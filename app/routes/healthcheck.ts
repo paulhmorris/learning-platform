@@ -1,10 +1,9 @@
 import type { LoaderFunctionArgs } from "@remix-run/node";
 
-import { prisma } from "~/db.server";
+import { prisma } from "~/lib/db.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const host =
-    request.headers.get("X-Forwarded-Host") ?? request.headers.get("host");
+  const host = request.headers.get("X-Forwarded-Host") ?? request.headers.get("host");
 
   try {
     const url = new URL("/", `http://${host}`);

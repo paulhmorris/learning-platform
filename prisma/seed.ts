@@ -15,6 +15,8 @@ async function seed() {
 
   await prisma.user.create({
     data: {
+      firstName: "Paul",
+      lastName: "Henschel",
       email,
       password: {
         create: {

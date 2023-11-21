@@ -6,9 +6,9 @@ import { z } from "zod";
 
 import { Button } from "~/components/ui/button";
 import { Field, useForm } from "~/components/ui/form";
+import { createUserSession, getUserId } from "~/lib/session.server";
 import { parseForm } from "~/lib/utils";
 import { verifyLogin } from "~/models/user.server";
-import { createUserSession, getUserId } from "~/session.server";
 
 export const meta: MetaFunction = () => [{ title: "Login" }];
 
