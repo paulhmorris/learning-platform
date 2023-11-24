@@ -25,6 +25,7 @@ model User {
   courses          UserCourses?
   lessonProgresses UserLessonProgress[]
   courseProgresses UserCourseProgress[]
+  passwordResets   PasswordReset[]
 }
 
 model Password {
@@ -32,6 +33,18 @@ model Password {
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   userId String @unique
+}
+
+model PasswordReset {
+  id        String    @id @default(cuid())
+  token     String    @unique @default(uuid())
+  user      User      @relation(fields: [userId], references: [id])
+  userId    String
+  expiresAt DateTime
+  usedAt    DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model UserRole {
@@ -46,6 +59,7 @@ model Course {
   id           String @id @default(cuid())
   priceInCents Int
   strapiId     Int?
+  slug         String @unique
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -59,6 +73,7 @@ model Lesson {
   id                        String @id @default(cuid())
   strapiId                  Int?
   requiredDurationInSeconds Int?
+  slug                      String @unique
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -78,6 +93,9 @@ model UserCourses {
 
   course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   courseId String @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model UserCourseProgress {
@@ -90,7 +108,10 @@ model UserCourseProgress {
   course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   courseId String @unique
 
-  durationInSeconds Int
+  durationInSeconds Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model UserLessonProgress {
@@ -103,5 +124,8 @@ model UserLessonProgress {
   lesson   Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   lessonId String @unique
 
-  durationInSeconds Int?
+  durationInSeconds Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

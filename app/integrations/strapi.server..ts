@@ -14,7 +14,12 @@ export async function getEntries(pluralApiId: string) {
   return data;
 }
 
-export async function getEntry(pluralApiId: string, id: string) {
+export async function getEntry(pluralApiId: string, id: string | number | null) {
+  if (id === null) {
+    console.warn("Strapi getEntry() ----> ID was null");
+    return id;
+  }
+
   const res = await fetch(`${url}/${pluralApiId}/${id}`, config);
   const data = (await res.json()) as StrapiResponse;
   return data;
@@ -29,7 +34,7 @@ interface StrapiMetadata {
   };
 }
 
-interface StrapiEntry<T extends Record<string, unknown> = Record<string, unknown>> {
+interface StrapiEntry<T extends Record<string, string> = Record<string, string>> {
   id: string;
   attributes: {
     createdAt: string;
@@ -38,7 +43,7 @@ interface StrapiEntry<T extends Record<string, unknown> = Record<string, unknown
   } & T;
 }
 
-interface StrapiResponse<T extends Record<string, unknown> = Record<string, unknown>> {
+interface StrapiResponse<T extends Record<string, string> = Record<string, string>> {
   data: StrapiEntry<T>;
   meta: StrapiMetadata;
 }

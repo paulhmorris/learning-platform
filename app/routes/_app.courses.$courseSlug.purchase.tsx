@@ -33,6 +33,7 @@ export async function action() {
 export default function Purchase() {
   return (
     <section>
+      <h1>Purchase Course</h1>
       <div className="product">
         <img src="https://i.imgur.com/EHyR2nP.png" alt="The cover of Stubborn Attachments" />
         <div className="description">
@@ -41,7 +42,9 @@ export default function Purchase() {
         </div>
       </div>
       <form method="post">
-        <button type="submit">Checkout</button>
+        <button type="submit" className="font-bold text-purple-800">
+          Checkout
+        </button>
       </form>
     </section>
   );

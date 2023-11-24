@@ -1,11 +1,12 @@
+import { Submission } from "@conform-to/react";
 import { parse } from "@conform-to/zod";
-import { json } from "@remix-run/node";
 import { useMatches } from "@remix-run/react";
 import clsx, { ClassValue } from "clsx";
 import { useMemo } from "react";
 import { twMerge } from "tailwind-merge";
 import { z } from "zod";
 
+import { badRequest } from "~/lib/responses.server";
 import type { User } from "~/models/user.server";
 
 const DEFAULT_REDIRECT = "/";
@@ -69,11 +70,14 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+interface ParsedSubmission<S extends z.ZodTypeAny> extends Submission<S> {
+  value: z.infer<S>;
+}
 export async function parseForm<S extends z.ZodTypeAny>({ request, schema }: { request: Request; schema: S }) {
   const formData = await request.formData();
   const submission = parse<S>(formData, { schema });
   if (!submission.value) {
-    throw json(submission, { status: 400 });
+    throw badRequest(submission);
   }
-  return submission;
+  return submission as ParsedSubmission<S>;
 }
