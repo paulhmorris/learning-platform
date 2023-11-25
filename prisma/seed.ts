@@ -13,10 +13,24 @@ async function seed() {
 
   const hashedPassword = await bcrypt.hash("password", 10);
 
+  await prisma.userRole.deleteMany({}).catch(() => ({}));
+  await prisma.role.deleteMany({}).catch(() => ({}));
+  await prisma.role.createMany({
+    data: [
+      { id: 1, name: "ADMIN" },
+      { id: 2, name: "USER" },
+    ],
+  });
+
   await prisma.user.create({
     data: {
       firstName: "Paul",
       lastName: "Henschel",
+      role: {
+        create: {
+          roleId: 1,
+        },
+      },
       email,
       password: {
         create: {

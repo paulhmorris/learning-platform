@@ -47,11 +47,22 @@ model PasswordReset {
   updatedAt DateTime @updatedAt
 }
 
-model UserRole {
-  id Int @id @default(autoincrement())
+model Role {
+  id   Int    @id @default(autoincrement())
+  name String @unique
 
+  users UserRole[]
+}
+
+model UserRole {
+  id     Int    @id @default(autoincrement())
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   userId String @unique
+  role   Role   @relation(fields: [roleId], references: [id])
+  roleId Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 // Entities
