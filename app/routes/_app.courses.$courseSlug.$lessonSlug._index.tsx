@@ -10,7 +10,7 @@ import { badRequest, notFound } from "~/lib/responses.server";
 import { requireUserId } from "~/lib/session.server";
 import { parseForm } from "~/lib/utils";
 
-export const SUBMIT_INTERVAL_MS = 10_000;
+export const SUBMIT_INTERVAL_MS = 15_000;
 
 export async function loader({ params, request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
@@ -70,12 +70,13 @@ export async function action({ request }: ActionFunctionArgs) {
       throw json({ message: "Progress updates were too close together." }, { status: 429 });
     }
 
-    // Mark lesson complete if we're about to hit the required duration
-    if (progress.lesson.requiredDurationInSeconds && progress.durationInSeconds + SUBMIT_INTERVAL_MS / 1000 >= progress.lesson.requiredDurationInSeconds) {
-      await prisma.userLessonProgress.update({
+    // Mark lesson complete if we're about to hit the required duration;
+    if (progress.lesson.requiredDurationInSeconds !== null && progress.durationInSeconds + SUBMIT_INTERVAL_MS / 1_000 >= progress.lesson.requiredDurationInSeconds) {
+      const completedProgress = await prisma.userLessonProgress.update({
         where: { id: progress.id },
-        data: { isCompleted: true },
+        data: { isCompleted: true, durationInSeconds: { increment: SUBMIT_INTERVAL_MS / 1_000 } },
       });
+      return typedjson({ progress: completedProgress });
     }
   }
 
