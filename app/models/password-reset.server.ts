@@ -1,6 +1,6 @@
 import type { PasswordReset, User } from "@prisma/client";
 
-import { prisma } from "~/lib/db.server";
+import { prisma } from "~/integrations/prisma.server";
 
 export function getPasswordResetByToken({ token }: { token: PasswordReset["token"] }) {
   return prisma.passwordReset.findUnique({

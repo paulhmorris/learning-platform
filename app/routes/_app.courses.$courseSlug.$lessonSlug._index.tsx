@@ -1,11 +1,11 @@
-import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
+import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@remix-run/node";
 import { typedjson, useTypedLoaderData } from "remix-typedjson";
 import invariant from "tiny-invariant";
 import { z } from "zod";
 
 import { ProgressTimer } from "~/components/lesson/ProgressTimer";
+import { prisma } from "~/integrations/prisma.server";
 import { getEntry } from "~/integrations/strapi.server.";
-import { prisma } from "~/lib/db.server";
 import { badRequest, notFound } from "~/lib/responses.server";
 import { requireUserId } from "~/lib/session.server";
 import { parseForm } from "~/lib/utils";
@@ -52,17 +52,34 @@ export async function action({ request }: ActionFunctionArgs) {
     value: { lessonId, userId },
   } = await parseForm({ request, schema: ProgressUpdateShema });
 
-  // Prevent spamming the endpoint
-  const progress = await prisma.userLessonProgress.findFirst({ where: { lessonId, userId } });
+  const progress = await prisma.userLessonProgress.findFirst({
+    where: { lessonId, userId },
+    include: { lesson: { select: { requiredDurationInSeconds: true } } },
+  });
+
   if (progress) {
+    if (progress.isCompleted) {
+      throw badRequest({ message: "Can't update progress on a lesson that's already completed." });
+    }
+
+    // Prevent spamming the endpoint
     const now = new Date().getTime();
     const lastUpdate = progress.updatedAt.getTime();
 
     if (now - lastUpdate < SUBMIT_INTERVAL_MS) {
-      throw badRequest({ message: "Too many requests" });
+      throw json({ message: "Progress updates were too close together." }, { status: 429 });
+    }
+
+    // Mark lesson complete if we're about to hit the required duration
+    if (progress.lesson.requiredDurationInSeconds && progress.durationInSeconds + SUBMIT_INTERVAL_MS / 1000 >= progress.lesson.requiredDurationInSeconds) {
+      await prisma.userLessonProgress.update({
+        where: { id: progress.id },
+        data: { isCompleted: true },
+      });
     }
   }
 
+  // Create or update progress
   const currentProgress = await prisma.userLessonProgress.upsert({
     where: { lessonId, userId },
     create: {
@@ -70,9 +87,7 @@ export async function action({ request }: ActionFunctionArgs) {
       userId,
       durationInSeconds: SUBMIT_INTERVAL_MS / 1_000,
     },
-    update: {
-      durationInSeconds: { increment: SUBMIT_INTERVAL_MS / 1_000 },
-    },
+    update: { durationInSeconds: { increment: SUBMIT_INTERVAL_MS / 1_000 } },
     include: { lesson: { select: { requiredDurationInSeconds: true } } },
   });
 
@@ -98,7 +113,7 @@ export default function Course() {
   return (
     <div className="border border-purple-800 p-6">
       <h1>{content.data.attributes.title}</h1>
-      {lesson.requiredDurationInSeconds ? <ProgressTimer lesson={lesson} progress={progress} /> : null}
+      <ProgressTimer lesson={lesson} progress={progress} />
       <pre className="text-sm">{JSON.stringify({ content, lesson, progress }, null, 2)}</pre>
     </div>
   );

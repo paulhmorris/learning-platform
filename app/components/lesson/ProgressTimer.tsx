@@ -3,7 +3,7 @@ import { useFetcher } from "@remix-run/react";
 import { useEffect } from "react";
 import { useTimer } from "react-timing-hooks";
 
-import { useUser } from "~/lib/utils";
+import { cn, useUser } from "~/lib/utils";
 import { SUBMIT_INTERVAL_MS } from "~/routes/_app.courses.$courseSlug.$lessonSlug._index";
 
 interface Props {
@@ -12,27 +12,49 @@ interface Props {
 }
 
 export function ProgressTimer({ lesson, progress }: Props) {
-  const userId = useUser();
-  const [timerValue] = useTimer(progress?.durationInSeconds ?? 0, { startOnMount: true });
+  const user = useUser();
   const fetcher = useFetcher();
+  const [timerValue, { start, stop }] = useTimer(progress?.durationInSeconds ?? 0, { startOnMount: true });
 
+  // Submit progress every 10 seconds
   useEffect(() => {
-    // This is only for lessons with required durations
-    if (!lesson.requiredDurationInSeconds) return;
+    if (lesson.requiredDurationInSeconds === null || progress?.isCompleted) return;
 
     const timer = setTimeout(() => {
-      fetcher.submit({ userId: userId.id, lessonId: lesson.id }, { method: "POST", navigate: false });
+      if (lesson.requiredDurationInSeconds === null || progress?.isCompleted) return;
+
+      fetcher.submit({ userId: user.id, lessonId: lesson.id }, { method: "POST", navigate: false });
     }, SUBMIT_INTERVAL_MS);
 
     return () => clearTimeout(timer);
-  }, [fetcher, lesson.id, lesson.requiredDurationInSeconds, progress?.updatedAt, userId.id]);
+  }, [fetcher, lesson.id, lesson.requiredDurationInSeconds, progress?.isCompleted, progress?.updatedAt, user.id]);
 
+  // Stop the timer when the time is up
+  useEffect(() => {
+    if (lesson.requiredDurationInSeconds === null) return;
+
+    if (progress?.isCompleted || timerValue >= lesson.requiredDurationInSeconds) {
+      stop();
+      return;
+    }
+
+    start();
+  }, [timerValue, lesson.requiredDurationInSeconds, stop, start, progress?.isCompleted]);
+
+  if (!lesson.requiredDurationInSeconds) return null;
   return (
     <div>
-      <p>Client: {timerValue}</p>
+      <p className={cn(timerValue >= lesson.requiredDurationInSeconds && "text-green-700")}>{formatSeconds(timerValue)}</p>
       <p>
-        Server: {progress?.durationInSeconds ?? 0} seconds saved / {lesson.requiredDurationInSeconds} required
+        Server: {progress?.durationInSeconds} / {lesson.requiredDurationInSeconds}
       </p>
     </div>
   );
+}
+
+function formatSeconds(seconds: number) {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+
+  return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
 }

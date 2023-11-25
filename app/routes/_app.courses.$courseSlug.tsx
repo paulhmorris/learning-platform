@@ -3,8 +3,8 @@ import { Outlet } from "@remix-run/react";
 import { typedjson } from "remix-typedjson";
 import invariant from "tiny-invariant";
 
+import { prisma } from "~/integrations/prisma.server";
 import { getEntry } from "~/integrations/strapi.server.";
-import { prisma } from "~/lib/db.server";
 import { notFound } from "~/lib/responses.server";
 
 export async function loader({ params }: LoaderFunctionArgs) {
