@@ -2,6 +2,7 @@ import type { Password, User } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 import { prisma } from "~/integrations/prisma.server";
+import { stripe } from "~/integrations/stripe.server";
 
 export type { User } from "@prisma/client";
 
@@ -15,6 +16,8 @@ export async function getUserByEmail(email: User["email"]) {
 
 export async function createUser(email: User["email"], password: string) {
   const hashedPassword = await bcrypt.hash(password, 10);
+  // Create user in Stripe
+  const customer = await stripe.customers.create({ email });
 
   return prisma.user.create({
     data: {
@@ -24,6 +27,7 @@ export async function createUser(email: User["email"], password: string) {
           hash: hashedPassword,
         },
       },
+      stripeId: customer.id,
     },
   });
 }

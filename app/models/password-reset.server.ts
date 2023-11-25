@@ -24,10 +24,10 @@ export function expirePasswordReset({ token }: { token: PasswordReset["token"] }
 }
 
 export function generatePasswordReset({ email }: { email: User["email"] }) {
+  const fifteenMinutesFromNow = new Date(new Date().getTime() + 15 * 60 * 1000);
   return prisma.passwordReset.create({
     data: {
-      // expiresAt: dayjs().add(15, "minute").toDate(),
-      expiresAt: new Date(new Date().getTime() + 15 * 60 * 1000),
+      expiresAt: fifteenMinutesFromNow,
       user: { connect: { email } },
     },
   });

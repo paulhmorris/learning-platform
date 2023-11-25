@@ -6,6 +6,7 @@ import { z } from "zod";
 
 import { Button } from "~/components/ui/button";
 import { Field, useForm } from "~/components/ui/form";
+import { badRequest } from "~/lib/responses.server";
 import { createUserSession, getUserId } from "~/lib/session.server";
 import { parseForm } from "~/lib/utils";
 import { verifyLogin } from "~/models/user.server";
@@ -28,7 +29,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 export const action = async ({ request }: ActionFunctionArgs) => {
   const submission = await parseForm({ request, schema });
 
-  if (submission.intent !== "submit" || !submission.value) {
+  if (submission.intent !== "submit") {
     return json(submission);
   }
 
@@ -36,15 +37,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const user = await verifyLogin(email, password);
 
   if (!user) {
-    return json(
-      {
-        ...submission,
-        error: {
-          "": ["Invalid email or password"],
-        },
+    throw badRequest({
+      ...submission,
+      error: {
+        "": ["Invalid email or password"],
       },
-      { status: 400 },
-    );
+    });
   }
 
   return createUserSession({
