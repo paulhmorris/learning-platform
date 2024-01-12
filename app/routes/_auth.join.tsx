@@ -1,50 +1,50 @@
-import { conform } from "@conform-to/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
-import { Form, Link, useActionData, useSearchParams } from "@remix-run/react";
+import { Link, useSearchParams } from "@remix-run/react";
+import { withZod } from "@remix-validated-form/with-zod";
+import { ValidatedForm, validationError } from "remix-validated-form";
 import { z } from "zod";
 
 import { Button } from "~/components/ui/button";
-import { Field, useForm } from "~/components/ui/form";
+import { FormField } from "~/components/ui/form";
 import { badRequest } from "~/lib/responses.server";
-import { createUserSession, getUserId } from "~/lib/session.server";
-import { parseForm } from "~/lib/utils";
-import { createUser, getUserByEmail } from "~/models/user.server";
+import { SessionService } from "~/services/SessionService.server";
+import { UserService } from "~/services/UserService.server";
 
-const schema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8),
-  redirectTo: z.string().optional(),
-});
+const validator = withZod(
+  z.object({
+    email: z.string().email(),
+    password: z.string().min(8),
+    redirectTo: z.string().optional(),
+  }),
+);
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const userId = await getUserId(request);
+  const userId = await SessionService.getUserId(request);
   if (userId) return redirect("/");
   return json({});
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const submission = await parseForm({ request, schema });
-
-  if (submission.intent !== "submit") {
-    return json(submission);
+  const result = await validator.validate(await request.formData());
+  if (result.error) {
+    throw badRequest(result.error);
   }
 
-  const { email, password, redirectTo } = submission.value;
+  const { email, password, redirectTo } = result.data;
 
-  const existingUser = await getUserByEmail(email);
+  const existingUser = await UserService.getByEmail(email);
   if (existingUser) {
-    throw badRequest({
-      ...submission,
-      error: {
-        email: ["A user already exists with this email. Please log in."],
+    return validationError({
+      fieldErrors: {
+        email: "An account with this email already exists.",
       },
     });
   }
 
-  const user = await createUser(email, password);
+  const user = await UserService.create(email, password);
 
-  return createUserSession({
+  return SessionService.createUserSession({
     request,
     remember: false,
     userId: user.id,
@@ -56,24 +56,15 @@ export const meta: MetaFunction = () => [{ title: "Sign Up" }];
 
 export default function Join() {
   const [searchParams] = useSearchParams();
-  const lastSubmission = useActionData<typeof action>();
-  const [form, { email, password, redirectTo }] = useForm({
-    lastSubmission,
-    schema,
-    shouldRevalidate: "onSubmit",
-    defaultValue: {
-      redirectTo: searchParams.get("redirectTo") || "/",
-    },
-  });
 
   return (
     <div className="flex min-h-full flex-col justify-center">
       <div className="mx-auto w-full max-w-md px-8">
-        <Form method="post" className="space-y-6" {...form.props}>
-          <Field label="Email" autoComplete="email" {...conform.input(email, { type: "email" })} errors={email.errors} />
-          <Field label="Password" autoComplete="current-password" {...conform.input(password, { type: "password" })} errors={password.errors} />
+        <ValidatedForm validator={validator} method="post" className="space-y-6">
+          <FormField name="email" label="Email" autoComplete="email" />
+          <FormField name="password" label="Password" autoComplete="current-password" />
 
-          <input {...conform.input(redirectTo, { hidden: true })} />
+          <input type="hidden" name="redirectTo" value={searchParams.get("redirectTo") ?? ""} />
           <Button className="w-full">Sign Up</Button>
           <div className="flex items-center justify-center">
             <div className="text-center text-sm text-gray-500">
@@ -89,7 +80,7 @@ export default function Join() {
               </Link>
             </div>
           </div>
-        </Form>
+        </ValidatedForm>
       </div>
     </div>
   );

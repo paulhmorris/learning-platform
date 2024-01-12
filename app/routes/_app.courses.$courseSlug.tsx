@@ -3,7 +3,7 @@ import { Outlet } from "@remix-run/react";
 import { typedjson } from "remix-typedjson";
 import invariant from "tiny-invariant";
 
-import { prisma } from "~/integrations/prisma.server";
+import { db } from "~/integrations/db.server";
 import { getEntry } from "~/integrations/strapi.server.";
 import { notFound } from "~/lib/responses.server";
 
@@ -11,7 +11,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
   const courseSlug = params.courseSlug;
   invariant(courseSlug, "Course slug is required");
 
-  const course = await prisma.course.findUnique({ where: { slug: courseSlug } });
+  const course = await db.course.findUnique({ where: { slug: courseSlug } });
   if (!course) {
     throw notFound({ message: "Course not found" });
   }

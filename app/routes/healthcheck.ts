@@ -1,6 +1,7 @@
+/* eslint-disable no-console */
 import type { LoaderFunctionArgs } from "@remix-run/node";
 
-import { prisma } from "~/integrations/prisma.server";
+import { db } from "~/integrations/db.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const host = request.headers.get("X-Forwarded-Host") ?? request.headers.get("host");
@@ -10,7 +11,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     // if we can connect to the database and make a simple query
     // and make a HEAD request to ourselves, then we're good.
     await Promise.all([
-      prisma.user.count(),
+      db.user.count(),
       fetch(url.toString(), { method: "HEAD" }).then((r) => {
         if (!r.ok) return Promise.reject(r);
       }),

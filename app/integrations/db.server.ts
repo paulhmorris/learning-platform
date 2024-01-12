@@ -1,3 +1,5 @@
+/* eslint-disable no-console */
+/* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import { PrismaClient } from "@prisma/client";
 import invariant from "tiny-invariant";
 
@@ -12,7 +14,7 @@ const singleton = <Value>(name: string, valueFactory: () => Value): Value => {
 };
 
 // Hard-code a unique key, so we can look up the client when this module gets re-imported
-const prisma = singleton("prisma", getPrismaClient);
+const db = singleton("prisma", getPrismaClient);
 
 function getPrismaClient() {
   const { DATABASE_URL } = process.env;
@@ -38,4 +40,4 @@ function getPrismaClient() {
   return client;
 }
 
-export { prisma };
+export { db };

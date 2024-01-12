@@ -10,7 +10,7 @@ const url = new URL(`${process.env.STRAPI_URL}/api`).toString();
 
 export async function getEntries(pluralApiId: string) {
   const res = await fetch(`${url}/${pluralApiId}`, config);
-  const data = (await res.json()) as StrapiResponse[];
+  const data = (await res.json()) as Array<StrapiResponse>;
   return data;
 }
 

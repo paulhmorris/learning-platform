@@ -1,26 +1,27 @@
 import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@remix-run/node";
+import { withZod } from "@remix-validated-form/with-zod";
 import { typedjson, useTypedLoaderData } from "remix-typedjson";
+import { validationError } from "remix-validated-form";
 import invariant from "tiny-invariant";
 import { z } from "zod";
 
 import { ProgressTimer } from "~/components/lesson/ProgressTimer";
-import { prisma } from "~/integrations/prisma.server";
+import { db } from "~/integrations/db.server";
 import { getEntry } from "~/integrations/strapi.server.";
 import { badRequest, notFound } from "~/lib/responses.server";
-import { requireUserId } from "~/lib/session.server";
-import { parseForm } from "~/lib/utils";
+import { SessionService } from "~/services/SessionService.server";
 
 export const SUBMIT_INTERVAL_MS = 15_000;
 
 export async function loader({ params, request }: LoaderFunctionArgs) {
-  const userId = await requireUserId(request);
+  const userId = await SessionService.requireUserId(request);
 
   const courseSlug = params.courseSlug;
   const lessonSlug = params.lessonSlug;
   invariant(courseSlug, "Course slug is required");
   invariant(lessonSlug, "Lesson slug is required");
 
-  const lesson = await prisma.lesson.findUnique({
+  const lesson = await db.lesson.findUnique({
     where: {
       slug: lessonSlug,
       course: { slug: courseSlug },
@@ -35,24 +36,29 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     throw notFound({ message: "Lesson content not found" });
   }
 
-  const progress = await prisma.userLessonProgress.findUnique({
+  const progress = await db.userLessonProgress.findUnique({
     where: { userId, lessonId: lesson.id },
   });
 
   return typedjson({ lesson, content, progress });
 }
 
-const ProgressUpdateShema = z.object({
-  userId: z.string().cuid(),
-  lessonId: z.string().cuid(),
-});
+const validator = withZod(
+  z.object({
+    userId: z.string().cuid(),
+    lessonId: z.string().cuid(),
+  }),
+);
 
 export async function action({ request }: ActionFunctionArgs) {
-  const {
-    value: { lessonId, userId },
-  } = await parseForm({ request, schema: ProgressUpdateShema });
+  const result = await validator.validate(await request.formData());
+  if (result.error) {
+    throw validationError(result.error);
+  }
 
-  const progress = await prisma.userLessonProgress.findFirst({
+  const { lessonId, userId } = result.data;
+
+  const progress = await db.userLessonProgress.findFirst({
     where: { lessonId, userId },
     include: { lesson: { select: { requiredDurationInSeconds: true } } },
   });
@@ -72,7 +78,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
     // Mark lesson complete if we're about to hit the required duration;
     if (progress.lesson.requiredDurationInSeconds !== null && progress.durationInSeconds + SUBMIT_INTERVAL_MS / 1_000 >= progress.lesson.requiredDurationInSeconds) {
-      const completedProgress = await prisma.userLessonProgress.update({
+      const completedProgress = await db.userLessonProgress.update({
         where: { id: progress.id },
         data: { isCompleted: true, durationInSeconds: { increment: SUBMIT_INTERVAL_MS / 1_000 } },
       });
@@ -81,7 +87,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   // Create or update progress
-  const currentProgress = await prisma.userLessonProgress.upsert({
+  const currentProgress = await db.userLessonProgress.upsert({
     where: { lessonId, userId },
     create: {
       lessonId,
@@ -92,13 +98,13 @@ export async function action({ request }: ActionFunctionArgs) {
     include: { lesson: { select: { requiredDurationInSeconds: true } } },
   });
 
-  if (!currentProgress?.lesson.requiredDurationInSeconds) {
+  if (!currentProgress.lesson.requiredDurationInSeconds) {
     return typedjson({ progress: currentProgress });
   }
 
   // Lessons with required durations
   if (currentProgress.lesson.requiredDurationInSeconds && currentProgress.durationInSeconds >= currentProgress.lesson.requiredDurationInSeconds) {
-    const progress = await prisma.userLessonProgress.update({
+    const progress = await db.userLessonProgress.update({
       where: { id: currentProgress.id },
       data: { isCompleted: true },
     });

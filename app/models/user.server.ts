@@ -1,47 +1,11 @@
 import type { Password, User } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
-import { prisma } from "~/integrations/prisma.server";
-import { stripe } from "~/integrations/stripe.server";
+import { UserService } from "~/services/UserService.server";
 
-export type { User } from "@prisma/client";
-
-export async function getUserById(id: User["id"]) {
-  return prisma.user.findUnique({ where: { id } });
-}
-
-export async function getUserByEmail(email: User["email"]) {
-  return prisma.user.findUnique({ where: { email } });
-}
-
-export async function createUser(email: User["email"], password: string) {
-  const hashedPassword = await bcrypt.hash(password, 10);
-  // Create user in Stripe
-  const customer = await stripe.customers.create({ email });
-
-  return prisma.user.create({
-    data: {
-      email,
-      password: {
-        create: {
-          hash: hashedPassword,
-        },
-      },
-      stripeId: customer.id,
-    },
-  });
-}
-
-export async function deleteUserByEmail(email: User["email"]) {
-  return prisma.user.delete({ where: { email } });
-}
-
-export async function verifyLogin(email: User["email"], password: Password["hash"]) {
-  const userWithPassword = await prisma.user.findUnique({
-    where: { email },
-    include: {
-      password: true,
-    },
+export async function verifyLogin(email: NonNullable<User["email"]>, password: Password["hash"]) {
+  const userWithPassword = await UserService.getByEmail(email, {
+    include: { password: true },
   });
 
   if (!userWithPassword || !userWithPassword.password) {
@@ -54,7 +18,6 @@ export async function verifyLogin(email: User["email"], password: Password["hash
     return null;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { password: _password, ...userWithoutPassword } = userWithPassword;
 
   return userWithoutPassword;

@@ -3,14 +3,15 @@ import * as React from "react";
 
 import type { ToastActionElement, ToastProps } from "~/components/ui/toast";
 
-const TOAST_LIMIT = 1;
+const TOAST_LIMIT = 3;
 const TOAST_REMOVE_DELAY = 1000000;
 
-type ToasterToast = ToastProps & {
+type ToasterToast = Omit<ToastProps, keyof JSX.IntrinsicElements["div"]> & {
   id: string;
-  title?: React.ReactNode;
-  description?: React.ReactNode;
+  title?: string;
+  description?: string;
   action?: ToastActionElement;
+  icon?: React.ReactNode;
 };
 
 const actionTypes = {
@@ -48,7 +49,7 @@ type Action =
     };
 
 interface State {
-  toasts: ToasterToast[];
+  toasts: Array<ToasterToast>;
 }
 
 const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>();
@@ -80,9 +81,7 @@ export const reducer = (state: State, action: Action): State => {
     case "UPDATE_TOAST":
       return {
         ...state,
-        toasts: state.toasts.map((t) =>
-          t.id === action.toast.id ? { ...t, ...action.toast } : t,
-        ),
+        toasts: state.toasts.map((t) => (t.id === action.toast.id ? { ...t, ...action.toast } : t)),
       };
 
     case "DISMISS_TOAST": {
@@ -135,7 +134,7 @@ function dispatch(action: Action) {
   });
 }
 
-type Toast = Omit<ToasterToast, "id">;
+export type Toast = Omit<ToasterToast, "id">;
 
 function toast({ ...props }: Toast) {
   const id = genId();

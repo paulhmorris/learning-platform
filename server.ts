@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /* eslint-disable @typescript-eslint/no-misused-promises */
 import fs from "node:fs";
 import path from "node:path";
@@ -14,6 +15,9 @@ import express from "express";
 import morgan from "morgan";
 import sourceMapSupport from "source-map-support";
 
+import { validateEnv } from "~/lib/env.server";
+
+validateEnv();
 sourceMapSupport.install();
 installGlobals();
 void run();
@@ -50,10 +54,7 @@ async function run() {
   app.disable("x-powered-by");
 
   // Remix fingerprints its assets so we can cache forever.
-  app.use(
-    "/build",
-    express.static("public/build", { immutable: true, maxAge: "1y" }),
-  );
+  app.use("/build", express.static("public/build", { immutable: true, maxAge: "1y" }));
 
   // Everything else (like favicon.ico) is cached for an hour. You may want to be
   // more aggressive with this caching.
@@ -111,10 +112,7 @@ async function run() {
       // 2. tell Remix that this app server is now up-to-date and ready
       void broadcastDevReady(build);
     }
-    chokidar
-      .watch(VERSION_PATH, { ignoreInitial: true })
-      .on("add", handleServerUpdate)
-      .on("change", handleServerUpdate);
+    chokidar.watch(VERSION_PATH, { ignoreInitial: true }).on("add", handleServerUpdate).on("change", handleServerUpdate);
 
     // wrap request handler to make sure its recreated with the latest build for every request
     return async (req, res, next) => {

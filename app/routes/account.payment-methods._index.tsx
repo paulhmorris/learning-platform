@@ -2,14 +2,14 @@ import { LoaderFunctionArgs, redirect } from "@remix-run/node";
 import { Link } from "@remix-run/react";
 import { typedjson, useTypedLoaderData } from "remix-typedjson";
 
-import { prisma } from "~/integrations/prisma.server";
+import { db } from "~/integrations/db.server";
 import { stripe } from "~/integrations/stripe.server";
-import { requireUserId } from "~/lib/session.server";
+import { SessionService } from "~/services/SessionService.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const userId = await requireUserId(request);
+  const userId = await SessionService.requireUserId(request);
 
-  const { stripeId } = await prisma.user.findUniqueOrThrow({
+  const { stripeId } = await db.user.findUniqueOrThrow({
     where: { id: userId },
     select: { stripeId: true },
   });
