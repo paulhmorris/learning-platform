@@ -3,12 +3,12 @@ import { PassThrough } from "node:stream";
 import type { EntryContext } from "@remix-run/node";
 import { createReadableStreamFromReadable } from "@remix-run/node";
 import { RemixServer } from "@remix-run/react";
-import * as Sentry from "@sentry/remix";
 import { wrapRemixHandleError } from "@sentry/remix";
 import isbot from "isbot";
 import { renderToPipeableStream } from "react-dom/server";
 
 import { db } from "~/integrations/db.server";
+import { Sentry } from "~/integrations/sentry";
 
 export const handleError = wrapRemixHandleError;
 

@@ -9,6 +9,7 @@ import { ErrorComponent } from "~/components/error-component";
 import { Checkbox, FormField } from "~/components/ui/form";
 import { Label } from "~/components/ui/label";
 import { SubmitButton } from "~/components/ui/submit-button";
+import { Sentry } from "~/integrations/sentry";
 import { CheckboxSchema } from "~/lib/schemas";
 import { safeRedirect } from "~/lib/utils";
 import { verifyLogin } from "~/models/user.server";
@@ -47,7 +48,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     });
   }
 
-  // Sentry.setUser({ id: user.id, email: user.username });
+  Sentry.setUser({ id: user.id, email: user.email });
 
   return SessionService.createUserSession({
     request,

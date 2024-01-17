@@ -6,8 +6,8 @@ import invariant from "tiny-invariant";
 import { z } from "zod";
 
 import { ProgressTimer } from "~/components/lesson/ProgressTimer";
+import { cms } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
-import { getEntry } from "~/integrations/strapi.server.";
 import { badRequest, notFound } from "~/lib/responses.server";
 import { SessionService } from "~/services/SessionService.server";
 
@@ -27,11 +27,11 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
       course: { slug: courseSlug },
     },
   });
-  if (!lesson) {
+  if (!lesson || !lesson.strapiId) {
     throw notFound({ message: "Lesson not found" });
   }
 
-  const content = await getEntry("lessons", lesson.strapiId);
+  const content = await cms.getLesson(lesson.strapiId);
   if (!content) {
     throw notFound({ message: "Lesson content not found" });
   }

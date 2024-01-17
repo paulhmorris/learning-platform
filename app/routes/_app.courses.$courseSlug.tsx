@@ -3,8 +3,8 @@ import { Outlet } from "@remix-run/react";
 import { typedjson } from "remix-typedjson";
 import invariant from "tiny-invariant";
 
+import { cms } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
-import { getEntry } from "~/integrations/strapi.server.";
 import { notFound } from "~/lib/responses.server";
 
 export async function loader({ params }: LoaderFunctionArgs) {
@@ -12,11 +12,11 @@ export async function loader({ params }: LoaderFunctionArgs) {
   invariant(courseSlug, "Course slug is required");
 
   const course = await db.course.findUnique({ where: { slug: courseSlug } });
-  if (!course) {
+  if (!course || !course.strapiId) {
     throw notFound({ message: "Course not found" });
   }
 
-  const content = await getEntry("courses", course.strapiId);
+  const content = await cms.getCourse(course.strapiId);
   if (!content) {
     throw notFound({ message: "Content not found" });
   }
