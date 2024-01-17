@@ -8,6 +8,10 @@ const serverEnvValidation = z.object({
   SESSION_SECRET: z.string().min(16),
   SITE_URL: z.string().url().optional(),
 
+  // Strapi
+  STRAPI_URL: z.string().url(),
+  STRAPI_TOKEN: z.string().min(1),
+
   // Resend
   // RESEND_API_KEY: z.string().startsWith("re_"),
 
@@ -21,11 +25,12 @@ const serverEnvValidation = z.object({
   DATABASE_URL: z.string().min(1),
 
   // Sentry
-  // SENTRY_DSN: z.string().url(),
+  SENTRY_DSN: z.string().url(),
 
   // Trigger.dev
-  // TRIGGER_API_KEY: z.string().startsWith("tr_"),
-  // TRIGGER_API_URL: z.string().url(),
+  TRIGGER_API_KEY: z.string().startsWith("tr_"),
+  TRIGGER_PUBLIC_API_KEY: z.string().startsWith("pk_"),
+  TRIGGER_API_URL: z.string().url(),
 });
 
 const clientEnvValidation = z.object({
@@ -33,21 +38,10 @@ const clientEnvValidation = z.object({
   // TRIGGER_PUBLIC_API_KEY: z.string().startsWith("pk_"),
 });
 
-const deploymentPublicEnvValidation = z.object({
-  // Vercel
-  // VERCEL_URL: z.string(),
-  // VERCEL_ENV: z.enum(["production", "preview", "development"]),
-});
-
 declare global {
   // Server side
   namespace NodeJS {
-    interface ProcessEnv extends TypeOf<typeof serverEnvValidation & typeof clientEnvValidation & typeof deploymentPublicEnvValidation> {}
-  }
-
-  // Client side
-  interface Window {
-    ENV: TypeOf<typeof clientEnvValidation & typeof deploymentPublicEnvValidation>;
+    interface ProcessEnv extends TypeOf<typeof serverEnvValidation & typeof clientEnvValidation> {}
   }
 }
 

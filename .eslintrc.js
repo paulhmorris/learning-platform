@@ -7,7 +7,6 @@
 /** @type {import('eslint').Linter.Config} */
 module.exports = {
   root: true,
-  ignorePatterns: ["./cypress", "./cypress.config.ts"],
   parserOptions: {
     ecmaVersion: "latest",
     sourceType: "module",
@@ -99,7 +98,7 @@ module.exports = {
 
     // Jest/Vitest
     {
-      files: ["**/*.test.{js,jsx,ts,tsx}"],
+      files: ["test/**/*.test.{js,jsx,ts,tsx}"],
       plugins: ["jest", "jest-dom", "testing-library"],
       extends: ["plugin:jest/recommended", "plugin:jest-dom/recommended", "plugin:testing-library/react", "prettier"],
       env: {
@@ -115,11 +114,10 @@ module.exports = {
       },
     },
 
-    // Cypress
+    // Playwright
     {
-      files: ["cypress/**/*.ts"],
-      plugins: ["cypress"],
-      extends: ["plugin:cypress/recommended", "prettier"],
+      files: ["playwright/**/*.ts"],
+      extends: ["plugin:playwright/recommended"],
     },
 
     // Node
