@@ -8,6 +8,7 @@ import prom from "@isaacs/express-prometheus-middleware";
 import { createRequestHandler } from "@remix-run/express";
 import type { ServerBuild } from "@remix-run/node";
 import { broadcastDevReady, installGlobals } from "@remix-run/node";
+import { wrapExpressCreateRequestHandler } from "@sentry/remix";
 import chokidar from "chokidar";
 import compression from "compression";
 import type { RequestHandler } from "express";
@@ -16,6 +17,8 @@ import morgan from "morgan";
 import sourceMapSupport from "source-map-support";
 
 import { validateEnv } from "~/lib/env.server";
+
+const sentryCreateRequestHandler = wrapExpressCreateRequestHandler(createRequestHandler);
 
 validateEnv();
 sourceMapSupport.install();
@@ -66,7 +69,7 @@ async function run() {
     "*",
     process.env.NODE_ENV === "development"
       ? createDevRequestHandler(initialBuild)
-      : createRequestHandler({
+      : sentryCreateRequestHandler({
           build: initialBuild,
           mode: process.env.NODE_ENV,
         }),
@@ -112,12 +115,15 @@ async function run() {
       // 2. tell Remix that this app server is now up-to-date and ready
       void broadcastDevReady(build);
     }
-    chokidar.watch(VERSION_PATH, { ignoreInitial: true }).on("add", handleServerUpdate).on("change", handleServerUpdate);
+    chokidar
+      .watch(VERSION_PATH, { ignoreInitial: true })
+      .on("add", handleServerUpdate)
+      .on("change", handleServerUpdate);
 
     // wrap request handler to make sure its recreated with the latest build for every request
     return async (req, res, next) => {
       try {
-        return createRequestHandler({
+        return sentryCreateRequestHandler({
           build,
           mode: "development",
         })(req, res, next);

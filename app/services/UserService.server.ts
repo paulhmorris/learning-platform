@@ -11,17 +11,42 @@ type Model = typeof db.user;
 type UserResult<T, O extends Operation> = Promise<Prisma.Result<Model, T, O>>;
 
 interface IUserService {
-  getById<T extends OmitFromWhere<Prisma.Args<Model, "findUnique">, "id">>(id: User["id"], args?: T): UserResult<T, "findUnique">;
-  getByEmail<T extends OmitFromWhere<Prisma.Args<Model, "findUnique">, "email">>(email: User["email"], args?: T): UserResult<T, "findUnique">;
-  resetOrSetupPassword<T extends Prisma.Args<Model, "update">>(args: { userId: User["id"]; password: string }): UserResult<T, "update">;
-  create<T extends Prisma.Args<Model, "create">>(email: User["email"], password: string, args?: T): UserResult<T, "create">;
+  getById<T extends OmitFromWhere<Prisma.Args<Model, "findUnique">, "id">>(
+    id: User["id"],
+    args?: T,
+  ): UserResult<T, "findUnique">;
+  getByEmail<T extends OmitFromWhere<Prisma.Args<Model, "findUnique">, "email">>(
+    email: User["email"],
+    args?: T,
+  ): UserResult<T, "findUnique">;
+  resetOrSetupPassword<T extends Prisma.Args<Model, "update">>(args: {
+    userId: User["id"];
+    password: string;
+  }): UserResult<T, "update">;
+  create<T extends Prisma.Args<Model, "create">>(
+    email: User["email"],
+    password: string,
+    args?: T,
+  ): UserResult<T, "create">;
   update<T extends OmitFromWhere<Prisma.Args<Model, "update">, "id">>(id: User["id"], args: T): UserResult<T, "update">;
-  delete<T extends OmitFromWhere<Prisma.Args<Model, "delete">, "id">>(id: User["id"], args?: T): UserResult<T, "delete">;
-  deleteByEmail<T extends OmitFromWhere<Prisma.Args<Model, "delete">, "id">>(email: User["email"], args?: T): UserResult<T, "delete">;
+  delete<T extends OmitFromWhere<Prisma.Args<Model, "delete">, "id">>(
+    id: User["id"],
+    args?: T,
+  ): UserResult<T, "delete">;
+  deleteByEmail<T extends OmitFromWhere<Prisma.Args<Model, "delete">, "id">>(
+    email: User["email"],
+    args?: T,
+  ): UserResult<T, "delete">;
 }
 
 class Service implements IUserService {
-  resetOrSetupPassword<T extends Prisma.UserUpdateArgs<DefaultArgs>>({ userId, password }: { userId: User["id"]; password: string }) {
+  resetOrSetupPassword<T extends Prisma.UserUpdateArgs<DefaultArgs>>({
+    userId,
+    password,
+  }: {
+    userId: User["id"];
+    password: string;
+  }) {
     return withServiceErrorHandling<Model, T, "update">(async () => {
       const hashedPassword = await PasswordService.hashPassword(password);
 
@@ -46,7 +71,10 @@ class Service implements IUserService {
     });
   }
 
-  public async getByEmail<T extends OmitFromWhere<Prisma.Args<Model, "findUnique">, "email">>(email: User["email"], args?: T) {
+  public async getByEmail<T extends OmitFromWhere<Prisma.Args<Model, "findUnique">, "email">>(
+    email: User["email"],
+    args?: T,
+  ) {
     return withServiceErrorHandling<Model, T, "findUnique">(async () => {
       const user = await db.user.findUnique({ ...args, where: { email, ...args?.where } });
       return user as Prisma.Result<Model, T, "findUnique">;
@@ -87,7 +115,10 @@ class Service implements IUserService {
     });
   }
 
-  public async deleteByEmail<T extends OmitFromWhere<Prisma.Args<Model, "delete">, "email">>(email: User["email"], args?: T) {
+  public async deleteByEmail<T extends OmitFromWhere<Prisma.Args<Model, "delete">, "email">>(
+    email: User["email"],
+    args?: T,
+  ) {
     return withServiceErrorHandling<Model, T, "delete">(async () => {
       const user = await db.user.delete({ ...args, where: { email, ...args?.where } });
       return user as Prisma.Result<Model, T, "delete">;

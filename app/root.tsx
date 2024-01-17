@@ -1,6 +1,7 @@
 import { cssBundleHref } from "@remix-run/css-bundle";
 import type { LinksFunction, LoaderFunctionArgs } from "@remix-run/node";
-import { Links, LiveReload, Meta, Outlet, Scripts, ScrollRestoration } from "@remix-run/react";
+import { Links, LiveReload, Meta, Outlet, Scripts, ScrollRestoration, useRouteError } from "@remix-run/react";
+import { captureRemixErrorBoundaryError, withSentry } from "@sentry/remix";
 import { PreventFlashOnWrongTheme, ThemeProvider, useTheme } from "remix-themes";
 import { typedjson, useTypedLoaderData } from "remix-typedjson";
 
@@ -12,7 +13,10 @@ import { cn } from "~/lib/utils";
 import { SessionService } from "~/services/SessionService.server";
 import stylesheet from "~/tailwind.css";
 
-export const links: LinksFunction = () => [{ rel: "stylesheet", href: stylesheet }, ...(cssBundleHref ? [{ rel: "stylesheet", href: cssBundleHref }] : [])];
+export const links: LinksFunction = () => [
+  { rel: "stylesheet", href: stylesheet },
+  ...(cssBundleHref ? [{ rel: "stylesheet", href: cssBundleHref }] : []),
+];
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const session = await SessionService.getSession(request);
@@ -23,6 +27,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       user: await SessionService.getUser(request),
       theme: getTheme(),
       serverToast: getGlobalToast(session),
+      ENV: {
+        VERCEL_URL: process.env.VERCEL_URL,
+        VERCEL_ENV: process.env.VERCEL_ENV,
+      },
     },
     {
       headers: {
@@ -32,7 +40,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   );
 };
 
-export default function AppWithProviders() {
+function AppWithProviders() {
   const { theme } = useTypedLoaderData<typeof loader>();
   return (
     <ThemeProvider specifiedTheme={theme} themeAction="/resources/set-theme">
@@ -58,6 +66,11 @@ function App() {
         <Outlet />
         <Notifications serverToast={data.serverToast} />
         <ScrollRestoration />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.ENV = ${JSON.stringify(data.ENV)}`,
+          }}
+        />
         <Scripts />
         <LiveReload />
       </body>
@@ -65,12 +78,19 @@ function App() {
   );
 }
 
+export default withSentry(AppWithProviders);
+
 export function ErrorBoundary() {
+  const error = useRouteError();
+  captureRemixErrorBoundaryError(error);
   return (
     <html lang="en">
       <head>
         <title>Oh no!</title>
-        <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌐</text></svg>" />
+        <link
+          rel="icon"
+          href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌐</text></svg>"
+        />
         <Meta />
         <Links />
       </head>

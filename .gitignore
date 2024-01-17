@@ -5,3 +5,6 @@ node_modules
 .env
 
 /postgres-data
+
+# Sentry Config File
+.sentryclirc

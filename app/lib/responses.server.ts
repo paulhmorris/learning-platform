@@ -268,7 +268,14 @@ export function txt(content: string, init: number | ResponseInit = {}): Response
   });
 }
 
-export type ImageType = "image/jpeg" | "image/png" | "image/gif" | "image/svg+xml" | "image/webp" | "image/bmp" | "image/avif";
+export type ImageType =
+  | "image/jpeg"
+  | "image/png"
+  | "image/gif"
+  | "image/svg+xml"
+  | "image/webp"
+  | "image/bmp"
+  | "image/avif";
 
 /**
  * Create a response with a image file response.
@@ -281,7 +288,10 @@ export type ImageType = "image/jpeg" | "image/png" | "image/gif" | "image/svg+xm
  *   return image(await takeScreenshot(), { type: "image/avif" });
  * }
  */
-export function image(content: Buffer | ArrayBuffer | ReadableStream, { type, ...init }: ResponseInit & { type: ImageType }): Response {
+export function image(
+  content: Buffer | ArrayBuffer | ReadableStream,
+  { type, ...init }: ResponseInit & { type: ImageType },
+): Response {
   let headers = new Headers(init.headers);
 
   if (!headers.has("Content-Type")) {

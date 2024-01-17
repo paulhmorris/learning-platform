@@ -1,4 +1,5 @@
 import { createRemixRoute } from "@trigger.dev/remix";
+
 import { client } from "~/trigger.server";
 
 // Remix will automatically strip files with side effects

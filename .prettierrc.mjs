@@ -7,7 +7,7 @@ export default {
   htmlWhitespaceSensitivity: "css",
   insertPragma: false,
   jsxSingleQuote: false,
-  printWidth: 220,
+  printWidth: 120,
   proseWrap: "preserve",
   quoteProps: "as-needed",
   requirePragma: false,

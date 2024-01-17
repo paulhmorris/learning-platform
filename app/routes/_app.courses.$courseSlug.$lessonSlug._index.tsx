@@ -77,7 +77,10 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     // Mark lesson complete if we're about to hit the required duration;
-    if (progress.lesson.requiredDurationInSeconds !== null && progress.durationInSeconds + SUBMIT_INTERVAL_MS / 1_000 >= progress.lesson.requiredDurationInSeconds) {
+    if (
+      progress.lesson.requiredDurationInSeconds !== null &&
+      progress.durationInSeconds + SUBMIT_INTERVAL_MS / 1_000 >= progress.lesson.requiredDurationInSeconds
+    ) {
       const completedProgress = await db.userLessonProgress.update({
         where: { id: progress.id },
         data: { isCompleted: true, durationInSeconds: { increment: SUBMIT_INTERVAL_MS / 1_000 } },
@@ -103,7 +106,10 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   // Lessons with required durations
-  if (currentProgress.lesson.requiredDurationInSeconds && currentProgress.durationInSeconds >= currentProgress.lesson.requiredDurationInSeconds) {
+  if (
+    currentProgress.lesson.requiredDurationInSeconds &&
+    currentProgress.durationInSeconds >= currentProgress.lesson.requiredDurationInSeconds
+  ) {
     const progress = await db.userLessonProgress.update({
       where: { id: currentProgress.id },
       data: { isCompleted: true },

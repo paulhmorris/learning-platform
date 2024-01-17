@@ -14,7 +14,17 @@ interface ISessionService {
   requireUserId(request: Request, redirectTo?: string): Promise<User["id"]>;
   requireAdmin(request: Request): Promise<User>;
   requireSuperAdmin(request: Request): Promise<User>;
-  createUserSession({ request, userId, remember, redirectTo }: { request: Request; userId: string; remember: boolean; redirectTo: string }): Promise<Response>;
+  createUserSession({
+    request,
+    userId,
+    remember,
+    redirectTo,
+  }: {
+    request: Request;
+    userId: string;
+    remember: boolean;
+    redirectTo: string;
+  }): Promise<Response>;
 }
 
 class Session implements ISessionService {
@@ -108,7 +118,17 @@ class Session implements ISessionService {
     return this.requireUserByRole(request, ["SUPERADMIN"]);
   }
 
-  async createUserSession({ request, userId, remember, redirectTo }: { request: Request; userId: string; remember: boolean; redirectTo: string }) {
+  async createUserSession({
+    request,
+    userId,
+    remember,
+    redirectTo,
+  }: {
+    request: Request;
+    userId: string;
+    remember: boolean;
+    redirectTo: string;
+  }) {
     const session = await this.getSession(request);
     session.set(Session.USER_SESSION_KEY, userId);
     return redirect(redirectTo, {

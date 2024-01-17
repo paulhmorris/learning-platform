@@ -1,12 +1,26 @@
-/**
- * By default, Remix will handle hydrating your app on the client for you.
- * You are free to delete this file if you'd like to, but if you ever want it revealed again, you can run `npx remix reveal` ✨
- * For more information, see https://remix.run/docs/en/main/file-conventions/entry.client
- */
-
-import { RemixBrowser } from "@remix-run/react";
-import { startTransition, StrictMode } from "react";
+/* eslint-disable import/namespace */
+import { RemixBrowser, useLocation, useMatches } from "@remix-run/react";
+import * as Sentry from "@sentry/remix";
+import { StrictMode, startTransition, useEffect } from "react";
 import { hydrateRoot } from "react-dom/client";
+
+Sentry.init({
+  dsn:
+    window.location.hostname === "localhost"
+      ? undefined
+      : "https://f18051d71458f411f51af7ca0308b1cb@o4505496663359488.ingest.sentry.io/4506395673886720",
+  tracesSampleRate: 0.25,
+  replaysSessionSampleRate: 0.01,
+  replaysOnErrorSampleRate: 1,
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  environment: window?.ENV?.VERCEL_ENV,
+  integrations: [
+    new Sentry.BrowserTracing({
+      routingInstrumentation: Sentry.remixRouterInstrumentation(useEffect, useLocation, useMatches),
+    }),
+    new Sentry.Replay(),
+  ],
+});
 
 startTransition(() => {
   hydrateRoot(

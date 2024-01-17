@@ -11,10 +11,22 @@ type PasswordResult<M extends Model, T, O extends Operation> = Promise<Prisma.Re
 interface IPasswordService {
   hashPassword(password: string): Promise<string>;
   compare(password: string, hash: string): Promise<boolean>;
-  generateReset<T extends Omit<Prisma.Args<Model, "create">, "data">>(username: string, args?: T): PasswordResult<Model, T, "create">;
-  getResetByToken<T extends Prisma.Args<Model, "findUnique">>(token: string, args?: T): PasswordResult<Model, T, "findUnique">;
-  getResetByUserId<T extends Prisma.Args<Model, "findFirst">>(userId: string, args?: T): PasswordResult<Model, T, "findFirst">;
-  expireReset<T extends Prisma.Args<Model, "updateMany">>(token: string, args?: T): PasswordResult<Model, T, "updateMany">;
+  generateReset<T extends Omit<Prisma.Args<Model, "create">, "data">>(
+    username: string,
+    args?: T,
+  ): PasswordResult<Model, T, "create">;
+  getResetByToken<T extends Prisma.Args<Model, "findUnique">>(
+    token: string,
+    args?: T,
+  ): PasswordResult<Model, T, "findUnique">;
+  getResetByUserId<T extends Prisma.Args<Model, "findFirst">>(
+    userId: string,
+    args?: T,
+  ): PasswordResult<Model, T, "findFirst">;
+  expireReset<T extends Prisma.Args<Model, "updateMany">>(
+    token: string,
+    args?: T,
+  ): PasswordResult<Model, T, "updateMany">;
   deleteReset<T extends Prisma.Args<Model, "delete">>(token: string, args?: T): PasswordResult<Model, T, "delete">;
 }
 

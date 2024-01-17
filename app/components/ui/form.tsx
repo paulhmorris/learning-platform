@@ -35,7 +35,15 @@ interface FieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
   formId?: string;
   hideLabel?: boolean;
 }
-export function FormField({ isCurrency = false, hideLabel = false, name, label, formId, className, ...props }: FieldProps) {
+export function FormField({
+  isCurrency = false,
+  hideLabel = false,
+  name,
+  label,
+  formId,
+  className,
+  ...props
+}: FieldProps) {
   const fallbackId = useId();
   const { error, getInputProps } = useField(name, { formId });
 
@@ -43,9 +51,24 @@ export function FormField({ isCurrency = false, hideLabel = false, name, label, 
 
   return (
     <div className={cn("relative w-full")}>
-      <Label htmlFor={id} className={cn(hideLabel ? "sr-only" : "mb-1.5", error && "text-destructive", props.disabled && "cursor-not-allowed opacity-50")}>
+      <Label
+        htmlFor={id}
+        className={cn(
+          hideLabel ? "sr-only" : "mb-1.5",
+          error && "text-destructive",
+          props.disabled && "cursor-not-allowed opacity-50",
+        )}
+      >
         <span>{label}</span>
-        <span className={cn("ml-1 inline-block font-normal", props.required || error ? "text-destructive" : "text-muted-foreground/60", !props.required && "text-xs")}>{props.required ? "*" : "(optional)"}</span>
+        <span
+          className={cn(
+            "ml-1 inline-block font-normal",
+            props.required || error ? "text-destructive" : "text-muted-foreground/60",
+            !props.required && "text-xs",
+          )}
+        >
+          {props.required ? "*" : "(optional)"}
+        </span>
       </Label>
       <Input
         id={id}
@@ -92,9 +115,23 @@ export function FormTextarea({ hideLabel = false, name, label, formId, className
 
   return (
     <div className={cn("relative w-full")}>
-      <Label htmlFor={id} className={cn(hideLabel ? "sr-only" : "mb-1.5", error && "text-destructive", props.disabled && "cursor-not-allowed opacity-50")}>
+      <Label
+        htmlFor={id}
+        className={cn(
+          hideLabel ? "sr-only" : "mb-1.5",
+          error && "text-destructive",
+          props.disabled && "cursor-not-allowed opacity-50",
+        )}
+      >
         <span>{label}</span>
-        <span className={cn("ml-1 inline-block font-normal", props.required ? "text-destructive" : "text-xs text-muted-foreground/60")}>{props.required ? "*" : "(optional)"}</span>
+        <span
+          className={cn(
+            "ml-1 inline-block font-normal",
+            props.required ? "text-destructive" : "text-xs text-muted-foreground/60",
+          )}
+        >
+          {props.required ? "*" : "(optional)"}
+        </span>
       </Label>
       <Textarea
         id={id}
@@ -132,12 +169,30 @@ export function FormSelect(props: FormSelectProps) {
 
   return (
     <div {...divProps} className={cn("relative w-full", divProps?.className)}>
-      <Label htmlFor={id} className={cn(hideLabel ? "sr-only" : "mb-1", error && "text-destructive", props.disabled && "cursor-not-allowed opacity-50")}>
+      <Label
+        htmlFor={id}
+        className={cn(
+          hideLabel ? "sr-only" : "mb-1",
+          error && "text-destructive",
+          props.disabled && "cursor-not-allowed opacity-50",
+        )}
+      >
         <span>{label}</span>
-        <span className={cn("ml-1 inline-block font-normal", props.required ? "text-destructive" : "text-xs text-muted-foreground/60")}>{props.required ? "*" : "(optional)"}</span>
+        <span
+          className={cn(
+            "ml-1 inline-block font-normal",
+            props.required ? "text-destructive" : "text-xs text-muted-foreground/60",
+          )}
+        >
+          {props.required ? "*" : "(optional)"}
+        </span>
       </Label>
       <Select {...field} onValueChange={onChange}>
-        <SelectTrigger id={id} {...rest} className={cn(error && "border-destructive focus-visible:ring-destructive/50", rest.className)}>
+        <SelectTrigger
+          id={id}
+          {...rest}
+          className={cn(error && "border-destructive focus-visible:ring-destructive/50", rest.className)}
+        >
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent>
@@ -173,7 +228,10 @@ export function FormSelect(props: FormSelectProps) {
   );
 }
 
-export const Checkbox = React.forwardRef<React.ElementRef<typeof CheckboxPrimitive.Root>, React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root>>(({ className, ...props }, ref) => (
+export const Checkbox = React.forwardRef<
+  React.ElementRef<typeof CheckboxPrimitive.Root>,
+  React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root>
+>(({ className, ...props }, ref) => (
   <CheckboxPrimitive.Root
     ref={ref}
     className={cn(
@@ -184,7 +242,15 @@ export const Checkbox = React.forwardRef<React.ElementRef<typeof CheckboxPrimiti
     {...props}
   >
     <CheckboxPrimitive.Indicator className={cn("flex items-center justify-center text-current")}>
-      <svg viewBox="0 0 16 16" stroke="currentColor" fill="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" xmlns="http://www.w3.org/2000/svg">
+      <svg
+        viewBox="0 0 16 16"
+        stroke="currentColor"
+        fill="currentColor"
+        strokeWidth="1"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        xmlns="http://www.w3.org/2000/svg"
+      >
         <path d="M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z" />
       </svg>
     </CheckboxPrimitive.Indicator>

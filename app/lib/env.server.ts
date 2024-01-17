@@ -38,10 +38,21 @@ const clientEnvValidation = z.object({
   // TRIGGER_PUBLIC_API_KEY: z.string().startsWith("pk_"),
 });
 
+const deploymentPublicEnvValidation = z.object({
+  // Vercel
+  VERCEL_URL: z.string(),
+  VERCEL_ENV: z.enum(["production", "preview", "development"]),
+});
+
 declare global {
   // Server side
   namespace NodeJS {
     interface ProcessEnv extends TypeOf<typeof serverEnvValidation & typeof clientEnvValidation> {}
+  }
+
+  // Client side
+  interface Window {
+    ENV: TypeOf<typeof clientEnvValidation & typeof deploymentPublicEnvValidation>;
   }
 }
 
