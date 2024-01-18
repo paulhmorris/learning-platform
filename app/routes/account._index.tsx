@@ -1,7 +1,15 @@
+import { Link } from "@remix-run/react";
+
+import { PageTitle } from "~/components/page-header";
+
 export default function AccountLayout() {
   return (
-    <div className="border-green-700 p-6">
-      <h1>Account Index</h1>
-    </div>
+    <>
+      <PageTitle>Account Index</PageTitle>
+      <div className="flex flex-col gap-4">
+        <Link to="/account/payment-methods">Payment Methods</Link>
+        <Link to="/account/profile">Profile</Link>
+      </div>
+    </>
   );
 }

@@ -31,6 +31,10 @@ const serverEnvValidation = z.object({
   TRIGGER_API_KEY: z.string().startsWith("tr_"),
   TRIGGER_PUBLIC_API_KEY: z.string().startsWith("pk_"),
   TRIGGER_API_URL: z.string().url(),
+
+  // Stripe
+  STRIPE_PUBLIC_KEY: z.string().startsWith("pk_"),
+  STRIPE_SECRET_KEY: z.string().startsWith("sk_"),
 });
 
 const clientEnvValidation = z.object({
@@ -47,7 +51,8 @@ const deploymentPublicEnvValidation = z.object({
 declare global {
   // Server side
   namespace NodeJS {
-    interface ProcessEnv extends TypeOf<typeof serverEnvValidation & typeof clientEnvValidation> {}
+    interface ProcessEnv
+      extends TypeOf<typeof serverEnvValidation & typeof clientEnvValidation & typeof deploymentPublicEnvValidation> {}
   }
 
   // Client side

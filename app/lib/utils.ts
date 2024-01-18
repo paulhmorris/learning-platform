@@ -69,3 +69,12 @@ export function validateEmail(email: unknown): email is string {
 export function cn(...inputs: Array<ClassValue>) {
   return twMerge(clsx(inputs));
 }
+
+export function getSearchParam(param: string, request: Request) {
+  const url = new URL(request.url);
+  return url.searchParams.get(param);
+}
+export function getAllSearchParams(param: string, request: Request) {
+  const url = new URL(request.url);
+  return url.searchParams.getAll(param);
+}

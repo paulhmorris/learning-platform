@@ -2,6 +2,7 @@ import { LoaderFunctionArgs, redirect } from "@remix-run/node";
 import { Link } from "@remix-run/react";
 import { typedjson, useTypedLoaderData } from "remix-typedjson";
 
+import { PageTitle } from "~/components/page-header";
 import { db } from "~/integrations/db.server";
 import { stripe } from "~/integrations/stripe.server";
 import { SessionService } from "~/services/SessionService.server";
@@ -27,7 +28,7 @@ export default function AccountLayout() {
 
   return (
     <div className="border-purple-700 p-6">
-      <h1>Payment Methods</h1>
+      <PageTitle>Payment Methods</PageTitle>
       <Link to="/account/payment-methods/new">Add New</Link>
       <pre className="text-xs">{JSON.stringify(methods, null, 2)}</pre>
     </div>

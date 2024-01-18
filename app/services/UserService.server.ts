@@ -5,7 +5,7 @@ import bcrypt from "bcryptjs";
 import { db } from "~/integrations/db.server";
 import { withServiceErrorHandling } from "~/services/helpers";
 import { PasswordService } from "~/services/PasswordService.server";
-import { OmitFromWhere, Operation } from "~/services/types";
+import { OmitFromData, OmitFromWhere, Operation } from "~/services/types";
 
 type Model = typeof db.user;
 type UserResult<T, O extends Operation> = Promise<Prisma.Result<Model, T, O>>;
@@ -23,7 +23,7 @@ interface IUserService {
     userId: User["id"];
     password: string;
   }): UserResult<T, "update">;
-  create<T extends Prisma.Args<Model, "create">>(
+  create<T extends OmitFromData<Prisma.Args<Model, "create">, "email" | "password">>(
     email: User["email"],
     password: string,
     args?: T,
@@ -81,7 +81,11 @@ class Service implements IUserService {
     });
   }
 
-  public async create<T extends Prisma.Args<Model, "create">>(email: User["email"], password: string, args?: T) {
+  public async create<T extends OmitFromData<Prisma.Args<Model, "create">, "email" | "password">>(
+    email: User["email"],
+    password: string,
+    args?: T,
+  ) {
     return withServiceErrorHandling<Model, T, "create">(async () => {
       const hashedPassword = await bcrypt.hash(password, 10);
 

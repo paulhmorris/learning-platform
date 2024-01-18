@@ -43,7 +43,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 function AppWithProviders() {
   const { theme } = useTypedLoaderData<typeof loader>();
   return (
-    <ThemeProvider specifiedTheme={theme} themeAction="/resources/set-theme">
+    <ThemeProvider specifiedTheme={theme} themeAction="/set-theme">
       <App />
     </ThemeProvider>
   );
@@ -64,7 +64,7 @@ function App() {
       </head>
       <body className="h-full min-h-full font-sans">
         <Outlet />
-        <Notifications serverToast={data.serverToast} />
+        <Notifications />
         <ScrollRestoration />
         <script
           dangerouslySetInnerHTML={{

@@ -1,6 +1,7 @@
 import { Link } from "@remix-run/react";
 import { useTypedRouteLoaderData } from "remix-typedjson";
 
+import { PageTitle } from "~/components/page-header";
 import { loader } from "~/routes/_app.courses.$courseSlug";
 
 export default function Course() {
@@ -8,7 +9,7 @@ export default function Course() {
 
   return (
     <div className="border border-purple-800 p-6">
-      <h1>Course Title</h1>
+      <PageTitle>Course Title</PageTitle>
       <Link className="font-bold text-purple-800" to={`/courses/${data?.course.id}/purchase`}>
         Purchase Course
       </Link>

@@ -23,10 +23,23 @@ model User {
   updatedAt DateTime @updatedAt
 
   password         Password?
+  passwordResets   PasswordReset[]
+  verification     UserVerification?
   courses          UserCourses?
   lessonProgresses UserLessonProgress[]
   courseProgresses UserCourseProgress[]
-  passwordResets   PasswordReset[]
+}
+
+model UserVerification {
+  id        String    @id @default(cuid())
+  token     String    @unique @default(uuid())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  userId    String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 enum UserRole {

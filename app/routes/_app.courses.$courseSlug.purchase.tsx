@@ -1,5 +1,6 @@
 import { json, redirect } from "@remix-run/node";
 
+import { PageTitle } from "~/components/page-header";
 import { stripe } from "~/integrations/stripe.server";
 
 export function loader() {
@@ -33,7 +34,7 @@ export async function action() {
 export default function Purchase() {
   return (
     <section>
-      <h1>Purchase Course</h1>
+      <PageTitle>Purchase Course</PageTitle>
       <div className="product">
         <img src="https://i.imgur.com/EHyR2nP.png" alt="The cover of Stubborn Attachments" />
         <div className="description">

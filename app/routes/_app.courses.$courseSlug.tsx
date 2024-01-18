@@ -12,8 +12,12 @@ export async function loader({ params }: LoaderFunctionArgs) {
   invariant(courseSlug, "Course slug is required");
 
   const course = await db.course.findUnique({ where: { slug: courseSlug } });
-  if (!course || !course.strapiId) {
+  if (!course) {
     throw notFound({ message: "Course not found" });
+  }
+
+  if (!course.strapiId) {
+    throw notFound({ message: "Course content ID not found" });
   }
 
   const content = await cms.getCourse(course.strapiId);
@@ -27,7 +31,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
 export default function CourseLayout() {
   return (
     <div className="border border-destructive p-6">
-      <h1>Course Layout</h1>
+      <p>Course Layout</p>
       <Outlet />
     </div>
   );

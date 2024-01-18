@@ -6,6 +6,7 @@ import { ValidatedForm, validationError } from "remix-validated-form";
 import { z } from "zod";
 
 import { ErrorComponent } from "~/components/error-component";
+import { PageTitle } from "~/components/page-header";
 import { Checkbox, FormField } from "~/components/ui/form";
 import { Label } from "~/components/ui/label";
 import { SubmitButton } from "~/components/ui/submit-button";
@@ -65,9 +66,9 @@ export default function LoginPage() {
   const redirectTo = searchParams.get("redirectTo") || "/";
 
   return (
-    <div className="min-w-[400px] px-8">
-      <h1 className="text-4xl font-extrabold">Alliance 436</h1>
-      <ValidatedForm validator={validator} method="post" className="mt-4 space-y-4">
+    <div>
+      <PageTitle>Login</PageTitle>
+      <ValidatedForm validator={validator} method="post" className="mt-4 w-full space-y-4">
         <FormField label="Email" id="email" name="email" type="email" autoComplete="email" required />
         <FormField
           label="Password"
@@ -82,7 +83,7 @@ export default function LoginPage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Checkbox id="remember" name="remember" />
-            <Label htmlFor="remember">Remember me</Label>
+            <Label htmlFor="remember">Keep this device logged in for 30 days</Label>
           </div>
         </div>
         <SubmitButton className="w-full">Log in</SubmitButton>

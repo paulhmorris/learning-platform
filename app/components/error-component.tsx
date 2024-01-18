@@ -1,4 +1,5 @@
 import { isRouteErrorResponse, useRouteError } from "@remix-run/react";
+
 // import { captureRemixErrorBoundaryError } from "@sentry/remix";
 
 export function ErrorComponent() {

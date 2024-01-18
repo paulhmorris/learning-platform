@@ -6,6 +6,7 @@ import invariant from "tiny-invariant";
 import { z } from "zod";
 
 import { ProgressTimer } from "~/components/lesson/ProgressTimer";
+import { PageTitle } from "~/components/page-header";
 import { cms } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
 import { badRequest, notFound } from "~/lib/responses.server";
@@ -125,7 +126,7 @@ export default function Course() {
 
   return (
     <div className="border border-purple-800 p-6">
-      <h1>{content.data.attributes.title}</h1>
+      <PageTitle>{content.data.attributes.title}</PageTitle>
       <ProgressTimer lesson={lesson} progress={progress} />
       <pre className="text-sm">{JSON.stringify({ content, lesson, progress }, null, 2)}</pre>
     </div>
