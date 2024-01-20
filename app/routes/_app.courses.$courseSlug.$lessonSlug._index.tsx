@@ -1,5 +1,6 @@
 import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@remix-run/node";
 import { withZod } from "@remix-validated-form/with-zod";
+import { BlocksRenderer } from "@strapi/blocks-react-renderer";
 import { typedjson, useTypedLoaderData } from "remix-typedjson";
 import { validationError } from "remix-validated-form";
 import invariant from "tiny-invariant";
@@ -7,7 +8,7 @@ import { z } from "zod";
 
 import { ProgressTimer } from "~/components/lesson/ProgressTimer";
 import { PageTitle } from "~/components/page-header";
-import { cms } from "~/integrations/cms.server";
+import { Lesson, cms } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
 import { badRequest, notFound } from "~/lib/responses.server";
 import { SessionService } from "~/services/SessionService.server";
@@ -22,21 +23,16 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   invariant(courseSlug, "Course slug is required");
   invariant(lessonSlug, "Lesson slug is required");
 
-  const lesson = await db.lesson.findUnique({
-    where: {
-      slug: lessonSlug,
-      course: { slug: courseSlug },
-    },
-  });
-  if (!lesson || !lesson.strapiId) {
+  const lessonResults = await cms.find<Array<Lesson>>("lessons", { populate: "text_content" });
+  if (lessonResults.data.length === 0) {
     throw notFound({ message: "Lesson not found" });
   }
+  const content = lessonResults.data[0];
 
-  const content = await cms.getLesson(lesson.strapiId);
-  if (!content) {
-    throw notFound({ message: "Lesson content not found" });
+  const lesson = await db.lesson.findUnique({ where: { strapiId: lessonResults.data[0].id } });
+  if (!lesson) {
+    throw notFound({ message: "Lesson not found" });
   }
-
   const progress = await db.userLessonProgress.findUnique({
     where: { userId, lessonId: lesson.id },
   });
@@ -126,9 +122,12 @@ export default function Course() {
 
   return (
     <div className="border border-purple-800 p-6">
-      <PageTitle>{content.data.attributes.title}</PageTitle>
+      <PageTitle>{content.attributes.title}</PageTitle>
       <ProgressTimer lesson={lesson} progress={progress} />
-      <pre className="text-sm">{JSON.stringify({ content, lesson, progress }, null, 2)}</pre>
+      <article className="prose dark:prose-invert">
+        {/* eslint-disable-next-line @typescript-eslint/no-unsafe-assignment */}
+        <BlocksRenderer content={content.attributes.text_content} />
+      </article>
     </div>
   );
 }

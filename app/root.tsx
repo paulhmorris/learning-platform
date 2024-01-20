@@ -30,6 +30,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       ENV: {
         VERCEL_URL: process.env.VERCEL_URL,
         VERCEL_ENV: process.env.VERCEL_ENV,
+        STRAPI_URL: process.env.STRAPI_URL,
       },
     },
     {
@@ -64,6 +65,11 @@ function App() {
       </head>
       <body className="h-full min-h-full font-sans">
         <Outlet />
+        {/* {data.user ? (
+          <div className="fixed bottom-6 left-6 rounded border bg-background p-4 text-xs shadow-lg">
+            <pre>{JSON.stringify(data.user, null, 2)}</pre>
+          </div>
+        ) : null} */}
         <Notifications />
         <ScrollRestoration />
         <script

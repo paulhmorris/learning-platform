@@ -9,7 +9,6 @@ const serverEnvValidation = z.object({
   SITE_URL: z.string().url().optional(),
 
   // Strapi
-  STRAPI_URL: z.string().url(),
   STRAPI_TOKEN: z.string().min(1),
 
   // Resend
@@ -39,6 +38,7 @@ const serverEnvValidation = z.object({
 
 const clientEnvValidation = z.object({
   // Trigger.dev
+  STRAPI_URL: z.string().url(),
   // TRIGGER_PUBLIC_API_KEY: z.string().startsWith("pk_"),
 });
 

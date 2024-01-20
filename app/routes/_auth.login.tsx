@@ -1,7 +1,7 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
 import { Link, useSearchParams } from "@remix-run/react";
 import { withZod } from "@remix-validated-form/with-zod";
+import { redirect, typedjson } from "remix-typedjson";
 import { ValidatedForm, validationError } from "remix-validated-form";
 import { z } from "zod";
 
@@ -10,6 +10,7 @@ import { PageTitle } from "~/components/page-header";
 import { Checkbox, FormField } from "~/components/ui/form";
 import { Label } from "~/components/ui/label";
 import { SubmitButton } from "~/components/ui/submit-button";
+import { META } from "~/config";
 import { Sentry } from "~/integrations/sentry";
 import { CheckboxSchema } from "~/lib/schemas";
 import { safeRedirect } from "~/lib/utils";
@@ -18,7 +19,7 @@ import { SessionService } from "~/services/SessionService.server";
 
 const validator = withZod(
   z.object({
-    email: z.string().min(1, { message: "Email is required" }).email(),
+    email: z.string().email(),
     password: z.string().min(8, { message: "Password must be 8 or more characters." }),
     remember: CheckboxSchema,
     redirectTo: z.string().optional(),
@@ -27,8 +28,11 @@ const validator = withZod(
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const userId = await SessionService.getUserId(request);
-  if (userId) return redirect("/");
-  return json({});
+  if (userId) {
+    throw redirect("/");
+  }
+
+  return typedjson({});
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -59,7 +63,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   });
 };
 
-export const meta: MetaFunction = () => [{ title: "Login" }];
+export const meta: MetaFunction = () => [{ title: `Login | ${META.titleSuffix}` }];
 
 export default function LoginPage() {
   const [searchParams] = useSearchParams();
@@ -80,11 +84,11 @@ export default function LoginPage() {
         />
 
         <input type="hidden" name="redirectTo" value={redirectTo} />
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
           <div className="flex items-center space-x-2">
             <Checkbox id="remember" name="remember" aria-labelledby="remember-label" />
             <Label id="remember-label" htmlFor="remember">
-              Keep this device logged in for 30 days
+              Stay logged in for 30 days
             </Label>
           </div>
           <Link className="text-sm font-bold" to="/passwords/reset">
@@ -92,6 +96,9 @@ export default function LoginPage() {
           </Link>
         </div>
         <SubmitButton className="w-full">Log in</SubmitButton>
+        <p className="text-sm">
+          Want to sign up for an account? <Link to="/join">Sign up.</Link>
+        </p>
       </ValidatedForm>
     </div>
   );

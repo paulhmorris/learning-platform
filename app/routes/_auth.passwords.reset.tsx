@@ -22,6 +22,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   if (userId) {
     throw redirect("/");
   }
+  return typedjson({});
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
