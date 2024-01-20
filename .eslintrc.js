@@ -80,6 +80,7 @@ module.exports = {
       ],
       rules: {
         "no-console": ["warn", { allow: ["warn", "error", "info"] }],
+        "@typescript-eslint/consistent-type-definitions": ["off"],
         "@typescript-eslint/no-explicit-any": "off",
         "@typescript-eslint/array-type": ["error", { default: "generic" }],
         "@typescript-eslint/no-unused-vars": ["error", { varsIgnorePattern: "^_", argsIgnorePattern: "^_" }],
@@ -111,6 +112,7 @@ module.exports = {
     // Jest/Vitest
     {
       files: ["test/**/*.test.{js,jsx,ts,tsx}"],
+      excludedFiles: ["test/e2e/*"],
       plugins: ["jest", "jest-dom", "testing-library"],
       extends: ["plugin:jest/recommended", "plugin:jest-dom/recommended", "plugin:testing-library/react", "prettier"],
       env: {
@@ -128,7 +130,7 @@ module.exports = {
 
     // Playwright
     {
-      files: ["playwright/**/*.ts"],
+      files: ["test/e2e/*.ts"],
       extends: ["plugin:playwright/recommended"],
     },
 

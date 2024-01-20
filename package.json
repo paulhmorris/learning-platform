@@ -14,6 +14,7 @@
     "test": "vitest"
   },
   "dependencies": {
+    "@axe-core/playwright": "^4.8.3",
     "@isaacs/express-prometheus-middleware": "^1.2.1",
     "@prisma/client": "^5.8.1",
     "@radix-ui/react-accordion": "^1.1.2",
