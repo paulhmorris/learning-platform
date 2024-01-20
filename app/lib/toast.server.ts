@@ -1,5 +1,5 @@
-import type { Session, TypedResponse } from "@remix-run/node";
-import { redirect, typedjson } from "remix-typedjson";
+import type { Session } from "@remix-run/node";
+import { TypedJsonResponse, redirect, typedjson } from "remix-typedjson";
 import { ExternalToast, ToastT } from "sonner";
 
 import { SessionService } from "~/services/SessionService.server";
@@ -30,12 +30,17 @@ class ToastHandler {
     });
   }
 
-  async json<Data>(request: Request, data: Data, toast: Toast, init: ResponseInit = {}): Promise<TypedResponse<Data>> {
+  async json<Data>(
+    request: Request,
+    data: Data,
+    toast: Toast,
+    init: ResponseInit = {},
+  ): Promise<TypedJsonResponse<Data>> {
     const session = await SessionService.getSession(request);
     const type: Toast["type"] = toast.type ?? "default";
 
     setGlobalToast(session, { ...toast, type });
-    return typedjson(data, {
+    return typedjson<Data>(data, {
       ...init,
       headers: {
         ...init.headers,

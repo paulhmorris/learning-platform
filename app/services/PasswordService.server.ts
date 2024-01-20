@@ -46,14 +46,14 @@ class Service implements IPasswordService {
 
   public async generateReset<T extends Omit<Prisma.Args<Model, "create">, "data">>(email: string, args?: T) {
     return withServiceErrorHandling<Model, T, "create">(async () => {
-      const user = await db.user.findUnique({ where: { email } });
+      const user = await db.user.findUniqueOrThrow({ where: { email } });
       const reset = await db.passwordReset.create({
         ...args,
         data: {
           expiresAt: new Date(Date.now() + 15 * 60 * 1000),
           user: {
             connect: {
-              id: user?.id,
+              id: user.id,
             },
           },
         },

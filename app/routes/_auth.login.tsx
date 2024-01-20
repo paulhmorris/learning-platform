@@ -1,6 +1,6 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
-import { useSearchParams } from "@remix-run/react";
+import { Link, useSearchParams } from "@remix-run/react";
 import { withZod } from "@remix-validated-form/with-zod";
 import { ValidatedForm, validationError } from "remix-validated-form";
 import { z } from "zod";
@@ -67,7 +67,7 @@ export default function LoginPage() {
 
   return (
     <div>
-      <PageTitle>Login</PageTitle>
+      <PageTitle>Sign in to your account</PageTitle>
       <ValidatedForm validator={validator} method="post" className="mt-4 w-full space-y-4">
         <FormField label="Email" id="email" name="email" type="email" autoComplete="email" required />
         <FormField
@@ -82,9 +82,14 @@ export default function LoginPage() {
         <input type="hidden" name="redirectTo" value={redirectTo} />
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <Checkbox id="remember" name="remember" />
-            <Label htmlFor="remember">Keep this device logged in for 30 days</Label>
+            <Checkbox id="remember" name="remember" aria-labelledby="remember-label" />
+            <Label id="remember-label" htmlFor="remember">
+              Keep this device logged in for 30 days
+            </Label>
           </div>
+          <Link className="text-sm font-bold" to="/passwords/reset">
+            Forgot Password?
+          </Link>
         </div>
         <SubmitButton className="w-full">Log in</SubmitButton>
       </ValidatedForm>
