@@ -8,8 +8,8 @@ import { z } from "zod";
 
 import { FormField } from "~/components/ui/form";
 import { SubmitButton } from "~/components/ui/submit-button";
-import { META } from "~/config";
 import { Sentry } from "~/integrations/sentry";
+import { META } from "~/lib/constants";
 import { toast } from "~/lib/toast.server";
 import { MailService } from "~/services/MailService.server";
 import { PasswordService } from "~/services/PasswordService.server";

@@ -7,8 +7,8 @@ import { ValidatedForm, validationError } from "remix-validated-form";
 import { z } from "zod";
 
 import { PageTitle } from "~/components/page-header";
-import { Button } from "~/components/ui/button";
 import { FormField } from "~/components/ui/form";
+import { SubmitButton } from "~/components/ui/submit-button";
 import { verifyEmailJob } from "~/jobs/verify-email.server";
 import { SessionService } from "~/services/SessionService.server";
 import { UserService } from "~/services/UserService.server";
@@ -62,7 +62,7 @@ export default function Join() {
   return (
     <>
       <PageTitle>Sign Up</PageTitle>
-      <ValidatedForm validator={validator} method="post" className="space-y-6">
+      <ValidatedForm validator={validator} method="post" className="space-y-4">
         <div className="grid grid-cols-2 gap-2">
           <FormField required name="firstName" label="First Name" autoComplete="given-name" maxLength={255} />
           <FormField required name="lastName" label="Last Name" autoComplete="family-name" maxLength={255} />
@@ -78,21 +78,18 @@ export default function Join() {
         />
 
         <input type="hidden" name="redirectTo" value={searchParams.get("redirectTo") ?? ""} />
-        <Button className="w-full">Sign Up</Button>
-        <div className="flex items-center justify-center">
-          <div className="text-center text-sm text-gray-500">
-            Already have an account?{" "}
-            <Link
-              className="text-blue-500 underline"
-              to={{
-                pathname: "/login",
-                search: searchParams.toString(),
-              }}
-            >
-              Log in
-            </Link>
-          </div>
-        </div>
+        <SubmitButton className="w-full">Sign Up</SubmitButton>
+        <p className="text-sm">
+          Already have an account?{" "}
+          <Link
+            to={{
+              pathname: "/login",
+              search: searchParams.toString(),
+            }}
+          >
+            Log in
+          </Link>
+        </p>
       </ValidatedForm>
     </>
   );

@@ -1,9 +1,9 @@
 import { invokeTrigger } from "@trigger.dev/sdk";
 import { z } from "zod";
 
-import { COMPANY_NAME } from "~/config";
 import { db } from "~/integrations/db.server";
 import { client, triggerResend } from "~/integrations/trigger.server";
+import { COMPANY_NAME } from "~/lib/constants";
 
 export const verifyEmailJob = client.defineJob({
   enabled: true,
