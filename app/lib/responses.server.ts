@@ -1,5 +1,6 @@
 /* eslint-disable prefer-const */
-import { json, redirect } from "@remix-run/server-runtime";
+import { Prisma } from "@prisma/client";
+import { TypedJsonResponse, redirect, typedjson } from "remix-typedjson";
 
 /**
  * Create a response receiving a JSON object with the status code 201.
@@ -10,7 +11,7 @@ import { json, redirect } from "@remix-run/server-runtime";
  * }
  */
 export function created<Data = unknown>(data: Data, init?: Omit<ResponseInit, "status">) {
-  return json(data, { ...init, status: 201 });
+  return typedjson(data, { ...init, status: 201 });
 }
 
 /**
@@ -40,7 +41,19 @@ export function redirectBack(request: Request, { fallback, ...init }: ResponseIn
  * }
  */
 export function badRequest<Data = unknown>(data: Data, init?: Omit<ResponseInit, "status">) {
-  return json<Data>(data, { ...init, status: 400 });
+  return typedjson<Data>(data, { ...init, status: 400 });
+}
+
+/**
+ * Create a response receiving a JSON object with the status code 409.
+ * @example
+ * export async function loader({ request }: LoaderArgs) {
+ *   let user = await getUser(request);
+ *   throw conflict<BoundaryData>({ user });
+ * }
+ */
+export function conflict<Data = unknown>(data: Data, init?: Omit<ResponseInit, "status">) {
+  return typedjson<Data>(data, { ...init, status: 409 });
 }
 
 /**
@@ -52,7 +65,7 @@ export function badRequest<Data = unknown>(data: Data, init?: Omit<ResponseInit,
  * }
  */
 export function unauthorized<Data = unknown>(data: Data, init?: Omit<ResponseInit, "status">) {
-  return json<Data>(data, { ...init, status: 401 });
+  return typedjson<Data>(data, { ...init, status: 401 });
 }
 
 /**
@@ -64,7 +77,7 @@ export function unauthorized<Data = unknown>(data: Data, init?: Omit<ResponseIni
  * }
  */
 export function forbidden<Data = unknown>(data: Data, init?: Omit<ResponseInit, "status">) {
-  return json<Data>(data, { ...init, status: 403 });
+  return typedjson<Data>(data, { ...init, status: 403 });
 }
 
 /**
@@ -76,7 +89,7 @@ export function forbidden<Data = unknown>(data: Data, init?: Omit<ResponseInit, 
  * }
  */
 export function notFound<Data = unknown>(data: Data, init?: Omit<ResponseInit, "status">) {
-  return json<Data>(data, { ...init, status: 404 });
+  return typedjson<Data>(data, { ...init, status: 404 });
 }
 
 /**
@@ -88,7 +101,7 @@ export function notFound<Data = unknown>(data: Data, init?: Omit<ResponseInit, "
  * }
  */
 export function unprocessableEntity<Data = unknown>(data: Data, init?: Omit<ResponseInit, "status">) {
-  return json<Data>(data, { ...init, status: 422 });
+  return typedjson<Data>(data, { ...init, status: 422 });
 }
 
 /**
@@ -100,7 +113,7 @@ export function unprocessableEntity<Data = unknown>(data: Data, init?: Omit<Resp
  * }
  */
 export function serverError<Data = unknown>(data: Data, init?: Omit<ResponseInit, "status">) {
-  return json<Data>(data, { ...init, status: 500 });
+  return typedjson<Data>(data, { ...init, status: 500 });
 }
 
 /**
@@ -302,4 +315,104 @@ export function image(
     ...init,
     headers,
   });
+}
+
+export function handlePrismaError(error: Prisma.PrismaClientKnownRequestError): TypedJsonResponse<string> {
+  switch (error.code) {
+    case "P1000":
+      throw unauthorized("Access denied.");
+    case "P1001":
+    case "P1002":
+      throw serverError("Server is unreachable or timed out.");
+    case "P1003":
+      throw notFound("Requested item does not exist.");
+    case "P1008":
+      throw serverError("Operation timed out.");
+    case "P1009":
+      throw conflict("Item already exists.");
+    case "P1010":
+      throw unauthorized("Access denied.");
+    case "P1011":
+      throw serverError("Connection error.");
+    case "P1012":
+      throw badRequest("Validation error.");
+    case "P1013":
+      throw badRequest("Invalid input.");
+    case "P1014":
+      throw notFound("Requested item does not exist.");
+    case "P1015":
+      throw badRequest("Unsupported features.");
+    case "P1016":
+      throw badRequest("Incorrect parameters.");
+    case "P1017":
+      throw serverError("Connection closed by server.");
+    case "P2000":
+      throw badRequest("Input is too long.");
+    case "P2001":
+      throw notFound("Requested item does not exist.");
+    case "P2002":
+      throw conflict("Conflict with existing item.");
+    case "P2003":
+      throw conflict("Conflict with existing item.");
+    case "P2004":
+      throw conflict("Conflict with existing item.");
+    case "P2005":
+      throw badRequest("Invalid input.");
+    case "P2006":
+      throw badRequest("Invalid input.");
+    case "P2007":
+      throw badRequest("Validation error.");
+    case "P2008":
+      throw badRequest("Query error.");
+    case "P2009":
+      throw badRequest("Query error.");
+    case "P2010":
+      throw serverError("Query error.");
+    case "P2011":
+      throw badRequest("Null constraint violation.");
+    case "P2012":
+      throw badRequest("Missing required value.");
+    case "P2013":
+      throw badRequest("Missing required argument.");
+    case "P2014":
+      throw conflict("Conflict with existing relation.");
+    case "P2015":
+      throw notFound("Related item not found.");
+    case "P2016":
+      throw badRequest("Query interpretation error.");
+    case "P2017":
+      throw notFound("Related items not connected.");
+    case "P2018":
+      throw notFound("Required connected items not found.");
+    case "P2019":
+      throw badRequest("Input error.");
+    case "P2020":
+      throw badRequest("Value out of range.");
+    case "P2021":
+      throw notFound("Table does not exist.");
+    case "P2022":
+      throw notFound("Column does not exist.");
+    case "P2023":
+      throw badRequest("Inconsistent data.");
+    case "P2024":
+      throw serverError("Connection timeout.");
+    case "P2025":
+      throw notFound("Required items not found.");
+    case "P2026":
+      throw badRequest("Unsupported feature.");
+    case "P2027":
+      throw serverError("Multiple errors occurred.");
+    case "P2028":
+      throw serverError("Transaction error.");
+    case "P2030":
+      throw badRequest("Fulltext index not found.");
+    case "P2031":
+      throw serverError("Transaction requirement error.");
+    case "P2033":
+      throw badRequest("Number out of range.");
+    case "P2034":
+      throw serverError("Transaction conflict.");
+    default:
+      throw serverError("An unknown error occurred.");
+  }
 }
