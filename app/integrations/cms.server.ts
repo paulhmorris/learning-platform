@@ -40,6 +40,9 @@ export type Course = {
         attributes: StrapiImage;
       };
     } | null;
+    lessons?: {
+      data: Array<Lesson>;
+    };
     [key: string]: any;
   };
 };
@@ -51,7 +54,27 @@ export type Lesson = {
     short_description: string | null;
     long_description: string | null;
     slug: string;
-    text_content: Array<RootNode>;
+    text_content?: Array<RootNode>;
+    video?: {
+      data: Video;
+    };
     [key: string]: any;
+  };
+};
+
+export type Video = {
+  id: number;
+  attributes: {
+    title: string;
+    upload_id: string;
+    asset_id: string;
+    playback_id: string;
+    signed: boolean;
+    error_message: string | null;
+    isReady: boolean;
+    duration: number;
+    aspect_ratio: string;
+    createdAt: string;
+    updatedAt: string;
   };
 };

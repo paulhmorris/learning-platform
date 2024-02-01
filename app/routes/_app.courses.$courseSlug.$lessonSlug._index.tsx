@@ -1,3 +1,5 @@
+import MuxPlayer from "@mux/mux-player-react";
+import { Prisma } from "@prisma/client";
 import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@remix-run/node";
 import { withZod } from "@remix-validated-form/with-zod";
 import { BlocksRenderer } from "@strapi/blocks-react-renderer";
@@ -10,7 +12,9 @@ import { ProgressTimer } from "~/components/lesson/ProgressTimer";
 import { PageTitle } from "~/components/page-header";
 import { Lesson, cms } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
-import { badRequest, notFound } from "~/lib/responses.server";
+import { Sentry } from "~/integrations/sentry";
+import { badRequest, handlePrismaError, serverError } from "~/lib/responses.server";
+import { useUser } from "~/lib/utils";
 import { SessionService } from "~/services/SessionService.server";
 
 export const SUBMIT_INTERVAL_MS = 15_000;
@@ -23,21 +27,30 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   invariant(courseSlug, "Course slug is required");
   invariant(lessonSlug, "Lesson slug is required");
 
-  const lessonResults = await cms.find<Array<Lesson>>("lessons", { populate: "text_content" });
-  if (lessonResults.data.length === 0) {
-    throw notFound({ message: "Lesson not found" });
-  }
-  const content = lessonResults.data[0];
+  try {
+    const db_lesson = await db.lesson.findUniqueOrThrow({ where: { slug: lessonSlug } });
+    const cms_lesson = await cms.findOne<Lesson>("lessons", db_lesson.strapiId, {
+      fields: ["title", "short_description", "text_content"],
+      populate: {
+        video: {
+          populate: true,
+        },
+      },
+    });
 
-  const lesson = await db.lesson.findUnique({ where: { strapiId: lessonResults.data[0].id } });
-  if (!lesson) {
-    throw notFound({ message: "Lesson not found" });
-  }
-  const progress = await db.userLessonProgress.findUnique({
-    where: { userId, lessonId: lesson.id },
-  });
+    const progress = await db.userLessonProgress.findUnique({
+      where: { userId, lessonId: db_lesson.id },
+    });
 
-  return typedjson({ lesson, content, progress });
+    return typedjson({ lesson: db_lesson, content: cms_lesson, progress });
+  } catch (error) {
+    console.error(error);
+    Sentry.captureException(error);
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      handlePrismaError(error);
+    }
+    throw serverError("An error occurred while loading the course. Please try again.");
+  }
 }
 
 const validator = withZod(
@@ -118,16 +131,33 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function Course() {
+  const user = useUser();
   const { lesson, content, progress } = useTypedLoaderData<typeof loader>();
+  const video = content.data.attributes.video?.data.attributes;
 
   return (
     <div className="border border-purple-800 p-6">
-      <PageTitle>{content.attributes.title}</PageTitle>
+      <PageTitle>{content.data.attributes.title}</PageTitle>
       <ProgressTimer lesson={lesson} progress={progress} />
-      <article className="prose dark:prose-invert">
+      {video ? (
+        <MuxPlayer
+          streamType="on-demand"
+          playbackId={video.playback_id}
+          accentColor="#FFD703"
+          metadata={{
+            video_id: video.asset_id,
+            video_title: video.title,
+            viewer_user_id: user.id,
+          }}
+        />
+      ) : null}
+      <article className="prose">
         {/* eslint-disable-next-line @typescript-eslint/no-unsafe-assignment */}
-        <BlocksRenderer content={content.attributes.text_content} />
+        {content.data.attributes.text_content ? (
+          <BlocksRenderer content={content.data.attributes.text_content} />
+        ) : null}
       </article>
+      <pre className="text-xs">{JSON.stringify({ lesson, content }, null, 2)}</pre>
     </div>
   );
 }

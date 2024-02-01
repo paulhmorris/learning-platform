@@ -4,7 +4,7 @@ export default function AuthLayout() {
   return (
     <>
       <header>Auth layout</header>
-      <main className="p-6">
+      <main className="mx-auto max-w-screen-sm px-6 pt-12">
         <Outlet />
       </main>
     </>

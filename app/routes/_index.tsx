@@ -8,7 +8,7 @@ export default function Index() {
     <main className="p-24">
       <ul className="flex flex-col gap-4">
         <Link to="/courses">Courses</Link>
-        <Link to="/courses/first-course">Course 1</Link>
+        <Link to="/courses/tx-driver-safety">Course 1</Link>
         <Link to="/login">Login</Link>
         <Link to="/join">Join</Link>
         <Link to="/account">Account</Link>

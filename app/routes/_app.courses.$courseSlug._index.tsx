@@ -4,11 +4,13 @@ import { Link } from "@remix-run/react";
 import { typedjson, useTypedLoaderData } from "remix-typedjson";
 import invariant from "tiny-invariant";
 
+import { ErrorComponent } from "~/components/error-component";
 import { PageTitle } from "~/components/page-header";
 import { Course, cms } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
 import { handlePrismaError, serverError } from "~/lib/responses.server";
+import { generateImgSizes, generateImgSrcSet } from "~/lib/utils";
 
 export async function loader({ params }: LoaderFunctionArgs) {
   const courseSlug = params.courseSlug;
@@ -18,22 +20,20 @@ export async function loader({ params }: LoaderFunctionArgs) {
     const db_course = await db.course.findUniqueOrThrow({ where: { slug: courseSlug } });
     const cms_course = await cms.findOne<Course>("courses", db_course.strapiId, {
       fields: ["title"],
-      populate: ["cover_image"],
+      populate: {
+        cover_image: {
+          fields: ["alternativeText", "formats"],
+        },
+        lessons: {
+          fields: ["title", "slug"],
+        },
+      },
     });
 
     // Generate srcset and sizes for the cover image server-side
-    const { cover_image } = cms_course.data.attributes;
-    const imgSrcSet = cover_image?.data.attributes.formats
-      ? Object.entries(cover_image.data.attributes.formats)
-          .map(([_key, value]) => `${process.env.STRAPI_URL}${value.url} ${value.width}w`)
-          .join(", ")
-      : undefined;
-
-    const imgSizes = cover_image?.data.attributes.formats
-      ? Object.entries(cover_image.data.attributes.formats)
-          .map(([_key, value]) => `(max-width: ${value.width}px) ${value.width}px`)
-          .join(", ")
-      : undefined;
+    const formats = cms_course.data.attributes.cover_image?.data.attributes.formats;
+    const imgSrcSet = formats ? generateImgSrcSet(formats) : undefined;
+    const imgSizes = formats ? generateImgSizes(formats) : undefined;
 
     return typedjson({ course: db_course, content: cms_course, imgSrcSet, imgSizes });
   } catch (error) {
@@ -64,7 +64,21 @@ export default function CourseIndex() {
       <Link className="font-bold text-purple-800" to={`/courses/${course.id}/purchase`}>
         Purchase Course
       </Link>
+      <h2>Lessons</h2>
+      <ul>
+        {content.data.attributes.lessons?.data.map((lesson) => {
+          return (
+            <li key={`lesson-${lesson.id}`}>
+              <Link to={`/courses/${course.slug}/${lesson.attributes.slug}`}>{lesson.attributes.title}</Link>
+            </li>
+          );
+        })}
+      </ul>
       <pre className="text-xs">{JSON.stringify({ course, content }, null, 2)}</pre>
     </div>
   );
+}
+
+export function ErrorBoundary() {
+  return <ErrorComponent />;
 }

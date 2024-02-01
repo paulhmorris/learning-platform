@@ -4,6 +4,8 @@ import clsx, { ClassValue } from "clsx";
 import { useMemo } from "react";
 import { twMerge } from "tailwind-merge";
 
+import { StrapiImage } from "~/integrations/cms.server";
+
 const DEFAULT_REDIRECT = "/";
 
 /**
@@ -74,7 +76,20 @@ export function getSearchParam(param: string, request: Request) {
   const url = new URL(request.url);
   return url.searchParams.get(param);
 }
+
 export function getAllSearchParams(param: string, request: Request) {
   const url = new URL(request.url);
   return url.searchParams.getAll(param);
+}
+
+export function generateImgSrcSet(formats: StrapiImage["formats"]) {
+  return Object.entries(formats)
+    .map(([_key, value]) => `${process.env.STRAPI_URL}${value.url} ${value.width}w`)
+    .join(", ");
+}
+
+export function generateImgSizes(formats: StrapiImage["formats"]) {
+  return Object.entries(formats)
+    .map(([_key, value]) => `(max-width: ${value.width}px) ${value.width}px`)
+    .join(", ");
 }
