@@ -9,7 +9,6 @@ import { ErrorComponent } from "~/components/error-component";
 import { Notifications } from "~/components/notifications";
 import { themeSessionResolver } from "~/lib/session.server";
 import { getGlobalToast } from "~/lib/toast.server";
-import { cn } from "~/lib/utils";
 import { SessionService } from "~/services/SessionService.server";
 import stylesheet from "~/tailwind.css";
 
@@ -55,7 +54,7 @@ function App() {
   const [theme] = useTheme();
 
   return (
-    <html lang="en" className={cn(theme)}>
+    <html lang="en">
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -63,7 +62,7 @@ function App() {
         <PreventFlashOnWrongTheme ssrTheme={Boolean(data.theme)} />
         <Links />
       </head>
-      <body className="h-full min-h-full font-sans">
+      <body className="h-full min-h-dvh font-sans">
         <Outlet />
         {/* {data.user ? (
           <div className="fixed bottom-6 left-6 rounded border bg-background p-4 text-xs shadow-lg">
