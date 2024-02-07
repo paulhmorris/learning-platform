@@ -70,7 +70,7 @@ export function SectionLesson(props: SectionLessonProps) {
             <SectionItemIconContainer>
               <Icon className={cn(isActive ? "text-success" : "text-foreground", hasVideo ? "h-8 w-7" : "h-7 w-6")} />
             </SectionItemIconContainer>
-            <div>
+            <div className="flex flex-col justify-center">
               <SectionItemTitle>{lessonTitle}</SectionItemTitle>
               <SectionItemDescription>{durationInMinutes} min</SectionItemDescription>
             </div>
@@ -101,7 +101,7 @@ export function SectionLesson(props: SectionLessonProps) {
             <SectionItemIconContainer>
               <Icon className={cn(isActive ? "text-success" : "text-foreground", hasVideo ? "h-8 w-7" : "h-7 w-6")} />
             </SectionItemIconContainer>
-            <div>
+            <div className="flex flex-col justify-center">
               <SectionItemTitle>{props.lessonTitle}</SectionItemTitle>
               <SectionItemDescription>{durationInMinutes} min</SectionItemDescription>
             </div>
@@ -128,7 +128,7 @@ export function SectionLesson(props: SectionLessonProps) {
           <SectionItemIconContainer>
             <Icon className={cn(isActive ? "text-success" : "text-foreground", hasVideo ? "h-8 w-7" : "h-7 w-6")} />
           </SectionItemIconContainer>
-          <div>
+          <div className="flex flex-col justify-center">
             <SectionItemTitle>{props.lessonTitle}</SectionItemTitle>
             <SectionItemDescription>
               {durationInMinutes} of {durationInMinutes} min completed{" "}

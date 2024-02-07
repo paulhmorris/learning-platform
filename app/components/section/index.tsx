@@ -35,11 +35,11 @@ export function SectionItemButton({ children, to }: { children: React.ReactNode;
 }
 
 export function SectionItemTitle({ children }: { children: React.ReactNode }) {
-  return <h3 className="text-lg font-medium tracking-wide">{children}</h3>;
+  return <h3 className="text-lg font-medium leading-4 tracking-wide">{children}</h3>;
 }
 
 export function SectionItemIconContainer({ children }: { children: React.ReactNode }) {
-  return <div className="flex basis-9 justify-start">{children}</div>;
+  return <div className="flex basis-7 justify-start">{children}</div>;
 }
 
 export function SectionItemDescription({ children }: { children: React.ReactNode }) {
