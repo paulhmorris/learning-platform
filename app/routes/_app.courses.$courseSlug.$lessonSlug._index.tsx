@@ -8,8 +8,8 @@ import { validationError } from "remix-validated-form";
 import invariant from "tiny-invariant";
 import { z } from "zod";
 
-import { ProgressTimer } from "~/components/lesson/ProgressTimer";
 import { PageTitle } from "~/components/page-header";
+import { ProgressTimer } from "~/components/sidebar/progress-timer";
 import { Lesson, cms } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";

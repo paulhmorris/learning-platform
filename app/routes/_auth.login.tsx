@@ -95,7 +95,7 @@ export default function LoginPage() {
             Forgot Password?
           </Link>
         </div>
-        <SubmitButton className="w-full">Log in</SubmitButton>
+        <SubmitButton>Log in</SubmitButton>
         <p className="text-sm">
           Want to sign up for an account? <Link to="/join">Sign up.</Link>
         </p>

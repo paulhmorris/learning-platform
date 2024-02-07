@@ -9,8 +9,11 @@ import { ErrorComponent } from "~/components/error-component";
 import { Notifications } from "~/components/notifications";
 import { themeSessionResolver } from "~/lib/session.server";
 import { getGlobalToast } from "~/lib/toast.server";
+import { cn } from "~/lib/utils";
 import { SessionService } from "~/services/SessionService.server";
 import stylesheet from "~/tailwind.css";
+
+import "@fontsource-variable/inter/wght.css";
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: stylesheet },
@@ -54,7 +57,7 @@ function App() {
   const [theme] = useTheme();
 
   return (
-    <html lang="en">
+    <html lang="en" className={cn("h-full", theme)}>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -62,7 +65,7 @@ function App() {
         <PreventFlashOnWrongTheme ssrTheme={Boolean(data.theme)} />
         <Links />
       </head>
-      <body className="h-full min-h-dvh font-sans">
+      <body className={cn("h-full min-h-dvh bg-background font-sans text-foreground", theme)}>
         <Outlet />
         {/* {data.user ? (
           <div className="fixed bottom-6 left-6 rounded border bg-background p-4 text-xs shadow-lg">

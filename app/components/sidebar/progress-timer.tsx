@@ -44,7 +44,7 @@ export function ProgressTimer({ lesson, progress }: Props) {
   if (!lesson.requiredDurationInSeconds) return null;
   return (
     <div>
-      <p className={cn(timerValue >= lesson.requiredDurationInSeconds && "text-green-700")}>
+      <p className={cn(timerValue >= lesson.requiredDurationInSeconds && "text-success")}>
         {formatSeconds(timerValue)}
       </p>
       <p>

@@ -23,7 +23,10 @@ export function UserMenu() {
           <button className="relative mt-auto h-10 w-10 rounded-full">
             <span className="sr-only">Open User Menu</span>
             <Avatar aria-hidden="true">
-              <AvatarFallback className="bg-primary text-primary-foreground dark:text-black" aria-hidden="true">
+              <AvatarFallback
+                className="bg-primary text-primary-foreground transition-colors hover:bg-primary/90 dark:text-black"
+                aria-hidden="true"
+              >
                 <span>
                   {user.firstName?.charAt(0).toUpperCase()}
                   {user.lastName?.charAt(0).toUpperCase()}
