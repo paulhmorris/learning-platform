@@ -55,8 +55,8 @@ export type Lesson = {
     long_description: string | null;
     slug: string;
     text_content?: Array<RootNode>;
-    video?: {
-      data: Video;
+    video: {
+      data: Video | null;
     };
     [key: string]: any;
   };

@@ -1,5 +1,7 @@
 import { Lesson, UserLessonProgress } from "@prisma/client";
 
+import { ProgressBar } from "~/components/common/progress-bar";
+import { CourseHeader } from "~/components/course/course-header";
 import { IconCamera, IconCameraFilled, IconCertificate, IconDevices, IconDocument } from "~/components/icons";
 import { Section, SectionHeader } from "~/components/section";
 import { ProgressCircle } from "~/components/sidebar/progress-circle";
@@ -7,7 +9,6 @@ import { SectionLesson } from "~/components/sidebar/sidebar-section";
 import { ThemeModeToggle } from "~/components/theme-mode-toggle";
 import { Button } from "~/components/ui/button";
 import { Separator } from "~/components/ui/separator";
-import { UserMenu } from "~/components/user-menu";
 
 const mockUserLessonProgress: Record<string, UserLessonProgress> = {
   inProgress: {
@@ -42,7 +43,7 @@ const mockLesson: Lesson = {
 
 export default function Components() {
   return (
-    <div className="mx-auto mt-48 flex max-w-xl flex-col gap-4 px-12">
+    <div className="mx-auto mt-48 flex max-w-3xl flex-col gap-4 px-12">
       <ThemeModeToggle />
       <Button variant="primary">Primary</Button>
       <Button className="text-" variant="secondary">
@@ -51,7 +52,7 @@ export default function Components() {
       <Section>
         <SectionHeader sectionTitle="Section Title" durationInMinutes={10} />
         <Separator className="my-4" />
-        <div className="space-y-6">
+        <div className="flex flex-col gap-4">
           <SectionLesson
             hasVideo={false}
             userProgress={mockUserLessonProgress.inProgress}
@@ -75,7 +76,7 @@ export default function Components() {
           />
         </div>
       </Section>
-      <UserMenu />
+      {/* <UserMenu /> */}
       <p>Here is some text to select</p>
       <IconCameraFilled className="size-8 text-success" />
       <IconCamera className="size-8" />
@@ -83,6 +84,13 @@ export default function Components() {
       <IconDevices className="size-8" />
       <IconDocument className="size-8" />
       <IconDocument className="size-8 text-primary" />
+      <div>
+        <CourseHeader className="mb-8" courseTitle="Hip Hop Texas Defensive Driving Education Course" numVideos={12} />
+        <div className="space-y-2">
+          <ProgressBar id="progress" value={50} />
+          <label htmlFor="progress">2 of 5 minutes completed</label>
+        </div>
+      </div>
       <div className="flex flex-wrap items-center gap-2">
         <ProgressCircle ariaLabelledby="x" percentage={0} />
         <ProgressCircle ariaLabelledby="x" percentage={15} />

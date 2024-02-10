@@ -8,7 +8,7 @@ import { validationError } from "remix-validated-form";
 import invariant from "tiny-invariant";
 import { z } from "zod";
 
-import { PageTitle } from "~/components/page-header";
+import { CourseUpNext } from "~/components/course/course-up-next";
 import { ProgressTimer } from "~/components/sidebar/progress-timer";
 import { Lesson, cms } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
@@ -133,15 +133,17 @@ export async function action({ request }: ActionFunctionArgs) {
 export default function Course() {
   const user = useUser();
   const { lesson, content, progress } = useTypedLoaderData<typeof loader>();
-  const video = content.data.attributes.video?.data.attributes;
+  const video = content.data.attributes.video.data?.attributes;
 
   return (
-    <div className="border border-purple-800 p-6">
-      <PageTitle>{content.data.attributes.title}</PageTitle>
+    <div className="border-purple-800 max-w-screen-lg border p-6">
+      {/* <PageTitle>{content.data.attributes.title}</PageTitle> */}
+      <CourseUpNext content={content.data.attributes} lesson={lesson} />
       <ProgressTimer lesson={lesson} progress={progress} />
       {video ? (
         <MuxPlayer
           streamType="on-demand"
+          title={video.title}
           playbackId={video.playback_id}
           accentColor="#FFD703"
           metadata={{

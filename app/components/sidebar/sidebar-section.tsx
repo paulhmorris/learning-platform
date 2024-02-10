@@ -24,7 +24,6 @@ export function SectionLesson(props: SectionLessonProps) {
   const isTimed = lesson.requiredDurationInSeconds !== null && lesson.requiredDurationInSeconds > 0;
   const durationInMinutes = isTimed ? Math.ceil(lesson.requiredDurationInSeconds! / 60) : 0;
   const Icon = hasVideo ? IconCameraFilled : IconClipboard;
-  // h-7 w-6 text-foreground
 
   // Umtimed states
   if (!isTimed) {
@@ -34,14 +33,18 @@ export function SectionLesson(props: SectionLessonProps) {
         to={`/courses/${courseSlug}/${lesson.slug}`}
         className={({ isActive }) =>
           cn(
-            "block rounded-lg transition-colors hover:bg-gray-50 focus:outline-none focus:ring focus:ring-ring",
-            isActive && "rounded-lg border border-[#e4e4e4] bg-gray-50 p-2.5",
+            "block rounded-lg py-1 transition hover:ring hover:ring-[#e4e4e4] focus:outline-none focus:ring focus:ring-ring",
+            isActive ? "border border-[#e4e4e4] bg-muted p-2.5" : "-my-1",
           )
         }
       >
         {({ isActive }) => (
           <SectionItemContainer>
-            <ProgressCircle ariaLabel="Lesson progress" percentage={isCompleted ? 100 : 0} />
+            <ProgressCircle
+              className={cn(isActive && "border-success")}
+              ariaLabel="Lesson progress"
+              percentage={isCompleted ? 100 : 0}
+            />
             <SectionItemIconContainer>
               <Icon className={cn(isActive ? "text-success" : "text-foreground", hasVideo ? "h-8 w-7" : "h-7 w-6")} />
             </SectionItemIconContainer>
@@ -59,14 +62,14 @@ export function SectionLesson(props: SectionLessonProps) {
         to={`/courses/${courseSlug}/${lesson.slug}`}
         className={({ isActive }) =>
           cn(
-            "block rounded-lg transition-colors hover:bg-gray-50 focus:outline-none focus:ring focus:ring-ring",
-            isActive && "rounded-lg border border-[#e4e4e4] bg-gray-50 p-2.5",
+            "block rounded-lg py-1 transition hover:ring hover:ring-[#e4e4e4] focus:outline-none focus:ring focus:ring-ring",
+            isActive ? "border border-[#e4e4e4] bg-muted p-2.5" : "-my-1",
           )
         }
       >
         {({ isActive }) => (
           <SectionItemContainer>
-            <ProgressCircle ariaLabel="Lesson progress" percentage={0} />
+            <ProgressCircle className={cn(isActive && "border-success")} ariaLabel="Lesson progress" percentage={0} />
             <SectionItemIconContainer>
               <Icon className={cn(isActive ? "text-success" : "text-foreground", hasVideo ? "h-8 w-7" : "h-7 w-6")} />
             </SectionItemIconContainer>
@@ -87,14 +90,15 @@ export function SectionLesson(props: SectionLessonProps) {
         to={`/components`}
         className={({ isActive }) =>
           cn(
-            "block rounded-lg transition-colors hover:bg-gray-50 focus:outline-none focus:ring focus:ring-ring",
-            isActive && "rounded-lg border border-[#e4e4e4] bg-gray-50 p-2.5",
+            "block rounded-lg py-1 transition hover:ring hover:ring-[#e4e4e4] focus:outline-none focus:ring focus:ring-ring",
+            isActive ? "border border-[#e4e4e4] bg-muted p-2.5" : "-my-1",
           )
         }
       >
         {({ isActive }) => (
           <SectionItemContainer>
             <ProgressCircle
+              className={cn(isActive && "border-success")}
               ariaLabel="Lesson progress"
               percentage={(userProgress.durationInSeconds / lesson.requiredDurationInSeconds!) * 100}
             />
@@ -117,14 +121,14 @@ export function SectionLesson(props: SectionLessonProps) {
       to={`/courses/${courseSlug}/${lesson.slug}`}
       className={({ isActive }) =>
         cn(
-          "block rounded-lg transition-colors hover:bg-gray-50 focus:outline-none focus:ring focus:ring-ring",
-          isActive && "rounded-lg border border-[#e4e4e4] bg-gray-50 p-2.5",
+          "block rounded-lg py-1 transition hover:ring hover:ring-[#e4e4e4] focus:outline-none focus:ring focus:ring-ring",
+          isActive ? "border border-[#e4e4e4] bg-muted p-2.5" : "-my-1",
         )
       }
     >
       {({ isActive }) => (
         <SectionItemContainer>
-          <ProgressCircle ariaLabel="Lesson progress" percentage={100} />
+          <ProgressCircle className={cn(isActive && "border-success")} ariaLabel="Lesson progress" percentage={100} />
           <SectionItemIconContainer>
             <Icon className={cn(isActive ? "text-success" : "text-foreground", hasVideo ? "h-8 w-7" : "h-7 w-6")} />
           </SectionItemIconContainer>

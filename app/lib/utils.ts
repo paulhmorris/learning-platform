@@ -93,3 +93,7 @@ export function generateImgSizes(formats: StrapiImage["formats"]) {
     .map(([_key, value]) => `(max-width: ${value.width}px) ${value.width}px`)
     .join(", ");
 }
+
+export function valueIsNotNullOrZero<T>(value: T | null | undefined): value is T {
+  return value !== null && value !== 0;
+}
