@@ -69,17 +69,18 @@ model PasswordReset {
 
 // Entities
 model Course {
-  id           String @id @default(cuid())
-  priceInCents Int
-  strapiId     Int    @unique
-  slug         String @unique
+  id                  String  @id @default(cuid())
+  priceInCents        Int
+  strapiId            Int     @unique
+  slug                String  @unique
+  hasRequiredDuration Boolean @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  users              UserCourses[]
-  lessons            Lesson[]
-  UserCourseProgress UserCourseProgress?
+  users      UserCourses[]
+  lessons    Lesson[]
+  progresses UserCourseProgress?
 }
 
 model Lesson {
@@ -130,7 +131,7 @@ model UserCourseProgress {
   course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   courseId String @unique
 
-  durationInSeconds Int @default(0)
+  durationInSeconds Int? @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -8,7 +8,7 @@ import { validationError } from "remix-validated-form";
 import invariant from "tiny-invariant";
 import { z } from "zod";
 
-import { CourseUpNext } from "~/components/course/course-up-next";
+import { PageTitle } from "~/components/page-header";
 import { ProgressTimer } from "~/components/sidebar/progress-timer";
 import { Lesson, cms } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
@@ -137,8 +137,7 @@ export default function Course() {
 
   return (
     <div className="border-purple-800 max-w-screen-lg border p-6">
-      {/* <PageTitle>{content.data.attributes.title}</PageTitle> */}
-      <CourseUpNext content={content.data.attributes} lesson={lesson} />
+      <PageTitle>{content.data.attributes.title}</PageTitle>
       <ProgressTimer lesson={lesson} progress={progress} />
       {video ? (
         <MuxPlayer
