@@ -6,6 +6,7 @@ import { redirect, typedjson } from "remix-typedjson";
 import { ValidatedForm, validationError } from "remix-validated-form";
 import { z } from "zod";
 
+import { AuthCard } from "~/components/common/auth-card";
 import { PageTitle } from "~/components/page-header";
 import { FormField } from "~/components/ui/form";
 import { SubmitButton } from "~/components/ui/submit-button";
@@ -19,6 +20,7 @@ const validator = withZod(
     lastName: z.string().max(255),
     email: z.string().email(),
     password: z.string().min(8).max(64),
+    redirectTo: z.string().optional(),
   }),
 );
 
@@ -35,7 +37,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     return validationError(result.error);
   }
 
-  const { firstName, lastName, email, password } = result.data;
+  const { firstName, lastName, email, password, redirectTo } = result.data;
 
   const existingUser = await UserService.getByEmail(email);
   if (existingUser) {
@@ -51,7 +53,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   });
 
   await verifyEmailJob.invoke({ email: user.email }, { idempotencyKey: nanoid() });
-  return redirect("/join/verify-email");
+
+  const url = new URL("/join/verify-email", request.url);
+  url.searchParams.set("email", user.email);
+  if (redirectTo) {
+    url.searchParams.set("redirectTo", redirectTo);
+  }
+
+  return redirect(url.toString());
 };
 
 export const meta: MetaFunction = () => [{ title: "Sign Up" }];
@@ -61,36 +70,37 @@ export default function Join() {
 
   return (
     <>
-      <PageTitle>Sign Up</PageTitle>
-      <ValidatedForm validator={validator} method="post" className="space-y-4">
-        <div className="grid grid-cols-2 gap-2">
-          <FormField required name="firstName" label="First Name" autoComplete="given-name" maxLength={255} />
-          <FormField required name="lastName" label="Last Name" autoComplete="family-name" maxLength={255} />
-        </div>
-        <FormField required name="email" label="Email" autoComplete="email" />
-        <FormField
-          required
-          name="password"
-          type="password"
-          label="Password"
-          autoComplete="current-password"
-          maxLength={64}
-        />
-
-        <input type="hidden" name="redirectTo" value={searchParams.get("redirectTo") ?? ""} />
-        <SubmitButton className="w-full">Sign Up</SubmitButton>
-        <p className="text-sm">
-          Already have an account?{" "}
-          <Link
-            to={{
-              pathname: "/login",
-              search: searchParams.toString(),
-            }}
-          >
-            Log in
-          </Link>
-        </p>
-      </ValidatedForm>
+      <PageTitle className="text-center">Register for an account</PageTitle>
+      <AuthCard>
+        <ValidatedForm validator={validator} method="post" className="w-full space-y-8">
+          <div className="grid grid-cols-2 gap-2">
+            <FormField required name="firstName" label="First Name" autoComplete="given-name" maxLength={255} />
+            <FormField required name="lastName" label="Last Name" autoComplete="family-name" maxLength={255} />
+            <input type="hidden" name="redirectTo" value={searchParams.get("redirectTo") ?? ""} />
+          </div>
+          <FormField required name="email" label="Email" autoComplete="email" />
+          <FormField
+            required
+            name="password"
+            type="password"
+            label="Password"
+            autoComplete="new-password"
+            maxLength={64}
+          />
+          <div>
+            <SubmitButton variant="primary-md">Sign Up</SubmitButton>
+            <p className="mt-1 text-center text-sm text-muted-foreground contrast-more:text-foreground">
+              You will be receive a code to verify your account.
+            </p>
+          </div>
+        </ValidatedForm>
+      </AuthCard>
+      <p className="text-center text-sm">
+        Already have an account?{" "}
+        <Link className="text-sm font-bold" to={{ pathname: "/login", search: searchParams.toString() }}>
+          Log in
+        </Link>
+      </p>
     </>
   );
 }

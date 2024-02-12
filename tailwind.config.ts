@@ -66,6 +66,9 @@ module.exports = {
           },
         ],
       },
+      boxShadow: {
+        card: "0px_8px_32px_0px_hsla(0,0%,0%,0.08)",
+      },
       borderRadius: {
         xl: "0.625rem",
       },

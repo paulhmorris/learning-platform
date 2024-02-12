@@ -24,7 +24,7 @@
     --card-foreground: 224 71.4% 4.1%;
     --border: 220 13% 91%;
     --input: 220 13% 91%;
-    --ring: 262.1 83.3% 57.8%;
+    --ring: 210 100% 45%;
     --radius: 0.5rem;
   }
 
@@ -43,17 +43,13 @@
     --accent-foreground: 210 20% 98%;
     --border: 0 0% 50%;
     --input: 215 27.9% 16.9%;
-    --ring: 263.4 70% 50.4%;
+    --ring: 50 100% 49%;
   }
 }
 
 @layer base {
   * {
     @apply border-border;
-  }
-
-  :focus {
-    @apply outline-none ring-2 ring-ring ring-offset-2;
   }
 
   body {
@@ -67,6 +63,10 @@
 
   ::selection {
     @apply bg-primary text-primary-foreground;
+  }
+
+  a[href] {
+    @apply rounded text-foreground underline decoration-primary decoration-4 underline-offset-4 focus-visible:no-underline focus-visible:outline-none focus-visible:ring focus-visible:ring-ring focus-visible:ring-offset-1 contrast-more:decoration-[#0073e6];
   }
 
   p {

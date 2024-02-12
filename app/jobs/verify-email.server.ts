@@ -20,11 +20,14 @@ export const verifyEmailJob = client.defineJob({
   },
   run: async (payload, io) => {
     // Generate a verification token
-    const verification = await io.runTask("generate-token", async () => {
+    const token = (await io.random("generate-token", { min: 100000, max: 999999, round: true })).toString();
+
+    // Create verification entry
+    const verification = await io.runTask("save-token", async () => {
       return db.userVerification.create({
         data: {
-          // 1 hour
           expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+          token,
           user: {
             connect: {
               email: payload.email,
@@ -41,7 +44,7 @@ export const verifyEmailJob = client.defineJob({
       from: `${COMPANY_NAME} <no-reply@getcosmic.dev>`,
       to: payload.email,
       subject: "Verify your email",
-      text: `Click this link to verify your email: ${process.env.SITE_URL}/verify-email/${verification.token}`,
+      html: `<p>Here's your six digit verification code: <strong>${token}</strong></p>`,
     });
 
     return {

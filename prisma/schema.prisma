@@ -31,14 +31,12 @@ model User {
 }
 
 model UserVerification {
-  id        String    @id @default(cuid())
-  token     String    @unique @default(uuid())
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  userId    String    @unique
+  id        String   @id @default(cuid())
+  token     String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  userId    String   @unique
   expiresAt DateTime
-  usedAt    DateTime?
 
-  createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 

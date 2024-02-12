@@ -18,12 +18,7 @@ export function SectionHeader(props: SectionHeaderProps) {
 }
 
 export function Section(props: React.HTMLAttributes<HTMLDivElement>) {
-  return (
-    <section
-      {...props}
-      className={cn("rounded-xl p-6 pb-8 shadow-[0px_8px_32px_0px_hsla(0,0%,0%,0.08)] dark:border", props.className)}
-    ></section>
-  );
+  return <section {...props} className={cn("rounded-xl p-6 pb-8 shadow-card dark:border", props.className)}></section>;
 }
 
 export function SectionItemButton({ children, to }: { children: React.ReactNode; to: string }) {

@@ -5,6 +5,7 @@ import { redirect, typedjson } from "remix-typedjson";
 import { ValidatedForm, validationError } from "remix-validated-form";
 import { z } from "zod";
 
+import { AuthCard } from "~/components/common/auth-card";
 import { ErrorComponent } from "~/components/error-component";
 import { PageTitle } from "~/components/page-header";
 import { Checkbox, FormField } from "~/components/ui/form";
@@ -70,37 +71,42 @@ export default function LoginPage() {
   const redirectTo = searchParams.get("redirectTo") || "/";
 
   return (
-    <div>
-      <PageTitle>Sign in to your account</PageTitle>
-      <ValidatedForm validator={validator} method="post" className="mt-4 w-full space-y-4">
-        <FormField label="Email" id="email" name="email" type="email" autoComplete="email" required />
-        <FormField
-          label="Password"
-          id="password"
-          name="password"
-          type="password"
-          autoComplete="current-password"
-          required
-        />
+    <>
+      <PageTitle className="text-center">Sign in to your account</PageTitle>
+      <AuthCard>
+        <ValidatedForm validator={validator} method="post" className="w-full space-y-8">
+          <FormField label="Email" id="email" name="email" type="email" autoComplete="email" required />
+          <FormField
+            label="Password"
+            id="password"
+            name="password"
+            type="password"
+            autoComplete="current-password"
+            required
+          />
 
-        <input type="hidden" name="redirectTo" value={redirectTo} />
-        <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
-          <div className="flex items-center space-x-2">
-            <Checkbox id="remember" name="remember" aria-labelledby="remember-label" />
-            <Label id="remember-label" htmlFor="remember">
-              Stay logged in for 30 days
-            </Label>
+          <div className="flex items-center justify-between gap-x-2">
+            <div className="flex items-center gap-x-2">
+              <Checkbox id="remember" name="remember" aria-labelledby="remember-label" />
+              <Label id="remember-label" htmlFor="remember" className="cursor-pointer">
+                Stay logged in
+              </Label>
+            </div>
+            <Link className="inline-block text-sm font-bold" to="/passwords/reset">
+              Forgot Password?
+            </Link>
+            <input type="hidden" name="redirectTo" value={redirectTo} />
           </div>
-          <Link className="text-sm font-bold" to="/passwords/reset">
-            Forgot Password?
-          </Link>
-        </div>
-        <SubmitButton>Log in</SubmitButton>
-        <p className="text-sm">
-          Want to sign up for an account? <Link to="/join">Sign up.</Link>
-        </p>
-      </ValidatedForm>
-    </div>
+          <SubmitButton variant="primary-md">Log in</SubmitButton>
+        </ValidatedForm>
+      </AuthCard>
+      <p className="text-center text-sm">
+        Want to sign up for an account?{" "}
+        <Link to={{ pathname: "/join", search: searchParams.toString() }} className="text-sm font-bold">
+          Sign up.
+        </Link>
+      </p>
+    </>
   );
 }
 
