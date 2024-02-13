@@ -54,6 +54,16 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     });
   }
 
+  // If the user is not verified, redirect them to the join page with a message
+  if (!user.isVerified) {
+    const url = new URL("/join", request.url);
+    url.searchParams.set("redirectTo", redirectTo || "/");
+    url.searchParams.set("step", "verify-email");
+    url.searchParams.set("email", email);
+    url.searchParams.set("status", "unverified");
+    return redirect(url.toString());
+  }
+
   Sentry.setUser({ id: user.id, email: user.email });
 
   return SessionService.createUserSession({

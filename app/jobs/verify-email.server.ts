@@ -4,6 +4,7 @@ import { z } from "zod";
 import { db } from "~/integrations/db.server";
 import { client, triggerResend } from "~/integrations/trigger.server";
 import { COMPANY_NAME } from "~/lib/constants";
+import { UserService } from "~/services/UserService.server";
 
 export const verifyEmailJob = client.defineJob({
   enabled: true,
@@ -22,10 +23,19 @@ export const verifyEmailJob = client.defineJob({
     // Generate a verification token
     const token = (await io.random("generate-token", { min: 100000, max: 999999, round: true })).toString();
 
+    const user = await io.runTask("get-user", async () => {
+      return UserService.getByEmail(payload.email, { select: { id: true } });
+    });
+
+    if (!user) {
+      return io.logger.error("User not found", { email: payload.email });
+    }
+
     // Create verification entry
-    const verification = await io.runTask("save-token", async () => {
-      return db.userVerification.create({
-        data: {
+    await io.runTask("save-token", async () => {
+      return db.userVerification.upsert({
+        where: { userId: user.id },
+        create: {
           expiresAt: new Date(Date.now() + 60 * 60 * 1000),
           token,
           user: {
@@ -34,10 +44,12 @@ export const verifyEmailJob = client.defineJob({
             },
           },
         },
+        update: {
+          expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+          token,
+        },
       });
     });
-
-    await io.logger.info("Generated token", { token: verification.token });
 
     // Send email
     await io.resend.emails.send("send-email-verification", {

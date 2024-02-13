@@ -6,6 +6,8 @@ import { redirect, typedjson, useTypedActionData } from "remix-typedjson";
 import { ValidatedForm, validationError } from "remix-validated-form";
 import { z } from "zod";
 
+import { AuthCard } from "~/components/common/auth-card";
+import { PageTitle } from "~/components/page-header";
 import { FormField } from "~/components/ui/form";
 import { SubmitButton } from "~/components/ui/submit-button";
 import { Sentry } from "~/integrations/sentry";
@@ -60,20 +62,20 @@ export default function ResetPassword() {
   const data = useTypedActionData() as { success?: boolean } | undefined;
 
   return (
-    <div className="grid h-full place-items-center">
-      <div className="max-w-lg px-8">
-        <h1 className="text-4xl font-extrabold">Reset your password.</h1>
+    <>
+      <PageTitle className="text-center">Reset your password</PageTitle>
+      <AuthCard>
         {data && data.success ? (
-          <p className="mt-4 text-lg font-medium">
+          <p className="text-lg font-medium">
             Thanks! If your email is registered with us, you will be emailed a link to reset your password.
           </p>
         ) : (
-          <ValidatedForm validator={validator} method="post" className="mt-4 space-y-3">
+          <ValidatedForm validator={validator} method="post" className="space-y-4">
             <FormField label="Email" name="email" type="email" autoComplete="username" required />
-            <SubmitButton>Get Reset Link</SubmitButton>
+            <SubmitButton variant="primary-md">Get Reset Link</SubmitButton>
           </ValidatedForm>
         )}
-      </div>
-    </div>
+      </AuthCard>
+    </>
   );
 }
