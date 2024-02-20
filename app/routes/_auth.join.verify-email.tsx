@@ -5,7 +5,7 @@ import { ValidatedForm } from "remix-validated-form";
 import { z } from "zod";
 
 import { AuthCard } from "~/components/common/auth-card";
-import { PageTitle } from "~/components/page-header";
+import { PageTitle } from "~/components/page-title";
 
 const validator = withZod(
   z.object({

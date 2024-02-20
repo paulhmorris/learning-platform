@@ -6,7 +6,7 @@ import { ValidatedForm, validationError } from "remix-validated-form";
 import { z } from "zod";
 
 import { ErrorComponent } from "~/components/error-component";
-import { PageTitle } from "~/components/page-header";
+import { PageTitle } from "~/components/page-title";
 import { FormField } from "~/components/ui/form";
 import { SubmitButton } from "~/components/ui/submit-button";
 import { unauthorized } from "~/lib/responses.server";

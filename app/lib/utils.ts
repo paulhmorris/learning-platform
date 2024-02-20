@@ -1,10 +1,9 @@
 import { User } from "@prisma/client";
 import { useMatches } from "@remix-run/react";
+import type { Attribute } from "@strapi/strapi";
 import clsx, { ClassValue } from "clsx";
 import { useMemo } from "react";
 import { twMerge } from "tailwind-merge";
-
-import { StrapiImage } from "~/integrations/cms.server";
 
 const DEFAULT_REDIRECT = "/";
 
@@ -82,16 +81,34 @@ export function getAllSearchParams(param: string, request: Request) {
   return url.searchParams.getAll(param);
 }
 
-export function generateImgSrcSet(formats: StrapiImage["formats"]) {
-  return Object.entries(formats)
-    .map(([_key, value]) => `${process.env.STRAPI_URL}${value.url} ${value.width}w`)
-    .join(", ");
-}
+export function getStrapiImgSrcSetAndSizes(formats: Attribute.JsonValue) {
+  if (!formats) {
+    return {
+      srcSet: "",
+      sizes: "",
+    };
+  }
 
-export function generateImgSizes(formats: StrapiImage["formats"]) {
-  return Object.entries(formats)
-    .map(([_key, value]) => `(max-width: ${value.width}px) ${value.width}px`)
-    .join(", ");
+  const baseUrl = typeof window === "undefined" ? process.env.STRAPI_URL : window.ENV.STRAPI_URL;
+
+  return {
+    srcSet: Object.entries(formats)
+      .map(([_key, value]) => {
+        if ("url" in value && "width" in value) {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+          return `${baseUrl}${value.url} ${value.width}w`;
+        }
+      })
+      .join(", "),
+    sizes: Object.entries(formats)
+      .map(([_key, value]) => {
+        if ("url" in value && "width" in value) {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+          return `(max-width: ${value.width}px) ${value.width}px`;
+        }
+      })
+      .join(", "),
+  };
 }
 
 export function valueIsNotNullOrZero<T>(value: T | null | undefined): value is T {

@@ -1,6 +1,6 @@
 import { json, redirect } from "@remix-run/node";
 
-import { PageTitle } from "~/components/page-header";
+import { PageTitle } from "~/components/page-title";
 import { stripe } from "~/integrations/stripe.server";
 
 export function loader() {
@@ -43,7 +43,7 @@ export default function Purchase() {
         </div>
       </div>
       <form method="post">
-        <button type="submit" className="font-bold text-purple-800">
+        <button type="submit" className="text-purple-800 font-bold">
           Checkout
         </button>
       </form>

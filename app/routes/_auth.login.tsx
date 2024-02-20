@@ -7,7 +7,7 @@ import { z } from "zod";
 
 import { AuthCard } from "~/components/common/auth-card";
 import { ErrorComponent } from "~/components/error-component";
-import { PageTitle } from "~/components/page-header";
+import { PageTitle } from "~/components/page-title";
 import { Checkbox, FormField } from "~/components/ui/form";
 import { Label } from "~/components/ui/label";
 import { SubmitButton } from "~/components/ui/submit-button";

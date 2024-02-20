@@ -1,6 +1,8 @@
 *.md
 node_modules
 
+/app/types/generated
+
 /build
 /public/build
 .env

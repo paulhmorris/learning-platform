@@ -1,21 +1,19 @@
-import MuxPlayer from "@mux/mux-player-react";
 import { Prisma } from "@prisma/client";
 import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@remix-run/node";
 import { withZod } from "@remix-validated-form/with-zod";
-import { BlocksRenderer } from "@strapi/blocks-react-renderer";
 import { typedjson, useTypedLoaderData } from "remix-typedjson";
 import { validationError } from "remix-validated-form";
 import invariant from "tiny-invariant";
 import { z } from "zod";
 
-import { PageTitle } from "~/components/page-header";
-import { ProgressTimer } from "~/components/sidebar/progress-timer";
-import { Lesson, cms } from "~/integrations/cms.server";
+import { LessonContentRenderer } from "~/components/lesson-content-renderer";
+import { PageTitle } from "~/components/page-title";
+import { cms } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
 import { badRequest, handlePrismaError, serverError } from "~/lib/responses.server";
-import { useUser } from "~/lib/utils";
 import { SessionService } from "~/services/SessionService.server";
+import { APIResponseData } from "~/types/utils";
 
 export const SUBMIT_INTERVAL_MS = 15_000;
 
@@ -29,11 +27,11 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 
   try {
     const db_lesson = await db.lesson.findUniqueOrThrow({ where: { slug: lessonSlug } });
-    const cms_lesson = await cms.findOne<Lesson>("lessons", db_lesson.strapiId, {
-      fields: ["title", "short_description", "text_content"],
+    const cms_lesson = await cms.findOne<APIResponseData<"api::lesson.lesson">>("lessons", db_lesson.strapiId, {
+      fields: ["title"],
       populate: {
-        video: {
-          populate: true,
+        content: {
+          populate: "*",
         },
       },
     });
@@ -131,34 +129,17 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function Course() {
-  const user = useUser();
-  const { lesson, content, progress } = useTypedLoaderData<typeof loader>();
-  const video = content.data.attributes.video.data?.attributes;
+  const { content } = useTypedLoaderData<typeof loader>();
+
+  // useEffect(() => {
+  // console.log("data: ", data);
+  // console.log(matches);
+  // }, [data]);
 
   return (
-    <div className="border-purple-800 max-w-screen-lg border p-6">
-      <PageTitle>{content.data.attributes.title}</PageTitle>
-      <ProgressTimer lesson={lesson} progress={progress} />
-      {video ? (
-        <MuxPlayer
-          streamType="on-demand"
-          title={video.title}
-          playbackId={video.playback_id}
-          accentColor="#FFD703"
-          metadata={{
-            video_id: video.asset_id,
-            video_title: video.title,
-            viewer_user_id: user.id,
-          }}
-        />
-      ) : null}
-      <article className="prose">
-        {/* eslint-disable-next-line @typescript-eslint/no-unsafe-assignment */}
-        {content.data.attributes.text_content ? (
-          <BlocksRenderer content={content.data.attributes.text_content} />
-        ) : null}
-      </article>
-      <pre className="text-xs">{JSON.stringify({ lesson, content }, null, 2)}</pre>
+    <div>
+      <PageTitle className="mb-8">{content.data.attributes.title}</PageTitle>
+      <LessonContentRenderer content={content.data.attributes.content} />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { PageTitle } from "~/components/page-header";
+import { PageTitle } from "~/components/page-title";
 
 export default function NewPaymentMethod() {
   return (

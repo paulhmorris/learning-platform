@@ -9,7 +9,7 @@ import { ValidatedForm, validationError } from "remix-validated-form";
 import { z } from "zod";
 
 import { AuthCard } from "~/components/common/auth-card";
-import { PageTitle } from "~/components/page-header";
+import { PageTitle } from "~/components/page-title";
 import { FormField } from "~/components/ui/form";
 import { SubmitButton } from "~/components/ui/submit-button";
 import { db } from "~/integrations/db.server";
@@ -108,7 +108,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         });
       }
 
-      const verification = await db.userVerification.findFirst({ where: { userId: user.id, token: code } });
+      const verification = await db.userVerification.findFirst({
+        where: {
+          userId: user.id,
+          token: code,
+          expiresAt: {
+            gte: new Date(),
+          },
+        },
+      });
       if (!verification) {
         return validationError({
           fieldErrors: {
@@ -117,7 +125,16 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         });
       }
 
-      await UserService.update(user.id, { data: { isVerified: true } });
+      await UserService.update(user.id, {
+        data: {
+          isVerified: true,
+          verification: {
+            update: {
+              expiresAt: new Date(),
+            },
+          },
+        },
+      });
 
       return SessionService.createUserSession({
         request,
@@ -160,7 +177,9 @@ export default function Join() {
 
   return (
     <>
-      <PageTitle className="text-center">Register for an account</PageTitle>
+      <PageTitle className="text-center">
+        {searchParams.get("status") === "unverified" ? "Verify Your Account" : "Register for an account"}
+      </PageTitle>
       <AuthCard>
         {searchParams.get("step") === "verify-email" ? (
           <>
