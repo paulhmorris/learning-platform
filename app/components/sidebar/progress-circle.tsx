@@ -7,19 +7,21 @@ type Attributes = Omit<React.HTMLAttributes<HTMLDivElement>, "role" | "aria-valu
 type Props =
   | (Attributes & {
       percentage: number | `${number}`;
-      ariaLabelledby: string;
+      "aria-labelledby": string;
     })
   | (Attributes & {
       percentage: number | `${number}`;
-      ariaLabel: string;
+      "aria-label": string;
     });
 
 export function ProgressCircle({ percentage, ...props }: Props) {
   const isComplete = percentage === 100;
+  // const isClient = useIsClient();
 
   return (
     <div
       {...props}
+      aria-labelledby=""
       role="progressbar"
       aria-valuenow={Number(percentage)}
       className={cn(

@@ -100,11 +100,13 @@ export interface CourseSection extends Schema.Component {
   attributes: {
     lessons: Attribute.Relation<
       'course.section',
-      'oneToOne',
+      'oneToMany',
       'api::lesson.lesson'
     >;
     title: Attribute.String & Attribute.Required;
     quiz: Attribute.Relation<'course.section', 'oneToOne', 'api::quiz.quiz'>;
+    uuid: Attribute.UID &
+      Attribute.CustomField<'plugin::strapi-advanced-uuid.uuid'>;
   };
 }
 

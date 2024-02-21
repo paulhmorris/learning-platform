@@ -9,16 +9,22 @@ interface SectionHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 export function SectionHeader(props: SectionHeaderProps) {
+  const { sectionTitle, durationInMinutes, className, ...rest } = props;
   return (
-    <header {...props} className={cn("space-y-1", props.className)}>
-      <h2 className="text-2xl">{props.sectionTitle}</h2>
-      <p className="text-sm font-light">{props.durationInMinutes} min</p>
+    <header {...rest} className={cn("space-y-1", className)}>
+      <h2 className="text-2xl">{sectionTitle}</h2>
+      <p className="text-sm font-light">{durationInMinutes} min</p>
     </header>
   );
 }
 
 export function Section(props: React.HTMLAttributes<HTMLDivElement>) {
-  return <section {...props} className={cn("rounded-xl p-6 pb-8 shadow-card dark:border", props.className)}></section>;
+  return (
+    <section
+      {...props}
+      className={cn("rounded-xl p-6 pb-8 shadow-[0px_8px_32px_0px_rgba(0,0,0,0.08)] dark:border", props.className)}
+    ></section>
+  );
 }
 
 export function SectionItemButton({ children, to }: { children: React.ReactNode; to: string }) {
@@ -30,7 +36,7 @@ export function SectionItemButton({ children, to }: { children: React.ReactNode;
 }
 
 export function SectionItemTitle({ children }: { children: React.ReactNode }) {
-  return <h3 className="text-lg font-medium leading-4 tracking-wide">{children}</h3>;
+  return <h3 className="text-lg font-medium">{children}</h3>;
 }
 
 export function SectionItemIconContainer({ children }: { children: React.ReactNode }) {
@@ -38,7 +44,7 @@ export function SectionItemIconContainer({ children }: { children: React.ReactNo
 }
 
 export function SectionItemDescription({ children }: { children: React.ReactNode }) {
-  return <p className="text-sm font-light">{children}</p>;
+  return <p className="text-sm font-light leading-4">{children}</p>;
 }
 
 export function SectionItemContainer({ children, ...props }: React.HTMLAttributes<HTMLDivElement>) {

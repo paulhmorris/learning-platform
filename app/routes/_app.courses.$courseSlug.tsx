@@ -36,9 +36,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           cover_image: {
             fields: ["alternativeText", "formats"],
           },
-          lessons: {
-            fields: ["title", "slug"],
-            populate: ["video"],
+          sections: {
+            fields: ["title", "uuid"],
+            populate: {
+              quiz: {
+                fields: ["title", "uuid"],
+              },
+              lessons: {
+                fields: ["title", "slug", "has_video", "uuid"],
+              },
+            },
           },
         },
       }),
@@ -78,9 +85,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export default function CourseLayout() {
   return (
-    <main>
-      <Outlet />
-    </main>
+    <div className="relative">
+      <main className="ml-[400px] py-10 pl-12 pr-4 md:py-12">
+        <Outlet />
+      </main>
+    </div>
   );
 }
 

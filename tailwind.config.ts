@@ -1,5 +1,6 @@
 import type { Config } from "tailwindcss";
 import colors from "tailwindcss/colors";
+import { fontFamily } from "tailwindcss/defaultTheme";
 
 module.exports = {
   darkMode: ["class"],
@@ -58,6 +59,9 @@ module.exports = {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ["Inter Variable", ...fontFamily.sans],
+      },
       fontSize: {
         "3.5xl": [
           "2rem",
@@ -67,7 +71,7 @@ module.exports = {
         ],
       },
       boxShadow: {
-        card: "0px_8px_32px_0px_hsla(0,0%,0%,0.08)",
+        card: "0px 8px 32px 0px rgba(0, 0, 0, 0.08)",
       },
       borderRadius: {
         xl: "0.625rem",

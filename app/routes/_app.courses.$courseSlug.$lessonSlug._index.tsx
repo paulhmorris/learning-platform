@@ -1,17 +1,25 @@
 import { Prisma } from "@prisma/client";
 import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@remix-run/node";
+import { Link, useParams } from "@remix-run/react";
 import { withZod } from "@remix-validated-form/with-zod";
-import { typedjson, useTypedLoaderData } from "remix-typedjson";
+import { IconArrowLeft } from "@tabler/icons-react";
+import { useEffect } from "react";
+import { typedjson, useTypedLoaderData, useTypedRouteLoaderData } from "remix-typedjson";
 import { validationError } from "remix-validated-form";
 import invariant from "tiny-invariant";
 import { z } from "zod";
 
+import { ProgressBar } from "~/components/common/progress-bar";
 import { LessonContentRenderer } from "~/components/lesson-content-renderer";
 import { PageTitle } from "~/components/page-title";
+import { Section, SectionHeader } from "~/components/section";
+import { SectionLesson } from "~/components/sidebar/section-lesson";
+import { Separator } from "~/components/ui/separator";
 import { cms } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
 import { badRequest, handlePrismaError, serverError } from "~/lib/responses.server";
+import { loader as courseLoader } from "~/routes/_app.courses.$courseSlug";
 import { SessionService } from "~/services/SessionService.server";
 import { APIResponseData } from "~/types/utils";
 
@@ -129,17 +137,65 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function Course() {
-  const { content } = useTypedLoaderData<typeof loader>();
+  const { content, lesson, progress } = useTypedLoaderData<typeof loader>();
+  const courseData = useTypedRouteLoaderData<typeof courseLoader>("routes/_app.courses.$courseSlug");
+  const params = useParams();
 
-  // useEffect(() => {
-  // console.log("data: ", data);
-  // console.log(matches);
-  // }, [data]);
+  if (!courseData) {
+    throw new Error("Course data not found");
+  }
+
+  useEffect(() => {
+    console.log("data: ", courseData);
+  }, [courseData]);
 
   return (
     <div>
-      <PageTitle className="mb-8">{content.data.attributes.title}</PageTitle>
-      <LessonContentRenderer content={content.data.attributes.content} />
+      <nav className="fixed left-0 top-[88px] -z-10 h-full w-[400px] py-10 pl-4 md:py-12">
+        <Link to={`/courses/${params.courseSlug}`} className="flex items-center gap-2">
+          <IconArrowLeft className="size-[1.125rem]" />
+          <span>Back to course</span>
+        </Link>
+
+        {/* TODO: Adjust for non timed courses */}
+        <div className="my-7">
+          <ProgressBar
+            id="course-progress"
+            value={(courseData.courseProgress?.durationInSeconds ?? 12_000 / 21_600) * 100}
+          />
+          <label htmlFor="course-progress">2 of 5 minutes completed</label>
+        </div>
+
+        {courseData.content.data.attributes.sections.map((section) => {
+          return (
+            <Section key={section.uuid}>
+              <SectionHeader sectionTitle={section.title} durationInMinutes={45} />
+              <Separator className="my-4" />
+              <div className="flex flex-col gap-4">
+                {section.lessons
+                  ? section.lessons.data.map((l) => {
+                      return (
+                        <SectionLesson
+                          key={l.attributes.uuid}
+                          hasVideo={l.attributes.has_video}
+                          userProgress={progress}
+                          courseSlug={params.courseSlug}
+                          lesson={lesson}
+                          lessonTitle={l.attributes.title}
+                        />
+                      );
+                    })
+                  : null}
+              </div>
+            </Section>
+          );
+        })}
+      </nav>
+
+      <div>
+        <PageTitle className="mb-8">{content.data.attributes.title}</PageTitle>
+        <LessonContentRenderer content={content.data.attributes.content} />
+      </div>
     </div>
   );
 }

@@ -15,7 +15,7 @@ import { cn } from "~/lib/utils";
 interface SectionLessonProps extends React.HTMLAttributes<HTMLDivElement> {
   lesson: Lesson;
   lessonTitle: string;
-  courseSlug: string;
+  courseSlug: string | undefined;
   hasVideo: boolean;
   userProgress: UserLessonProgress | null;
 }
@@ -42,7 +42,7 @@ export function SectionLesson(props: SectionLessonProps) {
           <SectionItemContainer>
             <ProgressCircle
               className={cn(isActive && "border-success")}
-              ariaLabel="Lesson progress"
+              aria-label="Lesson progress"
               percentage={isCompleted ? 100 : 0}
             />
             <SectionItemIconContainer>
@@ -69,7 +69,7 @@ export function SectionLesson(props: SectionLessonProps) {
       >
         {({ isActive }) => (
           <SectionItemContainer>
-            <ProgressCircle className={cn(isActive && "border-success")} ariaLabel="Lesson progress" percentage={0} />
+            <ProgressCircle className={cn(isActive && "border-success")} aria-label="Lesson progress" percentage={0} />
             <SectionItemIconContainer>
               <Icon className={cn(isActive ? "text-success" : "text-foreground", hasVideo ? "h-8 w-7" : "h-7 w-6")} />
             </SectionItemIconContainer>
@@ -99,7 +99,7 @@ export function SectionLesson(props: SectionLessonProps) {
           <SectionItemContainer>
             <ProgressCircle
               className={cn(isActive && "border-success")}
-              ariaLabel="Lesson progress"
+              aria-label="Lesson progress"
               percentage={(userProgress.durationInSeconds / lesson.requiredDurationInSeconds!) * 100}
             />
             <SectionItemIconContainer>
@@ -128,7 +128,7 @@ export function SectionLesson(props: SectionLessonProps) {
     >
       {({ isActive }) => (
         <SectionItemContainer>
-          <ProgressCircle className={cn(isActive && "border-success")} ariaLabel="Lesson progress" percentage={100} />
+          <ProgressCircle className={cn(isActive && "border-success")} aria-label="Lesson progress" percentage={100} />
           <SectionItemIconContainer>
             <Icon className={cn(isActive ? "text-success" : "text-foreground", hasVideo ? "h-8 w-7" : "h-7 w-6")} />
           </SectionItemIconContainer>

@@ -11,10 +11,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
-import { useUser } from "~/lib/utils";
+import { useOptionalUser } from "~/lib/utils";
 
 export function UserMenu() {
-  const user = useUser();
+  const user = useOptionalUser();
+
+  if (!user) {
+    return null;
+  }
 
   return (
     <>

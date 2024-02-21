@@ -5,7 +5,7 @@ import { CourseHeader } from "~/components/course/course-header";
 import { IconCamera, IconCameraFilled, IconCertificate, IconDevices, IconDocument } from "~/components/icons";
 import { Section, SectionHeader } from "~/components/section";
 import { ProgressCircle } from "~/components/sidebar/progress-circle";
-import { SectionLesson } from "~/components/sidebar/sidebar-section";
+import { SectionLesson } from "~/components/sidebar/section-lesson";
 import { ThemeModeToggle } from "~/components/theme-mode-toggle";
 import { Button } from "~/components/ui/button";
 import { Separator } from "~/components/ui/separator";
@@ -85,20 +85,20 @@ export default function Components() {
       <IconDocument className="size-8" />
       <IconDocument className="size-8 text-primary" />
       <div>
-        <CourseHeader className="mb-8" courseTitle="Hip Hop Texas Defensive Driving Education Course" numVideos={12} />
+        <CourseHeader className="mb-8" courseTitle="Hip Hop Texas Defensive Driving Education Course" numLessons={12} />
         <div className="space-y-2">
           <ProgressBar id="progress" value={50} />
           <label htmlFor="progress">2 of 5 minutes completed</label>
         </div>
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <ProgressCircle ariaLabelledby="x" percentage={0} />
-        <ProgressCircle ariaLabelledby="x" percentage={15} />
-        <ProgressCircle ariaLabelledby="x" percentage={25} />
-        <ProgressCircle ariaLabelledby="x" percentage={35} />
-        <ProgressCircle ariaLabelledby="x" percentage={50} />
-        <ProgressCircle ariaLabelledby="x" percentage={75} />
-        <ProgressCircle ariaLabelledby="x" percentage={100} />
+        <ProgressCircle aria-labelledby="x" percentage={0} />
+        <ProgressCircle aria-labelledby="x" percentage={15} />
+        <ProgressCircle aria-labelledby="x" percentage={25} />
+        <ProgressCircle aria-labelledby="x" percentage={35} />
+        <ProgressCircle aria-labelledby="x" percentage={50} />
+        <ProgressCircle aria-labelledby="x" percentage={75} />
+        <ProgressCircle aria-labelledby="x" percentage={100} />
       </div>
       <button className="rounded-full bg-success px-4 py-2 font-bold text-success-foreground">Success button</button>
       <h1>H1</h1>

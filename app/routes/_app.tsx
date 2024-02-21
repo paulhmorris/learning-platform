@@ -1,8 +1,11 @@
 import { Outlet } from "@remix-run/react";
 
+import { Header } from "~/components/header";
+
 export default function AppLayout() {
   return (
-    <div className="flex gap-x-12 px-4 pt-10 md:flex-row md:pt-12">
+    <div>
+      <Header />
       <Outlet />
     </div>
   );
