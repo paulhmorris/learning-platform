@@ -56,21 +56,21 @@ export default function Components() {
           <SectionLesson
             hasVideo={false}
             userProgress={mockUserLessonProgress.inProgress}
-            courseSlug="tx-driver-safety"
+            courseSlug="driver-safety-course"
             lesson={mockLesson}
             lessonTitle="Title"
           />
           <SectionLesson
             hasVideo={false}
             userProgress={mockUserLessonProgress.completed}
-            courseSlug="tx-driver-safety"
+            courseSlug="driver-safety-course"
             lesson={mockLesson}
             lessonTitle="Title"
           />
           <SectionLesson
             hasVideo
             userProgress={mockUserLessonProgress.completed}
-            courseSlug="tx-driver-safety"
+            courseSlug="driver-safety-course"
             lesson={mockLesson}
             lessonTitle="Title"
           />

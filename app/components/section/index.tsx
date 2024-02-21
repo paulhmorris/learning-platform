@@ -35,16 +35,28 @@ export function SectionItemButton({ children, to }: { children: React.ReactNode;
   );
 }
 
-export function SectionItemTitle({ children }: { children: React.ReactNode }) {
-  return <h3 className="text-lg font-medium">{children}</h3>;
+export function SectionItemTitle({ children, className, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
+  return (
+    <h3 {...props} className={cn("text-lg font-medium", className)}>
+      {children}
+    </h3>
+  );
 }
 
-export function SectionItemIconContainer({ children }: { children: React.ReactNode }) {
-  return <div className="flex basis-7 justify-start">{children}</div>;
+export function SectionItemIconContainer({ children, className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div {...props} className={cn("flex basis-7 justify-start", className)}>
+      {children}
+    </div>
+  );
 }
 
-export function SectionItemDescription({ children }: { children: React.ReactNode }) {
-  return <p className="text-sm font-light leading-4">{children}</p>;
+export function SectionItemDescription({ children, className, ...props }: React.HTMLAttributes<HTMLParagraphElement>) {
+  return (
+    <p {...props} className={cn("text-sm font-light leading-4", className)}>
+      {children}
+    </p>
+  );
 }
 
 export function SectionItemContainer({ children, ...props }: React.HTMLAttributes<HTMLDivElement>) {

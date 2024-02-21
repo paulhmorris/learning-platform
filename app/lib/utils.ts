@@ -81,7 +81,7 @@ export function getAllSearchParams(param: string, request: Request) {
   return url.searchParams.getAll(param);
 }
 
-export function getStrapiImgSrcSetAndSizes(formats: Attribute.JsonValue) {
+export function getStrapiImgSrcSetAndSizes(formats: Attribute.JsonValue | undefined) {
   if (!formats) {
     return {
       srcSet: "",

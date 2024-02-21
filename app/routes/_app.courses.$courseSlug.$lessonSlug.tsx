@@ -1,9 +1,76 @@
-import { Outlet } from "@remix-run/react";
+import { Link, Outlet, useParams } from "@remix-run/react";
+import { IconArrowLeft } from "@tabler/icons-react";
+import { useTypedRouteLoaderData } from "remix-typedjson";
 
-export default function LessonLayout() {
+import { ProgressBar } from "~/components/common/progress-bar";
+import { ErrorComponent } from "~/components/error-component";
+import { Section, SectionHeader } from "~/components/section";
+import { SectionLesson } from "~/components/sidebar/section-lesson";
+import { Separator } from "~/components/ui/separator";
+import { loader } from "~/routes/_app.courses.$courseSlug";
+
+export default function CourseLayout() {
+  const data = useTypedRouteLoaderData<typeof loader>("routes/_app.courses.$courseSlug");
+  const params = useParams();
+
+  if (!data) {
+    throw new Error("No course data");
+  }
+
+  const { course, progress } = data;
+
+  // sum up all the progresses to get the total progress
+  const totalProgressInSeconds = progress.reduce((acc, curr) => {
+    return acc + (curr.durationInSeconds ?? 0);
+  }, 0);
+
   return (
-    <>
-      <Outlet />
-    </>
+    <div className="flex gap-x-12">
+      <nav className="sticky left-0 top-[88px] h-full shrink-0 basis-[448px] py-10 pl-4 md:py-12">
+        <Link to={`/courses/${params.courseSlug}`} className="flex items-center gap-2">
+          <IconArrowLeft className="size-[1.125rem]" />
+          <span>Back to course</span>
+        </Link>
+
+        {/* TODO: Adjust for non timed courses */}
+        <div className="my-7">
+          <ProgressBar id="course-progress" value={(totalProgressInSeconds / 21_600) * 100} />
+          <label htmlFor="course-progress">2 of 5 minutes completed</label>
+        </div>
+
+        {course.attributes.sections.map((section) => {
+          const lessons = section.lessons
+            ? section.lessons.data.sort((a, b) => a.attributes.order - b.attributes.order)
+            : [];
+          return (
+            <Section key={section.uuid}>
+              <SectionHeader sectionTitle={section.title} durationInMinutes={45} />
+              <Separator className="my-4" />
+              <div className="flex flex-col gap-4">
+                {lessons.map((l) => {
+                  return (
+                    <SectionLesson
+                      key={l.attributes.uuid}
+                      hasVideo={l.attributes.has_video}
+                      userProgress={progress.find((lp) => lp.lessonId === l.id) ?? null}
+                      courseSlug={params.courseSlug}
+                      lesson={l}
+                      lessonTitle={l.attributes.title}
+                    />
+                  );
+                })}
+              </div>
+            </Section>
+          );
+        })}
+      </nav>
+      <main className="max-w-screen-md py-10 pr-4 md:py-12">
+        <Outlet />
+      </main>
+    </div>
   );
+}
+
+export function ErrorBoundary() {
+  return <ErrorComponent />;
 }

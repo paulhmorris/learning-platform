@@ -1,4 +1,4 @@
-import { Lesson, UserLessonProgress } from "@prisma/client";
+import { UserLessonProgress } from "@prisma/client";
 import { NavLink } from "@remix-run/react";
 import React from "react";
 
@@ -11,29 +11,48 @@ import {
 } from "~/components/section";
 import { ProgressCircle } from "~/components/sidebar/progress-circle";
 import { cn } from "~/lib/utils";
+import { APIResponseData } from "~/types/utils";
 
 interface SectionLessonProps extends React.HTMLAttributes<HTMLDivElement> {
-  lesson: Lesson;
+  lesson: APIResponseData<"api::lesson.lesson">;
   lessonTitle: string;
   courseSlug: string | undefined;
   hasVideo: boolean;
   userProgress: UserLessonProgress | null;
+  locked?: boolean;
 }
 export function SectionLesson(props: SectionLessonProps) {
-  const { lesson, userProgress, courseSlug, hasVideo, lessonTitle } = props;
-  const isTimed = lesson.requiredDurationInSeconds !== null && lesson.requiredDurationInSeconds > 0;
-  const durationInMinutes = isTimed ? Math.ceil(lesson.requiredDurationInSeconds! / 60) : 0;
+  const { lesson, locked, userProgress, courseSlug, hasVideo, lessonTitle } = props;
+  const isTimed =
+    typeof lesson.attributes.required_duration_in_seconds !== "undefined" &&
+    lesson.attributes.required_duration_in_seconds > 0;
+  const durationInMinutes = isTimed ? Math.ceil(lesson.attributes.required_duration_in_seconds! / 60) : 0;
   const Icon = hasVideo ? IconCameraFilled : IconClipboard;
+
+  // Locked state
+  if (locked) {
+    return (
+      <div className={cn("block cursor-not-allowed rounded-lg py-1")}>
+        <SectionItemContainer>
+          <ProgressCircle aria-label="Lesson progress" percentage={0} className="border-gray-300" />
+          <SectionItemIconContainer>
+            <Icon className={cn("text-gray-300", hasVideo ? "h-8 w-7" : "h-7 w-6")} />
+          </SectionItemIconContainer>
+          <SectionItemTitle className="text-gray-300">{props.lessonTitle}</SectionItemTitle>
+        </SectionItemContainer>
+      </div>
+    );
+  }
 
   // Umtimed states
   if (!isTimed) {
     const isCompleted = userProgress?.isCompleted;
     return (
       <NavLink
-        to={`/courses/${courseSlug}/${lesson.slug}`}
+        to={`/courses/${courseSlug}/${lesson.attributes.slug}`}
         className={({ isActive }) =>
           cn(
-            "block rounded-lg py-1 transition hover:ring hover:ring-[#e4e4e4] focus:outline-none focus:ring focus:ring-ring",
+            "block rounded-lg py-1 hover:ring hover:ring-[#e4e4e4] focus:outline-none focus:ring focus:ring-ring motion-safe:transition-all",
             isActive ? "border border-[#e4e4e4] bg-muted p-2.5" : "-my-1",
           )
         }
@@ -59,10 +78,10 @@ export function SectionLesson(props: SectionLessonProps) {
   if (!userProgress) {
     return (
       <NavLink
-        to={`/courses/${courseSlug}/${lesson.slug}`}
+        to={`/courses/${courseSlug}/${lesson.attributes.slug}`}
         className={({ isActive }) =>
           cn(
-            "block rounded-lg py-1 transition hover:ring hover:ring-[#e4e4e4] focus:outline-none focus:ring focus:ring-ring",
+            "block rounded-lg py-1 hover:ring hover:ring-[#e4e4e4] focus:outline-none focus:ring focus:ring-ring motion-safe:transition-all",
             isActive ? "border border-[#e4e4e4] bg-muted p-2.5" : "-my-1",
           )
         }
@@ -90,7 +109,7 @@ export function SectionLesson(props: SectionLessonProps) {
         to={`/components`}
         className={({ isActive }) =>
           cn(
-            "block rounded-lg py-1 transition hover:ring hover:ring-[#e4e4e4] focus:outline-none focus:ring focus:ring-ring",
+            "block rounded-lg py-1 hover:ring hover:ring-[#e4e4e4] focus:outline-none focus:ring focus:ring-ring motion-safe:transition-all",
             isActive ? "border border-[#e4e4e4] bg-muted p-2.5" : "-my-1",
           )
         }
@@ -100,7 +119,7 @@ export function SectionLesson(props: SectionLessonProps) {
             <ProgressCircle
               className={cn(isActive && "border-success")}
               aria-label="Lesson progress"
-              percentage={(userProgress.durationInSeconds / lesson.requiredDurationInSeconds!) * 100}
+              percentage={(userProgress.durationInSeconds ?? 1 / lesson.attributes.required_duration_in_seconds!) * 100}
             />
             <SectionItemIconContainer>
               <Icon className={cn(isActive ? "text-success" : "text-foreground", hasVideo ? "h-8 w-7" : "h-7 w-6")} />
@@ -118,10 +137,10 @@ export function SectionLesson(props: SectionLessonProps) {
   // Completed state
   return (
     <NavLink
-      to={`/courses/${courseSlug}/${lesson.slug}`}
+      to={`/courses/${courseSlug}/${lesson.attributes.slug}`}
       className={({ isActive }) =>
         cn(
-          "block rounded-lg py-1 transition hover:ring hover:ring-[#e4e4e4] focus:outline-none focus:ring focus:ring-ring",
+          "block rounded-lg py-1 hover:ring hover:ring-[#e4e4e4] focus:outline-none focus:ring focus:ring-ring motion-safe:transition-all",
           isActive ? "border border-[#e4e4e4] bg-muted p-2.5" : "-my-1",
         )
       }

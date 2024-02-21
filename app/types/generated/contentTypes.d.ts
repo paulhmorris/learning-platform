@@ -443,6 +443,7 @@ export interface ApiLessonLesson extends Schema.CollectionType {
     has_video: Attribute.Boolean &
       Attribute.Required &
       Attribute.DefaultTo<true>;
+    required_duration_in_seconds: Attribute.Integer;
     createdAt: Attribute.DateTime;
     updatedAt: Attribute.DateTime;
     publishedAt: Attribute.DateTime;

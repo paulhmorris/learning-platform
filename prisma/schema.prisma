@@ -27,7 +27,6 @@ model User {
   verification     UserVerification?
   courses          UserCourses?
   lessonProgresses UserLessonProgress[]
-  courseProgresses UserCourseProgress[]
   quizProgresses   UserQuizProgress[]
 }
 
@@ -66,46 +65,6 @@ model PasswordReset {
   updatedAt DateTime @updatedAt
 }
 
-// Entities
-model Course {
-  id                  String  @id @default(cuid())
-  priceInCents        Int
-  strapiId            Int     @unique
-  slug                String  @unique
-  hasRequiredDuration Boolean @default(true)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  users      UserCourses[]
-  lessons    Lesson[]
-  progresses UserCourseProgress?
-}
-
-model Lesson {
-  id                        String @id @default(cuid())
-  strapiId                  Int    @unique
-  requiredDurationInSeconds Int?
-  slug                      String @unique
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  course     Course               @relation(fields: [courseId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  courseId   String
-  progresses UserLessonProgress[]
-}
-
-model Quiz {
-  id       String @id @default(cuid())
-  strapiId Int    @unique
-  slug     String @unique
-
-  createdAt  DateTime          @default(now())
-  updatedAt  DateTime          @updatedAt
-  progresses UserQuizProgress?
-}
-
 // Relations
 model UserCourses {
   id          Int     @id @default(autoincrement())
@@ -114,24 +73,7 @@ model UserCourses {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   userId String @unique
 
-  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   courseId String @unique
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model UserCourseProgress {
-  id          Int     @id @default(autoincrement())
-  isCompleted Boolean @default(false)
-
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  userId String @unique
-
-  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  courseId String @unique
-
-  durationInSeconds Int? @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -141,16 +83,17 @@ model UserLessonProgress {
   id          Int     @id @default(autoincrement())
   isCompleted Boolean @default(false)
 
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  userId String @unique
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  userId   String
+  /// The lesson id from Strapi
+  lessonId Int
 
-  lesson   Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  lessonId String @unique
-
-  durationInSeconds Int @default(0)
+  durationInSeconds Int? @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@unique([userId, lessonId])
 }
 
 model UserQuizProgress {
@@ -158,11 +101,12 @@ model UserQuizProgress {
   isCompleted Boolean @default(false)
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  userId String @unique
-
-  quiz   Quiz   @relation(fields: [quizId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  quizId String @unique
+  userId String
+  /// The quiz id from Strapi
+  quizId Int
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@unique([userId, quizId])
 }

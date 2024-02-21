@@ -41,7 +41,10 @@ export function LessonContentRenderer({ content }: Props) {
 
           case "blocks.text": {
             return (
-              <section key={component.uuid} className="prose text-black prose-h1:text-[32px] prose-p:text-lg">
+              <section
+                key={component.uuid}
+                className="prose max-w-full text-black prose-h1:text-[32px] prose-p:text-lg"
+              >
                 <BlocksRenderer content={component.content} />
               </section>
             );
