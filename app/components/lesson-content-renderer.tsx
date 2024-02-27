@@ -42,8 +42,8 @@ export function LessonContentRenderer({ content }: Props) {
           case "blocks.text": {
             return (
               <section
-                key={component.uuid}
-                className="prose max-w-full text-black prose-h1:text-[32px] prose-p:text-lg"
+                key={`${component.__component}-${component.id}`}
+                className="prose max-w-full dark:prose-invert prose-h1:text-[32px] prose-p:text-lg"
               >
                 <BlocksRenderer content={component.content} />
               </section>
@@ -60,7 +60,7 @@ export function LessonContentRenderer({ content }: Props) {
             if (!formats) {
               return (
                 <img
-                  key={component.uuid}
+                  key={`${component.__component}-${component.id}`}
                   src={url.toString()}
                   alt={component.alt}
                   width={component.asset.data.attributes.width}
@@ -72,7 +72,7 @@ export function LessonContentRenderer({ content }: Props) {
             const { srcSet, sizes } = getStrapiImgSrcSetAndSizes(formats);
             return (
               <img
-                key={component.uuid}
+                key={`${component.__component}-${component.id}`}
                 src={url.toString()}
                 alt={component.alt}
                 srcSet={srcSet}
@@ -93,7 +93,7 @@ export function LessonContentRenderer({ content }: Props) {
 
             return (
               // eslint-disable-next-line jsx-a11y/media-has-caption
-              <audio controls key={component.uuid}>
+              <audio controls key={`${component.__component}-${component.id}`}>
                 <source src={url} type={audio.mime} />
               </audio>
             );

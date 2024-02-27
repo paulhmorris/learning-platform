@@ -10,8 +10,6 @@ export interface BlocksAudio extends Schema.Component {
   attributes: {
     asset: Attribute.Media & Attribute.Required;
     transcript: Attribute.Text;
-    uuid: Attribute.UID &
-      Attribute.CustomField<'plugin::strapi-advanced-uuid.uuid'>;
   };
 }
 
@@ -26,8 +24,6 @@ export interface BlocksImage extends Schema.Component {
     title: Attribute.String & Attribute.Required;
     alt: Attribute.Text & Attribute.Required;
     asset: Attribute.Media & Attribute.Required;
-    uuid: Attribute.UID &
-      Attribute.CustomField<'plugin::strapi-advanced-uuid.uuid'>;
   };
 }
 
@@ -40,8 +36,6 @@ export interface BlocksText extends Schema.Component {
   };
   attributes: {
     content: Attribute.Blocks & Attribute.Required;
-    uuid: Attribute.UID &
-      Attribute.CustomField<'plugin::strapi-advanced-uuid.uuid'>;
   };
 }
 
@@ -94,19 +88,17 @@ export interface CourseSection extends Schema.Component {
   collectionName: 'components_course_sections';
   info: {
     displayName: 'Section';
-    icon: 'layer';
+    icon: 'bulletList';
     description: '';
   };
   attributes: {
+    title: Attribute.String & Attribute.Required;
     lessons: Attribute.Relation<
       'course.section',
       'oneToMany',
       'api::lesson.lesson'
     >;
-    title: Attribute.String & Attribute.Required;
     quiz: Attribute.Relation<'course.section', 'oneToOne', 'api::quiz.quiz'>;
-    uuid: Attribute.UID &
-      Attribute.CustomField<'plugin::strapi-advanced-uuid.uuid'>;
   };
 }
 

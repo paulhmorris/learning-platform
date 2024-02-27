@@ -387,16 +387,9 @@ export interface ApiCourseCourse extends Schema.CollectionType {
       Attribute.SetMinMaxLength<{
         minLength: 8;
       }>;
-    sections: Attribute.DynamicZone<['course.section']> &
-      Attribute.Required &
-      Attribute.SetMinMax<
-        {
-          min: 1;
-        },
-        number
-      >;
     uuid: Attribute.UID &
       Attribute.CustomField<'plugin::strapi-advanced-uuid.uuid'>;
+    sections: Attribute.DynamicZone<['course.section']> & Attribute.Required;
     createdAt: Attribute.DateTime;
     updatedAt: Attribute.DateTime;
     publishedAt: Attribute.DateTime;

@@ -1,5 +1,4 @@
 import { NavLink, useParams } from "@remix-run/react";
-import { useEffect } from "react";
 import { useTypedRouteLoaderData } from "remix-typedjson";
 
 import { ProgressBar } from "~/components/common/progress-bar";
@@ -12,8 +11,13 @@ import { cn } from "~/lib/utils";
 import { loader } from "~/routes/_app.courses.$courseSlug";
 import { TypedMetaFunction } from "~/types/utils";
 
-export const meta: TypedMetaFunction<typeof loader> = ({ matches }) => {
+export const meta: TypedMetaFunction<typeof loader, { "routes/_app.courses.$courseSlug": typeof loader }> = ({
+  matches,
+}) => {
+  // @ts-expect-error typed meta funtion not supporting this yet
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const match = matches.find((m) => m.id === "routes/_app.courses.$courseSlug")?.data.course;
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
   return [{ title: `Course Overview | ${match?.attributes.title}` }];
 };
 
@@ -21,9 +25,9 @@ export default function CourseIndex() {
   const data = useTypedRouteLoaderData<typeof loader>("routes/_app.courses.$courseSlug");
   const params = useParams();
 
-  useEffect(() => {
-    console.log(data);
-  }, []);
+  // useEffect(() => {
+  //   console.log(data);
+  // }, []);
 
   if (!data) {
     throw new Error("No course data");

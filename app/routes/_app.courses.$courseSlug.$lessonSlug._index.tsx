@@ -12,7 +12,7 @@ import { cms } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
 import { badRequest, handlePrismaError, notFound, serverError } from "~/lib/responses.server";
-import { loader as courseLoader } from "~/routes/_app.courses.$courseSlug.$lessonSlug";
+import { loader as courseLoader } from "~/routes/_app.courses.$courseSlug";
 import { SessionService } from "~/services/SessionService.server";
 import { APIResponseCollection, APIResponseData } from "~/types/utils";
 

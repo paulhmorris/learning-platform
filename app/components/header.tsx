@@ -1,6 +1,7 @@
 import { Link } from "@remix-run/react";
 
 import { Logo } from "~/components/icons";
+import { ThemeModeToggle } from "~/components/theme-mode-toggle";
 import { UserMenu } from "~/components/user-menu";
 import { useOptionalUser } from "~/lib/utils";
 
@@ -19,6 +20,7 @@ export function Header() {
         ) : (
           <Link to="/login">Log in</Link>
         )}
+        <ThemeModeToggle />
         <UserMenu />
       </div>
     </header>
