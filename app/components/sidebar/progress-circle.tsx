@@ -16,14 +16,13 @@ type Props =
 
 export function ProgressCircle({ percentage, className, ...props }: Props) {
   const isComplete = percentage === 100;
-  // const isClient = useIsClient();
 
   return (
     <div
       {...props}
       aria-labelledby=""
       role="progressbar"
-      aria-valuenow={Number(percentage)}
+      aria-valuenow={Math.ceil(Number(percentage))}
       className={cn(
         "relative aspect-square size-10 rounded-full border",
         isComplete ? "border-2 border-success" : "border border-foreground",

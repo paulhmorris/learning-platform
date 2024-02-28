@@ -2,7 +2,7 @@ import { Link, useParams } from "@remix-run/react";
 
 import { IconCameraFilled, IconDocument } from "~/components/icons";
 import { Button } from "~/components/ui/button";
-import { valueIsNotNullOrZero } from "~/lib/utils";
+import { valueIsNotNullishOrZero } from "~/lib/utils";
 import { APIResponseData } from "~/types/utils";
 
 type Props = {
@@ -43,7 +43,7 @@ export function CourseUpNext({ lesson }: Props) {
             >
               {lesson.attributes.title}
             </h3>
-            {valueIsNotNullOrZero(lesson.attributes.required_duration_in_seconds) ? (
+            {valueIsNotNullishOrZero(lesson.attributes.required_duration_in_seconds) ? (
               <div className="flex items-center gap-2">
                 {lesson.attributes.has_video ? (
                   <IconCameraFilled className="size-7" />

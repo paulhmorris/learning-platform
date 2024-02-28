@@ -28,7 +28,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           fields: ["alternativeText", "formats", "url"],
         },
         lessons: {
-          fields: ["title", "slug", "has_video", "uuid", "required_duration_in_seconds", "order"],
+          fields: ["title", "slug", "has_video", "uuid", "required_duration_in_seconds"],
         },
         sections: {
           fields: ["title"],
@@ -37,7 +37,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
               fields: ["title", "uuid"],
             },
             lessons: {
-              fields: ["title", "slug", "has_video", "uuid", "required_duration_in_seconds", "order"],
+              fields: ["title", "slug", "has_video", "uuid", "required_duration_in_seconds"],
             },
           },
         },
@@ -56,20 +56,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
     const progress = await db.userLessonProgress.findMany({ where: { userId: user.id } });
     const lessonsInOrder = course.attributes.sections.flatMap((section) => {
-      const sortedLessons = section.lessons?.data.sort((a, b) => a.attributes.order - b.attributes.order) ?? [];
-      return sortedLessons.map((l) => {
-        const lessonProgress = progress.find((p) => p.lessonId === l.id);
-        return {
-          uuid: l.attributes.uuid,
-          sectionId: section.id,
-          sectionTitle: section.title,
-          orderInSection: l.attributes.order,
-          isCompleted: lessonProgress?.isCompleted ?? false,
-          isTimed: l.attributes.required_duration_in_seconds && l.attributes.required_duration_in_seconds > 0,
-          requiredDurationInSeconds: l.attributes.required_duration_in_seconds,
-          progressDuration: lessonProgress?.durationInSeconds,
-        };
-      });
+      return (
+        section.lessons?.data.map((l) => {
+          const lessonProgress = progress.find((p) => p.lessonId === l.id);
+          return {
+            uuid: l.attributes.uuid,
+            sectionId: section.id,
+            sectionTitle: section.title,
+            isCompleted: lessonProgress?.isCompleted ?? false,
+            isTimed: l.attributes.required_duration_in_seconds && l.attributes.required_duration_in_seconds > 0,
+            requiredDurationInSeconds: l.attributes.required_duration_in_seconds,
+            progressDuration: lessonProgress?.durationInSeconds,
+          };
+        }) ?? []
+      );
     });
 
     console.log(lessonsInOrder);

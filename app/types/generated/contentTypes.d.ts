@@ -422,7 +422,6 @@ export interface ApiLessonLesson extends Schema.CollectionType {
   attributes: {
     title: Attribute.String & Attribute.Required;
     description: Attribute.Text;
-    order: Attribute.Integer & Attribute.Required;
     slug: Attribute.UID<'api::lesson.lesson', 'title'> &
       Attribute.Required &
       Attribute.SetMinMaxLength<{

@@ -111,6 +111,13 @@ export function getStrapiImgSrcSetAndSizes(formats: Attribute.JsonValue | undefi
   };
 }
 
-export function valueIsNotNullOrZero<T>(value: T | null | undefined): value is T {
+export function valueIsNotNullishOrZero<T>(value: T | null | undefined): value is T {
   return value !== null && value !== 0;
+}
+
+export function formatSeconds(seconds: number) {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+
+  return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
 }

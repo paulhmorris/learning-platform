@@ -1,62 +1,86 @@
-import { Lesson, UserLessonProgress } from "@prisma/client";
+import { UserLessonProgress } from "@prisma/client";
 import { useFetcher } from "@remix-run/react";
 import { useEffect } from "react";
-import { useTimer } from "react-timing-hooks";
+import { useCountdown } from "react-timing-hooks";
 
-import { cn, useUser } from "~/lib/utils";
+import { cn, formatSeconds, useUser } from "~/lib/utils";
 import { SUBMIT_INTERVAL_MS } from "~/routes/_app.courses.$courseSlug.$lessonSlug._index";
+import { APIResponseData } from "~/types/utils";
 
 interface Props {
-  lesson: Lesson;
+  lesson: APIResponseData<"api::lesson.lesson">;
   progress: UserLessonProgress | null;
 }
 
 export function ProgressTimer({ lesson, progress }: Props) {
+  const duration = lesson.attributes.required_duration_in_seconds ?? 0;
   const user = useUser();
   const fetcher = useFetcher();
-  const [timerValue, { start, stop }] = useTimer(progress?.durationInSeconds ?? 0, { startOnMount: true });
+  const [countdownValue, { stop, resume }] = useCountdown(duration - (progress?.durationInSeconds ?? 0), 0, {
+    startOnMount: true,
+  });
 
-  // Submit progress every 10 seconds
+  // Submit progress every n seconds
   useEffect(() => {
-    if (lesson.requiredDurationInSeconds === null || progress?.isCompleted) return;
+    if (typeof duration === "undefined" || progress?.isCompleted) {
+      return;
+    }
 
     const timer = setTimeout(() => {
-      if (lesson.requiredDurationInSeconds === null || progress?.isCompleted) return;
+      if (typeof duration === "undefined" || progress?.isCompleted) {
+        return;
+      }
 
-      fetcher.submit({ userId: user.id, lessonId: lesson.id }, { method: "POST", navigate: false });
+      fetcher.submit({ userId: user.id, lessonId: lesson.id }, { method: "POST", action: "?index", navigate: false });
     }, SUBMIT_INTERVAL_MS);
 
     return () => clearTimeout(timer);
-  }, [fetcher, lesson.id, lesson.requiredDurationInSeconds, progress?.isCompleted, progress?.updatedAt, user.id]);
+  }, [fetcher, lesson.id, duration, progress?.isCompleted, progress?.updatedAt, user.id]);
 
   // Stop the timer when the time is up
   useEffect(() => {
-    if (lesson.requiredDurationInSeconds === null) return;
-
-    if (progress?.isCompleted || timerValue >= lesson.requiredDurationInSeconds) {
+    if (typeof duration === "undefined" || progress?.isCompleted) {
       stop();
       return;
     }
 
-    start();
-  }, [timerValue, lesson.requiredDurationInSeconds, stop, start, progress?.isCompleted]);
+    resume();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [countdownValue, duration, progress?.isCompleted]);
 
-  if (!lesson.requiredDurationInSeconds) return null;
+  if (!duration) {
+    return null;
+  }
+
+  if (progress?.isCompleted) {
+    return (
+      <span className="font-bold text-success" aria-label="Lesson completed">
+        Completed!
+      </span>
+    );
+  }
+
   return (
-    <div>
-      <p className={cn(timerValue >= lesson.requiredDurationInSeconds && "text-success")}>
-        {formatSeconds(timerValue)}
-      </p>
-      <p>
-        Server: {progress?.durationInSeconds} / {lesson.requiredDurationInSeconds}
-      </p>
-    </div>
+    <>
+      <span
+        aria-label="Time remaining on this lesson"
+        className={cn(countdownValue === 0 && "text-success", "tabular-nums")}
+      >
+        {formatSeconds(countdownValue)} minutes remaining
+      </span>
+      {/* {process.env.NODE_ENV === "development"
+        ? createPortal(
+            <div className="fixed bottom-8 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-2xl border bg-background p-2 shadow-xl">
+              <button className="rounded bg-secondary px-3 py-2 font-bold hover:bg-secondary/90" onClick={resume}>
+                Resume
+              </button>
+              <button className="rounded bg-secondary px-3 py-2 font-bold hover:bg-secondary/90" onClick={pause}>
+                Pause
+              </button>
+            </div>,
+            document.body,
+          )
+        : null} */}
+    </>
   );
-}
-
-function formatSeconds(seconds: number) {
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-
-  return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
 }

@@ -1,5 +1,5 @@
 import { UserLessonProgress } from "@prisma/client";
-import { NavLink } from "@remix-run/react";
+import { NavLink, useParams } from "@remix-run/react";
 import React from "react";
 
 import { IconCameraFilled, IconClipboard } from "~/components/icons";
@@ -10,7 +10,8 @@ import {
   SectionItemTitle,
 } from "~/components/section";
 import { ProgressCircle } from "~/components/sidebar/progress-circle";
-import { cn } from "~/lib/utils";
+import { ProgressTimer } from "~/components/sidebar/progress-timer";
+import { cn, formatSeconds } from "~/lib/utils";
 import { APIResponseData } from "~/types/utils";
 
 interface SectionLessonProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -28,17 +29,33 @@ export function SectionLesson(props: SectionLessonProps) {
     lesson.attributes.required_duration_in_seconds > 0;
   const durationInMinutes = isTimed ? Math.ceil((lesson.attributes.required_duration_in_seconds || 1) / 60) : 0;
   const Icon = hasVideo ? IconCameraFilled : IconClipboard;
+  const params = useParams();
 
   // Locked state
   if (locked) {
     return (
-      <div className={cn("block cursor-not-allowed rounded-lg py-1")}>
+      <div
+        className={cn("block cursor-not-allowed rounded-lg py-1")}
+        title="Complete previous lessons to unlock"
+        aria-label="This lesson is locked until previoius lessons are completed."
+      >
         <SectionItemContainer>
-          <ProgressCircle aria-label="Lesson progress" percentage={0} className="border-gray-300" />
+          <ProgressCircle
+            aria-label="Lesson progress"
+            percentage={0}
+            className="border-gray-400 contrast-more:border-gray-500 dark:border-gray-600 contrast-more:dark:border-gray-400"
+          />
           <SectionItemIconContainer>
-            <Icon className={cn("text-gray-300", hasVideo ? "h-8 w-7" : "h-7 w-6")} />
+            <Icon
+              className={cn(
+                "text-gray-400 contrast-more:text-gray-500 dark:text-gray-600 contrast-more:dark:text-gray-400",
+                hasVideo ? "h-8 w-7" : "h-7 w-6",
+              )}
+            />
           </SectionItemIconContainer>
-          <SectionItemTitle className="text-gray-300">{props.lessonTitle}</SectionItemTitle>
+          <SectionItemTitle className="text-gray-400 contrast-more:text-gray-500 dark:text-gray-600 contrast-more:dark:text-gray-400">
+            {props.lessonTitle}
+          </SectionItemTitle>
         </SectionItemContainer>
       </div>
     );
@@ -46,7 +63,6 @@ export function SectionLesson(props: SectionLessonProps) {
 
   // Umtimed states
   if (!isTimed) {
-    const isCompleted = userProgress?.isCompleted;
     return (
       <NavLink
         to={`/courses/${courseSlug}/${lesson.attributes.slug}`}
@@ -62,7 +78,7 @@ export function SectionLesson(props: SectionLessonProps) {
             <ProgressCircle
               className={cn(isActive && "border-success")}
               aria-label="Lesson progress"
-              percentage={isCompleted ? 100 : 0}
+              percentage={userProgress?.isCompleted ? 100 : 0}
             />
             <SectionItemIconContainer>
               <Icon className={cn(isActive ? "text-success" : "text-foreground", hasVideo ? "h-8 w-7" : "h-7 w-6")} />
@@ -94,7 +110,13 @@ export function SectionLesson(props: SectionLessonProps) {
             </SectionItemIconContainer>
             <div className="flex flex-col justify-center">
               <SectionItemTitle>{lessonTitle}</SectionItemTitle>
-              <SectionItemDescription>{durationInMinutes} min</SectionItemDescription>
+              {params.lessonSlug === lesson.attributes.slug ? (
+                <SectionItemDescription>
+                  <ProgressTimer lesson={lesson} progress={userProgress} />
+                </SectionItemDescription>
+              ) : (
+                <SectionItemDescription>{durationInMinutes} min</SectionItemDescription>
+              )}
             </div>
           </SectionItemContainer>
         )}
@@ -104,9 +126,14 @@ export function SectionLesson(props: SectionLessonProps) {
 
   // In progress state
   if (!userProgress.isCompleted) {
+    let percentage = 0;
+    if (userProgress.durationInSeconds && lesson.attributes.required_duration_in_seconds) {
+      percentage = (userProgress.durationInSeconds / lesson.attributes.required_duration_in_seconds) * 100;
+    }
+
     return (
       <NavLink
-        to={`/components`}
+        to={`/courses/${courseSlug}/${lesson.attributes.slug}`}
         className={({ isActive }) =>
           cn(
             "block rounded-lg py-1 hover:ring hover:ring-[#e4e4e4] focus:outline-none focus:ring focus:ring-ring motion-safe:transition-all",
@@ -119,14 +146,22 @@ export function SectionLesson(props: SectionLessonProps) {
             <ProgressCircle
               className={cn(isActive && "border-success")}
               aria-label="Lesson progress"
-              percentage={(userProgress.durationInSeconds ?? 1 / lesson.attributes.required_duration_in_seconds!) * 100}
+              percentage={percentage}
             />
             <SectionItemIconContainer>
               <Icon className={cn(isActive ? "text-success" : "text-foreground", hasVideo ? "h-8 w-7" : "h-7 w-6")} />
             </SectionItemIconContainer>
             <div className="flex flex-col justify-center">
               <SectionItemTitle>{props.lessonTitle}</SectionItemTitle>
-              <SectionItemDescription>{durationInMinutes} min</SectionItemDescription>
+              {params.lessonSlug === lesson.attributes.slug ? (
+                <SectionItemDescription>
+                  <ProgressTimer lesson={lesson} progress={userProgress} />
+                </SectionItemDescription>
+              ) : (
+                <SectionItemDescription>
+                  {formatSeconds(userProgress.durationInSeconds ?? 0)} of {durationInMinutes} min completed
+                </SectionItemDescription>
+              )}
             </div>
           </SectionItemContainer>
         )}
@@ -154,7 +189,7 @@ export function SectionLesson(props: SectionLessonProps) {
           <div className="flex flex-col justify-center">
             <SectionItemTitle>{props.lessonTitle}</SectionItemTitle>
             <SectionItemDescription>
-              {durationInMinutes} of {durationInMinutes} min completed{" "}
+              {durationInMinutes} of {durationInMinutes} min completed
             </SectionItemDescription>
           </div>
         </SectionItemContainer>
