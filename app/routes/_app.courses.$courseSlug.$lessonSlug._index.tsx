@@ -83,11 +83,17 @@ export async function action({ request }: ActionFunctionArgs) {
   const { lessonId, userId } = result.data;
 
   const lesson = await cms.findOne<APIResponseData<"api::lesson.lesson">>("lessons", lessonId);
+  // Lessons without required durations
+  const { required_duration_in_seconds } = lesson.data.attributes;
+  if (!required_duration_in_seconds) {
+    return typedjson({ progress: null });
+  }
+
   const progress = await db.userLessonProgress.findUnique({
     where: { userId_lessonId: { lessonId, userId } },
   });
-  const { required_duration_in_seconds } = lesson.data.attributes;
 
+  // Completion flow
   if (progress && progress.durationInSeconds !== null) {
     if (progress.isCompleted) {
       throw badRequest({ message: "Can't update progress on a lesson that's already completed." });
@@ -98,17 +104,14 @@ export async function action({ request }: ActionFunctionArgs) {
     const lastUpdate = progress.updatedAt.getTime();
 
     if (now - lastUpdate < SUBMIT_INTERVAL_MS) {
-      throw json({ message: "Progress updates were too close together." }, { status: 429 });
+      throw json({ message: "Requests were too close together." }, { status: 429 });
     }
 
     // Mark lesson complete if we're about to hit the required duration;
-    if (
-      required_duration_in_seconds !== undefined &&
-      progress.durationInSeconds + SUBMIT_INTERVAL_MS / 1_000 >= required_duration_in_seconds
-    ) {
+    if (progress.durationInSeconds + SUBMIT_INTERVAL_MS / 1_000 >= required_duration_in_seconds) {
       const completedProgress = await db.userLessonProgress.update({
         where: { id: progress.id },
-        data: { isCompleted: true, durationInSeconds: { increment: SUBMIT_INTERVAL_MS / 1_000 } },
+        data: { isCompleted: true, durationInSeconds: required_duration_in_seconds },
       });
       return typedjson({ progress: completedProgress });
     }
@@ -125,24 +128,6 @@ export async function action({ request }: ActionFunctionArgs) {
     update: { durationInSeconds: { increment: SUBMIT_INTERVAL_MS / 1_000 } },
   });
 
-  // Lessons without required durations
-  if (!required_duration_in_seconds) {
-    return typedjson({ progress: currentProgress });
-  }
-
-  // Lessons with required durations
-  if (
-    required_duration_in_seconds &&
-    currentProgress.durationInSeconds !== null &&
-    currentProgress.durationInSeconds >= required_duration_in_seconds
-  ) {
-    const progress = await db.userLessonProgress.update({
-      where: { id: currentProgress.id },
-      data: { isCompleted: true },
-    });
-    return typedjson({ progress });
-  }
-
   return typedjson({ progress: currentProgress });
 }
 
@@ -153,10 +138,6 @@ export default function Course() {
   if (!courseData) {
     throw new Error("Course data not found");
   }
-
-  // useEffect(() => {
-  //   console.log("data: ", courseData);
-  // }, [courseData]);
 
   return (
     <>
