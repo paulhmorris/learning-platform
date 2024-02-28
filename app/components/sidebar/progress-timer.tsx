@@ -1,6 +1,6 @@
 import { UserLessonProgress } from "@prisma/client";
 import { useFetcher } from "@remix-run/react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useCountdown } from "react-timing-hooks";
 
 import { cn, formatSeconds, useUser } from "~/lib/utils";
@@ -16,7 +16,8 @@ export function ProgressTimer({ lesson, progress }: Props) {
   const duration = lesson.attributes.required_duration_in_seconds ?? 0;
   const user = useUser();
   const fetcher = useFetcher();
-  const [countdownValue, { stop, resume }] = useCountdown(duration - (progress?.durationInSeconds ?? 0), 0, {
+  const [lastSubmitMs, setLastSubmitMs] = useState<number | null>(null);
+  const [countdownValue, { pause, resume }] = useCountdown(duration - (progress?.durationInSeconds ?? 0), 0, {
     startOnMount: true,
   });
 
@@ -26,27 +27,31 @@ export function ProgressTimer({ lesson, progress }: Props) {
       return;
     }
 
-    const timer = setTimeout(() => {
-      if (typeof duration === "undefined" || progress?.isCompleted) {
-        return;
+    const interval = setInterval(() => {
+      if (lastSubmitMs === null || Date.now() - lastSubmitMs > SUBMIT_INTERVAL_MS) {
+        fetcher.submit({ userId: user.id, lessonId: lesson.id }, { method: "POST", action: "?index", navigate: false });
+        setLastSubmitMs(Date.now());
       }
-
-      fetcher.submit({ userId: user.id, lessonId: lesson.id }, { method: "POST", action: "?index", navigate: false });
     }, SUBMIT_INTERVAL_MS);
 
-    return () => clearTimeout(timer);
-  }, [fetcher, lesson.id, duration, progress?.isCompleted, progress?.updatedAt, user.id]);
-
-  // Stop the timer when the time is up
-  useEffect(() => {
-    if (typeof duration === "undefined" || progress?.isCompleted) {
-      stop();
-      return;
-    }
-
-    resume();
+    return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [countdownValue, duration, progress?.isCompleted]);
+  }, [countdownValue, fetcher, progress?.isCompleted]);
+
+  // Pause the timer when the tab is not visible
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        pause();
+      } else {
+        resume();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [pause, resume]);
 
   if (!duration) {
     return null;

@@ -53,9 +53,14 @@ export function SectionLesson(props: SectionLessonProps) {
               )}
             />
           </SectionItemIconContainer>
-          <SectionItemTitle className="text-gray-400 contrast-more:text-gray-500 dark:text-gray-600 contrast-more:dark:text-gray-400">
-            {props.lessonTitle}
-          </SectionItemTitle>
+          <div className="flex flex-col justify-center">
+            <SectionItemTitle className="text-gray-400 contrast-more:text-gray-500 dark:text-gray-600 contrast-more:dark:text-gray-400">
+              {props.lessonTitle}
+            </SectionItemTitle>
+            <SectionItemDescription className="text-gray-400 contrast-more:text-gray-500 dark:text-gray-600 contrast-more:dark:text-gray-400">
+              {durationInMinutes} min
+            </SectionItemDescription>
+          </div>
         </SectionItemContainer>
       </div>
     );
