@@ -72,8 +72,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       );
     });
 
-    console.log(lessonsInOrder);
-
     return typedjson({ course, progress, lessonsInOrder });
   } catch (error) {
     console.error(error);

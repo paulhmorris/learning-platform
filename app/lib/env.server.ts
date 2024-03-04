@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-empty-interface */
 /* eslint-disable @typescript-eslint/no-namespace */
+import { loadEnv } from "vite";
 import { TypeOf, z } from "zod";
 
 const serverEnvValidation = z.object({
   // Remix
-  NODE_ENV: z.enum(["development", "production", "test"]),
   SESSION_SECRET: z.string().min(16),
   SITE_URL: z.string().url().optional(),
 
@@ -63,9 +63,10 @@ declare global {
 
 export function validateEnv(): void {
   try {
+    const env = loadEnv("", process.cwd(), "");
     console.info("🌎 validating environment variables..");
-    serverEnvValidation.parse(process.env);
-    clientEnvValidation.parse(process.env);
+    serverEnvValidation.parse(env);
+    clientEnvValidation.parse(env);
   } catch (err) {
     if (err instanceof z.ZodError) {
       const { fieldErrors } = err.flatten();

@@ -1,6 +1,5 @@
-import { cssBundleHref } from "@remix-run/css-bundle";
 import type { LinksFunction, LoaderFunctionArgs } from "@remix-run/node";
-import { Links, LiveReload, Meta, Outlet, Scripts, ScrollRestoration, useRouteError } from "@remix-run/react";
+import { Links, Meta, Outlet, Scripts, ScrollRestoration, useRouteError } from "@remix-run/react";
 import { captureRemixErrorBoundaryError, withSentry } from "@sentry/remix";
 import { PreventFlashOnWrongTheme, ThemeProvider, useTheme } from "remix-themes";
 import { typedjson, useTypedLoaderData } from "remix-typedjson";
@@ -11,14 +10,11 @@ import { themeSessionResolver } from "~/lib/session.server";
 import { getGlobalToast } from "~/lib/toast.server";
 import { cn } from "~/lib/utils";
 import { SessionService } from "~/services/SessionService.server";
-import stylesheet from "~/tailwind.css";
+import stylesheet from "~/tailwind.css?url";
 
 import "@fontsource-variable/inter/wght.css";
 
-export const links: LinksFunction = () => [
-  { rel: "stylesheet", href: stylesheet },
-  ...(cssBundleHref ? [{ rel: "stylesheet", href: cssBundleHref }] : []),
-];
+export const links: LinksFunction = () => [{ rel: "stylesheet", href: stylesheet }];
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const session = await SessionService.getSession(request);
@@ -82,7 +78,6 @@ function App() {
           }}
         />
         <Scripts />
-        <LiveReload />
       </body>
     </html>
   );
