@@ -31,7 +31,9 @@ export function ProgressCircle({ percentage, className, ...props }: Props) {
     >
       <div
         style={{
-          background: isComplete ? "" : `conic-gradient(hsl(var(--success)) calc(${percentage} * 1%), #0000 0)`,
+          background: isComplete
+            ? "hsl(var(--background))"
+            : `conic-gradient(hsl(var(--success)) calc(${percentage} * 1%), #0000 0)`,
         }}
         className={cn(`absolute inset-0 left-1/2 top-1/2 size-6 -translate-x-1/2 -translate-y-1/2 rounded-full`)}
       >

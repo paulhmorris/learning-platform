@@ -7,6 +7,9 @@ import { CourseHeader } from "~/components/course/course-header";
 import { CourseUpNext } from "~/components/course/course-up-next";
 import { ErrorComponent } from "~/components/error-component";
 import { IconClipboard, IconDocument } from "~/components/icons";
+import { Section, SectionHeader } from "~/components/section";
+import { SectionLesson } from "~/components/sidebar/section-lesson";
+import { Separator } from "~/components/ui/separator";
 import { cn } from "~/lib/utils";
 import { loader } from "~/routes/_app.courses.$courseSlug";
 import { TypedMetaFunction } from "~/types/utils";
@@ -33,18 +36,28 @@ export default function CourseIndex() {
     throw new Error("No course data");
   }
 
-  const { course, progress } = data;
+  const { course, progress, lessonsInOrder } = data;
+
+  // Calculate the most recent lesson that is in progress, defaulting to the first lesson
+  // Calculate the lesson last completed lesson, defaulting to the first lesson
+  const nextLessonIndex = lessonsInOrder.findIndex((l) => !l.isCompleted);
+  const lastCompletedLessonIndex = nextLessonIndex === -1 ? 0 : nextLessonIndex - 1;
+  const upNext = lessonsInOrder.at(nextLessonIndex);
+
+  // Sum the user progress to get the total progress
   const totalProgressInSeconds = progress.reduce((acc, curr) => {
     return acc + (curr.durationInSeconds ?? 0);
   }, 0);
-  const totalDurationInSeconds =
-    course.attributes.lessons?.data.reduce((acc, curr) => {
-      return acc + (curr.attributes.required_duration_in_seconds ?? 0);
-    }, 0) ?? 1;
 
-  const upNext = course.attributes.lessons?.data
-    .sort((a, b) => a.attributes.order - b.attributes.order)
-    .find((l) => progress.every((p) => p.lessonId !== l.id));
+  const totalDurationInSeconds = lessonsInOrder.reduce((acc, curr) => {
+    return acc + (curr.requiredDurationInSeconds ?? 0);
+  }, 0);
+
+  // useEffect(() => {
+  //   console.log({
+  //     lessonsInOrder,
+  //   });
+  // }, []);
 
   // Timed Courses
   return (
@@ -107,25 +120,39 @@ export default function CourseIndex() {
               {Math.floor(totalProgressInSeconds / 60)} of {totalDurationInSeconds / 60} minutes completed
             </label>
           </div>
-          <CourseUpNext lesson={upNext} />
+          {upNext ? <CourseUpNext lesson={lessonsInOrder[lastCompletedLessonIndex + 1]} /> : null}
         </div>
 
-        {/* <div className="space-y-8">
-              <CourseHeader courseTitle={content.data.attributes.title} numLessons={course.lessons.length} />
-              <div className="space-y-2">
-                <ProgressBar
-                  aria-label="Course progress"
-                  id="course-progress"
-                  value={(completedLessons / course.lessons.length) * 100}
-                />
-                <label htmlFor="course-progress">
-                  {Math.floor(completedLessons)} of {course.lessons.length}{" "}
-                  {course.lessons.length === 1 ? "lesson" : "lessons"} completed
-                </label>
-              </div>
-              {nextLesson ? <CourseUpNext content={nextLesson} lesson={firstLesson!} /> : null}
-            </div>
-          </div> */}
+        <div className="mt-10 space-y-7">
+          {course.attributes.sections.map((section) => {
+            const durationInSeconds = section.lessons?.data.reduce(
+              (acc, curr) => Math.ceil((curr.attributes.required_duration_in_seconds || 0) + acc),
+              0,
+            );
+            return (
+              <Section key={`section-${section.id}`}>
+                <SectionHeader sectionTitle={section.title} durationInMinutes={(durationInSeconds || 1) / 60} />
+                <Separator className="my-4" />
+                <div className="flex flex-col gap-4">
+                  {section.lessons?.data.map((l) => {
+                    const lessonIndex = lessonsInOrder.findIndex((li) => li.uuid === l.attributes.uuid);
+                    return (
+                      <SectionLesson
+                        key={l.attributes.uuid}
+                        hasVideo={l.attributes.has_video}
+                        userProgress={progress.find((lp) => lp.lessonId === l.id) ?? null}
+                        courseSlug={params.courseSlug}
+                        lesson={l}
+                        lessonTitle={l.attributes.title}
+                        locked={lessonIndex > lastCompletedLessonIndex + 1}
+                      />
+                    );
+                  })}
+                </div>
+              </Section>
+            );
+          })}
+        </div>
       </main>
     </div>
   );
@@ -133,8 +160,4 @@ export default function CourseIndex() {
 
 export function ErrorBoundary() {
   return <ErrorComponent />;
-}
-
-{
-  /* */
 }

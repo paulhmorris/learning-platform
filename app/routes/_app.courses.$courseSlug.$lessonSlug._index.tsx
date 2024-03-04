@@ -1,5 +1,5 @@
 import { Prisma } from "@prisma/client";
-import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@remix-run/node";
+import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { withZod } from "@remix-validated-form/with-zod";
 import { typedjson, useTypedLoaderData, useTypedRouteLoaderData } from "remix-typedjson";
 import { validationError } from "remix-validated-form";
@@ -99,13 +99,7 @@ export async function action({ request }: ActionFunctionArgs) {
       throw badRequest({ message: "Can't update progress on a lesson that's already completed." });
     }
 
-    // Prevent spamming the endpoint
-    const now = new Date().getTime();
-    const lastUpdate = progress.updatedAt.getTime();
-
-    if (now - lastUpdate < SUBMIT_INTERVAL_MS) {
-      throw json({ message: "Requests were too close together." }, { status: 429 });
-    }
+    // TODO: prevent spamming the endpoint
 
     // Mark lesson complete if we're about to hit the required duration;
     if (progress.durationInSeconds + SUBMIT_INTERVAL_MS / 1_000 >= required_duration_in_seconds) {

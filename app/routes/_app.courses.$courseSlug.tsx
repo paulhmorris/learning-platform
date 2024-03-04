@@ -61,10 +61,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           const lessonProgress = progress.find((p) => p.lessonId === l.id);
           return {
             uuid: l.attributes.uuid,
+            slug: l.attributes.slug,
+            title: l.attributes.title,
             sectionId: section.id,
             sectionTitle: section.title,
             isCompleted: lessonProgress?.isCompleted ?? false,
             isTimed: l.attributes.required_duration_in_seconds && l.attributes.required_duration_in_seconds > 0,
+            hasVideo: l.attributes.has_video,
             requiredDurationInSeconds: l.attributes.required_duration_in_seconds,
             progressDuration: lessonProgress?.durationInSeconds,
           };

@@ -20,8 +20,9 @@ export default function CourseLayout() {
 
   const { course, progress, lessonsInOrder } = data;
 
-  // Calculate the lesson that is in progress, defaulting to the first lesson
-  const lastCompletedLessonIndex = lessonsInOrder.findIndex((l) => l.isCompleted);
+  // Calculate the lesson last completed lesson, defaulting to the first lesson
+  const nextLessonIndex = lessonsInOrder.findIndex((l) => !l.isCompleted);
+  const lastCompletedLessonIndex = nextLessonIndex === -1 ? 0 : nextLessonIndex - 1;
 
   // Sum the user progress to get the total progress
   const totalProgressInSeconds = progress.reduce((acc, curr) => {
@@ -33,8 +34,8 @@ export default function CourseLayout() {
   }, 0);
 
   return (
-    <div className="flex gap-x-12">
-      <nav className="sticky left-0 top-[88px] h-full shrink-0 basis-[448px] py-10 pl-4 md:py-12">
+    <div>
+      <nav className="fixed left-0 top-[88px] h-full shrink-0 basis-[448px] py-10 pl-4 md:py-12">
         <Link to={`/courses/${params.courseSlug}`} className="inline-flex items-center gap-2">
           <IconArrowLeft className="size-[1.125rem]" />
           <span>Back to course</span>
@@ -79,7 +80,7 @@ export default function CourseLayout() {
           })}
         </div>
       </nav>
-      <main className="max-w-screen-md py-10 pr-4 md:py-12">
+      <main className="ml-[448px] max-w-screen-md py-10 pr-4 md:py-12">
         <Outlet />
       </main>
     </div>

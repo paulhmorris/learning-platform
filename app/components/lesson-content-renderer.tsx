@@ -1,7 +1,7 @@
 // import MuxPlayer from "@mux/mux-player-react";
-const MuxPlayer = lazy(() => import("@mux/mux-player-react"));
 import { lazy } from "react";
 import { StrapiResponse } from "strapi-sdk-js";
+const MuxPlayer = lazy(() => import("@mux/mux-player-react"));
 const BlocksRenderer = lazy(() =>
   import("@strapi/blocks-react-renderer").then((module) => ({ default: module.BlocksRenderer })),
 );

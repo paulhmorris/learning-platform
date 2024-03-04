@@ -1,6 +1,7 @@
 import { UserLessonProgress } from "@prisma/client";
 import { useFetcher } from "@remix-run/react";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useCountdown } from "react-timing-hooks";
 
 import { cn, formatSeconds, useUser } from "~/lib/utils";
@@ -16,27 +17,26 @@ export function ProgressTimer({ lesson, progress }: Props) {
   const duration = lesson.attributes.required_duration_in_seconds ?? 0;
   const user = useUser();
   const fetcher = useFetcher();
-  const [lastSubmitMs, setLastSubmitMs] = useState<number | null>(null);
-  const [countdownValue, { pause, resume }] = useCountdown(duration - (progress?.durationInSeconds ?? 0), 0, {
+  const countdownStart = duration - (progress?.durationInSeconds ?? 0);
+  const [countdownValue, { pause, resume, isPaused }] = useCountdown(countdownStart, 0, {
     startOnMount: true,
   });
 
-  // Submit progress every n seconds
+  // Submit progress after 15 seconds or when the countdown reaches 0
+  const shouldSubmit =
+    countdownStart !== countdownValue && (countdownValue === 0 || countdownValue % (SUBMIT_INTERVAL_MS / 1000) === 0);
+
   useEffect(() => {
     if (typeof duration === "undefined" || progress?.isCompleted) {
       return;
     }
 
-    const interval = setInterval(() => {
-      if (lastSubmitMs === null || Date.now() - lastSubmitMs > SUBMIT_INTERVAL_MS) {
-        fetcher.submit({ userId: user.id, lessonId: lesson.id }, { method: "POST", action: "?index", navigate: false });
-        setLastSubmitMs(Date.now());
-      }
-    }, SUBMIT_INTERVAL_MS);
+    if (shouldSubmit) {
+      fetcher.submit({ userId: user.id, lessonId: lesson.id }, { method: "POST", action: "?index", navigate: false });
+    }
 
-    return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [countdownValue, fetcher, progress?.isCompleted]);
+  }, [shouldSubmit]);
 
   // Pause the timer when the tab is not visible
   useEffect(() => {
@@ -73,19 +73,21 @@ export function ProgressTimer({ lesson, progress }: Props) {
       >
         {formatSeconds(countdownValue)} minutes remaining
       </span>
-      {/* {process.env.NODE_ENV === "development"
+      {process.env.NODE_ENV === "production"
         ? createPortal(
-            <div className="fixed bottom-8 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-2xl border bg-background p-2 shadow-xl">
-              <button className="rounded bg-secondary px-3 py-2 font-bold hover:bg-secondary/90" onClick={resume}>
-                Resume
-              </button>
-              <button className="rounded bg-secondary px-3 py-2 font-bold hover:bg-secondary/90" onClick={pause}>
-                Pause
+            <div className="fixed bottom-8 left-8 flex flex-col gap-2 rounded border bg-background px-8 py-4 shadow-xl">
+              <p className="text-sm font-bold">Timer controls:</p>
+              <button
+                type="button"
+                className="rounded bg-primary px-3 py-1 font-bold hover:bg-primary/90"
+                onClick={isPaused ? resume : pause}
+              >
+                {isPaused ? "Resume" : "Pause"}
               </button>
             </div>,
             document.body,
           )
-        : null} */}
+        : null}
     </>
   );
 }
