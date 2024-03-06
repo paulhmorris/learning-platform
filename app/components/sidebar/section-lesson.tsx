@@ -17,27 +17,30 @@ import { APIResponseData } from "~/types/utils";
 interface SectionLessonProps extends React.HTMLAttributes<HTMLDivElement> {
   lesson: APIResponseData<"api::lesson.lesson">;
   lessonTitle: string;
-  courseSlug: string | undefined;
   hasVideo: boolean;
   userProgress: UserLessonProgress | null;
   locked?: boolean;
 }
+
 export function SectionLesson(props: SectionLessonProps) {
-  const { lesson, locked, userProgress, courseSlug, hasVideo, lessonTitle } = props;
+  const { lesson, locked, userProgress, hasVideo, lessonTitle } = props;
   const isTimed =
     typeof lesson.attributes.required_duration_in_seconds !== "undefined" &&
     lesson.attributes.required_duration_in_seconds > 0;
   const durationInMinutes = isTimed ? Math.ceil((lesson.attributes.required_duration_in_seconds || 1) / 60) : 0;
   const Icon = hasVideo ? IconCameraFilled : IconClipboard;
+
   const params = useParams();
+  // Tracks the timer value from <ProgressTimer /> for a more reactive progress circle
+  const [clientProgressPercentage, setClientProgressPercentage] = React.useState<number | null>(null);
 
   // Locked state
   if (locked) {
     return (
       <div
-        className={cn("block cursor-not-allowed rounded-lg py-1")}
+        className={cn("-my-1 block cursor-not-allowed rounded-lg py-1")}
         title="Complete previous lessons to unlock"
-        aria-label="This lesson is locked until previoius lessons are completed."
+        aria-label="This lesson is locked until previous lessons are completed."
       >
         <SectionItemContainer>
           <ProgressCircle
@@ -70,7 +73,8 @@ export function SectionLesson(props: SectionLessonProps) {
   if (!isTimed) {
     return (
       <NavLink
-        to={`/courses/${courseSlug}/${lesson.attributes.slug}`}
+        end
+        to={`/courses/${params.courseSlug}/${lesson.attributes.slug}`}
         className={({ isActive }) =>
           cn(
             "block rounded-lg py-1 hover:ring hover:ring-[#e4e4e4] focus:outline-none focus:ring focus:ring-ring motion-safe:transition-all",
@@ -99,7 +103,8 @@ export function SectionLesson(props: SectionLessonProps) {
   if (!userProgress) {
     return (
       <NavLink
-        to={`/courses/${courseSlug}/${lesson.attributes.slug}`}
+        end
+        to={`/courses/${params.courseSlug}/${lesson.attributes.slug}`}
         className={({ isActive }) =>
           cn(
             "block rounded-lg py-1 hover:ring hover:ring-[#e4e4e4] focus:outline-none focus:ring focus:ring-ring motion-safe:transition-all",
@@ -117,7 +122,11 @@ export function SectionLesson(props: SectionLessonProps) {
               <SectionItemTitle>{lessonTitle}</SectionItemTitle>
               {params.lessonSlug === lesson.attributes.slug ? (
                 <SectionItemDescription>
-                  <ProgressTimer lesson={lesson} progress={userProgress} />
+                  <ProgressTimer
+                    lesson={lesson}
+                    progress={userProgress}
+                    setClientProgressPercentage={setClientProgressPercentage}
+                  />
                 </SectionItemDescription>
               ) : (
                 <SectionItemDescription>{durationInMinutes} min</SectionItemDescription>
@@ -138,7 +147,8 @@ export function SectionLesson(props: SectionLessonProps) {
 
     return (
       <NavLink
-        to={`/courses/${courseSlug}/${lesson.attributes.slug}`}
+        end
+        to={`/courses/${params.courseSlug}/${lesson.attributes.slug}`}
         className={({ isActive }) =>
           cn(
             "block rounded-lg py-1 hover:ring hover:ring-[#e4e4e4] focus:outline-none focus:ring focus:ring-ring motion-safe:transition-all",
@@ -151,7 +161,7 @@ export function SectionLesson(props: SectionLessonProps) {
             <ProgressCircle
               className={cn(isActive && "border-success")}
               aria-label="Lesson progress"
-              percentage={percentage}
+              percentage={clientProgressPercentage || percentage}
             />
             <SectionItemIconContainer>
               <Icon className={cn(isActive ? "text-success" : "text-foreground", hasVideo ? "h-8 w-7" : "h-7 w-6")} />
@@ -160,7 +170,11 @@ export function SectionLesson(props: SectionLessonProps) {
               <SectionItemTitle>{props.lessonTitle}</SectionItemTitle>
               {params.lessonSlug === lesson.attributes.slug ? (
                 <SectionItemDescription>
-                  <ProgressTimer lesson={lesson} progress={userProgress} />
+                  <ProgressTimer
+                    lesson={lesson}
+                    progress={userProgress}
+                    setClientProgressPercentage={setClientProgressPercentage}
+                  />
                 </SectionItemDescription>
               ) : (
                 <SectionItemDescription>
@@ -177,7 +191,7 @@ export function SectionLesson(props: SectionLessonProps) {
   // Completed state
   return (
     <NavLink
-      to={`/courses/${courseSlug}/${lesson.attributes.slug}`}
+      to={`/courses/${params.courseSlug}/${lesson.attributes.slug}`}
       className={({ isActive }) =>
         cn(
           "block rounded-lg py-1 hover:ring hover:ring-[#e4e4e4] focus:outline-none focus:ring focus:ring-ring motion-safe:transition-all",

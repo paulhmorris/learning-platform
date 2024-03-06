@@ -470,6 +470,15 @@ export interface ApiQuizQuiz extends Schema.CollectionType {
       Attribute.CustomField<'plugin::strapi-advanced-uuid.uuid'>;
     questions: Attribute.Component<'course.quiz-question', true>;
     title: Attribute.String;
+    passing_score: Attribute.Integer &
+      Attribute.Required &
+      Attribute.SetMinMax<
+        {
+          max: 100;
+        },
+        number
+      > &
+      Attribute.DefaultTo<60>;
     createdAt: Attribute.DateTime;
     updatedAt: Attribute.DateTime;
     publishedAt: Attribute.DateTime;

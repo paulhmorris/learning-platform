@@ -1,5 +1,6 @@
 import { UserLessonProgress } from "@prisma/client";
 import { useFetcher } from "@remix-run/react";
+import { IconPlayerPause, IconPlayerPlay } from "@tabler/icons-react";
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useCountdown } from "react-timing-hooks";
@@ -11,9 +12,10 @@ import { APIResponseData } from "~/types/utils";
 interface Props {
   lesson: APIResponseData<"api::lesson.lesson">;
   progress: UserLessonProgress | null;
+  setClientProgressPercentage: (percentage: number) => void;
 }
 
-export function ProgressTimer({ lesson, progress }: Props) {
+export function ProgressTimer({ lesson, progress, setClientProgressPercentage }: Props) {
   const duration = lesson.attributes.required_duration_in_seconds ?? 0;
   const user = useUser();
   const fetcher = useFetcher();
@@ -21,6 +23,11 @@ export function ProgressTimer({ lesson, progress }: Props) {
   const [countdownValue, { pause, resume, isPaused }] = useCountdown(countdownStart, 0, {
     startOnMount: true,
   });
+
+  useEffect(() => {
+    const percentage = Math.ceil(((duration - countdownValue) / duration) * 100);
+    setClientProgressPercentage(percentage);
+  }, [countdownValue, setClientProgressPercentage, countdownStart, duration]);
 
   // Submit progress after 15 seconds or when the countdown reaches 0
   const shouldSubmit =
@@ -71,20 +78,17 @@ export function ProgressTimer({ lesson, progress }: Props) {
         aria-label="Time remaining on this lesson"
         className={cn(countdownValue === 0 && "text-success", "tabular-nums")}
       >
-        {formatSeconds(countdownValue)} minutes remaining
+        {formatSeconds(countdownValue)} remaining
       </span>
-      {process.env.NODE_ENV === "production"
+      {process.env.NODE_ENV === "development" && typeof document !== "undefined"
         ? createPortal(
-            <div className="fixed bottom-8 left-8 flex flex-col gap-2 rounded border bg-background px-8 py-4 shadow-xl">
-              <p className="text-sm font-bold">Timer controls:</p>
-              <button
-                type="button"
-                className="rounded bg-primary px-3 py-1 font-bold hover:bg-primary/90"
-                onClick={isPaused ? resume : pause}
-              >
-                {isPaused ? "Resume" : "Pause"}
-              </button>
-            </div>,
+            <button
+              type="button"
+              className="fixed bottom-8 left-8 rounded bg-primary p-3 font-bold shadow-xl hover:bg-primary/90"
+              onClick={isPaused ? resume : pause}
+            >
+              {isPaused ? <IconPlayerPlay /> : <IconPlayerPause />}
+            </button>,
             document.body,
           )
         : null}

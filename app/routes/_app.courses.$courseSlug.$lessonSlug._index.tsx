@@ -14,7 +14,7 @@ import { Sentry } from "~/integrations/sentry";
 import { badRequest, handlePrismaError, notFound, serverError } from "~/lib/responses.server";
 import { loader as courseLoader } from "~/routes/_app.courses.$courseSlug";
 import { SessionService } from "~/services/SessionService.server";
-import { APIResponseCollection, APIResponseData } from "~/types/utils";
+import { APIResponseCollection, APIResponseData, TypedMetaFunction } from "~/types/utils";
 
 export const SUBMIT_INTERVAL_MS = 15_000;
 
@@ -124,6 +124,17 @@ export async function action({ request }: ActionFunctionArgs) {
 
   return typedjson({ progress: currentProgress });
 }
+
+export const meta: TypedMetaFunction<typeof loader, { "routes/_app.courses.$courseSlug": typeof courseLoader }> = ({
+  data,
+  matches,
+}) => {
+  // @ts-expect-error typed meta funtion not supporting this yet
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  const match = matches.find((m) => m.id === "routes/_app.courses.$courseSlug")?.data.course;
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+  return [{ title: `${data?.lesson.attributes.title} | ${match?.attributes.title}` }];
+};
 
 export default function Course() {
   const { lesson } = useTypedLoaderData<typeof loader>();

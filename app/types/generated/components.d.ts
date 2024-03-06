@@ -74,13 +74,12 @@ export interface CourseQuizQuestion extends Schema.Component {
   info: {
     displayName: 'Quiz Question';
     icon: 'information';
+    description: '';
   };
   attributes: {
     answers: Attribute.Component<'course.quiz-answer', true>;
     question: Attribute.Text;
-    question_type: Attribute.Enumeration<['Choose One', 'Multiple Choice']> &
-      Attribute.Required &
-      Attribute.DefaultTo<'Choose One'>;
+    image: Attribute.Media;
   };
 }
 

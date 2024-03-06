@@ -99,6 +99,7 @@ model UserLessonProgress {
 model UserQuizProgress {
   id          Int     @id @default(autoincrement())
   isCompleted Boolean @default(false)
+  score       Int?
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   userId String
