@@ -1,6 +1,6 @@
 import { UserLessonProgress } from "@prisma/client";
 import { useFetcher } from "@remix-run/react";
-import { IconPlayerPause, IconPlayerPlay } from "@tabler/icons-react";
+import { IconPlayerPauseFilled, IconPlayerPlayFilled } from "@tabler/icons-react";
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useCountdown } from "react-timing-hooks";
@@ -84,10 +84,10 @@ export function ProgressTimer({ lesson, progress, setClientProgressPercentage }:
         ? createPortal(
             <button
               type="button"
-              className="fixed bottom-8 left-8 rounded bg-primary p-3 font-bold shadow-xl hover:bg-primary/90"
+              className="fixed bottom-8 left-8 rounded bg-primary p-3 font-bold text-black shadow-xl hover:bg-primary/90"
               onClick={isPaused ? resume : pause}
             >
-              {isPaused ? <IconPlayerPlay /> : <IconPlayerPause />}
+              {isPaused ? <IconPlayerPlayFilled /> : <IconPlayerPauseFilled />}
             </button>,
             document.body,
           )

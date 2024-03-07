@@ -2,7 +2,7 @@ import { LoaderFunctionArgs } from "@remix-run/node";
 import { Link } from "@remix-run/react";
 import { typedjson } from "remix-typedjson";
 
-import { PageTitle } from "~/components/page-title";
+import { PageTitle } from "~/components/common/page-title";
 import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
 import { badRequest } from "~/lib/responses.server";

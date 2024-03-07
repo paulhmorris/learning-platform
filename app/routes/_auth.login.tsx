@@ -6,8 +6,8 @@ import { ValidatedForm, validationError } from "remix-validated-form";
 import { z } from "zod";
 
 import { AuthCard } from "~/components/common/auth-card";
+import { PageTitle } from "~/components/common/page-title";
 import { ErrorComponent } from "~/components/error-component";
-import { PageTitle } from "~/components/page-title";
 import { Checkbox, FormField } from "~/components/ui/form";
 import { Label } from "~/components/ui/label";
 import { SubmitButton } from "~/components/ui/submit-button";

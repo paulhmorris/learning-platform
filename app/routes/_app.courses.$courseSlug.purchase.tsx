@@ -1,6 +1,6 @@
 import { json, redirect } from "@remix-run/node";
 
-import { PageTitle } from "~/components/page-title";
+import { PageTitle } from "~/components/common/page-title";
 import { stripe } from "~/integrations/stripe.server";
 
 export function loader() {

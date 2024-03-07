@@ -5,7 +5,7 @@ import { useEffect } from "react";
 import { typedjson, useTypedActionData, useTypedLoaderData } from "remix-typedjson";
 import invariant from "tiny-invariant";
 
-import { PageTitle } from "~/components/page-title";
+import { PageTitle } from "~/components/common/page-title";
 import { Button } from "~/components/ui/button";
 import { cms } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
@@ -199,12 +199,12 @@ export default function Quiz() {
         {/* Results */}
         <div role="alert" aria-live="polite" className="mb-8">
           {progress?.isCompleted || (actionData?.passed && actionData.score) ? (
-            <div className="rounded-md border-success bg-success/5 p-4 text-success">
+            <div className="rounded-md border-success bg-success/5 p-4 text-success dark:bg-success/15">
               <h2 className="text-2xl font-bold">Congratulations!</h2>
               <p>You passed with a score of {progress?.score || actionData?.score}%.</p>
             </div>
           ) : !actionData?.passed && typeof actionData?.score !== "undefined" ? (
-            <div className="rounded-md border-destructive bg-destructive/5 p-4 text-destructive">
+            <div className="rounded-md border-destructive bg-destructive/5 p-4 text-destructive dark:bg-destructive/15">
               <h2 className="text-2xl font-bold">Sorry!</h2>
               <p>You failed with a score of {actionData.score}%. Try again.</p>
             </div>
@@ -237,7 +237,7 @@ export default function Quiz() {
                           type="radio"
                           name={`question-${q_index}`}
                           value={a_index}
-                          className="size-6 cursor-pointer rounded-full accent-current focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed dark:accent-black"
+                          className="size-6 cursor-pointer border-2 !border-foreground text-foreground focus:ring-offset-background disabled:cursor-not-allowed dark:text-black"
                         />
                         <label
                           htmlFor={`question-${q_index}-answer-${a_index}`}

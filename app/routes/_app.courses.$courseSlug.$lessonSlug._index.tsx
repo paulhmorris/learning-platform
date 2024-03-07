@@ -6,8 +6,8 @@ import { validationError } from "remix-validated-form";
 import invariant from "tiny-invariant";
 import { z } from "zod";
 
-import { LessonContentRenderer } from "~/components/lesson-content-renderer";
-import { PageTitle } from "~/components/page-title";
+import { PageTitle } from "~/components/common/page-title";
+import { LessonContentRenderer } from "~/components/lesson/lesson-content-renderer";
 import { cms } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";

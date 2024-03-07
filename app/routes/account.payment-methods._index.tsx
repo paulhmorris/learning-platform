@@ -2,7 +2,7 @@ import { LoaderFunctionArgs, redirect } from "@remix-run/node";
 import { Link } from "@remix-run/react";
 import { typedjson, useTypedLoaderData } from "remix-typedjson";
 
-import { PageTitle } from "~/components/page-title";
+import { PageTitle } from "~/components/common/page-title";
 import { db } from "~/integrations/db.server";
 import { stripe } from "~/integrations/stripe.server";
 import { SessionService } from "~/services/SessionService.server";

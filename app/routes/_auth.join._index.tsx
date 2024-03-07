@@ -9,7 +9,7 @@ import { ValidatedForm, validationError } from "remix-validated-form";
 import { z } from "zod";
 
 import { AuthCard } from "~/components/common/auth-card";
-import { PageTitle } from "~/components/page-title";
+import { PageTitle } from "~/components/common/page-title";
 import { FormField } from "~/components/ui/form";
 import { SubmitButton } from "~/components/ui/submit-button";
 import { db } from "~/integrations/db.server";

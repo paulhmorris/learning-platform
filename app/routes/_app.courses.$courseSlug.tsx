@@ -1,14 +1,13 @@
 import { Prisma } from "@prisma/client";
 import { LoaderFunctionArgs } from "@remix-run/node";
-import { Link, Outlet, useParams } from "@remix-run/react";
-import { IconArrowLeft } from "@tabler/icons-react";
+import { Outlet } from "@remix-run/react";
 import { typedjson, useTypedLoaderData } from "remix-typedjson";
 import invariant from "tiny-invariant";
 
-import { ProgressBar } from "~/components/common/progress-bar";
 import { ErrorComponent } from "~/components/error-component";
-import { IconClock } from "~/components/icons";
 import { Section, SectionHeader } from "~/components/section";
+import { BackToCourseLink } from "~/components/sidebar/back-to-course-link";
+import { CourseProgressBar } from "~/components/sidebar/course-progress-bar";
 import { SectionLesson } from "~/components/sidebar/section-lesson";
 import { SectionQuiz } from "~/components/sidebar/section-quiz";
 import { Separator } from "~/components/ui/separator";
@@ -16,7 +15,6 @@ import { cms } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
 import { handlePrismaError, notFound, serverError } from "~/lib/responses.server";
-import { normalizeSeconds } from "~/lib/utils";
 import { SessionService } from "~/services/SessionService.server";
 import { APIResponseCollection } from "~/types/utils";
 
@@ -32,9 +30,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       },
       fields: ["title"],
       populate: {
-        cover_image: {
-          fields: ["alternativeText", "formats", "url"],
-        },
         lessons: {
           fields: ["title", "slug", "has_video", "uuid", "required_duration_in_seconds"],
         },
@@ -103,7 +98,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export default function CourseLayout() {
   const data = useTypedLoaderData<typeof loader>();
-  const params = useParams();
 
   const { course, progress, lessonsInOrder, quizProgress } = data;
 
@@ -122,26 +116,22 @@ export default function CourseLayout() {
 
   return (
     <div>
-      <nav className="fixed bottom-0 left-0 top-20 h-full w-[448px] overflow-auto py-10 pl-4 md:py-12">
-        <Link to={`/courses/${params.courseSlug}/preview`} className="inline-flex items-center gap-2">
-          <IconArrowLeft className="size-[1.125rem]" />
-          <span>Back to course</span>
-        </Link>
+      <nav className="fixed bottom-0 left-0 top-20 w-[448px] overflow-auto py-10 pl-4 md:py-12">
+        <BackToCourseLink />
 
         {/* TODO: Adjust for non timed courses */}
-        <div className="my-7 space-y-2">
-          <ProgressBar id="course-progress" value={(totalProgressInSeconds / totalDurationInSeconds) * 100} />
-          <label htmlFor="course-progress" className="flex items-center gap-2">
-            <IconClock className="size-4" />
-            {normalizeSeconds(totalProgressInSeconds)} of {normalizeSeconds(totalDurationInSeconds)} completed
-          </label>
+        <div className="my-7">
+          <CourseProgressBar progress={totalProgressInSeconds} duration={totalDurationInSeconds} />
         </div>
+
         <ul className="space-y-7">
           {course.attributes.sections.map((section, section_index) => {
             const durationInSeconds = section.lessons?.data.reduce(
               (acc, curr) => Math.ceil((curr.attributes.required_duration_in_seconds || 0) + acc),
               0,
             );
+            const isQuizLocked = lessonsInOrder.filter((l) => l.sectionId === section.id).some((l) => !l.isCompleted);
+
             return (
               <li key={`section-${section.id}`}>
                 <Section>
@@ -157,19 +147,9 @@ export default function CourseLayout() {
                       const previousSectionQuizIsCompleted = quizProgress.find(
                         (p) => p.isCompleted && p.quizId === previousSectionQuiz?.data.id,
                       );
-
-                      if (previousSectionQuiz && !previousSectionQuizIsCompleted) {
-                        return (
-                          <SectionLesson
-                            key={l.attributes.uuid}
-                            hasVideo={l.attributes.has_video}
-                            userProgress={progress.find((lp) => lp.lessonId === l.id) ?? null}
-                            lesson={l}
-                            lessonTitle={l.attributes.title}
-                            locked
-                          />
-                        );
-                      }
+                      const isSectionLocked =
+                        (previousSectionQuiz && !previousSectionQuizIsCompleted) ||
+                        lessonIndex > lastCompletedLessonIndex + 1;
 
                       return (
                         <SectionLesson
@@ -178,7 +158,7 @@ export default function CourseLayout() {
                           userProgress={progress.find((lp) => lp.lessonId === l.id) ?? null}
                           lesson={l}
                           lessonTitle={l.attributes.title}
-                          locked={lessonIndex > lastCompletedLessonIndex + 1}
+                          locked={isSectionLocked}
                         />
                       );
                     })}
@@ -186,7 +166,7 @@ export default function CourseLayout() {
                       <SectionQuiz
                         quiz={section.quiz.data}
                         userProgress={quizProgress.find((qp) => qp.quizId === section.quiz?.data.id) ?? null}
-                        locked={lessonsInOrder.filter((l) => l.sectionId === section.id).some((l) => !l.isCompleted)}
+                        locked={isQuizLocked}
                       />
                     ) : null}
                   </ul>

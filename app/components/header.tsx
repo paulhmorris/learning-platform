@@ -8,7 +8,7 @@ import { useOptionalUser } from "~/lib/utils";
 export function Header() {
   const user = useOptionalUser();
   return (
-    <header className="z-50 flex h-20 w-full items-center justify-between bg-background px-10 text-foreground shadow-[0px_6px_39px_0px_#00000014]">
+    <header className="sticky top-0 z-50 flex h-20 w-full items-center justify-between border-b border-transparent bg-background px-10 text-foreground shadow-[0px_6px_39px_0px_#00000014] dark:border-border">
       <Link to="/" className="block text-foreground">
         <Logo />
       </Link>
