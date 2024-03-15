@@ -25,7 +25,7 @@ export function ProgressTimer({ lesson, progress, setClientProgressPercentage }:
   });
 
   useEffect(() => {
-    const percentage = Math.ceil(((duration - countdownValue) / duration) * 100);
+    const percentage = Math.floor(((duration - countdownValue) / duration) * 100);
     setClientProgressPercentage(percentage);
   }, [countdownValue, setClientProgressPercentage, countdownStart, duration]);
 

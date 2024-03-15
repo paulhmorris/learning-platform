@@ -190,27 +190,30 @@ export default function Quiz() {
 
   return (
     <>
+      {/* Results */}
+      <div role="alert" aria-live="polite">
+        {progress?.isCompleted || (actionData?.passed && actionData.score) ? (
+          <div className="mb-8">
+            <div className="rounded-md border-success bg-success/5 p-4 text-success dark:bg-success/15">
+              <h2 className="text-2xl font-bold">You passed!</h2>
+              <p>You passed with a score of {progress?.score || actionData?.score}%. Great job!</p>
+            </div>
+          </div>
+        ) : !actionData?.passed && typeof actionData?.score !== "undefined" ? (
+          <div className="mb-8">
+            <div className="rounded-md border-destructive bg-destructive/5 p-4 text-destructive dark:bg-destructive/15">
+              <h2 className="text-2xl font-bold">You didn't pass.</h2>
+              <p>You failed with a score of {actionData.score}%. Please try again.</p>
+            </div>
+          </div>
+        ) : null}
+      </div>
       <PageTitle>{quiz.attributes.title}</PageTitle>
       <p className="text-sm text-secondary-foreground">
         Score {quiz.attributes.passing_score}% or higher on this quiz to proceed.
       </p>
       {/* TODO: Complete to unlock */}
       <Form className="mt-8" method="post">
-        {/* Results */}
-        <div role="alert" aria-live="polite" className="mb-8">
-          {progress?.isCompleted || (actionData?.passed && actionData.score) ? (
-            <div className="rounded-md border-success bg-success/5 p-4 text-success dark:bg-success/15">
-              <h2 className="text-2xl font-bold">Congratulations!</h2>
-              <p>You passed with a score of {progress?.score || actionData?.score}%.</p>
-            </div>
-          ) : !actionData?.passed && typeof actionData?.score !== "undefined" ? (
-            <div className="rounded-md border-destructive bg-destructive/5 p-4 text-destructive dark:bg-destructive/15">
-              <h2 className="text-2xl font-bold">Sorry!</h2>
-              <p>You failed with a score of {actionData.score}%. Try again.</p>
-            </div>
-          ) : null}
-        </div>
-
         {/* Questions */}
         <fieldset
           className={cn("flex flex-col gap-8", progress?.isCompleted && "opacity-50")}
