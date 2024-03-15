@@ -230,8 +230,9 @@ export default function Quiz() {
           <Button asChild>
             <Link to={`.`}>Retake Quiz</Link>
           </Button>
-          <Button variant="secondary">
-            <Link to={`/courses/${params.courseSlug}/${firstLessonInSectionSlug}}`}>Restart Section</Link>
+          <span className="text-center">or</span>
+          <Button variant="link" className="text-foreground underline">
+            <Link to={`/courses/${params.courseSlug}/${firstLessonInSectionSlug}`}>Restart Section</Link>
           </Button>
         </div>
       ) : (
@@ -255,6 +256,7 @@ export default function Quiz() {
                       return (
                         <li key={`question-${q_index}-answer-${a_index}`} className="flex items-center gap-2">
                           <input
+                            required
                             id={`question-${q_index}-answer-${a_index}`}
                             type="radio"
                             name={`question-${q_index}`}

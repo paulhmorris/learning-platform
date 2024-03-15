@@ -30,9 +30,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       },
       fields: ["title"],
       populate: {
-        lessons: {
-          fields: ["title", "slug", "has_video", "uuid", "required_duration_in_seconds"],
-        },
         sections: {
           fields: ["title"],
           populate: {

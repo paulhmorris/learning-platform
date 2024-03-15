@@ -1,6 +1,7 @@
 // import MuxPlayer from "@mux/mux-player-react";
 import { lazy } from "react";
 import { StrapiResponse } from "strapi-sdk-js";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "~/components/ui/carousel";
 const MuxPlayer = lazy(() => import("@mux/mux-player-react"));
 const BlocksRenderer = lazy(() =>
   import("@strapi/blocks-react-renderer").then((module) => ({ default: module.BlocksRenderer })),
@@ -51,6 +52,26 @@ export function LessonContentRenderer({ content }: Props) {
               >
                 <BlocksRenderer content={component.content} />
               </section>
+            );
+          }
+
+          case "blocks.slideshow": {
+            return (
+              <Carousel className="mx-12 max-w-[75%]">
+                <CarouselContent>
+                  {component.images.data.map((i, index) => {
+                    return (
+                      <CarouselItem key={`slideshow-image-${i.id}-${index}`}>
+                        <div className="flex aspect-square items-center justify-center p-6">
+                          <img src={`${window?.ENV.STRAPI_URL}${i.attributes.url}`} />
+                        </div>
+                      </CarouselItem>
+                    );
+                  })}
+                </CarouselContent>
+                <CarouselPrevious />
+                <CarouselNext />
+              </Carousel>
             );
           }
 

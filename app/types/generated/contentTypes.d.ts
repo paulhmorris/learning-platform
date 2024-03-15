@@ -428,7 +428,13 @@ export interface ApiLessonLesson extends Schema.CollectionType {
         minLength: 8;
       }>;
     content: Attribute.DynamicZone<
-      ['blocks.audio', 'blocks.image', 'blocks.text', 'blocks.video']
+      [
+        'blocks.audio',
+        'blocks.image',
+        'blocks.text',
+        'blocks.video',
+        'blocks.slideshow'
+      ]
     >;
     uuid: Attribute.UID &
       Attribute.CustomField<'plugin::strapi-advanced-uuid.uuid'>;
