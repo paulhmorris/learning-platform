@@ -133,7 +133,7 @@ export default function CourseLayout() {
             const isQuizLocked = lessonsInOrder.filter((l) => l.sectionId === section.id).some((l) => !l.isCompleted);
 
             return (
-              <li key={`section-${section.id}`}>
+              <li key={`section-${section.id}`} data-sectionid={section.id}>
                 <Section>
                   <SectionHeader sectionTitle={section.title} durationInMinutes={(durationInSeconds || 1) / 60} />
                   <Separator className="my-4" />

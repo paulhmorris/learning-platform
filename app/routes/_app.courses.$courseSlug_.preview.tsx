@@ -37,9 +37,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         cover_image: {
           fields: ["alternativeText", "formats", "url"],
         },
-        lessons: {
-          fields: ["title", "slug", "has_video", "uuid", "required_duration_in_seconds"],
-        },
         sections: {
           fields: ["title"],
           populate: {
@@ -167,10 +164,7 @@ export default function CourseIndex() {
 
       <main className="max-w-screen-md py-10 md:py-14">
         <div className="space-y-8">
-          <CourseHeader
-            courseTitle={course.attributes.title}
-            numLessons={course.attributes.lessons?.data.length ?? 0}
-          />
+          <CourseHeader courseTitle={course.attributes.title} numLessons={lessonsInOrder.length ?? 0} />
           <CourseProgressBar progress={totalProgressInSeconds} duration={totalDurationInSeconds} />
           {nextQuiz ? (
             <CourseUpNext quiz={{ id: nextQuiz.id, numQuestions: nextQuiz.attributes.questions?.length ?? 1 }} />

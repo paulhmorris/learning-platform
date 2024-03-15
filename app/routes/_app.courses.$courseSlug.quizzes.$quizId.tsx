@@ -1,8 +1,8 @@
 import { Prisma } from "@prisma/client";
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { Form } from "@remix-run/react";
+import { Form, Link, useParams } from "@remix-run/react";
 import { useEffect } from "react";
-import { typedjson, useTypedActionData, useTypedLoaderData } from "remix-typedjson";
+import { typedjson, useTypedActionData, useTypedLoaderData, useTypedRouteLoaderData } from "remix-typedjson";
 import invariant from "tiny-invariant";
 
 import { PageTitle } from "~/components/common/page-title";
@@ -26,7 +26,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     const quiz = await cms.findOne<APIResponseData<"api::quiz.quiz">>("quizzes", quizId, {
       populate: {
         questions: {
-          fields: ["question", "question_type", "id"],
+          fields: "*",
           populate: {
             answers: {
               fields: ["answer", "id"],
@@ -175,12 +175,14 @@ export const meta: TypedMetaFunction<typeof loader, { "routes/_app.courses.$cour
 };
 
 export default function Quiz() {
+  const courseData = useTypedRouteLoaderData<typeof courseLoader>("routes/_app.courses.$courseSlug");
   const { quiz, progress } = useTypedLoaderData<typeof loader>();
   const actionData = useTypedActionData<typeof action>();
+  const params = useParams();
 
   // Scroll to top when quiz is submitted
   useEffect(() => {
-    if (typeof actionData?.score !== "undefined") {
+    if (typeof actionData?.score !== "undefined" && typeof window !== "undefined") {
       window.scrollTo({
         top: 0,
         behavior: "smooth",
@@ -188,11 +190,21 @@ export default function Quiz() {
     }
   }, [actionData?.score]);
 
+  if (!courseData) {
+    throw new Error("Course data not found");
+  }
+
+  const firstLessonInSectionSlug = courseData.course.attributes.sections.find(
+    (section) => section.quiz?.data.id === quiz.id,
+  )?.lessons?.data[0].attributes.slug;
+  const isPassed = Boolean(progress?.isCompleted || (actionData?.passed && actionData.score));
+  const isFailed = Boolean(!progress?.isCompleted && actionData && !actionData.passed);
+
   return (
     <>
       {/* Results */}
       <div role="alert" aria-live="polite">
-        {progress?.isCompleted || (actionData?.passed && actionData.score) ? (
+        {isPassed ? (
           <div className="mb-8">
             <div className="rounded-md border-success bg-success/5 p-4 text-success dark:bg-success/15">
               <h2 className="text-2xl font-bold">You passed!</h2>
@@ -213,55 +225,63 @@ export default function Quiz() {
         Score {quiz.attributes.passing_score}% or higher on this quiz to proceed.
       </p>
       {/* TODO: Complete to unlock */}
-      <Form className="mt-8" method="post">
-        {/* Questions */}
-        <fieldset
-          className={cn("flex flex-col gap-8", progress?.isCompleted && "opacity-50")}
-          disabled={progress?.isCompleted}
-        >
-          {quiz.attributes.questions?.map((question, q_index) => {
-            if (!question.question) {
-              return null;
-            }
-
-            return (
-              <div key={`question-${q_index + 1}`}>
-                <h2 className="mb-4 text-[32px] font-bold leading-tight">{question.question}</h2>
-                <ul className="flex flex-col gap-2">
-                  {question.answers?.map(({ answer }, a_index) => {
-                    if (!answer) {
-                      return null;
-                    }
-
-                    return (
-                      <li key={`question-${q_index}-answer-${a_index}`} className="flex items-center gap-2">
-                        <input
-                          id={`question-${q_index}-answer-${a_index}`}
-                          type="radio"
-                          name={`question-${q_index}`}
-                          value={a_index}
-                          className="size-6 cursor-pointer border-2 !border-foreground text-foreground focus:ring-offset-background disabled:cursor-not-allowed dark:text-black"
-                        />
-                        <label
-                          htmlFor={`question-${q_index}-answer-${a_index}`}
-                          className="cursor-pointer text-lg font-medium"
-                        >
-                          {answer}
-                        </label>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            );
-          })}
-        </fieldset>
-        {progress?.isCompleted ? null : (
-          <Button type="submit" className="mt-8 sm:max-w-64">
-            Submit
+      {isFailed ? (
+        <div className="mt-8 flex flex-col gap-2 sm:max-w-96">
+          <Button asChild>
+            <Link to={`.`}>Retake Quiz</Link>
           </Button>
-        )}
-      </Form>
+          <Button variant="secondary">
+            <Link to={`/courses/${params.courseSlug}/${firstLessonInSectionSlug}}`}>Restart Section</Link>
+          </Button>
+        </div>
+      ) : (
+        <Form className="mt-8" method="post">
+          {/* Questions */}
+          <fieldset className={cn("flex flex-col gap-8", progress?.isCompleted && "opacity-50")} disabled={isPassed}>
+            {quiz.attributes.questions?.map((question, q_index) => {
+              if (!question.question) {
+                return null;
+              }
+
+              return (
+                <div key={`question-${q_index + 1}`}>
+                  <h2 className="mb-4 text-[32px] font-bold leading-tight">{question.question}</h2>
+                  <ul className="flex flex-col gap-2">
+                    {question.answers?.map(({ answer }, a_index) => {
+                      if (!answer) {
+                        return null;
+                      }
+
+                      return (
+                        <li key={`question-${q_index}-answer-${a_index}`} className="flex items-center gap-2">
+                          <input
+                            id={`question-${q_index}-answer-${a_index}`}
+                            type="radio"
+                            name={`question-${q_index}`}
+                            value={a_index}
+                            className="size-6 cursor-pointer border-2 !border-foreground text-foreground focus:ring-offset-background disabled:cursor-not-allowed dark:text-black"
+                          />
+                          <label
+                            htmlFor={`question-${q_index}-answer-${a_index}`}
+                            className="cursor-pointer text-lg font-medium"
+                          >
+                            {answer}
+                          </label>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              );
+            })}
+          </fieldset>
+          {isPassed ? null : (
+            <Button type="submit" className="mt-8 sm:max-w-64">
+              Submit
+            </Button>
+          )}
+        </Form>
+      )}
     </>
   );
 }
