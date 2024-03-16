@@ -1,6 +1,7 @@
-// import MuxPlayer from "@mux/mux-player-react";
 import { lazy } from "react";
 import { StrapiResponse } from "strapi-sdk-js";
+
+// eslint-disable-next-line import/order
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "~/components/ui/carousel";
 const MuxPlayer = lazy(() => import("@mux/mux-player-react"));
 const BlocksRenderer = lazy(() =>
@@ -63,7 +64,7 @@ export function LessonContentRenderer({ content }: Props) {
                     return (
                       <CarouselItem key={`slideshow-image-${i.id}-${index}`}>
                         <div className="flex aspect-square items-center justify-center p-6">
-                          <img src={`${window?.ENV.STRAPI_URL}${i.attributes.url}`} />
+                          <img src={`${window.ENV.STRAPI_URL}${i.attributes.url}`} alt={i.attributes.alternativeText} />
                         </div>
                       </CarouselItem>
                     );

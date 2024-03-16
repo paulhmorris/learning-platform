@@ -214,7 +214,7 @@ export default function Quiz() {
         ) : !actionData?.passed && typeof actionData?.score !== "undefined" ? (
           <div className="mb-8">
             <div className="rounded-md border-destructive bg-destructive/5 p-4 text-destructive dark:bg-destructive/15">
-              <h2 className="text-2xl font-bold">You didn't pass.</h2>
+              <h2 className="text-2xl font-bold">You didn&apos;t pass.</h2>
               <p>You failed with a score of {actionData.score}%. Please try again.</p>
             </div>
           </div>

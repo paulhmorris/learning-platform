@@ -98,7 +98,7 @@ const Carousel = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivEl
       api.on("select", onSelect);
 
       return () => {
-        api?.off("select", onSelect);
+        api.off("select", onSelect);
       };
     }, [api, onSelect]);
 
@@ -108,6 +108,7 @@ const Carousel = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivEl
           carouselRef,
           api: api,
           opts,
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
           orientation: orientation || (opts?.axis === "y" ? "vertical" : "horizontal"),
           scrollPrev,
           scrollNext,

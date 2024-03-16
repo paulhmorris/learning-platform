@@ -103,13 +103,6 @@ module.exports = {
       },
     },
 
-    // Markdown
-    {
-      files: ["**/*.md"],
-      plugins: ["markdown"],
-      extends: ["plugin:markdown/recommended", "prettier"],
-    },
-
     // Jest/Vitest
     {
       files: ["test/**/*.test.{js,jsx,ts,tsx}"],
