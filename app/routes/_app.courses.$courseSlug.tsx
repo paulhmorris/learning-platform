@@ -144,7 +144,7 @@ export default function CourseLayout() {
                       const previousSectionQuizIsCompleted = quizProgress.find(
                         (p) => p.isCompleted && p.quizId === previousSectionQuiz?.data.id,
                       );
-                      const isSectionLocked =
+                      const isLessonLocked =
                         (previousSectionQuiz && !previousSectionQuizIsCompleted) ||
                         lessonIndex > lastCompletedLessonIndex + 1;
 
@@ -155,7 +155,7 @@ export default function CourseLayout() {
                           userProgress={progress.find((lp) => lp.lessonId === l.id) ?? null}
                           lesson={l}
                           lessonTitle={l.attributes.title}
-                          locked={isSectionLocked}
+                          locked={isLessonLocked}
                         />
                       );
                     })}

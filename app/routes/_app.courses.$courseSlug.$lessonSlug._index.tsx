@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { withZod } from "@remix-validated-form/with-zod";
-import { typedjson, useTypedLoaderData, useTypedRouteLoaderData } from "remix-typedjson";
+import { typedjson, useTypedLoaderData } from "remix-typedjson";
 import { validationError } from "remix-validated-form";
 import invariant from "tiny-invariant";
 import { z } from "zod";
@@ -138,11 +138,6 @@ export const meta: TypedMetaFunction<typeof loader, { "routes/_app.courses.$cour
 
 export default function Course() {
   const { lesson } = useTypedLoaderData<typeof loader>();
-  const courseData = useTypedRouteLoaderData<typeof courseLoader>("routes/_app.courses.$courseSlug");
-
-  if (!courseData) {
-    throw new Error("Course data not found");
-  }
 
   return (
     <>

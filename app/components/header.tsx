@@ -15,7 +15,9 @@ export function Header() {
       <div className="flex items-center gap-4">
         {user ? (
           <form action="/logout" method="post" className="blo">
-            <button className="font-bold">Logout</button>
+            <button className="rounded font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+              Logout
+            </button>
           </form>
         ) : (
           <Link to="/login">Log in</Link>

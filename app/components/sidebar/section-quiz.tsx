@@ -26,7 +26,7 @@ export function SectionQuiz(props: SectionQuizProps) {
   if (locked) {
     return (
       <li
-        className={cn("-my-1 block cursor-not-allowed rounded-lg py-1")}
+        className={cn("-my-1 block rounded-lg py-1")}
         title="Complete lessons to unlock"
         aria-label="This quiz is locked until all section lessons are completed."
       >

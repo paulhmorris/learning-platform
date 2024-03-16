@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { Form, Link, useParams } from "@remix-run/react";
+import { IconLock } from "@tabler/icons-react";
 import { useEffect } from "react";
 import { typedjson, useTypedActionData, useTypedLoaderData, useTypedRouteLoaderData } from "remix-typedjson";
 import invariant from "tiny-invariant";
@@ -194,11 +195,31 @@ export default function Quiz() {
     throw new Error("Course data not found");
   }
 
+  const quizSection = courseData.course.attributes.sections.find((s) => s.quiz?.data.id === quiz.id);
   const firstLessonInSectionSlug = courseData.course.attributes.sections.find(
     (section) => section.quiz?.data.id === quiz.id,
   )?.lessons?.data[0].attributes.slug;
+  const isQuizLocked = courseData.lessonsInOrder
+    .filter((l) => l.sectionId === quizSection?.id)
+    .some((l) => !l.isCompleted);
+
   const isPassed = Boolean(progress?.isCompleted || (actionData?.passed && actionData.score));
   const isFailed = Boolean(!progress?.isCompleted && actionData && !actionData.passed);
+
+  if (isQuizLocked) {
+    return (
+      <>
+        <PageTitle>{quiz.attributes.title}</PageTitle>
+        <div className="mt-8 space-y-8">
+          <IconLock className="size-12" />
+          <div>
+            <h2 className="mb-1 text-2xl">This quiz is locked.</h2>
+            <p>Please navigate to an available lesson or quiz in the course overview.</p>
+          </div>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>

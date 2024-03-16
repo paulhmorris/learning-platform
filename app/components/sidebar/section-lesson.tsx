@@ -38,7 +38,7 @@ export function SectionLesson(props: SectionLessonProps) {
   if (locked) {
     return (
       <div
-        className={cn("-my-1 block cursor-not-allowed rounded-lg py-1")}
+        className={cn("-my-1 block rounded-lg py-1")}
         title="Complete previous lessons to unlock"
         aria-label="This lesson is locked until previous lessons are completed."
       >

@@ -1,6 +1,7 @@
 import { UserRole } from "@prisma/client";
-import { Form, Link } from "@remix-run/react";
+import { Link } from "@remix-run/react";
 
+import { IconAvatar } from "~/components/icons";
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
 import {
   DropdownMenu,
@@ -24,17 +25,14 @@ export function UserMenu() {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button className="relative mt-auto h-10 w-10 rounded-full">
+          <button className="relative mt-auto h-10 w-10 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
             <span className="sr-only">Open User Menu</span>
             <Avatar aria-hidden="true">
               <AvatarFallback
-                className="bg-primary text-primary-foreground transition-colors hover:bg-primary/90 dark:text-black"
+                className="bg-transparent text-primary transition-colors hover:text-primary/90"
                 aria-hidden="true"
               >
-                <span>
-                  {user.firstName?.charAt(0).toUpperCase()}
-                  {user.lastName?.charAt(0).toUpperCase()}
-                </span>
+                <IconAvatar className="size-10" />
               </AvatarFallback>
             </Avatar>
           </button>
@@ -62,12 +60,6 @@ export function UserMenu() {
               </Link>
             </DropdownMenuItem>
           </DropdownMenuGroup>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem className="px-0 py-0">
-            <Form className="w-full" method="post" action="/logout" navigate={false}>
-              <button className="w-full px-2 py-1.5 text-left">Log out</button>
-            </Form>
-          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </>
