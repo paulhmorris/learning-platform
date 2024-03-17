@@ -82,9 +82,9 @@ export default function LoginPage() {
 
   return (
     <>
-      <PageTitle className="text-center">Sign in to your account</PageTitle>
       <AuthCard>
-        <ValidatedForm validator={validator} method="post" className="w-full space-y-8">
+        <PageTitle className="mb-8">Sign in</PageTitle>
+        <ValidatedForm validator={validator} method="post" className="w-full space-y-6">
           <FormField
             label="Email"
             id="email"

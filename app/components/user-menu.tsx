@@ -1,5 +1,5 @@
 import { UserRole } from "@prisma/client";
-import { Link } from "@remix-run/react";
+import { Form, Link } from "@remix-run/react";
 
 import { IconAvatar } from "~/components/icons";
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
@@ -55,11 +55,17 @@ export function UserMenu() {
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link className="cursor-pointer" to={`/users/${user.id}`}>
+              <Link className="cursor-pointer" to="/account/profile">
                 Profile
               </Link>
             </DropdownMenuItem>
           </DropdownMenuGroup>
+          <DropdownMenuSeparator className="sm:hidden" />
+          <DropdownMenuItem className="px-0 py-0 sm:hidden">
+            <Form className="w-full" method="post" action="/logout" navigate={false}>
+              <button className="w-full px-2 py-1.5 text-left">Log out</button>
+            </Form>
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </>

@@ -1,15 +1,5 @@
-import { Link } from "@remix-run/react";
+import { redirect } from "remix-typedjson";
 
-import { PageTitle } from "~/components/common/page-title";
-
-export default function AccountLayout() {
-  return (
-    <>
-      <PageTitle>Account Index</PageTitle>
-      <div className="flex flex-col gap-4">
-        <Link to="/account/payment-methods">Payment Methods</Link>
-        <Link to="/account/profile">Profile</Link>
-      </div>
-    </>
-  );
+export function loader() {
+  throw redirect("/account/profile");
 }

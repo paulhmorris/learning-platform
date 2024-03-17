@@ -1,11 +1,10 @@
+import { MetaFunction } from "@remix-run/react";
 import { withZod } from "@remix-validated-form/with-zod";
 import { ValidatedForm } from "remix-validated-form";
 import { z } from "zod";
 
-import { PageTitle } from "~/components/common/page-title";
-import { Button } from "~/components/ui/button";
-import { ButtonGroup } from "~/components/ui/button-group";
 import { FormField } from "~/components/ui/form";
+import { SubmitButton } from "~/components/ui/submit-button";
 import { useUser } from "~/lib/utils";
 
 const validator = withZod(
@@ -18,12 +17,13 @@ const validator = withZod(
   }),
 );
 
+export const meta: MetaFunction = () => [{ title: "Account" }];
+
 export default function AccountProfile() {
   const user = useUser();
 
   return (
     <>
-      <PageTitle className="mb-12">Profile</PageTitle>
       <ValidatedForm
         validator={validator}
         defaultValues={{
@@ -32,26 +32,16 @@ export default function AccountProfile() {
           email: user.email,
         }}
       >
-        <div className="space-y-2">
+        <div className="space-y-4">
           <div className="grid grid-cols-2 gap-2">
             <FormField required name="firstName" label="First Name" autoComplete="given-name" maxLength={255} />
             <FormField required name="lastName" label="Last Name" autoComplete="family-name" maxLength={255} />
           </div>
-          <FormField
-            required
-            name="email"
-            label="Email"
-            type="email"
-            autoComplete="email"
-            description="This is what you log in with"
-          />
+          <FormField required name="email" label="Email" type="email" autoComplete="email" />
           <FormField name="phone" label="Phone" type="tel" autoComplete="tel" maxLength={20} />
-          <ButtonGroup>
-            <Button>Save</Button>
-            <Button variant="secondary" type="reset">
-              Reset
-            </Button>
-          </ButtonGroup>
+          <SubmitButton variant="primary-md" className="sm:w-auto">
+            Save
+          </SubmitButton>
         </div>
       </ValidatedForm>
     </>

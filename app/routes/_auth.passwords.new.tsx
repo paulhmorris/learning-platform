@@ -18,7 +18,7 @@ import { PasswordService } from "~/services/PasswordService.server";
 import { SessionService } from "~/services/SessionService.server";
 import { UserService } from "~/services/UserService.server";
 
-const validator = withZod(
+export const resetPasswordValidator = withZod(
   z
     .object({
       token: z.string(),
@@ -69,7 +69,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const isReset = getSearchParam("isReset", request) === "true";
 
   // Validate form
-  const result = await validator.validate(await request.formData());
+  const result = await resetPasswordValidator.validate(await request.formData());
   if (result.error) {
     return validationError(result.error);
   }
@@ -142,7 +142,7 @@ export default function NewPassword() {
     <div className="grid h-full place-items-center">
       <div className="max-w-lg px-8">
         <PageTitle className="text-4xl font-extrabold">Set a new password.</PageTitle>
-        <ValidatedForm id="password-form" validator={validator} method="post" className="mt-4 space-y-4">
+        <ValidatedForm id="password-form" validator={resetPasswordValidator} method="post" className="mt-4 space-y-4">
           <input type="hidden" name="token" value={searchParams.get("token") ?? ""} />
           <input type="hidden" name="isReset" value={String(isReset)} />
           {isReset ? (

@@ -177,10 +177,10 @@ export default function Join() {
 
   return (
     <>
-      <PageTitle className="text-center">
-        {searchParams.get("status") === "unverified" ? "Verify Your Account" : "Register for an account"}
-      </PageTitle>
       <AuthCard>
+        <PageTitle className="mb-8">
+          {searchParams.get("status") === "unverified" ? "Verify Your Account" : "Register"}
+        </PageTitle>
         {searchParams.get("step") === "verify-email" ? (
           <>
             <p>Please enter the six digit verification code sent to {redactedEmail}</p>
@@ -208,7 +208,7 @@ export default function Join() {
             </ValidatedForm>
           </>
         ) : (
-          <ValidatedForm validator={validator} method="post" className="w-full space-y-8">
+          <ValidatedForm validator={validator} method="post" className="w-full space-y-6">
             <div className="grid grid-cols-2 gap-2">
               <FormField required name="firstName" label="First Name" autoComplete="given-name" maxLength={255} />
               <FormField required name="lastName" label="Last Name" autoComplete="family-name" maxLength={255} />

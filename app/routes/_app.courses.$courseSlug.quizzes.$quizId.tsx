@@ -245,7 +245,8 @@ export default function Quiz() {
       <p className="text-sm text-secondary-foreground">
         Score {quiz.attributes.passing_score}% or higher on this quiz to proceed.
       </p>
-      {/* TODO: Complete to unlock */}
+      {/* TODO: Complete to unlock/up next */}
+      {/* <CourseUpNext lesson={} /> */}
       {isFailed ? (
         <div className="mt-8 flex flex-col gap-2 sm:max-w-96">
           <Button asChild>
