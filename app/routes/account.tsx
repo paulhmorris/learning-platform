@@ -1,4 +1,5 @@
 import { NavLink, Outlet } from "@remix-run/react";
+import { IconCreditCard, IconLock, IconUserCircle } from "@tabler/icons-react";
 import React from "react";
 
 import { ErrorComponent } from "~/components/error-component";
@@ -6,9 +7,10 @@ import { Header } from "~/components/header";
 import { cn } from "~/lib/utils";
 
 const links = [
-  { href: "/account/profile", text: "Profile" },
-  { href: "/account/password", text: "Password" },
-  { href: "/account/payment-methods", text: "Payment" },
+  { href: "/account/profile", text: "Profile", icon: <IconUserCircle className="size-[1.125rem]" /> },
+  { href: "/account/password", text: "Password", icon: <IconLock className="size-[1.125rem]" /> },
+  { href: "/account/payment-methods", text: "Payment", icon: <IconCreditCard className="size-[1.125rem]" /> },
+  // { href: "/account/history", text: "History", icon: <IconHistory className="size-[1.125rem]" /> },
 ];
 
 export default function AccountLayout() {
@@ -33,13 +35,14 @@ export default function AccountLayout() {
                     <NavLink
                       className={({ isActive }) =>
                         cn(
-                          "inline-flex items-center justify-center whitespace-nowrap rounded px-3 py-1.5 text-sm font-medium ring-offset-background transition-all hover:bg-background/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
-                          isActive && "bg-background text-foreground shadow-sm",
+                          "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+                          isActive ? "bg-background text-foreground shadow-sm" : "hover:bg-background/50",
                         )
                       }
                       to={link.href}
                     >
-                      {link.text}
+                      {link.icon}
+                      <span>{link.text}</span>
                     </NavLink>
                   </li>
                 ))}
