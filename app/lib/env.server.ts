@@ -37,8 +37,8 @@ const serverEnvValidation = z.object({
 });
 
 const clientEnvValidation = z.object({
-  // Trigger.dev
   STRAPI_URL: z.string().url(),
+  STRIPE_PUBLIC_KEY: z.string().startsWith("pk_"),
   // TRIGGER_PUBLIC_API_KEY: z.string().startsWith("pk_"),
 });
 

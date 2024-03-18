@@ -1,7 +1,9 @@
 import { LoaderFunctionArgs } from "@remix-run/node";
 import { Link, MetaFunction } from "@remix-run/react";
+import { IconCreditCard } from "@tabler/icons-react";
 import { typedjson, useTypedLoaderData } from "remix-typedjson";
 
+import { Button } from "~/components/ui/button";
 import { db } from "~/integrations/db.server";
 import { stripe } from "~/integrations/stripe.server";
 import { SessionService } from "~/services/SessionService.server";
@@ -25,8 +27,12 @@ export default function AccountLayout() {
 
   return (
     <>
-      <Link to="/account/payment-methods/new">Add New</Link>
-      <pre className="text-xs">{JSON.stringify(methods, null, 2)}</pre>
+      <Button variant="admin" asChild className="sm:w-auto">
+        <Link to="/account/payment-methods/new">
+          <IconCreditCard className="size-5" />
+          <span>Add Card</span>
+        </Link>
+      </Button>
     </>
   );
 }

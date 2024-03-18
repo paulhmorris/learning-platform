@@ -9,6 +9,7 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
+        admin: "rounded-md text-sm font-medium h-10 px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90",
         primary:
           "bg-primary text-primary-foreground hover:bg-primary/90 text-2xl py-4 px-6 shadow-[0px_1px_0px_0px_#FFFFFFB2_inset,0px_-3px_0px_0px_#A16A0040_inset]",
         "primary-md":
