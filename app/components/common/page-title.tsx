@@ -4,7 +4,7 @@ import { cn } from "~/lib/utils";
 
 export function PageTitle({ className, children, ...props }: ComponentProps<"h1">) {
   return (
-    <h1 className={cn("text-pretty text-5xl font-bold leading-tight", className)} {...props}>
+    <h1 className={cn("text-pretty text-[32px] font-bold leading-tight md:text-5xl", className)} {...props}>
       {children}
     </h1>
   );

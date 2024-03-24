@@ -6,6 +6,7 @@ import { StrapiImage } from "~/components/common/strapi-image";
 import { CourseHeader } from "~/components/course/course-header";
 import { CourseUpNext } from "~/components/course/course-up-next";
 import { ErrorComponent } from "~/components/error-component";
+import { Header } from "~/components/header";
 import { IconClipboard, IconDocument } from "~/components/icons";
 import { Section, SectionHeader } from "~/components/section";
 import { CoursePreviewLink } from "~/components/sidebar/course-preview-link";
@@ -119,95 +120,100 @@ export default function CourseIndex() {
 
   // Timed Courses
   return (
-    <div className="flex gap-x-12 px-10">
-      <nav className="sticky left-0 top-[88px] h-full shrink-0 basis-[448px] py-10 md:py-14">
-        <StrapiImage
-          asset={course.attributes.cover_image}
-          height={240}
-          width={448}
-          fetchpriority="high"
-          loading="eager"
-          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-          alt={course.attributes.cover_image?.data?.attributes.alternativeText}
-          className="overflow-hidden rounded-xl object-cover shadow-[0px_8px_32px_0px_#00000029]"
-        />
-        <div className="mt-7">
-          <CoursePreviewLink to={``}>
-            <IconClipboard className="text-current" />
-            <span>Course Chapters</span>
-          </CoursePreviewLink>
+    <>
+      <Header />
 
-          <CoursePreviewLink to={`/certificate`}>
-            <IconDocument className="text-current" />
-            <span>Certificate</span>
-          </CoursePreviewLink>
-        </div>
-      </nav>
+      <div className="flex gap-x-12 px-10">
+        <nav className="sticky left-0 top-[88px] h-full shrink-0 basis-[448px] py-10 md:py-14">
+          <StrapiImage
+            asset={course.attributes.cover_image}
+            height={240}
+            width={448}
+            fetchpriority="high"
+            loading="eager"
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+            alt={course.attributes.cover_image?.data?.attributes.alternativeText}
+            className="overflow-hidden rounded-xl object-cover shadow-[0px_8px_32px_0px_#00000029]"
+          />
+          <div className="mt-7">
+            <CoursePreviewLink to={``}>
+              <IconClipboard className="text-current" />
+              <span>Course Chapters</span>
+            </CoursePreviewLink>
 
-      <main className="max-w-screen-md py-10 md:py-14">
-        <div className="space-y-8">
-          <CourseHeader courseTitle={course.attributes.title} numLessons={lessonsInOrder.length || 0} />
-          <CourseProgressBar progress={totalProgressInSeconds} duration={totalDurationInSeconds} />
-          {nextQuiz ? (
-            <CourseUpNext quiz={{ id: nextQuiz.id, numQuestions: nextQuiz.attributes.questions?.length ?? 1 }} />
-          ) : nextLesson ? (
-            <CourseUpNext lesson={lessonsInOrder[lastCompletedLessonIndex + 1]} />
-          ) : null}
-        </div>
+            <CoursePreviewLink to={`/certificate`}>
+              <IconDocument className="text-current" />
+              <span>Certificate</span>
+            </CoursePreviewLink>
+          </div>
+        </nav>
 
-        <ul className="mt-10 space-y-7">
-          {course.attributes.sections.map((section, section_index) => {
-            const durationInSeconds = section.lessons?.data.reduce(
-              (acc, curr) => Math.ceil((curr.attributes.required_duration_in_seconds || 0) + acc),
-              0,
-            );
-            const isQuizLocked = lessonsInOrder.filter((l) => l.sectionId === section.id).some((l) => !l.isCompleted);
+        <main className="max-w-screen-md py-10 md:py-14">
+          <div className="space-y-8">
+            <CourseHeader courseTitle={course.attributes.title} numLessons={lessonsInOrder.length || 0} />
+            <CourseProgressBar progress={totalProgressInSeconds} duration={totalDurationInSeconds} />
+            {nextQuiz ? (
+              <CourseUpNext quiz={{ id: nextQuiz.id, numQuestions: nextQuiz.attributes.questions?.length ?? 1 }} />
+            ) : nextLesson ? (
+              <CourseUpNext lesson={lessonsInOrder[lastCompletedLessonIndex + 1]} />
+            ) : null}
+          </div>
 
-            return (
-              <li key={`section-${section.id}`}>
-                <Section>
-                  <SectionHeader sectionTitle={section.title} durationInMinutes={(durationInSeconds || 1) / 60} />
-                  <Separator className="my-4" />
-                  <ul className="flex flex-col gap-4">
-                    {section.lessons?.data.map((l) => {
-                      const lessonIndex = lessonsInOrder.findIndex((li) => li.uuid === l.attributes.uuid);
+          <ul className="mt-10 space-y-7">
+            {course.attributes.sections.map((section, section_index) => {
+              const durationInSeconds = section.lessons?.data.reduce(
+                (acc, curr) => Math.ceil((curr.attributes.required_duration_in_seconds || 0) + acc),
+                0,
+              );
+              const isQuizLocked = lessonsInOrder.filter((l) => l.sectionId === section.id).some((l) => !l.isCompleted);
 
-                      // Lock the lesson if the previous section's quiz is not completed
-                      const previousSection = section_index > 0 ? course.attributes.sections[section_index - 1] : null;
-                      const previousSectionQuiz = previousSection?.quiz;
-                      const previousSectionQuizIsCompleted = quizProgress.find(
-                        (p) => p.isCompleted && p.quizId === previousSectionQuiz?.data.id,
-                      );
-                      const isSectionLocked =
-                        (previousSectionQuiz && !previousSectionQuizIsCompleted) ||
-                        lessonIndex > lastCompletedLessonIndex + 1;
+              return (
+                <li key={`section-${section.id}`}>
+                  <Section>
+                    <SectionHeader sectionTitle={section.title} durationInMinutes={(durationInSeconds || 1) / 60} />
+                    <Separator className="my-4" />
+                    <ul className="flex flex-col gap-4">
+                      {section.lessons?.data.map((l) => {
+                        const lessonIndex = lessonsInOrder.findIndex((li) => li.uuid === l.attributes.uuid);
 
-                      return (
-                        <SectionLesson
-                          key={l.attributes.uuid}
-                          hasVideo={l.attributes.has_video}
-                          userProgress={progress.find((lp) => lp.lessonId === l.id) ?? null}
-                          lesson={l}
-                          lessonTitle={l.attributes.title}
-                          locked={isSectionLocked}
+                        // Lock the lesson if the previous section's quiz is not completed
+                        const previousSection =
+                          section_index > 0 ? course.attributes.sections[section_index - 1] : null;
+                        const previousSectionQuiz = previousSection?.quiz;
+                        const previousSectionQuizIsCompleted = quizProgress.find(
+                          (p) => p.isCompleted && p.quizId === previousSectionQuiz?.data.id,
+                        );
+                        const isSectionLocked =
+                          (previousSectionQuiz && !previousSectionQuizIsCompleted) ||
+                          lessonIndex > lastCompletedLessonIndex + 1;
+
+                        return (
+                          <SectionLesson
+                            key={l.attributes.uuid}
+                            hasVideo={l.attributes.has_video}
+                            userProgress={progress.find((lp) => lp.lessonId === l.id) ?? null}
+                            lesson={l}
+                            lessonTitle={l.attributes.title}
+                            locked={isSectionLocked}
+                          />
+                        );
+                      })}
+                      {section.quiz?.data ? (
+                        <SectionQuiz
+                          quiz={section.quiz.data}
+                          userProgress={quizProgress.find((qp) => qp.quizId === section.quiz?.data.id) ?? null}
+                          locked={isQuizLocked}
                         />
-                      );
-                    })}
-                    {section.quiz?.data ? (
-                      <SectionQuiz
-                        quiz={section.quiz.data}
-                        userProgress={quizProgress.find((qp) => qp.quizId === section.quiz?.data.id) ?? null}
-                        locked={isQuizLocked}
-                      />
-                    ) : null}
-                  </ul>
-                </Section>
-              </li>
-            );
-          })}
-        </ul>
-      </main>
-    </div>
+                      ) : null}
+                    </ul>
+                  </Section>
+                </li>
+              );
+            })}
+          </ul>
+        </main>
+      </div>
+    </>
   );
 }
 

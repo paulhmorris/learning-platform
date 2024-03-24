@@ -1,6 +1,8 @@
 import { LoaderFunctionArgs } from "@remix-run/node";
-import { Outlet } from "@remix-run/react";
-import { typedjson, useTypedLoaderData } from "remix-typedjson";
+import { Outlet, useParams } from "@remix-run/react";
+import { useState } from "react";
+import { typedjson } from "remix-typedjson";
+import { useMediaQuery } from "usehooks-ts";
 
 import { Header } from "~/components/header";
 import { Section, SectionHeader } from "~/components/section";
@@ -9,10 +11,12 @@ import { CourseProgressBar } from "~/components/sidebar/course-progress-bar";
 import { SectionLesson } from "~/components/sidebar/section-lesson";
 import { SectionQuiz } from "~/components/sidebar/section-quiz";
 import { Separator } from "~/components/ui/separator";
+import { useCourseData } from "~/hooks/useCourseData";
 import { cms } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
 import { toast } from "~/lib/toast.server";
+import { cn } from "~/lib/utils";
 import { SessionService } from "~/services/SessionService.server";
 import { APIResponseData } from "~/types/utils";
 
@@ -21,8 +25,23 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   try {
     const { host } = new URL(request.url);
-    const { strapiId } = await db.course.findUniqueOrThrow({ where: { host } });
-    const course = await cms.findOne<APIResponseData<"api::course.course">>("courses", strapiId, {
+    const linkedCourse = await db.course.findUnique({ where: { host } });
+
+    if (!linkedCourse) {
+      Sentry.captureMessage("Received request from unknown host", {
+        extra: { host },
+        level: "warning",
+        user: { username: user.email, id: user.id, email: user.email },
+      });
+      return toast.redirect(request, "/", {
+        type: "error",
+        title: "Course not found",
+        description: "Please try again later",
+        position: "bottom-center",
+      });
+    }
+
+    const course = await cms.findOne<APIResponseData<"api::course.course">>("courses", linkedCourse.strapiId, {
       fields: ["title"],
       populate: {
         sections: {
@@ -81,16 +100,33 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function CourseLayout() {
-  const { course, lessonsInOrder, progress, quizProgress } = useTypedLoaderData<typeof loader>();
+  const { course, lessonsInOrder, progress, quizProgress } = useCourseData();
+  const params = useParams();
+  const [isShowingMore, setIsShowingMore] = useState(false);
+  const isLargeScreen = useMediaQuery("(min-width: 1024px)");
+
+  const isCollapsed = !isShowingMore && !isLargeScreen;
+
+  function toggleShowMore() {
+    setIsShowingMore((prev) => !prev);
+  }
+
   // Calculate the lesson last completed lesson, defaulting to the first lesson
   const nextLessonIndex = lessonsInOrder.findIndex((l) => !l.isCompleted);
   const lastCompletedLessonIndex = nextLessonIndex === -1 ? 0 : nextLessonIndex - 1;
+
+  const activeLesson = lessonsInOrder.filter((l) => l.slug === params.lessonSlug)[0] ?? null;
+  const activeSection =
+    course.attributes.sections.find((s) => s.id === activeLesson.sectionId) ?? course.attributes.sections[0];
+  const isQuizActive = Boolean(params.quizId);
+  const shouldShowQuizInSection = isCollapsed ? isQuizActive : true;
 
   // Sum the user progress to get the total progress
   const totalProgressInSeconds = progress.reduce((acc, curr) => {
     return acc + (curr.durationInSeconds ?? 0);
   }, 0);
 
+  // The total duration of the course
   const totalDurationInSeconds = lessonsInOrder.reduce((acc, curr) => {
     return acc + (curr.requiredDurationInSeconds ?? 0);
   }, 0);
@@ -98,17 +134,18 @@ export default function CourseLayout() {
   return (
     <>
       <Header />
-      <div>
-        <nav className="fixed bottom-0 left-0 top-20 w-[448px] overflow-auto py-10 pl-4 md:py-12">
-          <BackToCourseLink />
+      <nav className="overflow-visible px-4 py-4 lg:fixed lg:bottom-0 lg:left-0 lg:top-20 lg:w-[448px] lg:py-12">
+        <BackToCourseLink />
 
-          {/* TODO: Adjust for non timed courses */}
-          <div className="my-7">
-            <CourseProgressBar progress={totalProgressInSeconds} duration={totalDurationInSeconds} />
-          </div>
+        {/* TODO: Adjust for non timed courses */}
+        <div className="my-7">
+          <CourseProgressBar progress={totalProgressInSeconds} duration={totalDurationInSeconds} />
+        </div>
 
-          <ul className="space-y-7">
-            {course.attributes.sections.map((section, section_index) => {
+        <ul className="space-y-7">
+          {course.attributes.sections
+            .filter((s) => (isCollapsed ? s.id === activeSection.id : true))
+            .map((section, section_index) => {
               const durationInSeconds = section.lessons?.data.reduce(
                 (acc, curr) => Math.ceil((curr.attributes.required_duration_in_seconds || 0) + acc),
                 0,
@@ -119,34 +156,34 @@ export default function CourseLayout() {
                 <li key={`section-${section.id}`} data-sectionid={section.id}>
                   <Section>
                     <SectionHeader sectionTitle={section.title} durationInMinutes={(durationInSeconds || 1) / 60} />
-                    <Separator className="my-4" />
+                    <Separator className={cn(!isLargeScreen && !isShowingMore ? "my-2 bg-transparent" : "my-4")} />
                     <ul className="flex flex-col gap-4">
-                      {section.lessons?.data.map((l) => {
-                        const lessonIndex = lessonsInOrder.findIndex((li) => li.uuid === l.attributes.uuid);
+                      {section.lessons?.data
+                        .filter((l) => (isCollapsed ? l.attributes.uuid === activeLesson.uuid : true))
+                        .map((l) => {
+                          const lessonIndex = lessonsInOrder.findIndex((li) => li.uuid === l.attributes.uuid);
 
-                        // Lock the lesson if the previous section's quiz is not completed
-                        const previousSection =
-                          section_index > 0 ? course.attributes.sections[section_index - 1] : null;
-                        const previousSectionQuiz = previousSection?.quiz;
-                        const previousSectionQuizIsCompleted = quizProgress.find(
-                          (p) => p.isCompleted && p.quizId === previousSectionQuiz?.data.id,
-                        );
-                        const isLessonLocked =
-                          (previousSectionQuiz && !previousSectionQuizIsCompleted) ||
-                          lessonIndex > lastCompletedLessonIndex + 1;
+                          // Lock the lesson if the previous section's quiz is not completed
+                          const previousSection =
+                            section_index > 0 ? course.attributes.sections[section_index - 1] : null;
+                          const previousSectionQuiz = previousSection?.quiz;
+                          const previousSectionQuizIsCompleted = quizProgress.find(
+                            (p) => p.isCompleted && p.quizId === previousSectionQuiz?.data.id,
+                          );
+                          const isLessonLocked =
+                            (previousSectionQuiz && !previousSectionQuizIsCompleted) ||
+                            lessonIndex > lastCompletedLessonIndex + 1;
 
-                        return (
-                          <SectionLesson
-                            key={l.attributes.uuid}
-                            hasVideo={l.attributes.has_video}
-                            userProgress={progress.find((lp) => lp.lessonId === l.id) ?? null}
-                            lesson={l}
-                            lessonTitle={l.attributes.title}
-                            locked={isLessonLocked}
-                          />
-                        );
-                      })}
-                      {section.quiz?.data ? (
+                          return (
+                            <SectionLesson
+                              key={l.attributes.uuid}
+                              lesson={l}
+                              userProgress={progress.find((lp) => lp.lessonId === l.id) ?? null}
+                              locked={isLessonLocked}
+                            />
+                          );
+                        })}
+                      {section.quiz?.data && shouldShowQuizInSection ? (
                         <SectionQuiz
                           quiz={section.quiz.data}
                           userProgress={quizProgress.find((qp) => qp.quizId === section.quiz?.data.id) ?? null}
@@ -154,16 +191,16 @@ export default function CourseLayout() {
                         />
                       ) : null}
                     </ul>
+                    <button onClick={toggleShowMore}>Show more</button>
                   </Section>
                 </li>
               );
             })}
-          </ul>
-        </nav>
-        <main className="ml-[480px] max-w-screen-md py-10 pr-4 md:py-12">
-          <Outlet />
-        </main>
-      </div>
+        </ul>
+      </nav>
+      <main className="px-4 py-12 lg:ml-[480px] lg:max-w-screen-md lg:pl-0 lg:pr-4">
+        <Outlet />
+      </main>
     </>
   );
 }

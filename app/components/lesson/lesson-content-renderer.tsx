@@ -49,7 +49,7 @@ export function LessonContentRenderer({ content }: Props) {
             return (
               <section
                 key={`${component.__component}-${component.id}`}
-                className="prose max-w-full dark:prose-invert prose-h1:text-[32px] prose-p:text-lg"
+                className="prose max-w-full dark:prose-invert prose-h1:text-[32px] prose-p:text-lg prose-p:leading-7"
               >
                 <BlocksRenderer content={component.content} />
               </section>
@@ -119,7 +119,7 @@ export function LessonContentRenderer({ content }: Props) {
 
             return (
               // eslint-disable-next-line jsx-a11y/media-has-caption
-              <audio controls key={`${component.__component}-${component.id}`}>
+              <audio controls key={`${component.__component}-${component.id}`} className="w-full">
                 <source src={url} type={audio.mime} />
               </audio>
             );

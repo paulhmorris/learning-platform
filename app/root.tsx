@@ -64,7 +64,7 @@ function App() {
         <PreventFlashOnWrongTheme ssrTheme={Boolean(data.theme)} />
         <Links />
       </head>
-      <body className={cn("h-full min-h-dvh bg-background font-sans text-foreground", theme)}>
+      <body className={cn("h-full min-h-full bg-background font-sans text-foreground", theme)}>
         <Outlet />
         {/* {data.user ? (
           <div className="fixed bottom-6 left-6 rounded border bg-background p-4 text-xs shadow-lg">

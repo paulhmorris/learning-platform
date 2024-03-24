@@ -16,14 +16,13 @@ import { APIResponseData } from "~/types/utils";
 
 interface SectionLessonProps extends React.HTMLAttributes<HTMLDivElement> {
   lesson: APIResponseData<"api::lesson.lesson">;
-  lessonTitle: string;
-  hasVideo: boolean;
   userProgress: UserLessonProgress | null;
   locked?: boolean;
 }
 
 export function SectionLesson(props: SectionLessonProps) {
-  const { lesson, locked, userProgress, hasVideo, lessonTitle } = props;
+  const { lesson, locked, userProgress } = props;
+  const { has_video: hasVideo } = lesson.attributes;
   const isTimed =
     typeof lesson.attributes.required_duration_in_seconds !== "undefined" &&
     lesson.attributes.required_duration_in_seconds > 0;
@@ -58,7 +57,7 @@ export function SectionLesson(props: SectionLessonProps) {
           </SectionItemIconContainer>
           <div className="flex flex-col justify-center">
             <SectionItemTitle className="text-gray-400 contrast-more:text-gray-500 dark:text-gray-600 contrast-more:dark:text-gray-400">
-              {props.lessonTitle}
+              {lesson.attributes.title}
             </SectionItemTitle>
             <SectionItemDescription className="text-gray-400 contrast-more:text-gray-500 dark:text-gray-600 contrast-more:dark:text-gray-400">
               {durationInMinutes} min
@@ -92,7 +91,7 @@ export function SectionLesson(props: SectionLessonProps) {
             <SectionItemIconContainer>
               <Icon className={cn(isActive ? "text-success" : "text-foreground", hasVideo ? "h-8 w-7" : "h-7 w-6")} />
             </SectionItemIconContainer>
-            <SectionItemTitle>{props.lessonTitle}</SectionItemTitle>
+            <SectionItemTitle>{lesson.attributes.title}</SectionItemTitle>
           </SectionItemContainer>
         )}
       </NavLink>
@@ -119,7 +118,7 @@ export function SectionLesson(props: SectionLessonProps) {
               <Icon className={cn(isActive ? "text-success" : "text-foreground", hasVideo ? "h-8 w-7" : "h-7 w-6")} />
             </SectionItemIconContainer>
             <div className="flex flex-col justify-center">
-              <SectionItemTitle>{lessonTitle}</SectionItemTitle>
+              <SectionItemTitle>{lesson.attributes.title}</SectionItemTitle>
               {params.lessonSlug === lesson.attributes.slug ? (
                 <SectionItemDescription>
                   <ProgressTimer
@@ -167,7 +166,7 @@ export function SectionLesson(props: SectionLessonProps) {
               <Icon className={cn(isActive ? "text-success" : "text-foreground", hasVideo ? "h-8 w-7" : "h-7 w-6")} />
             </SectionItemIconContainer>
             <div className="flex flex-col justify-center">
-              <SectionItemTitle>{props.lessonTitle}</SectionItemTitle>
+              <SectionItemTitle>{lesson.attributes.title}</SectionItemTitle>
               {params.lessonSlug === lesson.attributes.slug ? (
                 <SectionItemDescription>
                   <ProgressTimer
@@ -206,7 +205,7 @@ export function SectionLesson(props: SectionLessonProps) {
             <Icon className={cn(isActive ? "text-success" : "text-foreground", hasVideo ? "h-8 w-7" : "h-7 w-6")} />
           </SectionItemIconContainer>
           <div className="flex flex-col justify-center">
-            <SectionItemTitle>{props.lessonTitle}</SectionItemTitle>
+            <SectionItemTitle>{lesson.attributes.title}</SectionItemTitle>
             <SectionItemDescription>
               {durationInMinutes} of {durationInMinutes} min completed
             </SectionItemDescription>
