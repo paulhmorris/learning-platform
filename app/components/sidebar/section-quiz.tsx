@@ -1,5 +1,5 @@
 import { UserQuizProgress } from "@prisma/client";
-import { NavLink, useParams } from "@remix-run/react";
+import { NavLink } from "@remix-run/react";
 import React from "react";
 
 import { IconDocument } from "~/components/icons";
@@ -20,7 +20,6 @@ interface SectionQuizProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 export function SectionQuiz(props: SectionQuizProps) {
   const { quiz, locked, userProgress } = props;
-  const params = useParams();
 
   // Locked state
   if (locked) {
@@ -48,7 +47,7 @@ export function SectionQuiz(props: SectionQuizProps) {
               Quiz
             </SectionItemTitle>
             <SectionItemDescription className="text-gray-400 contrast-more:text-gray-500 dark:text-gray-600 contrast-more:dark:text-gray-400">
-              {/* @ts-expect-error see query in $courseSlug */}
+              {/* @ts-expect-error see query in _course */}
               {quiz.attributes.questions?.count} questions
             </SectionItemDescription>
           </div>
@@ -61,7 +60,7 @@ export function SectionQuiz(props: SectionQuizProps) {
   if (!userProgress || !userProgress.isCompleted) {
     return (
       <NavLink
-        to={`/courses/${params.courseSlug}/quizzes/${quiz.id}`}
+        to={`/quizzes/${quiz.id}`}
         className={({ isActive }) =>
           cn(
             "block rounded-lg py-1 hover:ring hover:ring-[#e4e4e4] focus:outline-none focus:ring focus:ring-ring motion-safe:transition-all",
@@ -77,7 +76,7 @@ export function SectionQuiz(props: SectionQuizProps) {
             </SectionItemIconContainer>
             <div className="flex flex-col justify-center">
               <SectionItemTitle>Quiz</SectionItemTitle>
-              {/* @ts-expect-error see query in $courseSlug */}
+              {/* @ts-expect-error see query in _course */}
               <SectionItemDescription>{quiz.attributes.questions?.count} questions</SectionItemDescription>
             </div>
           </SectionItemContainer>
@@ -89,7 +88,7 @@ export function SectionQuiz(props: SectionQuizProps) {
   // Completed state
   return (
     <NavLink
-      to={`/courses/${params.courseSlug}/quizzes/${quiz.id}`}
+      to={`/quizzes/${quiz.id}`}
       className={({ isActive }) =>
         cn(
           "block rounded-lg py-1 hover:ring hover:ring-[#e4e4e4] focus:outline-none focus:ring focus:ring-ring motion-safe:transition-all",

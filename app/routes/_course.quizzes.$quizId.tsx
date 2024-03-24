@@ -1,19 +1,22 @@
 import { Prisma } from "@prisma/client";
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { Form, Link, useParams } from "@remix-run/react";
-import { IconLock } from "@tabler/icons-react";
+import { Form, Link } from "@remix-run/react";
 import { useEffect } from "react";
-import { typedjson, useTypedActionData, useTypedLoaderData, useTypedRouteLoaderData } from "remix-typedjson";
+import { typedjson, useTypedActionData, useTypedLoaderData } from "remix-typedjson";
 import invariant from "tiny-invariant";
 
 import { PageTitle } from "~/components/common/page-title";
+import { QuizFailed } from "~/components/quiz/quiz-failed";
+import { QuizLocked } from "~/components/quiz/quiz-locked";
+import { QuizPassed } from "~/components/quiz/quiz-passed";
 import { Button } from "~/components/ui/button";
+import { useCourseData } from "~/hooks/useCourseData";
 import { cms } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
 import { handlePrismaError, notFound } from "~/lib/responses.server";
 import { cn } from "~/lib/utils";
-import { loader as courseLoader } from "~/routes/_app.courses.$courseSlug";
+import { loader as courseLoader } from "~/routes/_course";
 import { SessionService } from "~/services/SessionService.server";
 import { APIResponseData, TypedMetaFunction } from "~/types/utils";
 
@@ -164,22 +167,21 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 }
 
-export const meta: TypedMetaFunction<typeof loader, { "routes/_app.courses.$courseSlug": typeof courseLoader }> = ({
+export const meta: TypedMetaFunction<typeof loader, { "routes/_course": typeof courseLoader }> = ({
   data,
   matches,
 }) => {
-  // @ts-expect-error typed meta funtion not supporting this yet
+  // @ts-expect-error typed meta funtion doesn't support this yet
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-  const match = matches.find((m) => m.id === "routes/_app.courses.$courseSlug")?.data.course;
+  const match = matches.find((m) => m.id === "routes/_course")?.data.course;
   // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
   return [{ title: `${data?.quiz.attributes.title} | ${match?.attributes.title}` }];
 };
 
 export default function Quiz() {
-  const courseData = useTypedRouteLoaderData<typeof courseLoader>("routes/_app.courses.$courseSlug");
+  const { course, lessonsInOrder } = useCourseData();
   const { quiz, progress } = useTypedLoaderData<typeof loader>();
   const actionData = useTypedActionData<typeof action>();
-  const params = useParams();
 
   // Scroll to top when quiz is submitted
   useEffect(() => {
@@ -191,34 +193,17 @@ export default function Quiz() {
     }
   }, [actionData?.score]);
 
-  if (!courseData) {
-    throw new Error("Course data not found");
-  }
+  const quizSection = course.attributes.sections.find((s) => s.quiz?.data.id === quiz.id);
+  const firstLessonInSectionSlug = quizSection?.lessons?.data[0].attributes.slug;
 
-  const quizSection = courseData.course.attributes.sections.find((s) => s.quiz?.data.id === quiz.id);
-  const firstLessonInSectionSlug = courseData.course.attributes.sections.find(
-    (section) => section.quiz?.data.id === quiz.id,
-  )?.lessons?.data[0].attributes.slug;
-  const isQuizLocked = courseData.lessonsInOrder
-    .filter((l) => l.sectionId === quizSection?.id)
-    .some((l) => !l.isCompleted);
+  // Quiz is locked if any lesson in the quiz section is not completed
+  const isQuizLocked = lessonsInOrder.filter((l) => l.sectionId === quizSection?.id).some((l) => !l.isCompleted);
 
   const isPassed = Boolean(progress?.isCompleted || (actionData?.passed && actionData.score));
   const isFailed = Boolean(!progress?.isCompleted && actionData && !actionData.passed);
 
   if (isQuizLocked) {
-    return (
-      <>
-        <PageTitle>{quiz.attributes.title}</PageTitle>
-        <div className="mt-8 space-y-8">
-          <IconLock className="size-12" />
-          <div>
-            <h2 className="mb-1 text-2xl">This quiz is locked.</h2>
-            <p>Please navigate to an available lesson or quiz in the course overview.</p>
-          </div>
-        </div>
-      </>
-    );
+    return <QuizLocked title={quiz.attributes.title ?? `Quiz ${quiz.id}`} />;
   }
 
   return (
@@ -226,19 +211,9 @@ export default function Quiz() {
       {/* Results */}
       <div role="alert" aria-live="polite">
         {isPassed ? (
-          <div className="mb-8">
-            <div className="rounded-md border-success bg-success/5 p-4 text-success dark:bg-success/15">
-              <h2 className="text-2xl font-bold">You passed!</h2>
-              <p>You passed with a score of {progress?.score || actionData?.score}%. Great job!</p>
-            </div>
-          </div>
+          <QuizPassed score={progress?.score ?? actionData?.score ?? 100} />
         ) : !actionData?.passed && typeof actionData?.score !== "undefined" ? (
-          <div className="mb-8">
-            <div className="rounded-md border-destructive bg-destructive/5 p-4 text-destructive dark:bg-destructive/15">
-              <h2 className="text-2xl font-bold">You didn&apos;t pass.</h2>
-              <p>You failed with a score of {actionData.score}%. Please try again.</p>
-            </div>
-          </div>
+          <QuizFailed score={actionData.score} />
         ) : null}
       </div>
       <PageTitle>{quiz.attributes.title}</PageTitle>
@@ -254,7 +229,7 @@ export default function Quiz() {
           </Button>
           <span className="text-center">or</span>
           <Button variant="link" className="text-foreground underline">
-            <Link to={`/courses/${params.courseSlug}/${firstLessonInSectionSlug}`}>Restart Section</Link>
+            <Link to={`/${firstLessonInSectionSlug}`}>Restart Section</Link>
           </Button>
         </div>
       ) : (

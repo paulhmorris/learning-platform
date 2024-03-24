@@ -16,7 +16,7 @@ export function Header() {
         <div className="hidden sm:block">
           {user ? (
             <form action="/logout" method="post" className="blo">
-              <button className="rounded font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+              <button className="rounded font-bold ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                 Logout
               </button>
             </form>

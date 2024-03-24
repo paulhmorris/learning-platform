@@ -1,4 +1,4 @@
-import { Link, useParams } from "@remix-run/react";
+import { Link } from "@remix-run/react";
 
 import { IconCameraFilled, IconClipboard, IconDocument } from "~/components/icons";
 import { Button } from "~/components/ui/button";
@@ -24,8 +24,6 @@ type Props = {
 };
 
 export function CourseUpNext({ lesson, quiz }: Props) {
-  const params = useParams();
-
   if (!lesson && !quiz) {
     return null;
   }
@@ -47,7 +45,7 @@ export function CourseUpNext({ lesson, quiz }: Props) {
               </div>
             </div>
             <Button className="sm:ml-auto sm:max-w-60" variant="primary" asChild>
-              <Link to={`/courses/${params.courseSlug}/quizzes/${quiz.id}`}>Start</Link>
+              <Link to={`/quizzes/${quiz.id}`}>Start</Link>
             </Button>
           </>
         ) : lesson ? (
@@ -66,9 +64,7 @@ export function CourseUpNext({ lesson, quiz }: Props) {
               ) : null}
             </div>
             <Button className="sm:ml-auto sm:max-w-60" variant="primary" asChild>
-              <Link to={`/courses/${params.courseSlug}/${lesson.slug}`}>
-                {lesson.progressDuration ? "Continue" : "Start"}
-              </Link>
+              <Link to={`/${lesson.slug}`}>{lesson.progressDuration ? "Continue" : "Start"}</Link>
             </Button>
           </>
         ) : null}

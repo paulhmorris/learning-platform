@@ -1,12 +1,14 @@
 import { Prisma } from "@prisma/client";
 import { LoaderFunctionArgs } from "@remix-run/node";
-import { Outlet } from "@remix-run/react";
 import { typedjson, useTypedLoaderData } from "remix-typedjson";
-import invariant from "tiny-invariant";
 
+import { StrapiImage } from "~/components/common/strapi-image";
+import { CourseHeader } from "~/components/course/course-header";
+import { CourseUpNext } from "~/components/course/course-up-next";
 import { ErrorComponent } from "~/components/error-component";
+import { IconClipboard, IconDocument } from "~/components/icons";
 import { Section, SectionHeader } from "~/components/section";
-import { BackToCourseLink } from "~/components/sidebar/back-to-course-link";
+import { CoursePreviewLink } from "~/components/sidebar/course-preview-link";
 import { CourseProgressBar } from "~/components/sidebar/course-progress-bar";
 import { SectionLesson } from "~/components/sidebar/section-lesson";
 import { SectionQuiz } from "~/components/sidebar/section-quiz";
@@ -14,22 +16,22 @@ import { Separator } from "~/components/ui/separator";
 import { cms } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
-import { handlePrismaError, notFound, serverError } from "~/lib/responses.server";
+import { handlePrismaError, serverError } from "~/lib/responses.server";
 import { SessionService } from "~/services/SessionService.server";
-import { APIResponseCollection } from "~/types/utils";
+import { APIResponseData, TypedMetaFunction } from "~/types/utils";
 
-export async function loader({ request, params }: LoaderFunctionArgs) {
+export async function loader({ request }: LoaderFunctionArgs) {
   const user = await SessionService.requireUser(request);
-  const courseSlug = params.courseSlug;
-  invariant(courseSlug, "Course slug is required");
 
   try {
-    const courseResult = await cms.find<APIResponseCollection<"api::course.course">["data"]>("courses", {
-      filters: {
-        slug: courseSlug,
-      },
+    const { host } = new URL(request.url);
+    const { strapiId } = await db.course.findUniqueOrThrow({ where: { host } });
+    const course = await cms.findOne<APIResponseData<"api::course.course">>("courses", strapiId, {
       fields: ["title"],
       populate: {
+        cover_image: {
+          fields: ["alternativeText", "formats", "url"],
+        },
         sections: {
           fields: ["title"],
           populate: {
@@ -49,20 +51,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       },
     });
 
-    if (courseResult.data.length > 1) {
-      throw serverError("Multiple courses with the same slug found.");
-    }
-
-    if (courseResult.data.length === 0) {
-      throw notFound("Course not found.");
-    }
-
-    const course = courseResult.data[0];
-
     const progress = await db.userLessonProgress.findMany({ where: { userId: user.id } });
     const quizProgress = await db.userQuizProgress.findMany({ where: { userId: user.id } });
 
-    const lessonsInOrder = course.attributes.sections.flatMap((section) => {
+    const lessonsInOrder = course.data.attributes.sections.flatMap((section) => {
       return (
         section.lessons?.data.map((l) => {
           const lessonProgress = progress.find((p) => p.lessonId === l.id);
@@ -82,7 +74,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       );
     });
 
-    return typedjson({ course, progress, lessonsInOrder, quizProgress });
+    return typedjson({ course: course.data, progress, lessonsInOrder, quizProgress });
   } catch (error) {
     console.error(error);
     Sentry.captureException(error);
@@ -93,14 +85,28 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 }
 
-export default function CourseLayout() {
-  const data = useTypedLoaderData<typeof loader>();
+export const meta: TypedMetaFunction<typeof loader> = ({ data }) => {
+  return [{ title: `Course Overview | ${data?.course.attributes.title}` }];
+};
 
-  const { course, progress, lessonsInOrder, quizProgress } = data;
+export default function CourseIndex() {
+  const { course, progress, lessonsInOrder, quizProgress } = useTypedLoaderData<typeof loader>();
 
   // Calculate the lesson last completed lesson, defaulting to the first lesson
   const nextLessonIndex = lessonsInOrder.findIndex((l) => !l.isCompleted);
   const lastCompletedLessonIndex = nextLessonIndex === -1 ? 0 : nextLessonIndex - 1;
+  const nextLesson = lessonsInOrder.at(nextLessonIndex);
+
+  // Check for a quiz
+  const lasCompletedLessonSection = course.attributes.sections.find(
+    (s) =>
+      s.lessons?.data.some((l) => l.attributes.uuid === lessonsInOrder[lastCompletedLessonIndex]?.uuid) &&
+      s.lessons.data.every((l) => lessonsInOrder.find((li) => li.uuid === l.attributes.uuid)?.isCompleted),
+  );
+  const lastCompletedLessonSectionHasIncompleteQuiz =
+    lasCompletedLessonSection?.quiz?.data &&
+    !quizProgress.find((p) => p.quizId === lasCompletedLessonSection.quiz?.data.id)?.isCompleted;
+  const nextQuiz = lastCompletedLessonSectionHasIncompleteQuiz ? lasCompletedLessonSection.quiz?.data : null;
 
   // Sum the user progress to get the total progress
   const totalProgressInSeconds = progress.reduce((acc, curr) => {
@@ -111,17 +117,45 @@ export default function CourseLayout() {
     return acc + (curr.requiredDurationInSeconds ?? 0);
   }, 0);
 
+  // Timed Courses
   return (
-    <div>
-      <nav className="fixed bottom-0 left-0 top-20 w-[448px] overflow-auto py-10 pl-4 md:py-12">
-        <BackToCourseLink />
+    <div className="flex gap-x-12 px-10">
+      <nav className="sticky left-0 top-[88px] h-full shrink-0 basis-[448px] py-10 md:py-14">
+        <StrapiImage
+          asset={course.attributes.cover_image}
+          height={240}
+          width={448}
+          fetchpriority="high"
+          loading="eager"
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+          alt={course.attributes.cover_image?.data?.attributes.alternativeText}
+          className="overflow-hidden rounded-xl object-cover shadow-[0px_8px_32px_0px_#00000029]"
+        />
+        <div className="mt-7">
+          <CoursePreviewLink to={``}>
+            <IconClipboard className="text-current" />
+            <span>Course Chapters</span>
+          </CoursePreviewLink>
 
-        {/* TODO: Adjust for non timed courses */}
-        <div className="my-7">
+          <CoursePreviewLink to={`/certificate`}>
+            <IconDocument className="text-current" />
+            <span>Certificate</span>
+          </CoursePreviewLink>
+        </div>
+      </nav>
+
+      <main className="max-w-screen-md py-10 md:py-14">
+        <div className="space-y-8">
+          <CourseHeader courseTitle={course.attributes.title} numLessons={lessonsInOrder.length || 0} />
           <CourseProgressBar progress={totalProgressInSeconds} duration={totalDurationInSeconds} />
+          {nextQuiz ? (
+            <CourseUpNext quiz={{ id: nextQuiz.id, numQuestions: nextQuiz.attributes.questions?.length ?? 1 }} />
+          ) : nextLesson ? (
+            <CourseUpNext lesson={lessonsInOrder[lastCompletedLessonIndex + 1]} />
+          ) : null}
         </div>
 
-        <ul className="space-y-7">
+        <ul className="mt-10 space-y-7">
           {course.attributes.sections.map((section, section_index) => {
             const durationInSeconds = section.lessons?.data.reduce(
               (acc, curr) => Math.ceil((curr.attributes.required_duration_in_seconds || 0) + acc),
@@ -130,7 +164,7 @@ export default function CourseLayout() {
             const isQuizLocked = lessonsInOrder.filter((l) => l.sectionId === section.id).some((l) => !l.isCompleted);
 
             return (
-              <li key={`section-${section.id}`} data-sectionid={section.id}>
+              <li key={`section-${section.id}`}>
                 <Section>
                   <SectionHeader sectionTitle={section.title} durationInMinutes={(durationInSeconds || 1) / 60} />
                   <Separator className="my-4" />
@@ -144,7 +178,7 @@ export default function CourseLayout() {
                       const previousSectionQuizIsCompleted = quizProgress.find(
                         (p) => p.isCompleted && p.quizId === previousSectionQuiz?.data.id,
                       );
-                      const isLessonLocked =
+                      const isSectionLocked =
                         (previousSectionQuiz && !previousSectionQuizIsCompleted) ||
                         lessonIndex > lastCompletedLessonIndex + 1;
 
@@ -155,7 +189,7 @@ export default function CourseLayout() {
                           userProgress={progress.find((lp) => lp.lessonId === l.id) ?? null}
                           lesson={l}
                           lessonTitle={l.attributes.title}
-                          locked={isLessonLocked}
+                          locked={isSectionLocked}
                         />
                       );
                     })}
@@ -172,9 +206,6 @@ export default function CourseLayout() {
             );
           })}
         </ul>
-      </nav>
-      <main className="ml-[480px] max-w-screen-md py-10 pr-4 md:py-12">
-        <Outlet />
       </main>
     </div>
   );

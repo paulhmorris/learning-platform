@@ -6,7 +6,7 @@ import { createPortal } from "react-dom";
 import { useCountdown } from "react-timing-hooks";
 
 import { cn, formatSeconds, useUser } from "~/lib/utils";
-import { SUBMIT_INTERVAL_MS } from "~/routes/_app.courses.$courseSlug.$lessonSlug._index";
+import { SUBMIT_INTERVAL_MS } from "~/routes/_course.$lessonSlug._index";
 import { APIResponseData } from "~/types/utils";
 
 interface Props {

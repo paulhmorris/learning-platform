@@ -74,7 +74,7 @@ export function SectionLesson(props: SectionLessonProps) {
     return (
       <NavLink
         end
-        to={`/courses/${params.courseSlug}/${lesson.attributes.slug}`}
+        to={`/${lesson.attributes.slug}`}
         className={({ isActive }) =>
           cn(
             "block rounded-lg py-1 hover:ring hover:ring-[#e4e4e4] focus:outline-none focus:ring focus:ring-ring motion-safe:transition-all",
@@ -104,7 +104,7 @@ export function SectionLesson(props: SectionLessonProps) {
     return (
       <NavLink
         end
-        to={`/courses/${params.courseSlug}/${lesson.attributes.slug}`}
+        to={`/${lesson.attributes.slug}`}
         className={({ isActive }) =>
           cn(
             "block rounded-lg py-1 hover:ring hover:ring-[#e4e4e4] focus:outline-none focus:ring focus:ring-ring motion-safe:transition-all",
@@ -148,7 +148,7 @@ export function SectionLesson(props: SectionLessonProps) {
     return (
       <NavLink
         end
-        to={`/courses/${params.courseSlug}/${lesson.attributes.slug}`}
+        to={`/${lesson.attributes.slug}`}
         className={({ isActive }) =>
           cn(
             "block rounded-lg py-1 hover:ring hover:ring-[#e4e4e4] focus:outline-none focus:ring focus:ring-ring motion-safe:transition-all",
@@ -191,7 +191,7 @@ export function SectionLesson(props: SectionLessonProps) {
   // Completed state
   return (
     <NavLink
-      to={`/courses/${params.courseSlug}/${lesson.attributes.slug}`}
+      to={`/${lesson.attributes.slug}`}
       className={({ isActive }) =>
         cn(
           "block rounded-lg py-1 hover:ring hover:ring-[#e4e4e4] focus:outline-none focus:ring focus:ring-ring motion-safe:transition-all",

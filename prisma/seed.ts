@@ -1,10 +1,12 @@
 /* eslint-disable no-console */
 import { PrismaClient, UserRole } from "@prisma/client";
 import bcrypt from "bcryptjs";
-
-import { stripe } from "~/integrations/stripe.server";
+import Stripe from "stripe";
+import { loadEnv } from "vite";
 
 const prisma = new PrismaClient();
+const env = loadEnv("", process.cwd(), "");
+const stripe = new Stripe(env.STRIPE_SECRET_KEY);
 
 async function seed() {
   const email = "paul@remix.run";
@@ -32,6 +34,7 @@ async function seed() {
       lastName: "Henschel",
       role: UserRole.SUPERADMIN,
       email,
+      isVerified: true,
       stripeId: stripeCustomerId,
       password: {
         create: {
