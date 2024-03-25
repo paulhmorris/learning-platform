@@ -23,7 +23,7 @@ export function Section(props: React.HTMLAttributes<HTMLDivElement>) {
     <section
       {...props}
       className={cn("rounded-xl p-6 pb-8 shadow-[0px_8px_32px_0px_rgba(0,0,0,0.08)] dark:border", props.className)}
-    ></section>
+    />
   );
 }
 
@@ -37,7 +37,7 @@ export function SectionItemButton({ children, to }: { children: React.ReactNode;
 
 export function SectionItemTitle({ children, className, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
-    <h3 {...props} className={cn("text-lg font-medium", className)}>
+    <h3 {...props} className={cn("text-pretty text-lg font-medium", className)}>
       {children}
     </h3>
   );

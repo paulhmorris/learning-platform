@@ -8,13 +8,15 @@ import { z } from "zod";
 
 import { PageTitle } from "~/components/common/page-title";
 import { LessonContentRenderer } from "~/components/lesson/lesson-content-renderer";
-import { cms } from "~/integrations/cms.server";
+import { LessonProgressBar } from "~/components/lesson/lesson-progress-bar";
+import { cms, getLessonBySlug } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
-import { badRequest, handlePrismaError, notFound, serverError } from "~/lib/responses.server";
+import { badRequest, handlePrismaError } from "~/lib/responses.server";
+import { toast } from "~/lib/toast.server";
 import { loader as courseLoader } from "~/routes/_course";
 import { SessionService } from "~/services/SessionService.server";
-import { APIResponseCollection, APIResponseData, TypedMetaFunction } from "~/types/utils";
+import { APIResponseData, TypedMetaFunction } from "~/types/utils";
 
 export const SUBMIT_INTERVAL_MS = 15_000;
 
@@ -25,27 +27,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   invariant(lessonSlug, "Lesson slug is required");
 
   try {
-    const lessonResult = await cms.find<APIResponseCollection<"api::lesson.lesson">["data"]>("lessons", {
-      filters: {
-        slug: lessonSlug,
-      },
-      fields: ["title"],
-      populate: {
-        content: {
-          populate: "*",
-        },
-      },
-    });
-
-    if (lessonResult.data.length > 1) {
-      throw serverError("Multiple courses with the same slug found.");
-    }
-
-    if (lessonResult.data.length === 0) {
-      throw notFound("Course not found.");
-    }
-
-    const lesson = lessonResult.data[0];
+    const lesson = await getLessonBySlug(lessonSlug);
 
     const progress = await db.userLessonProgress.findUnique({
       where: {
@@ -107,7 +89,11 @@ export async function action({ request }: ActionFunctionArgs) {
         where: { id: progress.id },
         data: { isCompleted: true, durationInSeconds: required_duration_in_seconds },
       });
-      return typedjson({ progress: completedProgress });
+      return toast.json(
+        request,
+        { progress: completedProgress },
+        { title: "Lesson completed!", type: "success", description: "You may now move on to the next item." },
+      );
     }
   }
 
@@ -137,12 +123,20 @@ export const meta: TypedMetaFunction<typeof loader, { "routes/_course": typeof c
 };
 
 export default function Course() {
-  const { lesson } = useTypedLoaderData<typeof loader>();
+  const { lesson, progress } = useTypedLoaderData<typeof loader>();
 
   return (
     <>
-      <PageTitle className="mb-8">{lesson.attributes.title}</PageTitle>
-      <LessonContentRenderer content={lesson.attributes.content} />
+      <PageTitle>{lesson.attributes.title}</PageTitle>
+      <div className="my-4 lg:hidden">
+        <LessonProgressBar
+          duration={lesson.attributes.required_duration_in_seconds ?? 0}
+          progress={progress?.durationInSeconds ?? 0}
+        />
+      </div>
+      <div className="mt-8">
+        <LessonContentRenderer content={lesson.attributes.content} />
+      </div>
     </>
   );
 }

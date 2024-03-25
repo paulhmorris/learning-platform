@@ -14,12 +14,12 @@ import { CourseProgressBar } from "~/components/sidebar/course-progress-bar";
 import { SectionLesson } from "~/components/sidebar/section-lesson";
 import { SectionQuiz } from "~/components/sidebar/section-quiz";
 import { Separator } from "~/components/ui/separator";
-import { cms } from "~/integrations/cms.server";
+import { getCoursePreview } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
 import { handlePrismaError, serverError } from "~/lib/responses.server";
 import { SessionService } from "~/services/SessionService.server";
-import { APIResponseData, TypedMetaFunction } from "~/types/utils";
+import { TypedMetaFunction } from "~/types/utils";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await SessionService.requireUser(request);
@@ -27,31 +27,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   try {
     const { host } = new URL(request.url);
     const { strapiId } = await db.course.findUniqueOrThrow({ where: { host } });
-    const course = await cms.findOne<APIResponseData<"api::course.course">>("courses", strapiId, {
-      fields: ["title"],
-      populate: {
-        cover_image: {
-          fields: ["alternativeText", "formats", "url"],
-        },
-        sections: {
-          fields: ["title"],
-          populate: {
-            quiz: {
-              fields: ["title", "uuid"],
-              populate: {
-                questions: {
-                  count: true,
-                },
-              },
-            },
-            lessons: {
-              fields: ["title", "slug", "has_video", "uuid", "required_duration_in_seconds"],
-            },
-          },
-        },
-      },
-    });
-
+    const course = await getCoursePreview(strapiId);
     const progress = await db.userLessonProgress.findMany({ where: { userId: user.id } });
     const quizProgress = await db.userQuizProgress.findMany({ where: { userId: user.id } });
 
@@ -190,10 +166,8 @@ export default function CourseIndex() {
                         return (
                           <SectionLesson
                             key={l.attributes.uuid}
-                            hasVideo={l.attributes.has_video}
-                            userProgress={progress.find((lp) => lp.lessonId === l.id) ?? null}
                             lesson={l}
-                            lessonTitle={l.attributes.title}
+                            userProgress={progress.find((lp) => lp.lessonId === l.id) ?? null}
                             locked={isSectionLocked}
                           />
                         );

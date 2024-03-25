@@ -12,13 +12,12 @@ import { SectionLesson } from "~/components/sidebar/section-lesson";
 import { SectionQuiz } from "~/components/sidebar/section-quiz";
 import { Separator } from "~/components/ui/separator";
 import { useCourseData } from "~/hooks/useCourseData";
-import { cms } from "~/integrations/cms.server";
+import { getCourse } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
 import { toast } from "~/lib/toast.server";
 import { cn } from "~/lib/utils";
 import { SessionService } from "~/services/SessionService.server";
-import { APIResponseData } from "~/types/utils";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await SessionService.requireUser(request);
@@ -41,27 +40,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       });
     }
 
-    const course = await cms.findOne<APIResponseData<"api::course.course">>("courses", linkedCourse.strapiId, {
-      fields: ["title"],
-      populate: {
-        sections: {
-          fields: ["title"],
-          populate: {
-            quiz: {
-              fields: ["title", "uuid"],
-              populate: {
-                questions: {
-                  count: true,
-                },
-              },
-            },
-            lessons: {
-              fields: ["title", "slug", "has_video", "uuid", "required_duration_in_seconds"],
-            },
-          },
-        },
-      },
-    });
+    const course = await getCourse(linkedCourse.strapiId);
 
     const progress = await db.userLessonProgress.findMany({ where: { userId: user.id } });
     const quizProgress = await db.userQuizProgress.findMany({ where: { userId: user.id } });
@@ -71,6 +50,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         section.lessons?.data.map((l) => {
           const lessonProgress = progress.find((p) => p.lessonId === l.id);
           return {
+            id: l.id,
             uuid: l.attributes.uuid,
             slug: l.attributes.slug,
             title: l.attributes.title,
@@ -102,24 +82,35 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export default function CourseLayout() {
   const { course, lessonsInOrder, progress, quizProgress } = useCourseData();
   const params = useParams();
-  const [isShowingMore, setIsShowingMore] = useState(false);
+  const [isShowingMore, setIsShowingMore] = useState(true);
   const isLargeScreen = useMediaQuery("(min-width: 1024px)");
-
   const isCollapsed = !isShowingMore && !isLargeScreen;
 
   function toggleShowMore() {
     setIsShowingMore((prev) => !prev);
   }
 
+  const { sections } = course.attributes;
+
   // Calculate the lesson last completed lesson, defaulting to the first lesson
   const nextLessonIndex = lessonsInOrder.findIndex((l) => !l.isCompleted);
+  const nextLesson = lessonsInOrder.at(nextLessonIndex);
   const lastCompletedLessonIndex = nextLessonIndex === -1 ? 0 : nextLessonIndex - 1;
 
-  const activeLesson = lessonsInOrder.filter((l) => l.slug === params.lessonSlug)[0] ?? null;
-  const activeSection =
-    course.attributes.sections.find((s) => s.id === activeLesson.sectionId) ?? course.attributes.sections[0];
   const isQuizActive = Boolean(params.quizId);
-  const shouldShowQuizInSection = isCollapsed ? isQuizActive : true;
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  const activeQuiz = sections.find((s) => s.quiz?.data?.id === Number(params.quizId))?.quiz ?? null;
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  const activeQuizProgress = quizProgress.find((p) => p.quizId === activeQuiz?.data?.id);
+
+  const activeLesson = lessonsInOrder.filter((l) => l.slug === params.lessonSlug).at(0) ?? null;
+  const activeLessonProgress = progress.find((p) => p.lessonId === activeLesson?.id);
+  const activeSection = activeQuiz
+    ? // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      sections.find((s) => s.quiz?.data?.attributes.uuid === activeQuiz.data?.attributes.uuid)
+    : sections.find((s) => s.id === activeLesson?.sectionId) ?? sections.at(0);
+
+  // console.log(nextLesson);
 
   // Sum the user progress to get the total progress
   const totalProgressInSeconds = progress.reduce((acc, curr) => {
@@ -134,7 +125,7 @@ export default function CourseLayout() {
   return (
     <>
       <Header />
-      <nav className="overflow-visible px-4 py-4 lg:fixed lg:bottom-0 lg:left-0 lg:top-20 lg:w-[448px] lg:py-12">
+      <nav className="overflow-visible px-4 py-4 lg:fixed lg:bottom-0 lg:left-0 lg:top-20 lg:w-[448px] lg:overflow-auto lg:py-12">
         <BackToCourseLink />
 
         {/* TODO: Adjust for non timed courses */}
@@ -142,30 +133,52 @@ export default function CourseLayout() {
           <CourseProgressBar progress={totalProgressInSeconds} duration={totalDurationInSeconds} />
         </div>
 
-        <ul className="space-y-7">
-          {course.attributes.sections
-            .filter((s) => (isCollapsed ? s.id === activeSection.id : true))
+        <ul className="relative space-y-7">
+          {sections
+            .filter((s) => {
+              if (isCollapsed) {
+                if (activeLessonProgress?.isCompleted || activeQuizProgress?.isCompleted) {
+                  return s.id === activeSection?.id || s.id === nextLesson?.sectionId;
+                }
+                return s.id === activeSection?.id;
+              }
+              return true;
+            })
             .map((section, section_index) => {
               const durationInSeconds = section.lessons?.data.reduce(
                 (acc, curr) => Math.ceil((curr.attributes.required_duration_in_seconds || 0) + acc),
                 0,
               );
+
               const isQuizLocked = lessonsInOrder.filter((l) => l.sectionId === section.id).some((l) => !l.isCompleted);
+              const shouldShowQuizInSection = isCollapsed ? isQuizActive || !isQuizLocked : true;
 
               return (
                 <li key={`section-${section.id}`} data-sectionid={section.id}>
-                  <Section>
+                  <Section className={cn(isCollapsed && "pb-16")}>
                     <SectionHeader sectionTitle={section.title} durationInMinutes={(durationInSeconds || 1) / 60} />
-                    <Separator className={cn(!isLargeScreen && !isShowingMore ? "my-2 bg-transparent" : "my-4")} />
+                    <Separator className={cn(isCollapsed ? "my-2 bg-transparent" : "my-4")} />
                     <ul className="flex flex-col gap-4">
                       {section.lessons?.data
-                        .filter((l) => (isCollapsed ? l.attributes.uuid === activeLesson.uuid : true))
+                        .filter((l) => {
+                          if (isCollapsed) {
+                            // If lesson is completed, show the next lesson too
+                            if (activeLessonProgress?.isCompleted || activeQuizProgress?.isCompleted) {
+                              return (
+                                l.attributes.uuid === activeLesson?.uuid ||
+                                (nextLesson && l.attributes.uuid === nextLesson.uuid)
+                              );
+                            }
+                            // Or just show active lesson when collapsed
+                            return l.attributes.uuid === activeLesson?.uuid;
+                          }
+                          return true;
+                        })
                         .map((l) => {
                           const lessonIndex = lessonsInOrder.findIndex((li) => li.uuid === l.attributes.uuid);
 
                           // Lock the lesson if the previous section's quiz is not completed
-                          const previousSection =
-                            section_index > 0 ? course.attributes.sections[section_index - 1] : null;
+                          const previousSection = section_index > 0 ? sections.at(section_index - 1) : null;
                           const previousSectionQuiz = previousSection?.quiz;
                           const previousSectionQuizIsCompleted = quizProgress.find(
                             (p) => p.isCompleted && p.quizId === previousSectionQuiz?.data.id,
@@ -191,11 +204,21 @@ export default function CourseLayout() {
                         />
                       ) : null}
                     </ul>
-                    <button onClick={toggleShowMore}>Show more</button>
                   </Section>
                 </li>
               );
             })}
+          {!isLargeScreen ? (
+            <button
+              className={cn(
+                "absolute left-1/2 -translate-x-1/2 self-center text-center text-base font-light",
+                !isCollapsed ? "-bottom-12" : "bottom-6",
+              )}
+              onClick={toggleShowMore}
+            >
+              {!isCollapsed ? "Show less" : "Show more"}
+            </button>
+          ) : null}
         </ul>
       </nav>
       <main className="px-4 py-12 lg:ml-[480px] lg:max-w-screen-md lg:pl-0 lg:pr-4">

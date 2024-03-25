@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { Form, Link } from "@remix-run/react";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { typedjson, useTypedActionData, useTypedLoaderData } from "remix-typedjson";
 import invariant from "tiny-invariant";
 
@@ -182,14 +182,12 @@ export default function Quiz() {
   const { course, lessonsInOrder } = useCourseData();
   const { quiz, progress } = useTypedLoaderData<typeof loader>();
   const actionData = useTypedActionData<typeof action>();
+  const resultsRef = useRef<HTMLDivElement>(null);
 
-  // Scroll to top when quiz is submitted
+  // Scroll to results quiz is submitted
   useEffect(() => {
     if (typeof actionData?.score !== "undefined" && typeof window !== "undefined") {
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth",
-      });
+      resultsRef.current?.scrollIntoView({ behavior: "smooth" });
     }
   }, [actionData?.score]);
 
@@ -209,7 +207,7 @@ export default function Quiz() {
   return (
     <>
       {/* Results */}
-      <div role="alert" aria-live="polite">
+      <div role="alert" aria-live="polite" ref={resultsRef}>
         {isPassed ? (
           <QuizPassed score={progress?.score ?? actionData?.score ?? 100} />
         ) : !actionData?.passed && typeof actionData?.score !== "undefined" ? (

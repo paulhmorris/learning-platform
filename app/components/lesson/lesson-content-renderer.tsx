@@ -1,5 +1,6 @@
 import { lazy } from "react";
 import { StrapiResponse } from "strapi-sdk-js";
+import { useIsClient } from "usehooks-ts";
 
 // eslint-disable-next-line import/order
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "~/components/ui/carousel";
@@ -18,9 +19,14 @@ type Props = {
 export function LessonContentRenderer({ content }: Props) {
   const user = useOptionalUser();
 
+  const isClient = useIsClient();
+  if (!isClient) {
+    return null;
+  }
+
   return (
     <div className="space-y-8">
-      {content?.map((component) => {
+      {content?.map((component, c_index) => {
         switch (component.__component) {
           case "blocks.video": {
             const video = component.mux_asset?.data.attributes;
@@ -49,6 +55,7 @@ export function LessonContentRenderer({ content }: Props) {
             return (
               <section
                 key={`${component.__component}-${component.id}`}
+                data-key={`${component.__component}-${component.id}`}
                 className="prose max-w-full dark:prose-invert prose-h1:text-[32px] prose-p:text-lg prose-p:leading-7"
               >
                 <BlocksRenderer content={component.content} />
@@ -58,7 +65,7 @@ export function LessonContentRenderer({ content }: Props) {
 
           case "blocks.slideshow": {
             return (
-              <Carousel className="mx-12 max-w-[75%]">
+              <Carousel key={`carousel-${c_index}`} className="mx-12 max-w-[75%]">
                 <CarouselContent>
                   {component.images.data.map((i, index) => {
                     return (
