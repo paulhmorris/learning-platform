@@ -4,40 +4,87 @@ import { captureRemixErrorBoundaryError, withSentry } from "@sentry/remix";
 import { PreventFlashOnWrongTheme, ThemeProvider, useTheme } from "remix-themes";
 import { typedjson, useTypedLoaderData } from "remix-typedjson";
 
+import "@fontsource-variable/inter/wght.css";
 import { ErrorComponent } from "~/components/error-component";
 import { Notifications } from "~/components/notifications";
+import { cms } from "~/integrations/cms.server";
+import { db } from "~/integrations/db.server";
+import { Sentry } from "~/integrations/sentry";
 import { themeSessionResolver } from "~/lib/session.server";
-import { getGlobalToast } from "~/lib/toast.server";
-import { cn } from "~/lib/utils";
+import { getGlobalToast, toast } from "~/lib/toast.server";
+import { cn, hexToPartialHSL } from "~/lib/utils";
 import { SessionService } from "~/services/SessionService.server";
-import stylesheet from "~/tailwind.css?url";
+import globalStyles from "~/tailwind.css?url";
+import { APIResponseData } from "~/types/utils";
 
-import "@fontsource-variable/inter/wght.css";
-
-export const links: LinksFunction = () => [{ rel: "stylesheet", href: stylesheet, as: "style" }];
+export const links: LinksFunction = () => [{ rel: "stylesheet", href: globalStyles, as: "style" }];
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const session = await SessionService.getSession(request);
+  const user = await SessionService.getUser(request);
   const { getTheme } = await themeSessionResolver(request);
 
-  return typedjson(
-    {
-      user: await SessionService.getUser(request),
-      theme: getTheme(),
-      serverToast: getGlobalToast(session),
-      ENV: {
-        VERCEL_URL: process.env.VERCEL_URL,
-        VERCEL_ENV: process.env.VERCEL_ENV,
-        STRAPI_URL: process.env.STRAPI_URL,
-        STRIPE_PUBLIC_KEY: process.env.STRIPE_PUBLIC_KEY,
-      },
+  const defaultResponse = {
+    user: await SessionService.getUser(request),
+    theme: getTheme(),
+    serverToast: getGlobalToast(session),
+    course: null,
+    ENV: {
+      VERCEL_URL: process.env.VERCEL_URL,
+      VERCEL_ENV: process.env.VERCEL_ENV,
+      STRAPI_URL: process.env.STRAPI_URL,
+      STRIPE_PUBLIC_KEY: process.env.STRIPE_PUBLIC_KEY,
     },
-    {
-      headers: {
-        "Set-Cookie": await SessionService.commitSession(session),
+  };
+
+  try {
+    const { host } = new URL(request.url);
+    const linkedCourse = await db.course.findUnique({ where: { host } });
+
+    if (!linkedCourse) {
+      Sentry.captureMessage("Received request from unknown host", {
+        extra: { host },
+        level: "warning",
+        user: user ? { username: user.email, id: user.id, email: user.email } : undefined,
+      });
+      return toast.json(request, defaultResponse, {
+        type: "error",
+        title: "Course not found",
+        description: "Please try again later",
+        position: "bottom-center",
+      });
+    }
+
+    const course = await cms.findOne<APIResponseData<"api::course.course">>("courses", linkedCourse.strapiId, {
+      fields: ["primary_color", "secondary_color", "title"],
+      populate: {
+        logo: {
+          fields: "url",
+        },
+        dark_mode_logo: {
+          fields: "url",
+        },
       },
-    },
-  );
+    });
+
+    return typedjson(
+      { ...defaultResponse, course },
+      {
+        headers: {
+          "Set-Cookie": await SessionService.commitSession(session),
+        },
+      },
+    );
+  } catch (error) {
+    console.error(error);
+    Sentry.captureException(error);
+    return toast.json(request, defaultResponse, {
+      type: "error",
+      title: "Course not found",
+      description: "Please try again later",
+      position: "bottom-center",
+    });
+  }
 };
 
 function AppWithProviders() {
@@ -60,17 +107,25 @@ function App() {
         <meta name="viewport" content="width=device-width,initial-scale=1" />
         <meta name="theme-color" media="(prefers-color-scheme: light)" content="#fff" />
         <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#030712" />
+        <link
+          rel="icon"
+          href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎓</text></svg>"
+        />
+        {/* Set colors from CMS */}
+        <style>
+          {`
+            :root {
+              --primary: ${hexToPartialHSL(data.course?.data.attributes.primary_color ?? "210 100% 40%")};
+              --primary-foreground: ${hexToPartialHSL(data.course?.data.attributes.secondary_color ?? "0 0% 100%")};
+            }
+          `}
+        </style>
         <Meta />
         <PreventFlashOnWrongTheme ssrTheme={Boolean(data.theme)} />
         <Links />
       </head>
       <body className={cn("h-full min-h-full bg-background font-sans text-foreground", theme)}>
         <Outlet />
-        {/* {data.user ? (
-          <div className="fixed bottom-6 left-6 rounded border bg-background p-4 text-xs shadow-lg">
-            <pre>{JSON.stringify(data.user, null, 2)}</pre>
-          </div>
-        ) : null} */}
         <Notifications />
         <ScrollRestoration />
         <script

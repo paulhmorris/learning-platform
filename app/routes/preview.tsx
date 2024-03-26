@@ -14,7 +14,7 @@ import { CourseProgressBar } from "~/components/sidebar/course-progress-bar";
 import { SectionLesson } from "~/components/sidebar/section-lesson";
 import { SectionQuiz } from "~/components/sidebar/section-quiz";
 import { Separator } from "~/components/ui/separator";
-import { getCoursePreview } from "~/integrations/cms.server";
+import { getCourse } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
 import { handlePrismaError, serverError } from "~/lib/responses.server";
@@ -27,7 +27,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   try {
     const { host } = new URL(request.url);
     const { strapiId } = await db.course.findUniqueOrThrow({ where: { host } });
-    const course = await getCoursePreview(strapiId);
+    const course = await getCourse(strapiId);
     const progress = await db.userLessonProgress.findMany({ where: { userId: user.id } });
     const quizProgress = await db.userQuizProgress.findMany({ where: { userId: user.id } });
 
@@ -63,7 +63,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export const meta: TypedMetaFunction<typeof loader> = ({ data }) => {
-  return [{ title: `Course Overview | ${data?.course.attributes.title}` }];
+  return [{ title: `Preview | ${data?.course.attributes.title}` }];
 };
 
 export default function CourseIndex() {
@@ -98,9 +98,8 @@ export default function CourseIndex() {
   return (
     <>
       <Header />
-
-      <div className="flex gap-x-12 px-10">
-        <nav className="sticky left-0 top-[88px] h-full shrink-0 basis-[448px] py-10 md:py-14">
+      <div className="flex flex-col gap-x-12 px-4 py-4 lg:flex-row lg:py-4">
+        <nav className="left-0 top-[88px] h-full shrink-0 basis-[448px] py-10 md:py-14 lg:sticky">
           <StrapiImage
             asset={course.attributes.cover_image}
             height={240}
@@ -112,7 +111,7 @@ export default function CourseIndex() {
             className="overflow-hidden rounded-xl object-cover shadow-[0px_8px_32px_0px_#00000029]"
           />
           <div className="mt-7">
-            <CoursePreviewLink to={``}>
+            <CoursePreviewLink to={`.`}>
               <IconClipboard className="text-current" />
               <span>Course Chapters</span>
             </CoursePreviewLink>
@@ -124,7 +123,7 @@ export default function CourseIndex() {
           </div>
         </nav>
 
-        <main className="max-w-screen-md py-10 md:py-14">
+        <main className="max-w-screen-md lg:py-14">
           <div className="space-y-8">
             <CourseHeader courseTitle={course.attributes.title} numLessons={lessonsInOrder.length || 0} />
             <CourseProgressBar progress={totalProgressInSeconds} duration={totalDurationInSeconds} />

@@ -1,5 +1,5 @@
 import { Prisma } from "@prisma/client";
-import type { ActionFunctionArgs, LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { Link, useFetcher, useSearchParams } from "@remix-run/react";
 import { withZod } from "@remix-validated-form/with-zod";
 import { nanoid } from "nanoid";
@@ -17,9 +17,11 @@ import { Sentry } from "~/integrations/sentry";
 import { verifyEmailJob } from "~/jobs/verify-email.server";
 import { handlePrismaError, serverError } from "~/lib/responses.server";
 import { toast } from "~/lib/toast.server";
+import { loader as rootLoader } from "~/root";
 import { validator as verifyCodeValidator } from "~/routes/api.verification-code";
 import { SessionService } from "~/services/SessionService.server";
 import { UserService } from "~/services/UserService.server";
+import { TypedMetaFunction } from "~/types/utils";
 
 const validator = withZod(
   z.discriminatedUnion("step", [
@@ -159,7 +161,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   );
 };
 
-export const meta: MetaFunction = () => [{ title: "Sign Up" }];
+export const meta: TypedMetaFunction<typeof loader, { root: typeof rootLoader }> = ({ matches }) => {
+  // @ts-expect-error typed meta funtion doesn't support this yet
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  const match = matches.find((m) => m.id === "root")?.data.course;
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+  return [{ title: `Login | ${match?.data?.attributes.title}` }];
+};
 
 export default function Join() {
   const [searchParams] = useSearchParams();
@@ -227,7 +235,7 @@ export default function Join() {
               <SubmitButton name="step" value="join" variant="primary-md">
                 Sign Up
               </SubmitButton>
-              <p className="mt-1 text-center text-sm text-muted-foreground contrast-more:text-foreground">
+              <p className="mt-1.5 text-center text-sm text-muted-foreground contrast-more:text-foreground">
                 You will receive a code to verify your account.
               </p>
             </div>

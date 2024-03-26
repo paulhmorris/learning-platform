@@ -37,6 +37,7 @@ model UserVerification {
   userId    String   @unique
   expiresAt DateTime
 
+  createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
@@ -49,7 +50,7 @@ enum UserRole {
 model Course {
   id       String @id @default(cuid())
   strapiId Int
-  /// e.g. "https://course.hiphopdriving.com"
+  /// e.g. "course.hiphopdriving.com"
   host     String @unique
 
   createdAt DateTime @default(now())

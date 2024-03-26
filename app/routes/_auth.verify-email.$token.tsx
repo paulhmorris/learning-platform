@@ -15,13 +15,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   try {
-    const token = await db.userVerification.findUniqueOrThrow({
+    const token = await db.userVerification.findFirst({
       where: { token: paramToken },
       include: { user: true },
     });
 
-    if (token.usedAt) {
-      return toast.redirect(request, "/login", { type: "error", title: "Token already used." });
+    if (!token) {
+      return toast.redirect(request, "/login", { type: "error", title: "Invalid token" });
     }
 
     if (token.expiresAt < new Date()) {
@@ -31,7 +31,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     await db.$transaction([
       db.userVerification.update({
         where: { id: token.id },
-        data: { usedAt: new Date() },
+        data: { expiresAt: new Date() },
       }),
       db.user.update({
         where: { id: token.userId },

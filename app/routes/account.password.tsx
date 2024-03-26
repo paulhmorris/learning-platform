@@ -11,8 +11,10 @@ import { Sentry } from "~/integrations/sentry";
 import { toast } from "~/lib/toast.server";
 import { useUser } from "~/lib/utils";
 import { verifyLogin } from "~/models/user.server";
+import { loader as rootLoader } from "~/root";
 import { PasswordService } from "~/services/PasswordService.server";
 import { SessionService } from "~/services/SessionService.server";
+import { TypedMetaFunction } from "~/types/utils";
 
 const validator = withZod(
   z
@@ -38,6 +40,14 @@ const validator = withZod(
       }
     }),
 );
+
+export const meta: TypedMetaFunction<typeof loader, { root: typeof rootLoader }> = ({ matches }) => {
+  // @ts-expect-error typed meta funtion doesn't support this yet
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  const match = matches.find((m) => m.id === "root")?.data.course;
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+  return [{ title: `Password | ${match?.data?.attributes.title}` }];
+};
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await SessionService.requireUserId(request);

@@ -56,7 +56,7 @@ export function LessonContentRenderer({ content }: Props) {
               <section
                 key={`${component.__component}-${component.id}`}
                 data-key={`${component.__component}-${component.id}`}
-                className="prose max-w-full dark:prose-invert prose-h1:text-[32px] prose-p:text-lg prose-p:leading-7"
+                className="prose max-w-full dark:prose-invert prose-h1:text-[32px] prose-p:my-0 prose-p:text-lg prose-p:leading-7"
               >
                 <BlocksRenderer content={component.content} />
               </section>

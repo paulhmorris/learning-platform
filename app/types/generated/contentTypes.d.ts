@@ -390,6 +390,14 @@ export interface ApiCourseCourse extends Schema.CollectionType {
     uuid: Attribute.UID &
       Attribute.CustomField<'plugin::strapi-advanced-uuid.uuid'>;
     sections: Attribute.DynamicZone<['course.section']> & Attribute.Required;
+    logo: Attribute.Media & Attribute.Required;
+    primary_color: Attribute.String &
+      Attribute.Required &
+      Attribute.CustomField<'plugin::color-picker.color'>;
+    secondary_color: Attribute.String &
+      Attribute.Required &
+      Attribute.CustomField<'plugin::color-picker.color'>;
+    dark_mode_logo: Attribute.Media;
     createdAt: Attribute.DateTime;
     updatedAt: Attribute.DateTime;
     publishedAt: Attribute.DateTime;
@@ -441,7 +449,13 @@ export interface ApiLessonLesson extends Schema.CollectionType {
     has_video: Attribute.Boolean &
       Attribute.Required &
       Attribute.DefaultTo<true>;
-    required_duration_in_seconds: Attribute.Integer;
+    required_duration_in_seconds: Attribute.Integer &
+      Attribute.SetMinMax<
+        {
+          min: 60;
+        },
+        number
+      >;
     createdAt: Attribute.DateTime;
     updatedAt: Attribute.DateTime;
     publishedAt: Attribute.DateTime;
@@ -647,6 +661,10 @@ export interface PluginContentReleasesRelease extends Schema.CollectionType {
     releasedAt: Attribute.DateTime;
     scheduledAt: Attribute.DateTime;
     timezone: Attribute.String;
+    status: Attribute.Enumeration<
+      ['ready', 'blocked', 'failed', 'done', 'empty']
+    > &
+      Attribute.Required;
     actions: Attribute.Relation<
       'plugin::content-releases.release',
       'oneToMany',
@@ -701,6 +719,7 @@ export interface PluginContentReleasesReleaseAction
       'manyToOne',
       'plugin::content-releases.release'
     >;
+    isEntryValid: Attribute.Boolean;
     createdAt: Attribute.DateTime;
     updatedAt: Attribute.DateTime;
     createdBy: Attribute.Relation<

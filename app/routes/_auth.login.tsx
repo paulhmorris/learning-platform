@@ -1,4 +1,4 @@
-import type { ActionFunctionArgs, LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { Link, useSearchParams } from "@remix-run/react";
 import { withZod } from "@remix-validated-form/with-zod";
 import { redirect, typedjson } from "remix-typedjson";
@@ -12,11 +12,12 @@ import { Checkbox, FormField } from "~/components/ui/form";
 import { Label } from "~/components/ui/label";
 import { SubmitButton } from "~/components/ui/submit-button";
 import { Sentry } from "~/integrations/sentry";
-import { META } from "~/lib/constants";
 import { CheckboxSchema } from "~/lib/schemas";
 import { safeRedirect } from "~/lib/utils";
 import { verifyLogin } from "~/models/user.server";
+import { loader as rootLoader } from "~/root";
 import { SessionService } from "~/services/SessionService.server";
+import { TypedMetaFunction } from "~/types/utils";
 
 const validator = withZod(
   z.object({
@@ -74,7 +75,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   });
 };
 
-export const meta: MetaFunction = () => [{ title: `Login | ${META.titleSuffix}` }];
+export const meta: TypedMetaFunction<typeof loader, { root: typeof rootLoader }> = ({ matches }) => {
+  // @ts-expect-error typed meta funtion doesn't support this yet
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  const match = matches.find((m) => m.id === "root")?.data.course;
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+  return [{ title: `Login | ${match?.data?.attributes.title}` }];
+};
 
 export default function LoginPage() {
   const [searchParams] = useSearchParams();

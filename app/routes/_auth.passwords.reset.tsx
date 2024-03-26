@@ -1,6 +1,5 @@
 import { Prisma } from "@prisma/client";
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { MetaFunction } from "@remix-run/react";
 import { withZod } from "@remix-validated-form/with-zod";
 import { redirect, typedjson, useTypedActionData } from "remix-typedjson";
 import { ValidatedForm, validationError } from "remix-validated-form";
@@ -11,11 +10,12 @@ import { PageTitle } from "~/components/common/page-title";
 import { FormField } from "~/components/ui/form";
 import { SubmitButton } from "~/components/ui/submit-button";
 import { Sentry } from "~/integrations/sentry";
-import { META } from "~/lib/constants";
 import { toast } from "~/lib/toast.server";
+import { loader as rootLoader } from "~/root";
 import { MailService } from "~/services/MailService.server";
 import { PasswordService } from "~/services/PasswordService.server";
 import { SessionService } from "~/services/SessionService.server";
+import { TypedMetaFunction } from "~/types/utils";
 
 const validator = withZod(z.object({ email: z.string().email() }));
 
@@ -56,15 +56,22 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   }
 };
 
-export const meta: MetaFunction = () => [{ title: `Reset your password | ${META.titleSuffix}` }];
+export const meta: TypedMetaFunction<typeof loader, { root: typeof rootLoader }> = ({ matches }) => {
+  // @ts-expect-error typed meta funtion doesn't support this yet
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  const match = matches.find((m) => m.id === "root")?.data.course;
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+  return [{ title: `Reset Your Password | ${match?.data?.attributes.title}` }];
+};
+
 export default function ResetPassword() {
   // remix-validated-form validationError breaks inference
   const data = useTypedActionData() as { success?: boolean } | undefined;
 
   return (
     <>
-      <PageTitle className="text-center">Reset your password</PageTitle>
       <AuthCard>
+        <PageTitle className="mb-8">Reset your password</PageTitle>
         {data && data.success ? (
           <p className="text-lg font-medium">
             Thanks! If your email is registered with us, you will be emailed a link to reset your password.

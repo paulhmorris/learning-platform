@@ -56,7 +56,7 @@ export function UserMenu() {
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link className="cursor-pointer" to="/account/profile">
-                Profile
+                Account
               </Link>
             </DropdownMenuItem>
           </DropdownMenuGroup>

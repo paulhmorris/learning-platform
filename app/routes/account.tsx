@@ -1,6 +1,5 @@
 import { NavLink, Outlet } from "@remix-run/react";
 import { IconCreditCard, IconLock, IconUserCircle } from "@tabler/icons-react";
-import React from "react";
 
 import { ErrorComponent } from "~/components/error-component";
 import { Header } from "~/components/header";
@@ -15,15 +14,7 @@ const links = [
 
 export default function AccountLayout() {
   return (
-    <div
-      className="h-full"
-      style={
-        {
-          "--primary": "210 100% 40%",
-          "--primary-foreground": "0 0% 100%",
-        } as React.CSSProperties
-      }
-    >
+    <div className="h-full">
       <Header />
       <div className="flex min-h-[calc(100%-80px)] flex-col justify-center dark:bg-background md:bg-secondary">
         <div className="flex-1">

@@ -2,7 +2,7 @@ import { LoaderFunctionArgs } from "@remix-run/node";
 import { Outlet, useParams } from "@remix-run/react";
 import { useState } from "react";
 import { typedjson } from "remix-typedjson";
-import { useMediaQuery } from "usehooks-ts";
+import { useIsClient, useMediaQuery } from "usehooks-ts";
 
 import { Header } from "~/components/header";
 import { Section, SectionHeader } from "~/components/section";
@@ -52,7 +52,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
           return {
             id: l.id,
             uuid: l.attributes.uuid,
-            slug: l.attributes.slug,
+            slug: l.attributes.slug.toLowerCase(),
             title: l.attributes.title,
             sectionId: section.id,
             sectionTitle: section.title,
@@ -83,6 +83,7 @@ export default function CourseLayout() {
   const { course, lessonsInOrder, progress, quizProgress } = useCourseData();
   const params = useParams();
   const [isShowingMore, setIsShowingMore] = useState(true);
+  const isClient = useIsClient();
   const isLargeScreen = useMediaQuery("(min-width: 1024px)");
   const isCollapsed = !isShowingMore && !isLargeScreen;
 
@@ -109,8 +110,6 @@ export default function CourseLayout() {
     ? // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       sections.find((s) => s.quiz?.data?.attributes.uuid === activeQuiz.data?.attributes.uuid)
     : sections.find((s) => s.id === activeLesson?.sectionId) ?? sections.at(0);
-
-  // console.log(nextLesson);
 
   // Sum the user progress to get the total progress
   const totalProgressInSeconds = progress.reduce((acc, curr) => {
@@ -208,10 +207,10 @@ export default function CourseLayout() {
                 </li>
               );
             })}
-          {!isLargeScreen ? (
+          {!isLargeScreen && isClient ? (
             <button
               className={cn(
-                "absolute left-1/2 -translate-x-1/2 self-center text-center text-base font-light",
+                "absolute left-1/2 -translate-x-1/2 self-center rounded text-center text-base font-light ring-offset-background transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                 !isCollapsed ? "-bottom-12" : "bottom-6",
               )}
               onClick={toggleShowMore}

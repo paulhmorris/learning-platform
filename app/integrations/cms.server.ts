@@ -12,30 +12,6 @@ export function getCourse(id: number) {
   return cms.findOne<APIResponseData<"api::course.course">>("courses", id, {
     fields: ["title"],
     populate: {
-      sections: {
-        fields: ["title"],
-        populate: {
-          quiz: {
-            fields: ["title", "uuid"],
-            populate: {
-              questions: {
-                count: true,
-              },
-            },
-          },
-          lessons: {
-            fields: ["title", "slug", "has_video", "uuid", "required_duration_in_seconds"],
-          },
-        },
-      },
-    },
-  });
-}
-
-export function getCoursePreview(id: number) {
-  return cms.findOne<APIResponseData<"api::course.course">>("courses", id, {
-    fields: ["title"],
-    populate: {
       cover_image: {
         fields: ["alternativeText", "formats", "url"],
       },
