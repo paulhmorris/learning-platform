@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { LoaderFunctionArgs } from "@remix-run/node";
+import { Link } from "@remix-run/react";
 import { typedjson, useTypedLoaderData } from "remix-typedjson";
 
 import { StrapiImage } from "~/components/common/strapi-image";
@@ -8,12 +9,19 @@ import { CoursePurchaseCTA } from "~/components/course/course-purchase-cta";
 import { CourseUpNext } from "~/components/course/course-up-next";
 import { ErrorComponent } from "~/components/error-component";
 import { Header } from "~/components/header";
-import { IconClipboard, IconDocument } from "~/components/icons";
-import { Section, SectionHeader } from "~/components/section";
+import { IconCertificate, IconClipboard, IconDocument } from "~/components/icons";
+import {
+  Section,
+  SectionHeader,
+  SectionItemContainer,
+  SectionItemIconContainer,
+  SectionItemTitle,
+} from "~/components/section";
 import { CoursePreviewLink } from "~/components/sidebar/course-preview-link";
 import { CourseProgressBar } from "~/components/sidebar/course-progress-bar";
 import { SectionLesson } from "~/components/sidebar/section-lesson";
 import { SectionQuiz } from "~/components/sidebar/section-quiz";
+import { Button } from "~/components/ui/button";
 import { Separator } from "~/components/ui/separator";
 import { getCourse } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
@@ -202,6 +210,30 @@ export default function CourseIndex() {
                 </li>
               );
             })}
+            <li key="section-certificate">
+              <Section>
+                <SectionHeader sectionTitle="Certificate" />
+                <Separator className="my-4" />
+                <div
+                  className="-my-1 block rounded-lg py-1"
+                  aria-label="This lesson is locked until previous lessons are completed."
+                >
+                  <SectionItemContainer>
+                    <SectionItemIconContainer>
+                      <IconCertificate className="h-7 w-6 text-gray-400 contrast-more:text-gray-500 dark:text-gray-600 contrast-more:dark:text-gray-400" />
+                    </SectionItemIconContainer>
+                    <div className="flex flex-col justify-center">
+                      <SectionItemTitle className="text-gray-400 contrast-more:text-gray-500 dark:text-gray-600 contrast-more:dark:text-gray-400">
+                        Certificate
+                      </SectionItemTitle>
+                    </div>
+                    <Button variant="secondary" className="ml-auto w-auto" asChild>
+                      <Link to="/certificate">Claim</Link>
+                    </Button>
+                  </SectionItemContainer>
+                </div>
+              </Section>
+            </li>
           </ul>
         </main>
       </div>

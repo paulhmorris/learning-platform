@@ -5,7 +5,7 @@ import { cn } from "~/lib/utils";
 
 interface SectionHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
   sectionTitle: string;
-  durationInMinutes: number;
+  durationInMinutes?: number;
 }
 
 export function SectionHeader(props: SectionHeaderProps) {
@@ -13,7 +13,7 @@ export function SectionHeader(props: SectionHeaderProps) {
   return (
     <header {...rest} className={cn("space-y-1", className)}>
       <h2 className="text-2xl">{sectionTitle}</h2>
-      <p className="text-sm font-light">{durationInMinutes} min</p>
+      {durationInMinutes && <p className="text-sm font-light">{durationInMinutes} min</p>}
     </header>
   );
 }

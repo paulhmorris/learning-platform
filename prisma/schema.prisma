@@ -79,8 +79,9 @@ model PasswordReset {
 
 // Relations
 model UserCourses {
-  id          Int     @id @default(autoincrement())
-  isCompleted Boolean @default(false)
+  id                 Int     @id @default(autoincrement())
+  isCompleted        Boolean @default(false)
+  certificateClaimed Boolean @default(false)
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   userId String @unique

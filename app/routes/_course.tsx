@@ -134,7 +134,7 @@ export default function CourseLayout() {
   return (
     <>
       <Header />
-      <div className="mx-auto max-w-screen-xl">
+      <div className="max-w-screen-xl">
         <nav className="overflow-visible px-4 py-4 lg:fixed lg:bottom-0 lg:left-0 lg:top-20 lg:w-[448px] lg:overflow-auto lg:py-12">
           <BackToCourseLink />
 
