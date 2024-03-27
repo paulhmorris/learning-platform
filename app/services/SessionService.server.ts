@@ -87,7 +87,7 @@ class Session implements ISessionService {
     const defaultAllowedRoles: Array<UserRole> = ["USER", "ADMIN"];
     const userId = await this.requireUserId(request);
 
-    const user = await UserService.getById(userId);
+    const user = await UserService.getById(userId, { include: { courses: true } });
 
     if (user && user.role === UserRole.SUPERADMIN) {
       return user;

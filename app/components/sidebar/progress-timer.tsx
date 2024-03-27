@@ -24,6 +24,7 @@ export function ProgressTimer({ lesson, progress, setClientProgressPercentage }:
     startOnMount: true,
   });
 
+  // Update client side progress percentage
   useEffect(() => {
     const percentage = Math.floor(((duration - countdownValue) / duration) * 100);
     setClientProgressPercentage(percentage);

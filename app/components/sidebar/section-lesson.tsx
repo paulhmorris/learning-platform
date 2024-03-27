@@ -38,7 +38,6 @@ export function SectionLesson(props: SectionLessonProps) {
     return (
       <div
         className={cn("-my-1 block rounded-lg py-1")}
-        title="Complete previous lessons to unlock"
         aria-label="This lesson is locked until previous lessons are completed."
       >
         <SectionItemContainer>
@@ -113,7 +112,11 @@ export function SectionLesson(props: SectionLessonProps) {
       >
         {({ isActive }) => (
           <SectionItemContainer>
-            <ProgressCircle className={cn(isActive && "border-success")} aria-label="Lesson progress" percentage={0} />
+            <ProgressCircle
+              className={cn(isActive && "border-success")}
+              aria-label="Lesson progress"
+              percentage={clientProgressPercentage ?? 0}
+            />
             <SectionItemIconContainer>
               <Icon className={cn(isActive ? "text-success" : "text-foreground", hasVideo ? "h-8 w-7" : "h-7 w-6")} />
             </SectionItemIconContainer>

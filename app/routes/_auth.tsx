@@ -10,7 +10,7 @@ export default function AuthLayout() {
   const rootData = useTypedRouteLoaderData<typeof loader>("root");
   const course = rootData?.course?.data?.attributes;
   const courseLogoUrl =
-    theme === Theme.LIGHT ? course?.logo?.data?.attributes?.url : course?.dark_mode_logo?.data?.attributes?.url;
+    theme === Theme.DARK ? course?.dark_mode_logo?.data?.attributes?.url : course?.logo?.data?.attributes?.url;
   const courseTitle = course?.title;
 
   return (

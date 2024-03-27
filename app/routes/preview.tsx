@@ -4,6 +4,7 @@ import { typedjson, useTypedLoaderData } from "remix-typedjson";
 
 import { StrapiImage } from "~/components/common/strapi-image";
 import { CourseHeader } from "~/components/course/course-header";
+import { CoursePurchaseCTA } from "~/components/course/course-purchase-cta";
 import { CourseUpNext } from "~/components/course/course-up-next";
 import { ErrorComponent } from "~/components/error-component";
 import { Header } from "~/components/header";
@@ -26,10 +27,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   try {
     const { host } = new URL(request.url);
-    const { strapiId } = await db.course.findUniqueOrThrow({ where: { host } });
-    const course = await getCourse(strapiId);
+    const linkedCourse = await db.course.findUniqueOrThrow({ where: { host } });
+    const course = await getCourse(linkedCourse.strapiId);
     const progress = await db.userLessonProgress.findMany({ where: { userId: user.id } });
     const quizProgress = await db.userQuizProgress.findMany({ where: { userId: user.id } });
+
+    const userHasAccess = user.courses.some((c) => c.courseId === linkedCourse.id);
 
     const lessonsInOrder = course.data.attributes.sections.flatMap((section) => {
       return (
@@ -51,7 +54,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       );
     });
 
-    return typedjson({ course: course.data, progress, lessonsInOrder, quizProgress });
+    return typedjson({ course: course.data, progress, lessonsInOrder, quizProgress, userHasAccess });
   } catch (error) {
     console.error(error);
     Sentry.captureException(error);
@@ -67,14 +70,14 @@ export const meta: TypedMetaFunction<typeof loader> = ({ data }) => {
 };
 
 export default function CourseIndex() {
-  const { course, progress, lessonsInOrder, quizProgress } = useTypedLoaderData<typeof loader>();
+  const { course, progress, lessonsInOrder, quizProgress, userHasAccess } = useTypedLoaderData<typeof loader>();
 
   // Calculate the lesson last completed lesson, defaulting to the first lesson
   const nextLessonIndex = lessonsInOrder.findIndex((l) => !l.isCompleted);
   const lastCompletedLessonIndex = nextLessonIndex === -1 ? 0 : nextLessonIndex - 1;
   const nextLesson = lessonsInOrder.at(nextLessonIndex);
 
-  // Check for a quiz
+  // Check if a quiz is next
   const lasCompletedLessonSection = course.attributes.sections.find(
     (s) =>
       s.lessons?.data.some((l) => l.attributes.uuid === lessonsInOrder[lastCompletedLessonIndex]?.uuid) &&
@@ -94,6 +97,15 @@ export default function CourseIndex() {
     return acc + (curr.requiredDurationInSeconds ?? 0);
   }, 0);
 
+  // Course is complete if:
+  const isCourseComplete =
+    // All lessons are completed
+    lessonsInOrder.every((l) => l.isCompleted) &&
+    // All quizzes are completed
+    course.attributes.sections.every((s) => {
+      return !s.quiz?.data || quizProgress.find((p) => p.quizId === s.quiz?.data.id)?.isCompleted;
+    });
+
   // Timed Courses
   return (
     <>
@@ -104,7 +116,7 @@ export default function CourseIndex() {
             asset={course.attributes.cover_image}
             height={240}
             width={448}
-            fetchpriority="high"
+            fetchPriority="high"
             loading="eager"
             // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
             alt={course.attributes.cover_image?.data?.attributes.alternativeText}
@@ -127,14 +139,20 @@ export default function CourseIndex() {
           <div className="space-y-8">
             <CourseHeader courseTitle={course.attributes.title} numLessons={lessonsInOrder.length || 0} />
             <CourseProgressBar progress={totalProgressInSeconds} duration={totalDurationInSeconds} />
-            {nextQuiz ? (
+            {!userHasAccess ? (
+              <CoursePurchaseCTA />
+            ) : isCourseComplete ? (
+              <div className="text-center">
+                <p className="text-lg">Congratulations! You have completed this course.</p>
+              </div>
+            ) : nextQuiz ? (
               <CourseUpNext quiz={{ id: nextQuiz.id, numQuestions: nextQuiz.attributes.questions?.length ?? 1 }} />
             ) : nextLesson ? (
               <CourseUpNext lesson={lessonsInOrder[lastCompletedLessonIndex + 1]} />
             ) : null}
           </div>
 
-          <ul className="mt-10 space-y-7">
+          <ul className="relative mt-10 space-y-7">
             {course.attributes.sections.map((section, section_index) => {
               const durationInSeconds = section.lessons?.data.reduce(
                 (acc, curr) => Math.ceil((curr.attributes.required_duration_in_seconds || 0) + acc),
@@ -158,7 +176,8 @@ export default function CourseIndex() {
                         const previousSectionQuizIsCompleted = quizProgress.find(
                           (p) => p.isCompleted && p.quizId === previousSectionQuiz?.data.id,
                         );
-                        const isSectionLocked =
+                        const isLessonLocked =
+                          !userHasAccess ||
                           (previousSectionQuiz && !previousSectionQuizIsCompleted) ||
                           lessonIndex > lastCompletedLessonIndex + 1;
 
@@ -167,7 +186,7 @@ export default function CourseIndex() {
                             key={l.attributes.uuid}
                             lesson={l}
                             userProgress={progress.find((lp) => lp.lessonId === l.id) ?? null}
-                            locked={isSectionLocked}
+                            locked={isLessonLocked}
                           />
                         );
                       })}

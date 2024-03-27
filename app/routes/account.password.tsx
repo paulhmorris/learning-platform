@@ -90,7 +90,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
     return toast.json(
       request,
-      { message: "Password updated" },
+      { success: true },
       {
         title: "Success",
         type: "success",
@@ -116,7 +116,7 @@ export default function Password() {
   const user = useUser();
 
   return (
-    <ValidatedForm id="pw-form" method="post" validator={validator} className="space-y-4">
+    <ValidatedForm id="pw-form" method="post" validator={validator} className="space-y-4" resetAfterSubmit>
       <input type="hidden" name="username" autoComplete="username" value={user.email} />
       <FormField name="oldPassword" label="Current Password" type="password" autoComplete="current-password" required />
       <FormField name="newPassword" label="New Password" type="password" autoComplete="new-password" required />

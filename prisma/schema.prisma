@@ -25,7 +25,7 @@ model User {
   password         Password?
   passwordResets   PasswordReset[]
   verification     UserVerification?
-  courses          UserCourses?
+  courses          UserCourses[]
   lessonProgresses UserLessonProgress[]
   quizProgresses   UserQuizProgress[]
 }
@@ -53,8 +53,9 @@ model Course {
   /// e.g. "course.hiphopdriving.com"
   host     String @unique
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  userCourses UserCourses[]
 }
 
 model Password {
@@ -84,7 +85,8 @@ model UserCourses {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   userId String @unique
 
-  courseId String @unique
+  course   Course @relation(fields: [courseId], references: [id])
+  courseId String
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

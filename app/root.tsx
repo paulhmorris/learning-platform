@@ -22,13 +22,14 @@ export const links: LinksFunction = () => [{ rel: "stylesheet", href: globalStyl
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const session = await SessionService.getSession(request);
   const user = await SessionService.getUser(request);
-  const { getTheme } = await themeSessionResolver(request);
+  const theme = (await themeSessionResolver(request)).getTheme();
+  const serverToast = getGlobalToast(session);
 
   const defaultResponse = {
-    user: await SessionService.getUser(request),
-    theme: getTheme(),
-    serverToast: getGlobalToast(session),
+    user,
+    theme,
     course: null,
+    serverToast,
     ENV: {
       VERCEL_URL: process.env.VERCEL_URL,
       VERCEL_ENV: process.env.VERCEL_ENV,
@@ -101,7 +102,7 @@ function App() {
   const [theme] = useTheme();
 
   return (
-    <html lang="en" className={cn("h-full", theme)} suppressHydrationWarning>
+    <html lang="en" className={cn(theme)} suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -120,11 +121,11 @@ function App() {
             }
           `}
         </style>
-        <Meta />
         <PreventFlashOnWrongTheme ssrTheme={Boolean(data.theme)} />
+        <Meta />
         <Links />
       </head>
-      <body className={cn("h-full min-h-full bg-background font-sans text-foreground", theme)}>
+      <body className={cn("flex h-full min-h-full flex-col bg-background font-sans text-foreground", theme)}>
         <Outlet />
         <Notifications />
         <ScrollRestoration />

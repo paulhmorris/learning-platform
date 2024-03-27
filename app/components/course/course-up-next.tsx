@@ -69,8 +69,6 @@ export function CourseUpNext({ lesson, quiz }: Props) {
           </>
         ) : null}
       </div>
-
-      {/* CTA */}
     </div>
   );
 }
