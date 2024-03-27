@@ -1,11 +1,5 @@
-/**
- * This is intended to be a basic starting point for linting in the Blues Stack.
- * It relies on recommended configs out of the box for simplicity, but you can
- * and should modify this configuration to best suit your team's needs.
- */
-
 /** @type {import('eslint').Linter.Config} */
-module.exports = {
+export default {
   root: true,
   parserOptions: {
     ecmaVersion: "latest",
@@ -54,7 +48,7 @@ module.exports = {
 
     // Typescript
     {
-      files: ["**/*.{ts,tsx}"],
+      files: ["**/*.{ts,mts,tsx}"],
       plugins: ["@typescript-eslint", "import"],
       parser: "@typescript-eslint/parser",
       parserOptions: {
@@ -130,7 +124,7 @@ module.exports = {
 
     // Node
     {
-      files: [".eslintrc.js", "mocks/**/*.js"],
+      files: [".eslintrc.cjs", "mocks/**/*.js"],
       env: {
         node: true,
       },

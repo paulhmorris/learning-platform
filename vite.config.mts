@@ -12,7 +12,7 @@ export default defineConfig({
     tsconfigPaths(),
     remix({
       ignoredRouteFiles: ["**/.*", "**/*.test.{ts,tsx}"],
-      serverModuleFormat: "cjs",
+      serverModuleFormat: "esm",
     }),
   ],
 });
