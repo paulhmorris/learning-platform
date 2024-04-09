@@ -12,11 +12,11 @@ import { SectionLesson } from "~/components/sidebar/section-lesson";
 import { SectionQuiz } from "~/components/sidebar/section-quiz";
 import { Separator } from "~/components/ui/separator";
 import { useCourseData } from "~/hooks/useCourseData";
-import { getCourse } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
 import { toast } from "~/lib/toast.server";
 import { cn } from "~/lib/utils";
+import { getCoursefromCMSForCourseLayout, getLinkedCourse } from "~/models/course.server";
 import { SessionService } from "~/services/SessionService.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -24,7 +24,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   try {
     const { host } = new URL(request.url);
-    const linkedCourse = await db.course.findUnique({ where: { host } });
+    const linkedCourse = await getLinkedCourse(host);
 
     if (!linkedCourse) {
       Sentry.captureMessage("Received request from unknown host", {
@@ -50,7 +50,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
       });
     }
 
-    const course = await getCourse(linkedCourse.strapiId);
+    const course = await getCoursefromCMSForCourseLayout(linkedCourse.strapiId);
+
+    if (!course) {
+      return toast.redirect(request, "/preview", {
+        type: "error",
+        title: "Failed to load course",
+        description: "Please try again later",
+        position: "bottom-center",
+      });
+    }
 
     const progress = await db.userLessonProgress.findMany({ where: { userId: user.id } });
     const quizProgress = await db.userQuizProgress.findMany({ where: { userId: user.id } });

@@ -40,7 +40,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const progress = await db.userLessonProgress.findMany({ where: { userId: user.id } });
     const quizProgress = await db.userQuizProgress.findMany({ where: { userId: user.id } });
 
-    const userHasAccess = user.courses.some((c) => c.courseId === linkedCourse.id);
+    const userHasAccess = user.courses && user.courses.some((c) => c.courseId === linkedCourse.id);
 
     const lessonsInOrder = course.data.attributes.sections.flatMap((section) => {
       return (

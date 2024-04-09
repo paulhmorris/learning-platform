@@ -7,15 +7,13 @@ import { typedjson, useTypedLoaderData } from "remix-typedjson";
 import "@fontsource-variable/inter/wght.css";
 import { ErrorComponent } from "~/components/error-component";
 import { Notifications } from "~/components/notifications";
-import { cms } from "~/integrations/cms.server";
-import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
 import { themeSessionResolver } from "~/lib/session.server";
 import { getGlobalToast, toast } from "~/lib/toast.server";
 import { cn, hexToPartialHSL } from "~/lib/utils";
+import { getCoursefromCMSForRoot, getLinkedCourse } from "~/models/course.server";
 import { SessionService } from "~/services/SessionService.server";
 import globalStyles from "~/tailwind.css?url";
-import { APIResponseData } from "~/types/utils";
 
 export const links: LinksFunction = () => [{ rel: "stylesheet", href: globalStyles, as: "style" }];
 
@@ -40,7 +38,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   try {
     const { host } = new URL(request.url);
-    const linkedCourse = await db.course.findUnique({ where: { host } });
+    const linkedCourse = await getLinkedCourse(host);
 
     if (!linkedCourse) {
       Sentry.captureMessage("Received request from unknown host", {
@@ -56,17 +54,16 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       });
     }
 
-    const course = await cms.findOne<APIResponseData<"api::course.course">>("courses", linkedCourse.strapiId, {
-      fields: ["primary_color", "secondary_color", "title"],
-      populate: {
-        logo: {
-          fields: "url",
-        },
-        dark_mode_logo: {
-          fields: "url",
-        },
-      },
-    });
+    const course = await getCoursefromCMSForRoot(linkedCourse.strapiId);
+
+    if (!course) {
+      return toast.json(request, defaultResponse, {
+        type: "error",
+        title: "Course data not found",
+        description: "Please try again later",
+        position: "bottom-center",
+      });
+    }
 
     return typedjson(
       { ...defaultResponse, course },

@@ -3,6 +3,7 @@ import { DefaultArgs } from "@prisma/client/runtime/library";
 import bcrypt from "bcryptjs";
 
 import { db } from "~/integrations/db.server";
+import { redis } from "~/integrations/redis.server";
 import { withServiceErrorHandling } from "~/services/helpers";
 import { PasswordService } from "~/services/PasswordService.server";
 import { OmitFromData, OmitFromWhere, Operation } from "~/services/types";
@@ -66,7 +67,14 @@ class Service implements IUserService {
   }
   public async getById<T extends OmitFromWhere<Prisma.Args<Model, "findUnique">, "id">>(id: User["id"], args?: T) {
     return withServiceErrorHandling<Model, T, "findUnique">(async () => {
+      const cachedUser = await redis.get<User>(`user-${id}`);
+      if (cachedUser) {
+        return cachedUser as Prisma.Result<Model, T, "findUnique">;
+      }
       const user = await db.user.findUnique({ ...args, where: { id, ...args?.where } });
+      if (user) {
+        await redis.set<User>(`user-${id}`, user, { ex: 30 });
+      }
       return user as Prisma.Result<Model, T, "findUnique">;
     });
   }
