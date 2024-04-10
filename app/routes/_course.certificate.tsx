@@ -81,7 +81,7 @@ export async function action({ request }: ActionFunctionArgs) {
     const allLessonsCompleted = allLessonIds.every((id) => allLessonProgress.includes(id));
     const allQuizzesCompleted = allQuizIds.every((id) => allQuizProgress.includes(id));
 
-    if (allLessonsCompleted || allQuizzesCompleted) {
+    if (!allLessonsCompleted || !allQuizzesCompleted) {
       Sentry.captureMessage("User tried to claim certificate without completing all lessons and quizzes", {
         extra: {
           user: { id: user.id, email: user.email },
