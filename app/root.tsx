@@ -46,24 +46,14 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         level: "warning",
         user: user ? { username: user.email, id: user.id, email: user.email } : undefined,
       });
-      return toast.json(request, defaultResponse, {
-        type: "error",
-        title: "Course not found",
-        description: "Please try again later",
-        position: "bottom-center",
+      return typedjson(defaultResponse, {
+        headers: {
+          "Set-Cookie": await SessionService.commitSession(session),
+        },
       });
     }
 
     const course = await getCoursefromCMSForRoot(linkedCourse.strapiId);
-
-    if (!course) {
-      return toast.json(request, defaultResponse, {
-        type: "error",
-        title: "Course data not found",
-        description: "Please try again later",
-        position: "bottom-center",
-      });
-    }
 
     return typedjson(
       { ...defaultResponse, course },
@@ -113,8 +103,8 @@ function App() {
         <style>
           {`
             :root {
-              --primary: ${hexToPartialHSL(data.course?.data.attributes.primary_color ?? "210 100% 40%")};
-              --primary-foreground: ${hexToPartialHSL(data.course?.data.attributes.secondary_color ?? "0 0% 100%")};
+              --primary: ${hexToPartialHSL(data.course?.data.attributes.primary_color) ?? "210 100% 40%"};
+              --primary-foreground: ${hexToPartialHSL(data.course?.data.attributes.secondary_color) ?? "0 0% 100%"};
             }
           `}
         </style>

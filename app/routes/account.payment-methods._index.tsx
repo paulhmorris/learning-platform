@@ -107,7 +107,7 @@ export const meta: TypedMetaFunction<typeof loader, { root: typeof rootLoader }>
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const match = matches.find((m) => m.id === "root")?.data.course;
   // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-  return [{ title: `Payment Methods | ${match?.data?.attributes.title}` }];
+  return [{ title: `Payment Methods | ${match?.data?.attributes.title ?? "Plumb Media & Education"}` }];
 };
 
 export default function PaymentMethodsIndex() {

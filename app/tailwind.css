@@ -68,6 +68,10 @@
     @apply rounded text-foreground underline decoration-primary decoration-4 underline-offset-4 focus-visible:no-underline focus-visible:outline-none focus-visible:ring focus-visible:ring-ring focus-visible:ring-offset-1 contrast-more:decoration-[#0073e6];
   }
 
+  a {
+    @apply touch-manipulation;
+  }
+
   p {
     @apply text-lg font-medium;
   }

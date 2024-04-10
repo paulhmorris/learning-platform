@@ -9,7 +9,17 @@ import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
 import { stripe } from "~/integrations/stripe.server";
 import { serverError } from "~/lib/responses.server";
+import { loader as rootLoader } from "~/root";
 import { SessionService } from "~/services/SessionService.server";
+import { TypedMetaFunction } from "~/types/utils";
+
+export const meta: TypedMetaFunction<typeof loader, { root: typeof rootLoader }> = ({ matches }) => {
+  // @ts-expect-error typed meta funtion doesn't support this yet
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  const match = matches.find((m) => m.id === "root")?.data.course;
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+  return [{ title: `Payment Methods | ${match?.data?.attributes.title ?? "Plumb Media & Education"}` }];
+};
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await SessionService.requireUser(request);

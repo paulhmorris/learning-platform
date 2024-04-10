@@ -27,6 +27,7 @@ import { getCourse } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
 import { handlePrismaError, serverError } from "~/lib/responses.server";
+import { toast } from "~/lib/toast.server";
 import { SessionService } from "~/services/SessionService.server";
 import { TypedMetaFunction } from "~/types/utils";
 
@@ -35,7 +36,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   try {
     const { host } = new URL(request.url);
-    const linkedCourse = await db.course.findUniqueOrThrow({ where: { host } });
+    const linkedCourse = await db.course.findUnique({ where: { host } });
+    if (!linkedCourse) {
+      return toast.redirect(request, "/", {
+        type: "error",
+        title: "Course not found.",
+        description: "Please try again later",
+      });
+    }
+
     const course = await getCourse(linkedCourse.strapiId);
     const progress = await db.userLessonProgress.findMany({ where: { userId: user.id } });
     const quizProgress = await db.userQuizProgress.findMany({ where: { userId: user.id } });

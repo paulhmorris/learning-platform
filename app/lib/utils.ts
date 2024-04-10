@@ -132,7 +132,10 @@ export function normalizeSeconds(seconds: number) {
   }
 }
 
-export function hexToPartialHSL(H: string) {
+export function hexToPartialHSL(H: string | undefined) {
+  if (!H) {
+    return null;
+  }
   // Convert hex to RGB first
   let r: string | number = 0,
     g: string | number = 0,
