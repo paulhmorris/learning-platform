@@ -19,8 +19,8 @@ import {
 } from "~/components/section";
 import { CoursePreviewLink } from "~/components/sidebar/course-preview-link";
 import { CourseProgressBar } from "~/components/sidebar/course-progress-bar";
-import { SectionLesson } from "~/components/sidebar/section-lesson";
-import { SectionQuiz } from "~/components/sidebar/section-quiz";
+import { PreviewSectionLesson } from "~/components/sidebar/preview-section-lesson";
+import { PreviewSectionQuiz } from "~/components/sidebar/preview-section-quiz";
 import { Button } from "~/components/ui/button";
 import { Separator } from "~/components/ui/separator";
 import { getCourse } from "~/integrations/cms.server";
@@ -119,7 +119,7 @@ export default function CourseIndex() {
     <>
       <Header />
       <div className="flex flex-col gap-x-12 px-4 py-4 lg:flex-row lg:py-4">
-        <nav className="left-0 top-[88px] h-full shrink-0 basis-[448px] py-10 md:py-14 lg:sticky">
+        <nav className="left-0 top-[88px] h-full shrink-0 basis-[448px] py-4 sm:py-10 md:py-14 lg:sticky">
           <StrapiImage
             asset={course.attributes.cover_image}
             height={240}
@@ -167,13 +167,14 @@ export default function CourseIndex() {
                 0,
               );
               const isQuizLocked = lessonsInOrder.filter((l) => l.sectionId === section.id).some((l) => !l.isCompleted);
+              const userQuizProgress = quizProgress.find((qp) => qp.quizId === section.quiz?.data?.id) ?? null;
 
               return (
                 <li key={`section-${section.id}`}>
                   <Section>
                     <SectionHeader sectionTitle={section.title} durationInMinutes={(durationInSeconds || 1) / 60} />
                     <Separator className="my-4" />
-                    <ul className="flex flex-col gap-4">
+                    <ul className="flex flex-col gap-6">
                       {section.lessons?.data.map((l) => {
                         const lessonIndex = lessonsInOrder.findIndex((li) => li.uuid === l.attributes.uuid);
 
@@ -189,21 +190,46 @@ export default function CourseIndex() {
                           (previousSectionQuiz && !previousSectionQuizIsCompleted) ||
                           lessonIndex > lastCompletedLessonIndex + 1;
 
+                        const userLessonProgress = progress.find((lp) => lp.lessonId === l.id) ?? null;
                         return (
-                          <SectionLesson
-                            key={l.attributes.uuid}
-                            lesson={l}
-                            userProgress={progress.find((lp) => lp.lessonId === l.id) ?? null}
-                            locked={isLessonLocked}
-                          />
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="shrink-0 grow">
+                              <PreviewSectionLesson
+                                key={l.attributes.uuid}
+                                lesson={l}
+                                userProgress={userLessonProgress}
+                                locked={isLessonLocked}
+                              />
+                            </div>
+                            {!isLessonLocked && (
+                              <Button asChild className="ml-12 grow-0 sm:ml-0 sm:w-auto" variant="secondary">
+                                <Link to={`/${l.attributes.slug}`}>
+                                  {!userLessonProgress
+                                    ? "Start"
+                                    : userLessonProgress.isCompleted
+                                      ? "Revisit"
+                                      : "Continue"}
+                                </Link>
+                              </Button>
+                            )}
+                          </div>
                         );
                       })}
                       {section.quiz?.data ? (
-                        <SectionQuiz
-                          quiz={section.quiz.data}
-                          userProgress={quizProgress.find((qp) => qp.quizId === section.quiz?.data.id) ?? null}
-                          locked={isQuizLocked}
-                        />
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <PreviewSectionQuiz
+                            quiz={section.quiz.data}
+                            userProgress={userQuizProgress}
+                            locked={isQuizLocked}
+                          />
+                          {!isQuizLocked && (
+                            <Button asChild className="ml-12 grow-0 sm:ml-0 sm:w-auto" variant="secondary">
+                              <Link to={`/quizzes/${section.quiz.data.id}`}>
+                                {!userQuizProgress ? "Start" : userQuizProgress.isCompleted ? "View results" : "Start"}
+                              </Link>
+                            </Button>
+                          )}
+                        </div>
                       ) : null}
                     </ul>
                   </Section>
@@ -227,9 +253,15 @@ export default function CourseIndex() {
                         Certificate
                       </SectionItemTitle>
                     </div>
-                    <Button variant="secondary" className="ml-auto w-auto" asChild>
-                      <Link to="/certificate">Claim</Link>
-                    </Button>
+                    {isCourseComplete ? (
+                      <Button variant="secondary" className="ml-auto w-auto" asChild>
+                        <Link to="/certificate">Claim</Link>
+                      </Button>
+                    ) : (
+                      <Button variant="secondary" className="ml-auto w-auto" disabled>
+                        Claim
+                      </Button>
+                    )}
                   </SectionItemContainer>
                 </div>
               </Section>

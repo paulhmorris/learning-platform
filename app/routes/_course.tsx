@@ -40,7 +40,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       });
     }
 
-    const userHasAccess = user.courses.some((c) => c.courseId === linkedCourse.id);
+    const userHasAccess = user.courses && user.courses.some((c) => c.courseId === linkedCourse.id);
     if (!userHasAccess) {
       return toast.redirect(request, "/preview", {
         type: "error",
@@ -179,7 +179,7 @@ export default function CourseLayout() {
                     <Section className={cn(isCollapsed && "pb-16")}>
                       <SectionHeader sectionTitle={section.title} durationInMinutes={(durationInSeconds || 1) / 60} />
                       <Separator className={cn(isCollapsed ? "my-2 bg-transparent" : "my-4")} />
-                      <ul className="flex flex-col gap-4">
+                      <ul className="flex flex-col gap-6">
                         {section.lessons?.data
                           .filter((l) => {
                             if (isCollapsed) {

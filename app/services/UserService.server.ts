@@ -71,7 +71,11 @@ class Service implements IUserService {
       if (cachedUser) {
         return cachedUser as Prisma.Result<Model, T, "findUnique">;
       }
-      const user = await db.user.findUnique({ ...args, where: { id, ...args?.where } });
+      const user = await db.user.findUnique({
+        ...args,
+        where: { id, ...args?.where },
+        include: { ...args?.include, courses: true },
+      });
       if (user) {
         await redis.set<User>(`user-${id}`, user, { ex: 30 });
       }

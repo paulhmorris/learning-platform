@@ -19,7 +19,7 @@ export function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 flex h-20 w-full items-center justify-between border-b border-transparent bg-background px-6 text-foreground shadow-[0px_6px_39px_0px_#00000014] sm:px-10">
+      <header className="sticky top-0 z-50 flex h-20 w-full items-center justify-between border-b border-transparent bg-background px-6 py-6 text-foreground shadow-[0px_6px_39px_0px_#00000014] sm:px-10">
         <Link to="/preview" className="block text-foreground">
           {courseLogoUrl ? (
             <img src={courseLogoUrl} alt={courseTitle ?? "Plumb Media & Education"} />

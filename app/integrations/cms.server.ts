@@ -1,7 +1,6 @@
 import Strapi from "strapi-sdk-js";
 
-import { notFound, serverError } from "~/lib/responses.server";
-import { APIResponseCollection, APIResponseData } from "~/types/utils";
+import { APIResponseData } from "~/types/utils";
 
 export const cms = new Strapi({
   url: process.env.STRAPI_URL,
@@ -33,26 +32,4 @@ export function getCourse(id: number) {
       },
     },
   });
-}
-
-export async function getLessonBySlug(slug: string) {
-  const lesson = await cms.find<APIResponseCollection<"api::lesson.lesson">["data"]>("lessons", {
-    filters: { slug },
-    fields: ["title", "required_duration_in_seconds"],
-    populate: {
-      content: {
-        populate: "*",
-      },
-    },
-  });
-
-  if (lesson.data.length > 1) {
-    throw serverError("Multiple courses with the same slug found.");
-  }
-
-  if (lesson.data.length === 0) {
-    throw notFound("Course not found.");
-  }
-
-  return lesson.data[0];
 }
