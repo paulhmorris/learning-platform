@@ -13,7 +13,7 @@ export function SectionHeader(props: SectionHeaderProps) {
   return (
     <header {...rest} className={cn("space-y-1", className)}>
       <h2 className="text-2xl">{sectionTitle}</h2>
-      {durationInMinutes && <p className="text-sm font-light">{durationInMinutes} min</p>}
+      {durationInMinutes ? <p className="text-sm font-light">{durationInMinutes} min</p> : null}
     </header>
   );
 }

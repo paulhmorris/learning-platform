@@ -40,6 +40,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       });
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     const userHasAccess = user.courses && user.courses.some((c) => c.courseId === linkedCourse.id);
     if (!userHasAccess) {
       return toast.redirect(request, "/preview", {
@@ -101,7 +102,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export default function CourseLayout() {
   const { course, lessonsInOrder, progress, quizProgress } = useCourseData();
   const params = useParams();
-  const [isShowingMore, setIsShowingMore] = useState(true);
+  const [isShowingMore, setIsShowingMore] = useState(false);
   const isClient = useIsClient();
   const isLargeScreen = useMediaQuery("(min-width: 1024px)");
   const isCollapsed = !isShowingMore && !isLargeScreen;

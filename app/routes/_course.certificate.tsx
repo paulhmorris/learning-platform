@@ -1,6 +1,7 @@
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { Form } from "@remix-run/react";
 import { typedjson } from "remix-typedjson";
+
 import { PageTitle } from "~/components/common/page-title";
 import { Button } from "~/components/ui/button";
 import { useCourseData } from "~/hooks/useCourseData";
@@ -68,8 +69,10 @@ export async function action({ request }: ActionFunctionArgs) {
     });
 
     const allLessonIds = course.data.attributes.sections
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       .flatMap((s) => s.lessons?.data?.map((l) => l.id))
       .filter(Boolean);
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     const allQuizIds = course.data.attributes.sections.flatMap((s) => s.quiz?.data?.id).filter(Boolean);
 
     const progress = await db.userLessonProgress.findMany({ where: { userId: user.id } });

@@ -1,4 +1,5 @@
 import { UserLessonProgress } from "@prisma/client";
+
 import { cms } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
 import { redis } from "~/integrations/redis.server";

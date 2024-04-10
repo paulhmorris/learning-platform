@@ -40,6 +40,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const progress = await db.userLessonProgress.findMany({ where: { userId: user.id } });
     const quizProgress = await db.userQuizProgress.findMany({ where: { userId: user.id } });
 
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     const userHasAccess = user.courses && user.courses.some((c) => c.courseId === linkedCourse.id);
 
     const lessonsInOrder = course.data.attributes.sections.flatMap((section) => {
@@ -77,7 +78,7 @@ export const meta: TypedMetaFunction<typeof loader> = ({ data }) => {
   return [{ title: `Preview | ${data?.course.attributes.title}` }];
 };
 
-export default function CourseIndex() {
+export default function CoursePreview() {
   const { course, progress, lessonsInOrder, quizProgress, userHasAccess } = useTypedLoaderData<typeof loader>();
 
   // Calculate the lesson last completed lesson, defaulting to the first lesson
@@ -167,6 +168,7 @@ export default function CourseIndex() {
                 0,
               );
               const isQuizLocked = lessonsInOrder.filter((l) => l.sectionId === section.id).some((l) => !l.isCompleted);
+              // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
               const userQuizProgress = quizProgress.find((qp) => qp.quizId === section.quiz?.data?.id) ?? null;
 
               return (
@@ -192,16 +194,15 @@ export default function CourseIndex() {
 
                         const userLessonProgress = progress.find((lp) => lp.lessonId === l.id) ?? null;
                         return (
-                          <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div key={l.attributes.uuid} className="flex flex-wrap items-center justify-between gap-2">
                             <div className="shrink-0 grow">
                               <PreviewSectionLesson
-                                key={l.attributes.uuid}
                                 lesson={l}
                                 userProgress={userLessonProgress}
                                 locked={isLessonLocked}
                               />
                             </div>
-                            {!isLessonLocked && (
+                            {!isLessonLocked ? (
                               <Button asChild className="ml-12 grow-0 sm:ml-0 sm:w-auto" variant="secondary">
                                 <Link to={`/${l.attributes.slug}`}>
                                   {!userLessonProgress
@@ -211,24 +212,27 @@ export default function CourseIndex() {
                                       : "Continue"}
                                 </Link>
                               </Button>
-                            )}
+                            ) : null}
                           </div>
                         );
                       })}
                       {section.quiz?.data ? (
-                        <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div
+                          key={`quiz-${section.quiz.data.id}`}
+                          className="flex flex-wrap items-center justify-between gap-2"
+                        >
                           <PreviewSectionQuiz
                             quiz={section.quiz.data}
                             userProgress={userQuizProgress}
                             locked={isQuizLocked}
                           />
-                          {!isQuizLocked && (
+                          {!isQuizLocked ? (
                             <Button asChild className="ml-12 grow-0 sm:ml-0 sm:w-auto" variant="secondary">
                               <Link to={`/quizzes/${section.quiz.data.id}`}>
                                 {!userQuizProgress ? "Start" : userQuizProgress.isCompleted ? "View results" : "Start"}
                               </Link>
                             </Button>
-                          )}
+                          ) : null}
                         </div>
                       ) : null}
                     </ul>

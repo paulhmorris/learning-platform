@@ -1,5 +1,6 @@
 import { Course } from "@prisma/client";
 import { StrapiResponse } from "strapi-sdk-js";
+
 import { cms } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
 import { redis } from "~/integrations/redis.server";
@@ -41,6 +42,7 @@ export async function getCoursefromCMSForRoot(strapiId: string | number) {
     },
   });
 
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (!course) {
     return null;
   }
@@ -80,6 +82,7 @@ export async function getCoursefromCMSForCourseLayout(strapiId: string | number)
     },
   });
 
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (!course) {
     return null;
   }

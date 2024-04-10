@@ -1,5 +1,5 @@
 {
-  "include": ["env.d.ts", "custom.d.ts", "**/*.ts", "**/*.tsx", "**/*.mts", "server.mjs"],
+  "include": ["env.d.ts", "custom.d.ts", "**/*.ts", "**/*.tsx", "**/*.mts"],
   "compilerOptions": {
     "noErrorTruncation": true,
     "lib": ["DOM", "DOM.Iterable", "ES2022"],
