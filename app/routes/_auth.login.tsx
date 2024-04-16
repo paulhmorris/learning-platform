@@ -1,3 +1,4 @@
+import { UserRole } from "@prisma/client";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { Link, useSearchParams } from "@remix-run/react";
 import { withZod } from "@remix-validated-form/with-zod";
@@ -58,7 +59,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   // If the user is not verified, redirect them to the join page with a message
   if (!user.isVerified) {
     const url = new URL("/join", request.url);
-    url.searchParams.set("redirectTo", redirectTo || "/");
+    url.searchParams.set("redirectTo", redirectTo || user.role === UserRole.USER ? "/" : "/admin");
     url.searchParams.set("step", "verify-email");
     url.searchParams.set("email", email);
     url.searchParams.set("status", "unverified");
@@ -70,7 +71,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   return SessionService.createUserSession({
     request,
     userId: user.id,
-    redirectTo: safeRedirect(redirectTo, "/"),
+    redirectTo: safeRedirect(redirectTo, user.role === UserRole.USER ? "/" : "/admin"),
     remember: !!remember,
   });
 };
@@ -85,7 +86,7 @@ export const meta: TypedMetaFunction<typeof loader, { root: typeof rootLoader }>
 
 export default function LoginPage() {
   const [searchParams] = useSearchParams();
-  const redirectTo = searchParams.get("redirectTo") || "/";
+  const redirectTo = searchParams.get("redirectTo") || "";
 
   return (
     <>

@@ -1,30 +1,38 @@
-import { LoaderFunctionArgs, json } from "@remix-run/node";
+import { LoaderFunctionArgs, MetaFunction, json } from "@remix-run/node";
 import { NavLink, Outlet } from "@remix-run/react";
-import { IconCreditCard, IconLock, IconUserCircle } from "@tabler/icons-react";
+import { IconUsersGroup } from "@tabler/icons-react";
+import { CSSProperties } from "react";
 
 import { ErrorComponent } from "~/components/error-component";
 import { Header } from "~/components/header";
 import { cn } from "~/lib/utils";
 import { SessionService } from "~/services/SessionService.server";
 
-const links = [
-  { href: "/account/profile", text: "Profile", icon: <IconUserCircle className="size-[1.125rem]" /> },
-  { href: "/account/password", text: "Password", icon: <IconLock className="size-[1.125rem]" /> },
-  { href: "/account/payment-methods", text: "Payment", icon: <IconCreditCard className="size-[1.125rem]" /> },
-];
+const links = [{ href: "/admin/users", text: "Users", icon: <IconUsersGroup className="size-[1.125rem]" /> }];
+
+export const meta: MetaFunction = () => {
+  return [{ title: `Users | "Plumb Media & Education"}` }];
+};
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await SessionService.requireUser(request);
+  await SessionService.requireAdmin(request);
   return json({});
 }
 
-export default function AccountLayout() {
+export default function AdminLayout() {
   return (
-    <>
+    <div
+      style={
+        {
+          "--primary": "210 100% 40%",
+          "--primary-foreground": "0 0% 100%",
+        } as CSSProperties
+      }
+    >
       <Header />
-      <div className="flex min-h-[calc(100dvh-80px)] flex-col justify-center dark:bg-background md:bg-secondary">
+      <div className="flex min-h-[calc(100dvh-80px)] flex-col justify-center">
         <div className="flex-1">
-          <div className="mx-auto w-full max-w-screen-md border border-transparent bg-background p-6 dark:border-border md:mt-40 md:rounded-xl md:p-12">
+          <div className="mx-auto w-full border border-transparent bg-background p-6 md:rounded-xl md:p-12">
             <nav>
               <ul className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-muted p-1 text-muted-foreground">
                 {links.map((link) => (
@@ -51,7 +59,7 @@ export default function AccountLayout() {
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }
 
