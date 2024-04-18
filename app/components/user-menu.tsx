@@ -59,6 +59,13 @@ export function UserMenu() {
                 Account
               </Link>
             </DropdownMenuItem>
+            {user.role !== UserRole.USER ? (
+              <DropdownMenuItem asChild>
+                <Link className="cursor-pointer" to="/admin">
+                  Admin
+                </Link>
+              </DropdownMenuItem>
+            ) : null}
           </DropdownMenuGroup>
           <DropdownMenuSeparator className="sm:hidden" />
           <DropdownMenuItem className="px-0 py-0 sm:hidden">
