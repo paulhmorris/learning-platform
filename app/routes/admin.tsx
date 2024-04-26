@@ -1,13 +1,17 @@
 import { LoaderFunctionArgs, MetaFunction, json } from "@remix-run/node";
-import { Outlet } from "@remix-run/react";
-import { IconUsersGroup } from "@tabler/icons-react";
+import { NavLink, Outlet } from "@remix-run/react";
+import { IconCertificate, IconUsersGroup } from "@tabler/icons-react";
 import { CSSProperties } from "react";
 
 import { ErrorComponent } from "~/components/error-component";
 import { Header } from "~/components/header";
+import { cn } from "~/lib/utils";
 import { SessionService } from "~/services/SessionService.server";
 
-const links = [{ href: "/admin/users", text: "Users", icon: <IconUsersGroup className="size-[1.125rem]" /> }];
+const links = [
+  { href: "/admin/users", text: "Users", icon: <IconUsersGroup className="size-[1.125rem]" /> },
+  { href: "/admin/courses", text: "Courses", icon: <IconCertificate className="size-[1.125rem]" /> },
+];
 
 export const meta: MetaFunction = () => {
   return [{ title: `Users | Plumb Media & Education}` }];
@@ -32,7 +36,7 @@ export default function AdminLayout() {
       <div className="flex min-h-[calc(100dvh-80px)] flex-col justify-center">
         <div className="flex-1">
           <div className="mx-auto w-full border border-transparent bg-background p-6 md:rounded-xl md:p-12">
-            {/* <nav>
+            <nav>
               <ul className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-muted p-1 text-muted-foreground">
                 {links.map((link) => (
                   <li key={link.href}>
@@ -51,7 +55,7 @@ export default function AdminLayout() {
                   </li>
                 ))}
               </ul>
-            </nav> */}
+            </nav>
             <main className="mt-8">
               <Outlet />
             </main>
