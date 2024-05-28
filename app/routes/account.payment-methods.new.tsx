@@ -4,6 +4,7 @@ import { IconArrowLeft } from "@tabler/icons-react";
 import { typedjson } from "remix-typedjson";
 
 import { PaymentMethodForm } from "~/components/account/payment-method-form";
+import { ErrorComponent } from "~/components/error-component";
 import { loader as rootLoader } from "~/root";
 import { SessionService } from "~/services/SessionService.server";
 import { TypedMetaFunction } from "~/types/utils";
@@ -32,4 +33,8 @@ export default function NewPaymentMethod() {
       <PaymentMethodForm />
     </>
   );
+}
+
+export function ErrorBoundary() {
+  return <ErrorComponent />;
 }

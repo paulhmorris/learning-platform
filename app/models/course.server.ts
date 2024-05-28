@@ -4,7 +4,6 @@ import { StrapiResponse } from "strapi-sdk-js";
 import { cms } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
 import { redis } from "~/integrations/redis.server";
-import { notFound, serverError } from "~/lib/responses.server";
 import { APIResponseCollection, APIResponseData } from "~/types/utils";
 
 const TTL = 120;
@@ -95,7 +94,7 @@ export async function getCoursefromCMSForCourseLayout(strapiId: string | number)
 type AllCoursesCMS = APIResponseCollection<"api::course.course">["data"];
 export async function getAllCourses() {
   const cachedCourses = await redis.get<AllCoursesCMS>(`courses-all`);
-  if (cachedCourses) {
+  if (cachedCourses && cachedCourses.length > 0) {
     return cachedCourses;
   }
 
@@ -103,13 +102,10 @@ export async function getAllCourses() {
     fields: ["title", "description"],
   });
 
-  if (courses.data.length > 1) {
-    throw serverError("Multiple courses with the same slug found.");
-  }
-
   if (courses.data.length === 0) {
-    throw notFound("Course not found.");
+    return [];
   }
 
   await redis.set<AllCoursesCMS>(`courses-all`, courses.data, { ex: TTL });
+  return courses.data;
 }

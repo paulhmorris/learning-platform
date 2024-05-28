@@ -59,7 +59,12 @@ class Session implements ISessionService {
     if (userId === undefined) return null;
 
     const user = await UserService.getById(userId);
-    if (user) return user;
+    if (user) {
+      if (!user.isActive) {
+        throw await this.logout(request);
+      }
+      return user;
+    }
 
     throw await this.logout(request);
   }

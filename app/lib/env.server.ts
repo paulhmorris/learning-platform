@@ -27,9 +27,7 @@ const serverEnvValidation = z.object({
   SENTRY_DSN: z.string().url(),
 
   // Trigger.dev
-  TRIGGER_API_KEY: z.string().startsWith("tr_"),
-  TRIGGER_PUBLIC_API_KEY: z.string().startsWith("pk_"),
-  TRIGGER_API_URL: z.string().url(),
+  // TRIGGER_SECRET_KEY: z.string().startsWith("tr_"),
 
   // Stripe
   STRIPE_PUBLIC_KEY: z.string().startsWith("pk_"),
@@ -43,7 +41,6 @@ const serverEnvValidation = z.object({
 const clientEnvValidation = z.object({
   STRAPI_URL: z.string().url(),
   STRIPE_PUBLIC_KEY: z.string().startsWith("pk_"),
-  // TRIGGER_PUBLIC_API_KEY: z.string().startsWith("pk_"),
 });
 
 const deploymentPublicEnvValidation = z.object({

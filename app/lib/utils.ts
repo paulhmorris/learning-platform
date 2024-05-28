@@ -89,14 +89,12 @@ export function getStrapiImgSrcSetAndSizes(formats: Attribute.JsonValue | undefi
     };
   }
 
-  const baseUrl = typeof window === "undefined" ? process.env.STRAPI_URL : window.ENV.STRAPI_URL;
-
   return {
     srcSet: Object.entries(formats)
       .map(([_key, value]) => {
         if ("url" in value && "width" in value) {
           // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-          return `${baseUrl}${value.url} ${value.width}w`;
+          return `${value.url} ${value.width}w`;
         }
       })
       .join(", "),

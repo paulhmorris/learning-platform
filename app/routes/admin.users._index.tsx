@@ -1,5 +1,5 @@
 import { Prisma } from "@prisma/client";
-import { LoaderFunctionArgs } from "@remix-run/node";
+import { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import { Link } from "@remix-run/react";
 import { ColumnDef } from "@tanstack/react-table";
 import { typedjson, useTypedLoaderData } from "remix-typedjson";
@@ -9,9 +9,12 @@ import { DataTableColumnHeader } from "~/components/ui/data-table/data-table-col
 import { Facet } from "~/components/ui/data-table/data-table-toolbar";
 import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
-import { toast } from "~/lib/toast.server";
 import { cn } from "~/lib/utils";
 import { SessionService } from "~/services/SessionService.server";
+
+export const meta: MetaFunction = () => {
+  return [{ title: `Users | Plumb Media & Education}` }];
+};
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await SessionService.requireAdmin(request);
@@ -25,11 +28,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   } catch (error) {
     console.error(error);
     Sentry.captureException(error);
-    throw toast.json(
-      request,
-      { message: "An error occurred while fetching users." },
-      { type: "error", title: "Error fetching users", description: "An error occurred while fetching users." },
-    );
+    throw error;
   }
 }
 

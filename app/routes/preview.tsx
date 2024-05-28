@@ -198,7 +198,7 @@ export default function CoursePreview() {
                         );
                         const isLessonLocked =
                           !userHasAccess ||
-                          (previousSectionQuiz && !previousSectionQuizIsCompleted) ||
+                          (previousSectionQuiz?.data && !previousSectionQuizIsCompleted) ||
                           lessonIndex > lastCompletedLessonIndex + 1;
 
                         const userLessonProgress = progress.find((lp) => lp.lessonId === l.id) ?? null;

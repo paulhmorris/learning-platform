@@ -5,6 +5,7 @@ import { loadStripe } from "@stripe/stripe-js";
 import { Theme, useTheme } from "remix-themes";
 import { typedjson, useTypedLoaderData } from "remix-typedjson";
 
+import { ErrorComponent } from "~/components/error-component";
 import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
 import { stripe } from "~/integrations/stripe.server";
@@ -68,4 +69,8 @@ export default function PaymentMethodsLayout() {
       <Outlet />
     </Elements>
   );
+}
+
+export function ErrorBoundary() {
+  return <ErrorComponent />;
 }

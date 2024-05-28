@@ -1,20 +1,22 @@
 import { LoaderFunctionArgs, json } from "@remix-run/node";
 import { NavLink, Outlet } from "@remix-run/react";
-import { IconCreditCard, IconLock, IconUserCircle } from "@tabler/icons-react";
+import { IconCreditCard, IconKey, IconUserCircle } from "@tabler/icons-react";
 
 import { ErrorComponent } from "~/components/error-component";
 import { Header } from "~/components/header";
+import { IconCertificate } from "~/components/icons";
 import { cn } from "~/lib/utils";
 import { SessionService } from "~/services/SessionService.server";
 
 const links = [
   { href: "/account/profile", text: "Profile", icon: <IconUserCircle className="size-[1.125rem]" /> },
-  { href: "/account/password", text: "Password", icon: <IconLock className="size-[1.125rem]" /> },
+  { href: "/account/password", text: "Password", icon: <IconKey className="size-[1.125rem]" /> },
   { href: "/account/payment-methods", text: "Payment", icon: <IconCreditCard className="size-[1.125rem]" /> },
+  { href: "/account/courses", text: "Courses", icon: <IconCertificate className="size-[1.125rem]" /> },
 ];
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await SessionService.requireUser(request);
+  await SessionService.requireUserId(request);
   return json({});
 }
 
@@ -39,7 +41,7 @@ export default function AccountLayout() {
                       to={link.href}
                     >
                       {link.icon}
-                      <span>{link.text}</span>
+                      <span className="sr-only sm:not-sr-only">{link.text}</span>
                     </NavLink>
                   </li>
                 ))}

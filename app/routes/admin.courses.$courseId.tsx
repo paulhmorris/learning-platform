@@ -1,11 +1,12 @@
-import { LoaderFunctionArgs } from "@remix-run/node";
+import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { Link } from "@remix-run/react";
 import { withZod } from "@remix-validated-form/with-zod";
 import { IconArrowLeft } from "@tabler/icons-react";
 import { typedjson, useTypedLoaderData } from "remix-typedjson";
-import { ValidatedForm } from "remix-validated-form";
+import { ValidatedForm, validationError } from "remix-validated-form";
 import { z } from "zod";
 
+import { ErrorComponent } from "~/components/error-component";
 import { FormField } from "~/components/ui/form";
 import { SubmitButton } from "~/components/ui/submit-button";
 import { db } from "~/integrations/db.server";
@@ -33,19 +34,45 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   } catch (error) {
     console.error(error);
     Sentry.captureException(error);
-    throw toast.json(
-      request,
-      { message: "An error occurred while fetching courses." },
-      { type: "error", title: "Error fetching courses", description: "An error occurred while fetching courses." },
-    );
+    throw new Response("An error occurred while fetching the course.", { status: 500 });
   }
 }
 
 const validator = withZod(
   z.object({
-    host: z.string().nonempty("Host is required"),
+    host: z.string({ message: "Host is required" }),
   }),
 );
+
+export async function action({ request, params }: ActionFunctionArgs) {
+  await SessionService.requireAdmin(request);
+  const id = params.courseId;
+
+  const result = await validator.validate(await request.formData());
+  if (result.error) {
+    return validationError(result.error);
+  }
+
+  const { host } = result.data;
+  try {
+    const course = await db.course.update({
+      where: { id },
+      data: { host },
+    });
+    return toast.redirect(request, `/admin/courses/${course.id}`, {
+      title: "Course updated successfully.",
+      type: "success",
+    });
+  } catch (error) {
+    console.error(error);
+    Sentry.captureException(error);
+    return toast.redirect(request, `/admin/courses/${id}`, {
+      title: "An error occurred while updating the course.",
+      description: error instanceof Error ? error.message : undefined,
+      type: "error",
+    });
+  }
+}
 
 export default function AdminEditCourse() {
   const { course } = useTypedLoaderData<typeof loader>();
@@ -71,4 +98,8 @@ export default function AdminEditCourse() {
       </div>
     </div>
   );
+}
+
+export function ErrorBoundary() {
+  return <ErrorComponent />;
 }

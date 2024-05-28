@@ -4,6 +4,7 @@ import { typedjson } from "remix-typedjson";
 import { ValidatedForm, validationError } from "remix-validated-form";
 import { z } from "zod";
 
+import { ErrorComponent } from "~/components/error-component";
 import { FormField } from "~/components/ui/form";
 import { SubmitButton } from "~/components/ui/submit-button";
 import { db } from "~/integrations/db.server";
@@ -120,4 +121,8 @@ export default function AccountProfile() {
       </ValidatedForm>
     </>
   );
+}
+
+export function ErrorBoundary() {
+  return <ErrorComponent />;
 }

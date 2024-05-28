@@ -1,4 +1,4 @@
-import { LoaderFunctionArgs } from "@remix-run/node";
+import { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import { Link } from "@remix-run/react";
 import { typedjson, useTypedLoaderData } from "remix-typedjson";
 
@@ -10,14 +10,22 @@ import { toast } from "~/lib/toast.server";
 import { getAllCourses } from "~/models/course.server";
 import { SessionService } from "~/services/SessionService.server";
 
+export const meta: MetaFunction = () => {
+  return [{ title: `Courses | Plumb Media & Education}` }];
+};
+
 export async function loader({ request }: LoaderFunctionArgs) {
   await SessionService.requireAdmin(request);
 
   try {
     const dbCourses = await db.course.findMany({ include: { userCourses: true } });
+    if (!dbCourses.length) {
+      return typedjson({ courses: [] });
+    }
+
     const cmsCourses = await getAllCourses();
     if (!cmsCourses) {
-      throw new Error("No courses found in CMS.");
+      throw new Error(`No courses found in CMS: ${JSON.stringify(cmsCourses)}`);
     }
     const courses = dbCourses.map((course) => {
       const cmsCourse = cmsCourses.find((c) => c.id === course.strapiId);

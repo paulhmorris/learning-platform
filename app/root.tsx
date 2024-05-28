@@ -6,6 +6,7 @@ import { typedjson, useTypedLoaderData } from "remix-typedjson";
 
 import "@fontsource-variable/inter/wght.css";
 import { ErrorComponent } from "~/components/error-component";
+import { GlobalLoader } from "~/components/global-loader";
 import { Notifications } from "~/components/notifications";
 import { Sentry } from "~/integrations/sentry";
 import { themeSessionResolver } from "~/lib/session.server";
@@ -115,6 +116,7 @@ function App() {
       <body className={cn("flex h-full min-h-full flex-col bg-background font-sans text-foreground", theme)}>
         <Outlet />
         <Notifications />
+        <GlobalLoader />
         <ScrollRestoration />
         <script
           dangerouslySetInnerHTML={{

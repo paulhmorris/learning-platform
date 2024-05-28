@@ -1,4 +1,4 @@
-import { LoaderFunctionArgs, MetaFunction, json } from "@remix-run/node";
+import { LoaderFunctionArgs, json } from "@remix-run/node";
 import { NavLink, Outlet } from "@remix-run/react";
 import { IconCertificate, IconUsersGroup } from "@tabler/icons-react";
 import { CSSProperties } from "react";
@@ -12,10 +12,6 @@ const links = [
   { href: "/admin/users", text: "Users", icon: <IconUsersGroup className="size-[1.125rem]" /> },
   { href: "/admin/courses", text: "Courses", icon: <IconCertificate className="size-[1.125rem]" /> },
 ];
-
-export const meta: MetaFunction = () => {
-  return [{ title: `Users | Plumb Media & Education}` }];
-};
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await SessionService.requireAdmin(request);

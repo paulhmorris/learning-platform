@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { typedjson, useTypedLoaderData } from "remix-typedjson";
 import { toast as clientToast } from "sonner";
 
+import { ErrorComponent } from "~/components/error-component";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { db } from "~/integrations/db.server";
@@ -209,4 +210,8 @@ export default function PaymentMethodsIndex() {
       </Button>
     </>
   );
+}
+
+export function ErrorBoundary() {
+  return <ErrorComponent />;
 }

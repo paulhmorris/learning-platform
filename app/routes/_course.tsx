@@ -141,6 +141,10 @@ export default function CourseLayout() {
     return acc + (curr.requiredDurationInSeconds ?? 0);
   }, 0);
 
+  if (!isClient) {
+    return null;
+  }
+
   return (
     <>
       <Header />
@@ -206,7 +210,7 @@ export default function CourseLayout() {
                               (p) => p.isCompleted && p.quizId === previousSectionQuiz?.data.id,
                             );
                             const isLessonLocked =
-                              (previousSectionQuiz && !previousSectionQuizIsCompleted) ||
+                              (previousSectionQuiz?.data && !previousSectionQuizIsCompleted) ||
                               lessonIndex > lastCompletedLessonIndex + 1;
 
                             return (
@@ -230,7 +234,7 @@ export default function CourseLayout() {
                   </li>
                 );
               })}
-            {!isLargeScreen && isClient ? (
+            {!isLargeScreen ? (
               <button
                 className={cn(
                   "absolute left-1/2 -translate-x-1/2 self-center rounded text-center text-base font-light ring-offset-background transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
