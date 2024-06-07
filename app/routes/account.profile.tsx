@@ -1,9 +1,10 @@
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
+import { useRevalidator } from "@remix-run/react";
 import { withZod } from "@remix-validated-form/with-zod";
 import { Stripe, loadStripe } from "@stripe/stripe-js";
 import { IconExclamationCircle } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
-import { typedjson } from "remix-typedjson";
+import { typedjson, useTypedLoaderData } from "remix-typedjson";
 import { ValidatedForm, validationError } from "remix-validated-form";
 import { toast as clientToast } from "sonner";
 import { z } from "zod";
@@ -15,6 +16,7 @@ import { FormField } from "~/components/ui/form";
 import { SubmitButton } from "~/components/ui/submit-button";
 import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
+import { stripe } from "~/integrations/stripe.server";
 import { toast } from "~/lib/toast.server";
 import { useUser } from "~/lib/utils";
 import { loader as rootLoader } from "~/root";
@@ -32,8 +34,13 @@ const validator = withZod(
 );
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await SessionService.requireUserId(request);
-  return typedjson({});
+  const user = await SessionService.requireUser(request);
+  let identityVerificationStatus;
+  if (user.stripeVerificationSessionId) {
+    const session = await stripe.identity.verificationSessions.retrieve(user.stripeVerificationSessionId);
+    identityVerificationStatus = session.status;
+  }
+  return typedjson({ identityVerificationStatus });
 }
 
 export const meta: TypedMetaFunction<typeof loader, { root: typeof rootLoader }> = ({ matches }) => {
@@ -101,6 +108,8 @@ const stripePromise = typeof window !== "undefined" ? loadStripe(window.ENV.STRI
 
 export default function AccountProfile() {
   const user = useUser();
+  const revalidator = useRevalidator();
+  const { identityVerificationStatus } = useTypedLoaderData<typeof loader>();
   const [stripe, setStripe] = useState<Stripe | null>(null);
 
   useEffect(() => {
@@ -133,13 +142,29 @@ export default function AccountProfile() {
       console.error(error);
       Sentry.captureException(error);
       clientToast.error("An error occurred while trying to verify your identity.");
+    } finally {
+      revalidator.revalidate();
     }
   }
+
+  const shouldShowVerifyButton =
+    !user.isIdentityVerified ||
+    !identityVerificationStatus ||
+    identityVerificationStatus === "requires_input" ||
+    identityVerificationStatus === "canceled";
 
   return (
     <div>
       <div className="mb-8">
-        {!user.isIdentityVerified && !user.stripeVerificationSessionId ? (
+        {identityVerificationStatus === "processing" ? (
+          <p className="flex gap-2 text-sm">
+            <IconExclamationCircle />
+            <span>
+              Your identity verification is in progress. You will receive an email with the results once it has
+              processed.
+            </span>
+          </p>
+        ) : shouldShowVerifyButton ? (
           <>
             <Button
               onClick={handleVerify}

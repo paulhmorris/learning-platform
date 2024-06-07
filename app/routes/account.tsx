@@ -2,6 +2,7 @@ import { LoaderFunctionArgs, json } from "@remix-run/node";
 import { NavLink, Outlet } from "@remix-run/react";
 import { IconCreditCard, IconKey, IconUserCircle } from "@tabler/icons-react";
 
+import { UserDebugTools } from "~/components/debug/user-debug-tools";
 import { ErrorComponent } from "~/components/error-component";
 import { Header } from "~/components/header";
 import { IconCertificate } from "~/components/icons";
@@ -53,6 +54,7 @@ export default function AccountLayout() {
           </div>
         </div>
       </div>
+      <UserDebugTools />
     </>
   );
 }
