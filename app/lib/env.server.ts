@@ -26,6 +26,7 @@ const serverEnvValidation = z.object({
   // Stripe
   STRIPE_PUBLIC_KEY: z.string().startsWith("pk_"),
   STRIPE_SECRET_KEY: z.string().startsWith("sk_"),
+  STRIPE_WEBHOOK_SECRET: z.string().startsWith("whsec_"),
 
   // Upstash
   UPSTASH_REDIS_REST_URL: z.string().url(),

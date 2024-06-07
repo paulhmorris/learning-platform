@@ -416,3 +416,103 @@ export function handlePrismaError(error: Prisma.PrismaClientKnownRequestError): 
       throw serverError("An unknown error occurred.");
   }
 }
+
+export function getPrismaErrorText(error: Prisma.PrismaClientKnownRequestError) {
+  switch (error.code) {
+    case "P1000":
+      return "Access denied.";
+    case "P1001":
+    case "P1002":
+      return "Server is unreachable or timed out.";
+    case "P1003":
+      return "Requested item does not exist.";
+    case "P1008":
+      return "Operation timed out.";
+    case "P1009":
+      return "Item already exists.";
+    case "P1010":
+      return "Access denied.";
+    case "P1011":
+      return "Connection error.";
+    case "P1012":
+      return "Validation error.";
+    case "P1013":
+      return "Invalid input.";
+    case "P1014":
+      return "Requested item does not exist.";
+    case "P1015":
+      return "Unsupported features.";
+    case "P1016":
+      return "Incorrect parameters.";
+    case "P1017":
+      return "Connection closed by server.";
+    case "P2000":
+      return "Input is too long.";
+    case "P2001":
+      return "Requested item does not exist.";
+    case "P2002":
+      return "Conflict with existing item.";
+    case "P2003":
+      return "Conflict with existing item.";
+    case "P2004":
+      return "Conflict with existing item.";
+    case "P2005":
+      return "Invalid input.";
+    case "P2006":
+      return "Invalid input.";
+    case "P2007":
+      return "Validation error.";
+    case "P2008":
+      return "Query error.";
+    case "P2009":
+      return "Query error.";
+    case "P2010":
+      return "Query error.";
+    case "P2011":
+      return "Null constraint violation.";
+    case "P2012":
+      return "Missing required value.";
+    case "P2013":
+      return "Missing required argument.";
+    case "P2014":
+      return "Conflict with existing relation.";
+    case "P2015":
+      return "Related item not found.";
+    case "P2016":
+      return "Query interpretation error.";
+    case "P2017":
+      return "Related items not connected.";
+    case "P2018":
+      return "Required connected items not found.";
+    case "P2019":
+      return "Input error.";
+    case "P2020":
+      return "Value out of range.";
+    case "P2021":
+      return "Table does not exist.";
+    case "P2022":
+      return "Column does not exist.";
+    case "P2023":
+      return "Inconsistent data.";
+    case "P2024":
+      return "Connection timeout.";
+    case "P2025":
+      return "Required items not found.";
+    case "P2026":
+      return "Unsupported feature.";
+    case "P2027":
+      return "Multiple errors occurred.";
+    case "P2028":
+      return "Transaction error.";
+    case "P2030":
+      return "Fulltext index not found.";
+    case "P2031":
+      return "Transaction requirement error.";
+    case "P2033":
+      return "Number out of range.";
+    case "P2034":
+      return "Transaction conflict.";
+    default:
+      return "An unknown error occurred.";
+  }
+}

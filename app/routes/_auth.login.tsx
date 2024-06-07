@@ -57,7 +57,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   }
 
   // If the user is not verified, redirect them to the join page with a message
-  if (!user.isVerified) {
+  if (!user.isEmailVerified) {
     const url = new URL("/join", request.url);
     url.searchParams.set("redirectTo", redirectTo || user.role === UserRole.USER ? "/" : "/admin");
     url.searchParams.set("step", "verify-email");

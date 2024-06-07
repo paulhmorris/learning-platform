@@ -19,7 +19,7 @@ const buttonVariants = cva(
           "bg-primary text-primary-foreground hover:bg-primary/90 text-lg py-2 px-6 shadow-[0px_1px_0px_0px_#FFFFFFB2_inset,0px_-3px_0px_0px_#A16A0040_inset]",
         secondary: "bg-transparent px-6 text-foreground hover:bg-secondary border border-foreground border-4 py-0.5",
         destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
-        link: "text-primary underline-offset-4 hover:underline",
+        link: "text-primary underline-offset-4 underline",
         icon: "size-10 sm:w-10",
       },
     },

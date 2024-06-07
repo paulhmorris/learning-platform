@@ -7,6 +7,9 @@ import { isbot } from "isbot";
 import { renderToPipeableStream } from "react-dom/server";
 
 import { Sentry } from "~/integrations/sentry";
+import { validateEnv } from "~/lib/env.server";
+
+validateEnv();
 
 export const handleError = Sentry.sentryHandleError;
 

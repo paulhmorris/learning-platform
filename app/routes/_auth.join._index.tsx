@@ -129,7 +129,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
       await UserService.update(user.id, {
         data: {
-          isVerified: true,
+          isEmailVerified: true,
           verification: {
             update: {
               expiresAt: new Date(),

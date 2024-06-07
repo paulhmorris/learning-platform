@@ -1,10 +1,16 @@
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { withZod } from "@remix-validated-form/with-zod";
+import { Stripe, loadStripe } from "@stripe/stripe-js";
+import { IconExclamationCircle } from "@tabler/icons-react";
+import { useEffect, useState } from "react";
 import { typedjson } from "remix-typedjson";
 import { ValidatedForm, validationError } from "remix-validated-form";
+import { toast as clientToast } from "sonner";
 import { z } from "zod";
 
 import { ErrorComponent } from "~/components/error-component";
+import { IconCheck } from "~/components/icons";
+import { Button } from "~/components/ui/button";
 import { FormField } from "~/components/ui/form";
 import { SubmitButton } from "~/components/ui/submit-button";
 import { db } from "~/integrations/db.server";
@@ -91,11 +97,72 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 }
 
+const stripePromise = typeof window !== "undefined" ? loadStripe(window.ENV.STRIPE_PUBLIC_KEY) : null;
+
 export default function AccountProfile() {
   const user = useUser();
+  const [stripe, setStripe] = useState<Stripe | null>(null);
+
+  useEffect(() => {
+    if (!stripePromise) return;
+
+    async function loadStripe() {
+      setStripe(await stripePromise);
+    }
+    void loadStripe();
+  }, []);
+
+  async function handleVerify() {
+    if (!stripe) return;
+
+    try {
+      const response = await fetch("/api/identity-verification", { method: "POST" });
+      if (!response.ok) {
+        throw new Error("Failed to create a verification session.");
+      }
+
+      const { client_secret } = (await response.json()) as { client_secret: string };
+      const { error } = await stripe.verifyIdentity(client_secret);
+      if (error) {
+        Sentry.captureException(error);
+        clientToast.error("An error occurred while verifying your identity.");
+      } else {
+        clientToast.info("We're processing your identity verification. You'll receive an email with the results.");
+      }
+    } catch (error) {
+      console.error(error);
+      Sentry.captureException(error);
+      clientToast.error("An error occurred while trying to verify your identity.");
+    }
+  }
 
   return (
-    <>
+    <div>
+      <div className="mb-8">
+        {!user.isIdentityVerified && !user.stripeVerificationSessionId ? (
+          <>
+            <Button
+              onClick={handleVerify}
+              disabled={!stripe}
+              type="button"
+              className="text-sm text-foreground sm:w-auto"
+              aria-describedby="verify-btn-description"
+              variant="link"
+            >
+              <IconExclamationCircle className="size-5" />
+              <span>Verify My Identity</span>
+            </Button>
+            <p className="text-xs text-muted-foreground" id="verify-btn-description">
+              This is required to complete a driver safety course.
+            </p>
+          </>
+        ) : (
+          <div className="flex items-center gap-2">
+            <IconCheck className="size-5 text-success" />
+            <p className="text-sm">Identity Verified</p>
+          </div>
+        )}
+      </div>
       <ValidatedForm
         method="post"
         action="/account/profile"
@@ -119,7 +186,7 @@ export default function AccountProfile() {
           </SubmitButton>
         </div>
       </ValidatedForm>
-    </>
+    </div>
   );
 }
 

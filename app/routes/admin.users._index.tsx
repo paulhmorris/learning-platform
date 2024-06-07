@@ -84,7 +84,7 @@ const columns: Array<ColumnDef<User>> = [
     enableColumnFilter: false,
   },
   {
-    accessorKey: "isVerified",
+    accessorKey: "isEmailVerified",
     header: ({ column }) => <DataTableColumnHeader column={column} title="Verified" />,
     cell: ({ row }) => {
       return (
@@ -92,10 +92,10 @@ const columns: Array<ColumnDef<User>> = [
           <span
             className={cn(
               "max-w-[500px] truncate font-medium capitalize",
-              !row.getValue("isVerified") ? "text-destructive" : "",
+              !row.getValue("isEmailVerified") ? "text-destructive" : "",
             )}
           >
-            {row.getValue("isVerified") === true ? "yes" : "no"}
+            {row.getValue("isEmailVerified") === true ? "yes" : "no"}
           </span>
         </div>
       );
@@ -119,7 +119,7 @@ const columns: Array<ColumnDef<User>> = [
 
 const facets: Array<Facet> = [
   {
-    columnId: "isVerified",
+    columnId: "isEmailVerified",
     title: "Verified",
   },
 ];
