@@ -11,9 +11,6 @@ const serverEnvValidation = z.object({
   // Strapi
   STRAPI_TOKEN: z.string().min(1),
 
-  // Resend
-  // RESEND_API_KEY: z.string().startsWith("re_"),
-
   // Cloudflare
   // AWS_BUCKET_NAME: z.string().min(1),
   // AWS_BUCKET_URL: z.string().url(),
@@ -21,10 +18,7 @@ const serverEnvValidation = z.object({
   // AWS_SECRET_ACCESS_KEY: z.string().min(1),
 
   // Database
-  DATABASE_URL: z.string().min(1),
-
-  // Sentry
-  SENTRY_DSN: z.string().url(),
+  DATABASE_URL: z.string().url(),
 
   // Trigger.dev
   // TRIGGER_SECRET_KEY: z.string().startsWith("tr_"),
