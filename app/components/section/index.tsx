@@ -53,7 +53,7 @@ export function SectionItemIconContainer({ children, className, ...props }: Reac
 
 export function SectionItemDescription({ children, className, ...props }: React.HTMLAttributes<HTMLParagraphElement>) {
   return (
-    <p {...props} className={cn("text-sm font-light leading-4", className)}>
+    <p {...props} className={cn("whitespace-nowrap text-sm font-light leading-4", className)}>
       {children}
     </p>
   );

@@ -2,7 +2,6 @@ import { Prisma } from "@prisma/client";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { Link, useFetcher, useSearchParams } from "@remix-run/react";
 import { withZod } from "@remix-validated-form/with-zod";
-import { nanoid } from "nanoid";
 import { useEffect } from "react";
 import { redirect, typedjson } from "remix-typedjson";
 import { ValidatedForm, validationError } from "remix-validated-form";
@@ -14,7 +13,6 @@ import { FormField } from "~/components/ui/form";
 import { SubmitButton } from "~/components/ui/submit-button";
 import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
-import { verifyEmailJob } from "~/jobs/verify-email.server";
 import { handlePrismaError, serverError } from "~/lib/responses.server";
 import { toast } from "~/lib/toast.server";
 import { loader as rootLoader } from "~/root";
@@ -76,7 +74,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         data: { firstName, lastName },
       });
 
-      await verifyEmailJob.invoke({ email: user.email }, { idempotencyKey: nanoid() });
+      // await verifyEmailJob.invoke({ email: user.email }, { idempotencyKey: nanoid() });
 
       const url = new URL("/join", request.url);
       url.searchParams.set("step", "verify-email");
