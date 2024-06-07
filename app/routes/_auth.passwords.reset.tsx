@@ -9,10 +9,10 @@ import { AuthCard } from "~/components/common/auth-card";
 import { PageTitle } from "~/components/common/page-title";
 import { FormField } from "~/components/ui/form";
 import { SubmitButton } from "~/components/ui/submit-button";
+import { EmailService } from "~/integrations/email.server";
 import { Sentry } from "~/integrations/sentry";
 import { toast } from "~/lib/toast.server";
 import { loader as rootLoader } from "~/root";
-import { MailService } from "~/services/MailService.server";
 import { PasswordService } from "~/services/PasswordService.server";
 import { SessionService } from "~/services/SessionService.server";
 import { TypedMetaFunction } from "~/types/utils";
@@ -35,7 +35,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   try {
     const reset = await PasswordService.generateReset(result.data.email);
-    await MailService.sendPasswordResetEmail({ email: result.data.email, token: reset.token });
+    await EmailService.sendPasswordReset({ email: result.data.email, token: reset.token });
     return typedjson({ success: true });
   } catch (error) {
     // If the user doesn't exist, we don't want to leak that information

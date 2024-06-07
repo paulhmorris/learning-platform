@@ -14,6 +14,7 @@
     "react-dom": "^18.3.1"
   },
   "dependencies": {
+    "@aws-sdk/client-sesv2": "^3.592.0",
     "@fontsource-variable/inter": "^5.0.18",
     "@mux/mux-player-react": "^2.7.0",
     "@prisma/client": "^5.15.0",
@@ -45,6 +46,7 @@
     "@tabler/icons-react": "^3.5.0",
     "@tanstack/match-sorter-utils": "^8.15.1",
     "@tanstack/react-table": "^8.17.3",
+    "@trigger.dev/sdk": "3.0.0-beta.36",
     "@upstash/redis": "^1.31.3",
     "@vercel/remix": "^2.9.2-patch.2",
     "bcryptjs": "^2.4.3",
@@ -55,6 +57,7 @@
     "dayjs": "^1.11.11",
     "embla-carousel-react": "^8.1.3",
     "express": "^4.19.2",
+    "isbot": "^5.1.9",
     "morgan": "^1.10.0",
     "nanoid": "^5.0.7",
     "nprogress": "^0.2.0",
@@ -133,7 +136,7 @@
     "seed": "tsx prisma/seed.ts"
   },
   "volta": {
-    "node": "20.11.1"
+    "node": "20.14.0"
   },
   "trigger.dev": {
     "endpointId": "learning-platform-K4ZL"

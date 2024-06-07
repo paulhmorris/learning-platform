@@ -25,7 +25,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { email } = result.data;
   try {
-    await verifyEmailJob.invoke({ email }, { idempotencyKey: nanoid() });
+    await verifyEmailJob.trigger({ email }, { idempotencyKey: nanoid() });
     return toast.json(
       request,
       { success: true },

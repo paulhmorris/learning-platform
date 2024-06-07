@@ -34,7 +34,8 @@ async function seed() {
       lastName: "Henschel",
       role: UserRole.SUPERADMIN,
       email,
-      isVerified: true,
+      isEmailVerified: true,
+      isIdentityVerified: true,
       stripeId: stripeCustomerId,
       password: {
         create: {

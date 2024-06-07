@@ -5,9 +5,9 @@ import { typedjson } from "remix-typedjson";
 import { validationError } from "remix-validated-form";
 import { z } from "zod";
 
+import { EmailService } from "~/integrations/email.server";
 import { Sentry } from "~/integrations/sentry";
 import { toast } from "~/lib/toast.server";
-import { MailService } from "~/services/MailService.server";
 import { PasswordService } from "~/services/PasswordService.server";
 import { UserService } from "~/services/UserService.server";
 
@@ -52,7 +52,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const reset = await PasswordService.generateReset(user.email);
-  const { data, error } = await MailService.sendPasswordSetupEmail({ email: user.email, token: reset.token });
+  const { data, error } = await EmailService.sendPasswordSetup({ email: user.email, token: reset.token });
 
   // Unknown Resend error
   if (error || !data) {
