@@ -3,6 +3,7 @@ import { NavLink, Outlet } from "@remix-run/react";
 import { IconCertificate, IconCreditCard, IconFingerprint, IconUserCircle } from "@tabler/icons-react";
 import { typedjson, useTypedLoaderData } from "remix-typedjson";
 
+import { BackLink } from "~/components/common/back-link";
 import { Badge } from "~/components/ui/badge";
 import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
@@ -43,6 +44,7 @@ export default function UsersIndex() {
   const { user } = useTypedLoaderData<typeof loader>();
   return (
     <>
+      <BackLink to="/admin/users">Back to users</BackLink>
       <h1 className="text-3xl">{`${user.firstName} ${user.lastName}`}</h1>
       <Badge variant={user.verification ? "default" : "destructive"}>
         {user.verification ? "Verified" : "Unverified"}

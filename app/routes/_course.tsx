@@ -4,9 +4,9 @@ import { useState } from "react";
 import { typedjson } from "remix-typedjson";
 import { useIsClient, useMediaQuery } from "usehooks-ts";
 
+import { BackLink } from "~/components/common/back-link";
 import { Header } from "~/components/header";
 import { Section, SectionHeader } from "~/components/section";
-import { BackToCourseLink } from "~/components/sidebar/back-to-course-link";
 import { CourseProgressBar } from "~/components/sidebar/course-progress-bar";
 import { SectionLesson } from "~/components/sidebar/section-lesson";
 import { SectionQuiz } from "~/components/sidebar/section-quiz";
@@ -150,8 +150,7 @@ export default function CourseLayout() {
       <Header />
       <div className="max-w-screen-xl">
         <nav className="overflow-visible px-4 py-4 lg:fixed lg:bottom-0 lg:left-0 lg:top-20 lg:w-[448px] lg:overflow-auto lg:py-12">
-          <BackToCourseLink />
-
+          <BackLink to="/preview">Back to course</BackLink>
           {/* TODO: Adjust for non timed courses */}
           <div className="my-7">
             <CourseProgressBar progress={totalProgressInSeconds} duration={totalDurationInSeconds} />

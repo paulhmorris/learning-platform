@@ -20,10 +20,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   await SessionService.requireAdmin(request);
 
   try {
-    const users = await db.user.findMany({
-      where: { role: "USER" },
-      include: { courses: true },
-    });
+    const users = await db.user.findMany({ include: { courses: true } });
     return typedjson({ users });
   } catch (error) {
     console.error(error);
@@ -54,6 +51,18 @@ const columns: Array<ColumnDef<User>> = [
           <Link to={`/admin/users/${row.original.id}`} className="max-w-[120px] truncate font-medium text-primary">
             {row.getValue("name")}
           </Link>
+        </div>
+      );
+    },
+    enableColumnFilter: false,
+  },
+  {
+    accessorKey: "role",
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Role" />,
+    cell: ({ row }) => {
+      return (
+        <div>
+          <span className="max-w-[120px] truncate font-medium">{row.getValue("role")}</span>
         </div>
       );
     },
