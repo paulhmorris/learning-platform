@@ -1,14 +1,21 @@
 import { LoaderFunctionArgs } from "@remix-run/node";
 import { NavLink, Outlet } from "@remix-run/react";
-import { IconCertificate, IconCreditCard, IconFingerprint, IconUserCircle } from "@tabler/icons-react";
+import {
+  IconCertificate,
+  IconCreditCard,
+  IconFingerprint,
+  IconMail,
+  IconUserCircle,
+  IconUserScan,
+} from "@tabler/icons-react";
 import { typedjson, useTypedLoaderData } from "remix-typedjson";
 
 import { BackLink } from "~/components/common/back-link";
 import { Badge } from "~/components/ui/badge";
 import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
+import { stripe } from "~/integrations/stripe.server";
 import { notFound } from "~/lib/responses.server";
-import { toast } from "~/lib/toast.server";
 import { cn } from "~/lib/utils";
 import { SessionService } from "~/services/SessionService.server";
 
@@ -28,27 +35,35 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   try {
     const user = await db.user.findUniqueOrThrow({ where: { id }, include: { verification: true } });
-    return typedjson({ user });
+    let identityVerificationStatus;
+    if (user.stripeVerificationSessionId) {
+      const session = await stripe.identity.verificationSessions.retrieve(user.stripeVerificationSessionId);
+      identityVerificationStatus = session.status;
+    }
+    return typedjson({ user, identityVerificationStatus });
   } catch (error) {
     console.error(error);
     Sentry.captureException(error);
-    throw toast.redirect(request, "/users", {
-      type: "error",
-      title: "Error fetching user",
-      description: `An error occurred while fetching user ${id}.`,
-    });
+    throw error;
   }
 }
 
 export default function UsersIndex() {
-  const { user } = useTypedLoaderData<typeof loader>();
+  const { user, identityVerificationStatus } = useTypedLoaderData<typeof loader>();
   return (
     <>
       <BackLink to="/admin/users">Back to users</BackLink>
       <h1 className="text-3xl">{`${user.firstName} ${user.lastName}`}</h1>
-      <Badge variant={user.verification ? "default" : "destructive"}>
-        {user.verification ? "Verified" : "Unverified"}
-      </Badge>
+      <div className="flex items-center gap-2">
+        <Badge variant={user.verification ? "success" : "secondary"}>
+          <IconMail strokeWidth={2.5} className="size-3.5" />
+          <span>Email: {user.verification ? "Verified" : "Unverified"}</span>
+        </Badge>
+        <Badge variant={identityVerificationStatus === "verified" ? "success" : "secondary"}>
+          <IconUserScan strokeWidth={2.5} className="size-3.5" />
+          <span className="capitalize">Identity: {identityVerificationStatus?.split("_").join(" ")}</span>
+        </Badge>
+      </div>
       <nav className="mt-4">
         <ul className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-muted p-1 text-muted-foreground">
           {links.map((link) => (

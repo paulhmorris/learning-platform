@@ -1,11 +1,10 @@
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { Link } from "@remix-run/react";
 import { withZod } from "@remix-validated-form/with-zod";
-import { IconArrowLeft } from "@tabler/icons-react";
 import { typedjson, useTypedLoaderData } from "remix-typedjson";
 import { ValidatedForm, validationError } from "remix-validated-form";
 import { z } from "zod";
 
+import { BackLink } from "~/components/common/back-link";
 import { ErrorComponent } from "~/components/error-component";
 import { FormField } from "~/components/ui/form";
 import { SubmitButton } from "~/components/ui/submit-button";
@@ -79,13 +78,7 @@ export default function AdminEditCourse() {
 
   return (
     <div>
-      <Link
-        to="/admin/courses"
-        className="group inline-flex items-center gap-2 rounded ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-      >
-        <IconArrowLeft className="size-[1.125rem] transition-transform duration-200 ease-out group-hover:-translate-x-0.5" />
-        <span>Back to courses</span>
-      </Link>
+      <BackLink to="/admin/courses">Back to courses</BackLink>
       <h1 className="mt-4 text-3xl">{course.title}</h1>
       {course.description ? <p className="mt-1 text-sm text-muted-foreground">{course.description}</p> : null}
       <div className="mt-4 max-w-sm">

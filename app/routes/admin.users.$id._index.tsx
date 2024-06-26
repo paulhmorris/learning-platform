@@ -1,5 +1,6 @@
 import { ActionFunctionArgs, MetaFunction } from "@remix-run/node";
 import { withZod } from "@remix-validated-form/with-zod";
+import { useTypedRouteLoaderData } from "remix-typedjson";
 import { ValidatedForm, validationError } from "remix-validated-form";
 import { z } from "zod";
 
@@ -8,7 +9,7 @@ import { SubmitButton } from "~/components/ui/submit-button";
 import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
 import { toast } from "~/lib/toast.server";
-import { useUser } from "~/lib/utils";
+import { loader } from "~/routes/admin.users.$id";
 import { SessionService } from "~/services/SessionService.server";
 
 const validator = withZod(
@@ -65,7 +66,13 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function AdminUserIndex() {
-  const user = useUser();
+  const userData = useTypedRouteLoaderData<typeof loader>("routes/admin.users.$id");
+
+  if (!userData) {
+    throw new Error("User not found.");
+  }
+
+  const { user } = userData;
 
   return (
     <div className="max-w-screen-md">

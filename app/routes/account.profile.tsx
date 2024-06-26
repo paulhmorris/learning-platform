@@ -40,6 +40,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const session = await stripe.identity.verificationSessions.retrieve(user.stripeVerificationSessionId);
     identityVerificationStatus = session.status;
   }
+
   return typedjson({ identityVerificationStatus });
 }
 
@@ -174,11 +175,11 @@ export default function AccountProfile() {
               aria-describedby="verify-btn-description"
               variant="link"
             >
-              <IconExclamationCircle className="size-5" />
               <span>Verify My Identity</span>
             </Button>
-            <p className="text-xs text-muted-foreground" id="verify-btn-description">
-              This is required to complete a driver safety course.
+            <p className="mt-1 text-xs text-muted-foreground" id="verify-btn-description">
+              This is required to complete a driver safety course. Status:{" "}
+              {identityVerificationStatus?.split("_").join(" ")}
             </p>
           </>
         ) : (

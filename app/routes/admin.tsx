@@ -3,6 +3,7 @@ import { NavLink, Outlet } from "@remix-run/react";
 import { IconCertificate, IconUsersGroup } from "@tabler/icons-react";
 import { CSSProperties } from "react";
 
+import { UserDebugTools } from "~/components/debug/user-debug-tools";
 import { ErrorComponent } from "~/components/error-component";
 import { Header } from "~/components/header";
 import { cn } from "~/lib/utils";
@@ -58,6 +59,7 @@ export default function AdminLayout() {
           </div>
         </div>
       </div>
+      <UserDebugTools />
     </div>
   );
 }

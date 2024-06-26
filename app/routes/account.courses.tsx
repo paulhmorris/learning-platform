@@ -54,7 +54,7 @@ export default function AccountCourses() {
         {courses.map((course) => (
           <li key={course.id}>
             <a
-              className="flex items-center justify-between rounded-2xl border px-4 py-6 shadow transition hover:bg-gray-50"
+              className="flex items-center justify-between rounded-2xl border px-4 py-6 shadow transition hover:bg-secondary"
               href={new URL("/", `https://${course.course.host}`).toString()}
               target="_blank"
               rel="noreferrer"

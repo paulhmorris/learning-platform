@@ -16,7 +16,7 @@ import { getCoursefromCMSForRoot, getLinkedCourse } from "~/models/course.server
 import { SessionService } from "~/services/SessionService.server";
 import globalStyles from "~/tailwind.css?url";
 
-export const links: LinksFunction = () => [{ rel: "stylesheet", href: globalStyles }];
+export const links: LinksFunction = () => [{ rel: "stylesheet", href: globalStyles, as: "style" }];
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const session = await SessionService.getSession(request);
