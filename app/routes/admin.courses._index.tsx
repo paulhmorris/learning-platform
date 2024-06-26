@@ -24,6 +24,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     }
 
     const cmsCourses = await getAllCourses();
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!cmsCourses) {
       throw new Error(`No courses found in CMS: ${JSON.stringify(cmsCourses)}`);
     }
