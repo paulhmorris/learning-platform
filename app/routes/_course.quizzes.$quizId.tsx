@@ -15,6 +15,7 @@ import { cms } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
 import { handlePrismaError, notFound } from "~/lib/responses.server";
+import { toast } from "~/lib/toast.server";
 import { cn } from "~/lib/utils";
 import { loader as courseLoader } from "~/routes/_course";
 import { SessionService } from "~/services/SessionService.server";
@@ -104,10 +105,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
         }
         return question.answers.findIndex((answer) => answer.is_correct);
       })
-      .filter(Boolean);
+      .filter((a) => typeof a !== "undefined");
 
-    if (!correctQuizAnswers) {
-      throw notFound("Quiz answers not found.");
+    if (!correctQuizAnswers || !correctQuizAnswers.length) {
+      return toast.json(
+        request,
+        { score: 0, passed: false, userAnswers: [], passingScore: quiz.data.attributes.passing_score },
+        {
+          title: "Error",
+          description: "There was an error processing your quiz. Please try again later.",
+          type: "error",
+        },
+      );
     }
 
     // [2, 1]
@@ -151,10 +160,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
 
     return typedjson({
-      correctQuizAnswers,
-      userAnswers,
-      passed,
       score,
+      passed,
+      userAnswers,
       passingScore: quiz.data.attributes.passing_score,
     });
   } catch (error) {
@@ -191,7 +199,8 @@ export default function Quiz() {
     }
   }, [actionData?.score]);
 
-  const quizSection = course.attributes.sections.find((s) => s.quiz?.data.id === quiz.id);
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  const quizSection = course.attributes.sections.find((s) => s.quiz?.data?.id === quiz.id);
   const firstLessonInSectionSlug = quizSection?.lessons?.data[0].attributes.slug;
 
   // Quiz is locked if any lesson in the quiz section is not completed
@@ -215,8 +224,8 @@ export default function Quiz() {
         ) : null}
       </div>
       <PageTitle>{quiz.attributes.title}</PageTitle>
-      <p className="text-sm text-secondary-foreground">
-        Score {quiz.attributes.passing_score}% or higher on this quiz to proceed.
+      <p className="mt-1 text-sm text-secondary-foreground">
+        Score <strong>{quiz.attributes.passing_score}% or higher</strong> on this quiz to proceed.
       </p>
       {/* TODO: Complete to unlock/up next */}
       {/* <CourseUpNext lesson={} /> */}

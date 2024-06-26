@@ -206,7 +206,8 @@ export default function CourseLayout() {
                             const previousSection = section_index > 0 ? sections.at(section_index - 1) : null;
                             const previousSectionQuiz = previousSection?.quiz;
                             const previousSectionQuizIsCompleted = quizProgress.find(
-                              (p) => p.isCompleted && p.quizId === previousSectionQuiz?.data.id,
+                              // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+                              (p) => p.isCompleted && p.quizId === previousSectionQuiz?.data?.id,
                             );
                             const isLessonLocked =
                               (previousSectionQuiz?.data && !previousSectionQuizIsCompleted) ||
