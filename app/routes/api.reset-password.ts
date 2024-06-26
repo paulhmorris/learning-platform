@@ -54,7 +54,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const reset = await PasswordService.generateReset(user.email);
   const { data, error } = await EmailService.sendPasswordSetup({ email: user.email, token: reset.token });
 
-  // Unknown Resend error
+  // Unknown email error
   if (error || !data) {
     Sentry.captureException(error);
     await PasswordService.deleteReset(reset.id);

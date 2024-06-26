@@ -85,9 +85,11 @@ model PasswordReset {
 
 // Relations
 model UserCourses {
-  id                 Int     @id @default(autoincrement())
-  isCompleted        Boolean @default(false)
-  certificateClaimed Boolean @default(false)
+  id                 Int       @id @default(autoincrement())
+  isCompleted        Boolean   @default(false)
+  completedAt        DateTime?
+  certificateClaimed Boolean   @default(false)
+  certificateS3Key   String?
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   userId String @unique
@@ -97,6 +99,8 @@ model UserCourses {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@unique([userId, courseId])
 }
 
 model UserLessonProgress {

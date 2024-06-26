@@ -27,7 +27,7 @@ export class EmailService {
 
     try {
       const data = await this.send({
-        from: "Alliance 436 <alliance-436@alliance436.org>",
+        from: "Alliance 436 <no-reply@getcosmic.dev>",
         to: email,
         subject: "Reset Your Password",
         html: `
@@ -49,7 +49,7 @@ export class EmailService {
 
     try {
       const data = await this.send({
-        from: "Alliance 436 <alliance-436@alliance436.org>",
+        from: "Alliance 436 <no-reply@getcosmic.dev>",
         to: email,
         subject: "Setup Your Password",
         html: `

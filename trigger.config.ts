@@ -22,7 +22,7 @@ export const config: TriggerConfig = {
   additionalFiles: ["./prisma/schema.prisma"],
   additionalPackages: ["prisma@5.16.0"],
   // eslint-disable-next-line @typescript-eslint/require-await
-  onFailure: async (_, error, _params) => {
+  onFailure: async (_, error) => {
     Sentry.captureException(error);
   },
 };

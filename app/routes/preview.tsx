@@ -11,7 +11,6 @@ import { ErrorComponent } from "~/components/error-component";
 import { Header } from "~/components/header";
 import { IconClipboard, IconDocument } from "~/components/icons";
 import { Section, SectionHeader } from "~/components/section";
-import { SectionCertificate } from "~/components/section/section-certificate";
 import { CoursePreviewLink } from "~/components/sidebar/course-preview-link";
 import { CourseProgressBar } from "~/components/sidebar/course-progress-bar";
 import { PreviewSectionLesson } from "~/components/sidebar/preview-section-lesson";
@@ -247,9 +246,6 @@ export default function CoursePreview() {
                 </li>
               );
             })}
-            <li key="section-certificate">
-              <SectionCertificate isCourseCompleted={isCourseCompleted} />
-            </li>
           </ul>
         </main>
       </div>

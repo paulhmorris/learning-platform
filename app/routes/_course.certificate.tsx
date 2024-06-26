@@ -1,13 +1,16 @@
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { Form } from "@remix-run/react";
-import { typedjson } from "remix-typedjson";
+import { withZod } from "@remix-validated-form/with-zod";
+import { typedjson, useTypedActionData, useTypedLoaderData } from "remix-typedjson";
+import { ValidatedForm } from "remix-validated-form";
+import { z } from "zod";
 
 import { PageTitle } from "~/components/common/page-title";
-import { Button } from "~/components/ui/button";
+import { SubmitButton } from "~/components/ui/submit-button";
 import { useCourseData } from "~/hooks/useCourseData";
 import { cms } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
+import { claimCertificateTask } from "~/jobs/claim-certificate";
 import { toast } from "~/lib/toast.server";
 import { useUser } from "~/lib/utils";
 import { loader as courseLoader } from "~/routes/_course";
@@ -15,8 +18,34 @@ import { SessionService } from "~/services/SessionService.server";
 import { APIResponseData, TypedMetaFunction } from "~/types/utils";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await SessionService.requireUser(request);
-  return typedjson({});
+  const user = await SessionService.requireUser(request);
+  const { host } = new URL(request.url);
+  const linkedCourse = await db.course.findUnique({ where: { host } });
+
+  if (!linkedCourse) {
+    Sentry.captureMessage("Received request from unknown host", {
+      extra: { host },
+      level: "warning",
+      user: { username: user.email, id: user.id, email: user.email },
+    });
+    return toast.redirect(request, "/preview", {
+      type: "error",
+      title: "Error claiming certificate",
+      description: "Please try again later.",
+      position: "bottom-center",
+    });
+  }
+
+  const userCourse = await db.userCourses.findUniqueOrThrow({
+    where: { userId_courseId: { userId: user.id, courseId: linkedCourse.id } },
+    select: {
+      certificateClaimed: true,
+      certificateS3Key: true,
+      isCompleted: true,
+      completedAt: true,
+    },
+  });
+  return typedjson({ userCourse });
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -101,18 +130,32 @@ export async function action({ request }: ActionFunctionArgs) {
       });
     }
 
-    return toast.redirect(request, "/preview", {
-      type: "success",
-      title: "Certificate claimed!",
-      description: "Your certificate will be emailed to you shortly.",
-      duration: 20_000,
+    const job = await claimCertificateTask.trigger({
+      userId: user.id,
+      courseId: linkedCourse.id,
+      courseName: course.data.attributes.title,
     });
+
+    if (!job.id) {
+      throw new Error("Failed to initiate certificate generation job.");
+    }
+
+    return toast.json(
+      request,
+      { success: true },
+      {
+        type: "success",
+        title: "Certificate claimed!",
+        description: "Your certificate will be emailed to you shortly.",
+        duration: 20_000,
+      },
+    );
   } catch (error) {
     console.error(error);
     Sentry.captureException(error);
     return toast.redirect(request, "/preview", {
       type: "error",
-      title: "Failed to load course",
+      title: "Error claiming certificate",
       description: "Please try again later",
       position: "bottom-center",
     });
@@ -128,6 +171,8 @@ export const meta: TypedMetaFunction<typeof loader, { "routes/_course": typeof c
 };
 
 export default function CourseCertificate() {
+  const { userCourse } = useTypedLoaderData<typeof loader>();
+  const actionData = useTypedActionData<typeof action>();
   const data = useCourseData();
   const user = useUser();
 
@@ -148,6 +193,36 @@ export default function CourseCertificate() {
     );
   }
 
+  if (userCourse.certificateClaimed && userCourse.certificateS3Key) {
+    return (
+      <>
+        <PageTitle>Certificate</PageTitle>
+        <p className="mt-8 rounded-md border border-success bg-success/5 p-4 text-success">
+          You have claimed your certificate.{" "}
+          <a
+            className="block underline"
+            target="_blank"
+            rel="noreferrer"
+            href={`https://assets.hiphopdriving.com/${userCourse.certificateS3Key}`}
+          >
+            Access it here.
+          </a>
+        </p>
+      </>
+    );
+  }
+
+  if (actionData?.success) {
+    return (
+      <>
+        <PageTitle>Certificate</PageTitle>
+        <p className="mt-8 rounded-md border border-success bg-success/5 p-4 text-success">
+          Thank you! Your certificate will be emailed to <span className="font-bold">{user.email}</span> shortly.
+        </p>
+      </>
+    );
+  }
+
   return (
     <>
       <PageTitle>Certificate</PageTitle>
@@ -158,9 +233,9 @@ export default function CourseCertificate() {
         Click the button below to claim your certificate. It will be emailed to{" "}
         <span className="font-bold">{user.email}</span>.
       </p>
-      <Form className="mt-8" method="post">
-        <Button className="sm:w-auto">Claim Certificate</Button>
-      </Form>
+      <ValidatedForm validator={withZod(z.object({}))} className="mt-8" method="post">
+        <SubmitButton className="sm:w-auto">Claim Certificate</SubmitButton>
+      </ValidatedForm>
     </>
   );
 }

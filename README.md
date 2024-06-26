@@ -4,5 +4,4 @@ Includes the Remix Blues Stack, plus:
 
 - shadcn/ui
 - remix-validated-form
-- Resend
 - Zod
