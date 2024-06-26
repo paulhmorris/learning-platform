@@ -103,7 +103,8 @@ export default function CoursePreview() {
   );
   const lastCompletedLessonSectionHasIncompleteQuiz =
     lasCompletedLessonSection?.quiz?.data &&
-    !quizProgress.find((p) => p.quizId === lasCompletedLessonSection.quiz?.data.id)?.isCompleted;
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    !quizProgress.find((p) => p.quizId === lasCompletedLessonSection.quiz?.data?.id)?.isCompleted;
   const nextQuiz = lastCompletedLessonSectionHasIncompleteQuiz ? lasCompletedLessonSection.quiz?.data : null;
 
   // Sum the user progress to get the total progress
@@ -121,7 +122,8 @@ export default function CoursePreview() {
     lessonsInOrder.every((l) => l.isCompleted) &&
     // All quizzes are completed
     course.attributes.sections.every((s) => {
-      return !s.quiz?.data || quizProgress.find((p) => p.quizId === s.quiz?.data.id)?.isCompleted;
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      return !s.quiz?.data || quizProgress.find((p) => p.quizId === s.quiz?.data?.id)?.isCompleted;
     });
 
   // Timed Courses
@@ -129,16 +131,16 @@ export default function CoursePreview() {
     <>
       <Header />
       <div className="flex flex-col gap-x-12 px-4 py-4 lg:flex-row lg:py-4">
-        <nav className="left-0 top-[88px] h-full shrink-0 basis-[448px] py-4 sm:py-10 md:py-14 lg:sticky">
+        <nav className="left-0 top-[88px] h-full shrink-0 basis-[448px] py-4 sm:py-10 md:sticky md:py-14">
           <StrapiImage
             asset={course.attributes.cover_image}
             height={240}
             width={448}
-            fetchPriority="high"
+            fetchpriority="high"
             loading="eager"
             // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
             alt={course.attributes.cover_image?.data?.attributes.alternativeText}
-            className="overflow-hidden rounded-xl object-cover shadow-[0px_8px_32px_0px_#00000029]"
+            className="w-full overflow-hidden rounded-xl object-cover shadow-[0px_8px_32px_0px_#00000029]"
           />
           <div className="mt-7">
             <CoursePreviewLink to={`.`}>
@@ -194,7 +196,8 @@ export default function CoursePreview() {
                           section_index > 0 ? course.attributes.sections[section_index - 1] : null;
                         const previousSectionQuiz = previousSection?.quiz;
                         const previousSectionQuizIsCompleted = quizProgress.find(
-                          (p) => p.isCompleted && p.quizId === previousSectionQuiz?.data.id,
+                          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+                          (p) => p.isCompleted && p.quizId === previousSectionQuiz?.data?.id,
                         );
                         const isLessonLocked =
                           !userHasAccess ||
@@ -227,7 +230,8 @@ export default function CoursePreview() {
                       })}
                       {section.quiz?.data ? (
                         <div
-                          key={`quiz-${section.quiz.data.id}`}
+                          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+                          key={`quiz-${section.quiz.data?.id}`}
                           className="flex flex-wrap items-center justify-between gap-2"
                         >
                           <PreviewSectionQuiz
@@ -237,7 +241,8 @@ export default function CoursePreview() {
                           />
                           {!isQuizLocked ? (
                             <Button asChild className="ml-12 grow-0 sm:ml-0 sm:w-auto" variant="secondary">
-                              <Link to={`/quizzes/${section.quiz.data.id}`}>
+                              {/* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition */}
+                              <Link to={`/quizzes/${section.quiz.data?.id}`}>
                                 {!userQuizProgress ? "Start" : userQuizProgress.isCompleted ? "View results" : "Start"}
                               </Link>
                             </Button>

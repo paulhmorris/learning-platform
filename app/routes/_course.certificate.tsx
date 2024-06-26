@@ -128,11 +128,11 @@ export default function CourseCertificate() {
       return !s.quiz?.data || data.quizProgress.find((p) => p.quizId === s.quiz?.data.id)?.isCompleted;
     });
 
-  if (isCourseComplete) {
+  if (!isCourseComplete) {
     return (
       <>
         <PageTitle>Certificate</PageTitle>
-        <p className="mt-8 rounded-md border-destructive bg-destructive/5 p-4 text-destructive dark:bg-destructive/15">
+        <p className="mt-8 rounded-md border-destructive bg-destructive/5 p-4 text-destructive">
           You must complete all lessons and quizzes before you can claim your certificate.
         </p>
       </>
@@ -142,12 +142,12 @@ export default function CourseCertificate() {
   return (
     <>
       <PageTitle>Certificate</PageTitle>
-      <p className="mt-8 rounded-md border-success bg-success/5 p-4 text-success dark:bg-success/15">
+      <p className="mt-8 rounded-md border-success bg-success/5 p-4 text-success">
         Congratulations on successfully completing <span className="font-bold">{data.course.attributes.title}</span>!
         <br />
         <br />
         Click the button below to claim your certificate. It will be emailed to{" "}
-        <span className="font-bold">{user.email}</span> shortly.
+        <span className="font-bold">{user.email}</span>.
       </p>
       <Form className="mt-8" method="post">
         <Button className="sm:w-auto">Claim Certificate</Button>
