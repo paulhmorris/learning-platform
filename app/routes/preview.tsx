@@ -9,14 +9,9 @@ import { CoursePurchaseCTA } from "~/components/course/course-purchase-cta";
 import { CourseUpNext } from "~/components/course/course-up-next";
 import { ErrorComponent } from "~/components/error-component";
 import { Header } from "~/components/header";
-import { IconCertificate, IconClipboard, IconDocument } from "~/components/icons";
-import {
-  Section,
-  SectionHeader,
-  SectionItemContainer,
-  SectionItemIconContainer,
-  SectionItemTitle,
-} from "~/components/section";
+import { IconClipboard, IconDocument } from "~/components/icons";
+import { Section, SectionHeader } from "~/components/section";
+import { SectionCertificate } from "~/components/section/section-certificate";
 import { CoursePreviewLink } from "~/components/sidebar/course-preview-link";
 import { CourseProgressBar } from "~/components/sidebar/course-progress-bar";
 import { PreviewSectionLesson } from "~/components/sidebar/preview-section-lesson";
@@ -90,6 +85,12 @@ export const meta: TypedMetaFunction<typeof loader> = ({ data }) => {
 export default function CoursePreview() {
   const { course, progress, lessonsInOrder, quizProgress, userHasAccess } = useTypedLoaderData<typeof loader>();
 
+  const isCourseCompleted =
+    lessonsInOrder.every((l) => l.isCompleted) &&
+    course.attributes.sections.every((s) => {
+      return !s.quiz?.data || quizProgress.find((p) => p.quizId === s.quiz?.data.id)?.isCompleted;
+    });
+
   // Calculate the lesson last completed lesson, defaulting to the first lesson
   const nextLessonIndex = lessonsInOrder.findIndex((l) => !l.isCompleted);
   const lastCompletedLessonIndex = nextLessonIndex === -1 ? 0 : nextLessonIndex - 1;
@@ -116,22 +117,12 @@ export default function CoursePreview() {
     return acc + (curr.requiredDurationInSeconds ?? 0);
   }, 0);
 
-  // Course is complete if:
-  const isCourseComplete =
-    // All lessons are completed
-    lessonsInOrder.every((l) => l.isCompleted) &&
-    // All quizzes are completed
-    course.attributes.sections.every((s) => {
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-      return !s.quiz?.data || quizProgress.find((p) => p.quizId === s.quiz?.data?.id)?.isCompleted;
-    });
-
   // Timed Courses
   return (
     <>
       <Header />
       <div className="flex flex-col gap-x-12 px-4 py-4 lg:flex-row lg:py-4">
-        <nav className="left-0 top-[88px] h-full shrink-0 basis-[448px] py-4 sm:py-10 md:sticky md:py-14">
+        <nav className="left-0 top-[88px] h-full shrink-0 basis-[448px] py-4 sm:py-10 lg:sticky lg:py-14">
           <StrapiImage
             asset={course.attributes.cover_image}
             height={240}
@@ -161,9 +152,11 @@ export default function CoursePreview() {
             <CourseProgressBar progress={totalProgressInSeconds} duration={totalDurationInSeconds} />
             {!userHasAccess ? (
               <CoursePurchaseCTA />
-            ) : isCourseComplete ? (
+            ) : isCourseCompleted ? (
               <div className="text-center">
-                <p className="text-lg">Congratulations! You have completed this course.</p>
+                <p className="rounded-md border border-success bg-success/5 p-4 text-lg text-success">
+                  You have completed this course.
+                </p>
               </div>
             ) : nextQuiz ? (
               <CourseUpNext quiz={{ id: nextQuiz.id, numQuestions: nextQuiz.attributes.questions?.length ?? 1 }} />
@@ -255,34 +248,7 @@ export default function CoursePreview() {
               );
             })}
             <li key="section-certificate">
-              <Section>
-                <SectionHeader sectionTitle="Certificate" />
-                <Separator className="my-4" />
-                <div
-                  className="-my-1 block rounded-lg py-1"
-                  aria-label="This lesson is locked until previous lessons are completed."
-                >
-                  <SectionItemContainer>
-                    <SectionItemIconContainer>
-                      <IconCertificate className="h-7 w-6 text-gray-400 contrast-more:text-gray-500 dark:text-gray-600 contrast-more:dark:text-gray-400" />
-                    </SectionItemIconContainer>
-                    <div className="flex flex-col justify-center">
-                      <SectionItemTitle className="text-gray-400 contrast-more:text-gray-500 dark:text-gray-600 contrast-more:dark:text-gray-400">
-                        Certificate
-                      </SectionItemTitle>
-                    </div>
-                    {isCourseComplete ? (
-                      <Button variant="secondary" className="ml-auto w-auto" asChild>
-                        <Link to="/certificate">Claim</Link>
-                      </Button>
-                    ) : (
-                      <Button variant="secondary" className="ml-auto w-auto" disabled>
-                        Claim
-                      </Button>
-                    )}
-                  </SectionItemContainer>
-                </div>
-              </Section>
+              <SectionCertificate isCourseCompleted={isCourseCompleted} />
             </li>
           </ul>
         </main>

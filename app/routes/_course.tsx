@@ -1,23 +1,16 @@
 import { LoaderFunctionArgs } from "@remix-run/node";
-import { Link, Outlet, useParams } from "@remix-run/react";
+import { Outlet, useParams } from "@remix-run/react";
 import { useState } from "react";
 import { typedjson } from "remix-typedjson";
 import { useIsClient, useMediaQuery } from "usehooks-ts";
 
 import { BackLink } from "~/components/common/back-link";
 import { Header } from "~/components/header";
-import { IconCertificate } from "~/components/icons";
-import {
-  Section,
-  SectionHeader,
-  SectionItemContainer,
-  SectionItemIconContainer,
-  SectionItemTitle,
-} from "~/components/section";
+import { Section, SectionHeader } from "~/components/section";
+import { SectionCertificate } from "~/components/section/section-certificate";
 import { CourseProgressBar } from "~/components/sidebar/course-progress-bar";
 import { SectionLesson } from "~/components/sidebar/section-lesson";
 import { SectionQuiz } from "~/components/sidebar/section-quiz";
-import { Button } from "~/components/ui/button";
 import { Separator } from "~/components/ui/separator";
 import { useCourseData } from "~/hooks/useCourseData";
 import { db } from "~/integrations/db.server";
@@ -121,7 +114,7 @@ export default function CourseLayout() {
 
   const { sections } = course.attributes;
 
-  const isCourseComplete =
+  const isCourseCompleted =
     lessonsInOrder.every((l) => l.isCompleted) &&
     course.attributes.sections.every((s) => {
       return !s.quiz?.data || quizProgress.find((p) => p.quizId === s.quiz?.data.id)?.isCompleted;
@@ -249,34 +242,7 @@ export default function CourseLayout() {
                 );
               })}
             <li key="section-certificate">
-              <Section>
-                <SectionHeader sectionTitle="Certificate" />
-                <Separator className="my-4" />
-                <div
-                  className="-my-1 block rounded-lg py-1"
-                  aria-label="This lesson is locked until previous lessons are completed."
-                >
-                  <SectionItemContainer>
-                    <SectionItemIconContainer>
-                      <IconCertificate className="h-7 w-6 text-gray-400 contrast-more:text-gray-500 dark:text-gray-600 contrast-more:dark:text-gray-400" />
-                    </SectionItemIconContainer>
-                    <div className="flex flex-col justify-center">
-                      <SectionItemTitle className="text-gray-400 contrast-more:text-gray-500 dark:text-gray-600 contrast-more:dark:text-gray-400">
-                        Certificate
-                      </SectionItemTitle>
-                    </div>
-                    {isCourseComplete ? (
-                      <Button variant="secondary" className="ml-auto w-auto" asChild>
-                        <Link to="/certificate">Claim</Link>
-                      </Button>
-                    ) : (
-                      <Button variant="secondary" className="ml-auto w-auto" disabled>
-                        Claim
-                      </Button>
-                    )}
-                  </SectionItemContainer>
-                </div>
-              </Section>
+              <SectionCertificate isCourseCompleted={isCourseCompleted} />
             </li>
             {!isLargeScreen ? (
               <button

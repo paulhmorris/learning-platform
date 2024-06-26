@@ -10,8 +10,9 @@ import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
 import { toast } from "~/lib/toast.server";
 import { useUser } from "~/lib/utils";
+import { loader as courseLoader } from "~/routes/_course";
 import { SessionService } from "~/services/SessionService.server";
-import { APIResponseData } from "~/types/utils";
+import { APIResponseData, TypedMetaFunction } from "~/types/utils";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await SessionService.requireUser(request);
@@ -118,6 +119,14 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 }
 
+export const meta: TypedMetaFunction<typeof loader, { "routes/_course": typeof courseLoader }> = ({ matches }) => {
+  // @ts-expect-error typed meta funtion not supporting this yet
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  const match = matches.find((m) => m.id === "routes/_course")?.data.course;
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+  return [{ title: `Certificate | ${match?.attributes.title}` }];
+};
+
 export default function CourseCertificate() {
   const data = useCourseData();
   const user = useUser();
@@ -132,7 +141,7 @@ export default function CourseCertificate() {
     return (
       <>
         <PageTitle>Certificate</PageTitle>
-        <p className="mt-8 rounded-md border-destructive bg-destructive/5 p-4 text-destructive">
+        <p className="mt-8 rounded-md border border-destructive bg-destructive/5 p-4 text-destructive">
           You must complete all lessons and quizzes before you can claim your certificate.
         </p>
       </>
@@ -142,7 +151,7 @@ export default function CourseCertificate() {
   return (
     <>
       <PageTitle>Certificate</PageTitle>
-      <p className="mt-8 rounded-md border-success bg-success/5 p-4 text-success">
+      <p className="mt-8 rounded-md border border-success bg-success/5 p-4 text-success">
         Congratulations on successfully completing <span className="font-bold">{data.course.attributes.title}</span>!
         <br />
         <br />
