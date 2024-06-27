@@ -57,7 +57,7 @@ export default function UsersIndex() {
           <span className="capitalize">Identity: {identityVerificationStatus?.split("_").join(" ")}</span>
         </Badge>
       </div>
-      <nav className="mt-4">
+      <nav className="mt-12">
         <ul className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-muted p-1 text-muted-foreground">
           {links.map((link) => (
             <li key={link.href}>

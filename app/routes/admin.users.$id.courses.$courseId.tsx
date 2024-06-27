@@ -1,31 +1,37 @@
 import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@remix-run/node";
-import { MetaFunction, useFetcher, useLoaderData } from "@remix-run/react";
-import { useState } from "react";
-import { validationError } from "remix-validated-form";
+import { MetaFunction, useLoaderData } from "@remix-run/react";
+import { IconCircle, IconCircleCheckFilled, IconCircleDashedCheck, IconCircleXFilled } from "@tabler/icons-react";
 import invariant from "tiny-invariant";
 import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
 
-import { AdminButton } from "~/components/ui/admin-button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "~/components/ui/dialog";
-import { Input } from "~/components/ui/input";
+import { LessonCompleteForm } from "~/components/admin/courses/lesson-complete-form";
+import { LessonProgressHeader } from "~/components/admin/courses/lesson-progress-header";
+import { LessonResetForm } from "~/components/admin/courses/lesson-reset-form";
+import { LessonUpdateForm } from "~/components/admin/courses/lesson-update-form";
+import { QuizProgressHeader } from "~/components/admin/courses/quiz-progress-header";
+import { QuizResetForm } from "~/components/admin/courses/quiz-reset-form";
+import { QuizUpdateForm } from "~/components/admin/courses/quiz-update-form";
+import { ResetAllProgressDialog } from "~/components/admin/courses/reset-all-progress-dialog";
 import { db } from "~/integrations/db.server";
 import { toast } from "~/lib/toast.server";
-import { cn, formatSeconds } from "~/lib/utils";
+import { formatSeconds } from "~/lib/utils";
 import { getLessons } from "~/models/lesson.server";
 import { getQuizzes } from "~/models/quiz.server";
 import { SessionService } from "~/services/SessionService.server";
 
 const schema = z.object({
-  _action: z.enum(["reset-all-progress", "reset-lesson", "complete-lesson", "update-lesson"]),
+  _action: z.enum([
+    "reset-all-progress",
+    "reset-lesson",
+    "complete-lesson",
+    "update-lesson",
+    "reset-quiz",
+    "update-quiz",
+  ]),
+  quizId: z.coerce.number().optional(),
+  quizScore: z.coerce.number().optional(),
+  quizPassingScore: z.coerce.number().optional(),
   lessonId: z.coerce.number().optional(),
   durationInSeconds: z.coerce.number().optional(),
   requiredDurationInSeconds: z.coerce.number().optional(),
@@ -63,20 +69,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!result.success) {
     return toast.json(
       request,
-      { message: "Invalid form data.", errors: result.error.issues },
+      { ok: false, message: "Invalid form data.", errors: result.error.issues },
       { type: "error", title: "Error", description: `Invalid form data: ${fromZodError(result.error).toString()}` },
     );
   }
 
-  const { _action, durationInSeconds, lessonId, requiredDurationInSeconds } = result.data;
-
-  if (_action === "update-lesson" && !durationInSeconds) {
-    return validationError({
-      fieldErrors: {
-        durationInSeconds: "Duration is required",
-      },
-    });
-  }
+  const { _action, durationInSeconds, lessonId, requiredDurationInSeconds, quizId, quizScore, quizPassingScore } =
+    result.data;
 
   switch (_action) {
     case "reset-all-progress": {
@@ -85,7 +84,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       await db.userQuizProgress.deleteMany({ where: { userId } });
       return toast.json(
         request,
-        { message: "All progress reset." },
+        { ok: true, message: "All progress reset." },
         { type: "success", title: "Success", description: "All progress has been reset." },
       );
     }
@@ -94,15 +93,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
       if (!lessonId) {
         return toast.json(
           request,
-          { message: "Lesson ID is required." },
-          { type: "error", title: "Error", description: "A lesson ID was not found with this request" },
+          { ok: false, message: "Lesson ID is required." },
+          { type: "error", title: "Error", description: "A lesson ID was not found with this request." },
         );
       }
       // Reset progress for this lesson
       await db.userLessonProgress.deleteMany({ where: { userId, lessonId } });
       return toast.json(
         request,
-        { message: "Lesson progress reset." },
+        { ok: true, message: "Lesson progress reset." },
         { type: "success", title: "Success", description: "Lesson progress has been reset." },
       );
     }
@@ -111,15 +110,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
       if (!lessonId || !requiredDurationInSeconds) {
         return toast.json(
           request,
-          { message: "Lesson ID is required." },
+          { ok: false, message: "Lesson ID is required." },
           {
             type: "error",
             title: "Error",
-            description: "A lesson ID or required duration was not found with this request",
+            description: "A lesson ID or required duration was not found with this request.",
           },
         );
       }
-      // Complete this lesson
       await db.userLessonProgress.upsert({
         where: {
           userId_lessonId: { userId, lessonId },
@@ -137,8 +135,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
       });
       return toast.json(
         request,
-        { message: "Lesson completed." },
-        { type: "success", title: "Success", description: "Lesson has been marked as completed." },
+        { ok: true, message: "Lesson completed." },
+        { type: "success", title: "Success", description: "Lesson has been marked complete." },
       );
     }
 
@@ -146,8 +144,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
       if (!lessonId || !durationInSeconds || !requiredDurationInSeconds) {
         return toast.json(
           request,
-          { message: "Lesson ID is required." },
-          { type: "error", title: "Error", description: "A lesson ID or duration was not found with this request" },
+          { ok: false, message: "Lesson ID is required." },
+          { type: "error", title: "Error", description: "A lesson ID or duration was not found with this request." },
         );
       }
       // Update progress for this lesson
@@ -163,19 +161,66 @@ export async function action({ request, params }: ActionFunctionArgs) {
         },
         update: {
           durationInSeconds,
+          isCompleted: durationInSeconds >= requiredDurationInSeconds,
         },
       });
       return toast.json(
         request,
-        { message: "Lesson progress updated." },
+        { ok: true, message: "Lesson progress updated." },
         { type: "success", title: "Success", description: "Lesson progress has been updated." },
+      );
+    }
+
+    case "reset-quiz": {
+      if (!quizId) {
+        return toast.json(
+          request,
+          { ok: false, message: "Quiz ID is required." },
+          { type: "error", title: "Error", description: "A quiz ID was not found with this request." },
+        );
+      }
+      await db.userQuizProgress.deleteMany({ where: { userId, quizId } });
+      return toast.json(
+        request,
+        { ok: true, message: "Quiz progress reset." },
+        { type: "success", title: "Success", description: "Quiz progress has been reset." },
+      );
+    }
+
+    case "update-quiz": {
+      if (!quizId || typeof quizScore === "undefined" || typeof quizPassingScore === "undefined") {
+        return toast.json(
+          request,
+          { ok: false, message: "Quiz ID and Score are required." },
+          { type: "error", title: "Error", description: "A quiz ID or score was not found with this request." },
+        );
+      }
+      await db.userQuizProgress.upsert({
+        where: {
+          userId_quizId: { userId, quizId },
+        },
+        create: {
+          userId,
+          quizId,
+          isCompleted: quizScore >= quizPassingScore,
+          score: quizScore,
+        },
+        update: {
+          isCompleted: quizScore >= quizPassingScore,
+          score: quizScore,
+        },
+      });
+      return toast.json(
+        request,
+        { ok: true, message: "Quiz completed." },
+        { type: "success", title: "Success", description: "Quiz has been marked complete." },
       );
     }
 
     default:
       return toast.json(
         request,
-        { message: "Invalid action." },
+        { ok: false, message: "Invalid action." },
         { type: "error", title: "Error", description: "Invalid action requested." },
       );
   }
@@ -186,109 +231,70 @@ export const meta: MetaFunction = () => {
 };
 
 export default function AdminUserCourse() {
-  const fetcher = useFetcher();
-  const isSubmitting = fetcher.state === "submitting" || fetcher.state === "loading";
-  const { lessons, lessonProgress } = useLoaderData<typeof loader>();
-  const [resetProgressModalOpen, setResetProgressModalOpen] = useState(false);
+  const { lessons, lessonProgress, quizzes, quizProgress } = useLoaderData<typeof loader>();
 
   return (
     <>
-      <Dialog open={resetProgressModalOpen} onOpenChange={setResetProgressModalOpen}>
-        <DialogTrigger asChild>
-          <AdminButton variant="destructive">Reset All Progress</AdminButton>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Are you sure?</DialogTitle>
-            <DialogDescription>
-              This will reset all progress for this user in this course. This action is not reversible.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <AdminButton variant="secondary" onClick={() => setResetProgressModalOpen(false)}>
-              Cancel
-            </AdminButton>
-            <fetcher.Form id="reset-progress-form" method="post">
-              <AdminButton
-                onClick={() => setResetProgressModalOpen(false)}
-                variant="destructive"
-                type="submit"
-                name="_action"
-                value="reset-all-progress"
-              >
-                Reset Progress
-              </AdminButton>
-            </fetcher.Form>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <h2 className="mb-2 mt-4 text-xl">Lessons</h2>
-      <div className="grid grid-cols-12 items-center text-left text-muted-foreground">
-        <p className="col-span-2 text-sm">Title</p>
-        <p className="col-span-2 text-sm">Duration</p>
-        <p className="col-span-2 text-sm">Progress</p>
-        <p className="col-span-6 text-sm">Actions</p>
+      <div className="mb-4 flex gap-1.5">
+        <ResetAllProgressDialog />
+        {/* <CompleteCourseDialog /> */}
       </div>
-      <ul className="divide-y divide-border">
+
+      <LessonProgressHeader />
+      <ul className="mb-8 divide-y divide-border">
         {lessons.data.map((l) => {
           const progress = lessonProgress.find((lp) => lp.lessonId === l.id);
 
           return (
             <li key={l.attributes.uuid} className="grid grid-cols-12 items-center py-2">
+              <div className="col-span-1">
+                {!progress ? (
+                  <IconCircle className="size-6 text-foreground" />
+                ) : !progress.isCompleted ? (
+                  <IconCircleDashedCheck className="size-6 text-foreground" />
+                ) : (
+                  <IconCircleCheckFilled className="size-6 text-success" />
+                )}
+              </div>
               <h3 className="col-span-2 text-sm font-normal">{l.attributes.title}</h3>
-              <p className={cn("col-span-2 text-sm", progress?.isCompleted ? "text-success" : "text-foreground")}>
+              <p className="col-span-3 text-sm">
+                {formatSeconds(progress?.durationInSeconds ?? 0)} /{" "}
                 {formatSeconds(l.attributes.required_duration_in_seconds ?? 0)}
               </p>
-              <p className={cn("col-span-2 text-sm", progress?.isCompleted ? "text-success" : "text-foreground")}>
-                {formatSeconds(progress?.durationInSeconds ?? 0)}
+              <div className="col-span-6 flex items-center gap-1.5">
+                <LessonResetForm lesson={l} progress={progress} />
+                <LessonCompleteForm lesson={l} progress={progress} />
+                <LessonUpdateForm lesson={l} />
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+
+      <QuizProgressHeader />
+      <ul className="divide-y divide-border">
+        {quizzes.data.map((q) => {
+          const progress = quizProgress.find((qp) => qp.quizId === q.id);
+          const passingScore = q.attributes.passing_score;
+
+          return (
+            <li key={q.attributes.uuid} className="grid grid-cols-12 items-center py-2">
+              <div className="col-span-1">
+                {!progress ? (
+                  <IconCircle className="size-6 text-foreground" />
+                ) : progress.score && progress.score < passingScore ? (
+                  <IconCircleXFilled className="size-6 text-destructive" />
+                ) : (
+                  <IconCircleCheckFilled className="size-6 text-success" />
+                )}
+              </div>
+              <h3 className="col-span-2 text-sm font-normal">{q.attributes.title}</h3>
+              <p className="col-span-3 text-sm">
+                {progress?.score ? `${progress.score}%` : "-"} / {q.attributes.passing_score}%
               </p>
               <div className="col-span-6 flex items-center gap-1.5">
-                <fetcher.Form method="post" className="flex items-center gap-1.5">
-                  <input type="hidden" name="lessonId" value={l.id} />
-                  <input
-                    type="hidden"
-                    name="requiredDurationInSeconds"
-                    value={l.attributes.required_duration_in_seconds}
-                  />
-                  <AdminButton
-                    variant="secondary"
-                    type="submit"
-                    name="_action"
-                    value="reset-lesson"
-                    disabled={progress?.durationInSeconds === 0 || isSubmitting}
-                  >
-                    Reset
-                  </AdminButton>
-                  <AdminButton
-                    variant="secondary"
-                    type="submit"
-                    name="_action"
-                    value="complete-lesson"
-                    disabled={progress?.isCompleted || isSubmitting}
-                    className="hover:bg-primary hover:text-white dark:hover:text-black"
-                  >
-                    Complete
-                  </AdminButton>
-                </fetcher.Form>
-                <fetcher.Form method="post" className="flex items-center gap-1.5">
-                  <input type="hidden" name="lessonId" value={l.id} />
-                  <input
-                    type="hidden"
-                    name="requiredDurationInSeconds"
-                    value={l.attributes.required_duration_in_seconds}
-                  />
-                  <Input name="durationInSeconds" placeholder="Seconds" pattern="[0-9]*" />
-                  <AdminButton
-                    variant="secondary"
-                    type="submit"
-                    name="_action"
-                    value="update-lesson"
-                    disabled={isSubmitting}
-                  >
-                    Set Progress
-                  </AdminButton>
-                </fetcher.Form>
+                <QuizResetForm quiz={q} hasProgress={Boolean(progress)} />
+                <QuizUpdateForm quiz={q} />
               </div>
             </li>
           );

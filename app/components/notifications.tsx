@@ -15,7 +15,7 @@ export function Notifications() {
         break;
       }
       case "error": {
-        toast.error(title, { ...rest, duration: Infinity });
+        toast.error(title, { ...rest, duration: Infinity, closeButton: true });
         break;
       }
       case "warning": {
@@ -34,5 +34,5 @@ export function Notifications() {
     }
   }, [data]);
 
-  return <Toaster richColors expand closeButton />;
+  return <Toaster richColors expand />;
 }

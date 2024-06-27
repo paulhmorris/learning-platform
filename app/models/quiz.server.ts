@@ -3,6 +3,6 @@ import { APIResponseCollection } from "~/types/utils";
 
 export async function getQuizzes() {
   return cms.find<APIResponseCollection<"api::quiz.quiz">["data"]>("quizzes", {
-    fields: ["title"],
+    fields: ["title", "passing_score", "uuid"],
   });
 }
