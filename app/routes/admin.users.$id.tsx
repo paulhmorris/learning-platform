@@ -1,13 +1,6 @@
 import { LoaderFunctionArgs } from "@remix-run/node";
 import { NavLink, Outlet } from "@remix-run/react";
-import {
-  IconCertificate,
-  IconCreditCard,
-  IconFingerprint,
-  IconMail,
-  IconUserCircle,
-  IconUserScan,
-} from "@tabler/icons-react";
+import { IconCertificate, IconFingerprint, IconMail, IconUserCircle, IconUserScan } from "@tabler/icons-react";
 import { typedjson, useTypedLoaderData } from "remix-typedjson";
 
 import { BackLink } from "~/components/common/back-link";
@@ -22,8 +15,8 @@ import { SessionService } from "~/services/SessionService.server";
 const links = [
   { href: "", text: "Profile", end: true, icon: <IconUserCircle className="size-[1.125rem]" /> },
   { href: "security", text: "Security", end: true, icon: <IconFingerprint className="size-[1.125rem]" /> },
-  { href: "payment", text: "Payment", end: true, icon: <IconCreditCard className="size-[1.125rem]" /> },
-  { href: "courses", text: "Courses", end: true, icon: <IconCertificate className="size-[1.125rem]" /> },
+  // { href: "payment", text: "Payment", end: true, icon: <IconCreditCard className="size-[1.125rem]" /> },
+  { href: "courses", text: "Courses", end: false, icon: <IconCertificate className="size-[1.125rem]" /> },
 ];
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

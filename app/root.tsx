@@ -12,7 +12,7 @@ import { Sentry } from "~/integrations/sentry";
 import { themeSessionResolver } from "~/lib/session.server";
 import { getGlobalToast, toast } from "~/lib/toast.server";
 import { cn, hexToPartialHSL } from "~/lib/utils";
-import { getCoursefromCMSForRoot, getLinkedCourse } from "~/models/course.server";
+import { getCoursefromCMSForRoot, getLinkedCourseByHost } from "~/models/course.server";
 import { SessionService } from "~/services/SessionService.server";
 import globalStyles from "~/tailwind.css?url";
 
@@ -39,7 +39,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   try {
     const { host } = new URL(request.url);
-    const linkedCourse = await getLinkedCourse(host);
+    const linkedCourse = await getLinkedCourseByHost(host);
 
     if (!linkedCourse) {
       Sentry.captureMessage("Received request from unknown host", {

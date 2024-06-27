@@ -8,7 +8,7 @@ import { APIResponseCollection, APIResponseData } from "~/types/utils";
 
 const TTL = 120;
 
-export async function getLinkedCourse(host: string) {
+export async function getLinkedCourseByHost(host: string) {
   const cachedCourse = await redis.get<Course>(`course-root-db-${host}`);
   if (cachedCourse) {
     return cachedCourse;
@@ -21,6 +21,10 @@ export async function getLinkedCourse(host: string) {
 
   await redis.set<Course>(`course-root-db-${host}`, course, { ex: TTL });
   return course;
+}
+
+export async function getLinkedCourseById(id: string) {
+  return db.course.findUniqueOrThrow({ where: { id } });
 }
 
 type CourseCMS = StrapiResponse<APIResponseData<"api::course.course">>;

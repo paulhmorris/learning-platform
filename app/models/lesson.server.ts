@@ -5,8 +5,14 @@ import { db } from "~/integrations/db.server";
 import { redis } from "~/integrations/redis.server";
 import { notFound, serverError } from "~/lib/responses.server";
 import { APIResponseCollection, APIResponseData } from "~/types/utils";
-
 type Lesson = APIResponseCollection<"api::lesson.lesson">["data"][0];
+
+export async function getLessons() {
+  return cms.find<APIResponseCollection<"api::lesson.lesson">["data"]>("lessons", {
+    fields: ["title", "required_duration_in_seconds", "uuid"],
+  });
+}
+
 export async function getLessonBySlugWithContent(slug: string) {
   const cachedLesson = await redis.get<Lesson>(`lesson:${slug}`);
   if (cachedLesson) {

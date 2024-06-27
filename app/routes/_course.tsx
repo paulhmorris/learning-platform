@@ -17,7 +17,7 @@ import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
 import { toast } from "~/lib/toast.server";
 import { cn } from "~/lib/utils";
-import { getCoursefromCMSForCourseLayout, getLinkedCourse } from "~/models/course.server";
+import { getCoursefromCMSForCourseLayout, getLinkedCourseByHost } from "~/models/course.server";
 import { SessionService } from "~/services/SessionService.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -25,7 +25,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   try {
     const { host } = new URL(request.url);
-    const linkedCourse = await getLinkedCourse(host);
+    const linkedCourse = await getLinkedCourseByHost(host);
 
     if (!linkedCourse) {
       Sentry.captureMessage("Received request from unknown host", {

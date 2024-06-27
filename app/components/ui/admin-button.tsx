@@ -11,9 +11,9 @@ const adminButtonVariants = cva(
       variant: {
         default: "bg-primary text-white dark:text-black hover:bg-primary/90 shadow-sm",
         destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-sm",
-        outline: "border border-input bg-background hover:bg-accent hover:text-accent-foreground shadow-sm",
+        outline: "border border-input bg-background hover:bg-secondary hover:text-secondary-foreground shadow-sm",
         secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80 shadow-sm",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
+        ghost: "hover:bg-secondary hover:text-secondary-foreground",
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {

@@ -4,8 +4,12 @@ import { APIResponseData } from "~/types/utils";
 
 export const cms = new Strapi({
   url: process.env.STRAPI_URL,
+  axiosOptions: {
+    headers: {
+      Authorization: `Bearer ${process.env.STRAPI_TOKEN}`,
+    },
+  },
 });
-cms.axios.defaults.headers.common["Authorization"] = `Bearer ${process.env.STRAPI_TOKEN}`;
 
 export function getCourse(id: number) {
   return cms.findOne<APIResponseData<"api::course.course">>("courses", id, {
