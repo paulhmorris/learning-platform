@@ -23,7 +23,7 @@ const validator = withZod(
 );
 
 export const meta: MetaFunction = () => {
-  return [{ title: `Profile | Plumb Media & Education` }];
+  return [{ title: `User Profile | Plumb Media & Education` }];
 };
 
 export async function action({ request }: ActionFunctionArgs) {

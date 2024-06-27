@@ -1,6 +1,14 @@
 import { LoaderFunctionArgs } from "@remix-run/node";
 import { NavLink, Outlet } from "@remix-run/react";
-import { IconCertificate, IconFingerprint, IconMail, IconUserCircle, IconUserScan } from "@tabler/icons-react";
+import {
+  IconCertificate,
+  IconCircleCheckFilled,
+  IconCircleXFilled,
+  IconFingerprint,
+  IconMail,
+  IconUserCircle,
+  IconUserScan,
+} from "@tabler/icons-react";
 import { typedjson, useTypedLoaderData } from "remix-typedjson";
 
 import { BackLink } from "~/components/common/back-link";
@@ -47,12 +55,16 @@ export default function UsersIndex() {
     <>
       <BackLink to="/admin/users">Back to users</BackLink>
       <h1 className="text-3xl">{`${user.firstName} ${user.lastName}`}</h1>
-      <div className="flex items-center gap-2">
-        <Badge variant={user.verification ? "success" : "secondary"}>
+      <div className="mt-1 flex items-center gap-2">
+        <Badge variant={user.isActive ? "secondary" : "destructive"}>
+          {user.isActive ? <IconCircleCheckFilled className="size-3.5" /> : <IconCircleXFilled className="size-3.5" />}
+          <span>{user.isActive ? "Active" : "Inactive"}</span>
+        </Badge>
+        <Badge variant={user.verification ? "success" : "destructive"}>
           <IconMail strokeWidth={2.5} className="size-3.5" />
           <span>Email: {user.verification ? "Verified" : "Unverified"}</span>
         </Badge>
-        <Badge variant={identityVerificationStatus === "verified" ? "success" : "secondary"}>
+        <Badge variant={identityVerificationStatus === "verified" ? "success" : "destructive"}>
           <IconUserScan strokeWidth={2.5} className="size-3.5" />
           <span className="capitalize">Identity: {identityVerificationStatus?.split("_").join(" ")}</span>
         </Badge>
