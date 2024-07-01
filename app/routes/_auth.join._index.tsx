@@ -13,6 +13,7 @@ import { FormField } from "~/components/ui/form";
 import { SubmitButton } from "~/components/ui/submit-button";
 import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
+import { stripe } from "~/integrations/stripe.server";
 import { verifyEmailJob } from "~/jobs/verify-email.server";
 import { handlePrismaError, serverError } from "~/lib/responses.server";
 import { toast } from "~/lib/toast.server";
@@ -29,6 +30,7 @@ const validator = withZod(
       firstName: z.string().max(255),
       lastName: z.string().max(255),
       email: z.string().email(),
+      phone: z.string().optional(),
       password: z.string().min(8).max(64),
       redirectTo: z.string().optional(),
     }),
@@ -116,6 +118,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           },
         },
       });
+
       if (!verification) {
         return validationError({
           fieldErrors: {
@@ -124,8 +127,17 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         });
       }
 
+      const stripeCustomer = await stripe.customers.create({
+        name: `${user.firstName}${user.lastName ? " " + user.lastName : ""}`,
+        email: user.email,
+        phone: user.phone ?? undefined,
+        metadata: {
+          user_id: user.id,
+        },
+      });
       await UserService.update(user.id, {
         data: {
+          stripeId: stripeCustomer.id,
           isEmailVerified: true,
           verification: {
             update: {
@@ -138,7 +150,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       return SessionService.createUserSession({
         request,
         userId: user.id,
-        redirectTo: redirectTo ?? "/",
+        redirectTo: redirectTo ?? "/preview",
         remember: false,
       });
     } catch (error) {
@@ -214,12 +226,13 @@ export default function Join() {
             </ValidatedForm>
           </>
         ) : (
-          <ValidatedForm validator={validator} method="post" className="w-full space-y-6">
+          <ValidatedForm validator={validator} method="post" className="w-full space-y-4">
             <div className="grid grid-cols-2 gap-2">
               <FormField required name="firstName" label="First Name" autoComplete="given-name" maxLength={255} />
               <FormField required name="lastName" label="Last Name" autoComplete="family-name" maxLength={255} />
               <input type="hidden" name="redirectTo" value={searchParams.get("redirectTo") ?? ""} />
             </div>
+            <FormField name="phone" label="Phone Number" autoComplete="tel" inputMode="tel" maxLength={15} />
             <FormField required id="email" key="email" type="email" name="email" label="Email" autoComplete="email" />
             <FormField
               required

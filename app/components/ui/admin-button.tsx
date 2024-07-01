@@ -9,7 +9,7 @@ const adminButtonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-white dark:text-black hover:bg-primary/90 shadow-sm",
+        default: "bg-primary text-primary-foreground dark:text-black hover:bg-primary/90 shadow-sm",
         destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-sm",
         outline: "border border-input bg-background hover:bg-secondary hover:text-secondary-foreground shadow-sm",
         secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80 shadow-sm",

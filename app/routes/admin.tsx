@@ -30,7 +30,7 @@ export default function AdminLayout() {
     >
       <div className="flex min-h-[calc(100dvh-80px)] flex-col justify-center">
         <div className="flex-1">
-          <div className="mx-auto w-full border border-transparent bg-background p-6 md:rounded-xl md:p-12 2xl:px-0">
+          <div className="mx-auto w-full border border-transparent bg-background p-6 md:rounded-xl md:p-12">
             <nav>
               <ul className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-muted p-1 text-muted-foreground">
                 {links.map((link) => (

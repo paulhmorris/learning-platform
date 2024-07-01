@@ -12,6 +12,7 @@ import { Button } from "~/components/ui/button";
 import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
 import { stripe } from "~/integrations/stripe.server";
+import { serverError } from "~/lib/responses.server";
 import { toast } from "~/lib/toast.server";
 import { loader as rootLoader } from "~/root";
 import { SessionService } from "~/services/SessionService.server";
@@ -26,7 +27,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       email: user.email,
       phone: user.phone ?? undefined,
       metadata: {
-        userId: user.id,
+        user_id: user.id,
       },
     });
     await db.user.update({
@@ -41,11 +42,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   if (stripeCustomer.deleted) {
     Sentry.captureMessage("A deleted Stripe customer attempted to access payment methods.", { level: "info" });
-    return toast.redirect(request, "/account/payment-methods", {
-      title: "Error",
-      type: "error",
-      description: "Error retrieving your payment profile. Please contact support.",
-    });
+    throw serverError("Error retrieving payment methods. Please contact support.");
   }
 
   return typedjson({ methods, stripeCustomer });

@@ -68,7 +68,7 @@ export default function UsersIndex() {
         </Badge>
         <Badge variant={identityVerificationStatus === "verified" ? "success" : "destructive"}>
           <IconUserScan strokeWidth={2.5} className="size-3.5" />
-          <span className="capitalize">Identity: {identityVerificationStatus?.split("_").join(" ")}</span>
+          <span className="capitalize">Identity: {identityVerificationStatus?.split("_").join(" ") ?? "Unknown"}</span>
         </Badge>
         <a
           href={`https://dashboard.stripe.com/customers/${user.stripeId}`}

@@ -25,7 +25,7 @@ export function UserMenu() {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button className="relative mt-auto h-10 w-10 rounded-full ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+          <button className="relative mt-auto h-10 rounded-full ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
             <span className="sr-only">Open User Menu</span>
             <Avatar aria-hidden="true">
               <AvatarFallback
@@ -37,14 +37,14 @@ export function UserMenu() {
             </Avatar>
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="mb-2 w-40" align="end" forceMount>
+        <DropdownMenuContent className="mb-2 min-w-40 max-w-64" align="end" forceMount>
           <DropdownMenuLabel className="font-normal">
             <div className="flex flex-col space-y-2 sm:space-y-1">
               <p className="text-base font-medium leading-none sm:text-sm">
                 {user.firstName}
                 {user.lastName ? ` ${user.lastName}` : null}
               </p>
-              <p className="text-sm leading-none text-muted-foreground sm:text-xs">{user.email}</p>
+              <p className="truncate text-sm leading-none text-muted-foreground sm:text-xs">{user.email}</p>
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />

@@ -50,11 +50,13 @@ enum UserRole {
 }
 
 model Course {
-  id            String  @id @default(cuid())
-  strapiId      Int
-  stripePriceId String?
+  id                           String  @id @default(cuid())
+  strapiId                     Int
+  stripePriceId                String
+  stripeProductId              String
   /// e.g. "course.hiphopdriving.com"
-  host          String  @unique
+  host                         String  @unique
+  requiresIdentityVerification Boolean @default(false)
 
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt

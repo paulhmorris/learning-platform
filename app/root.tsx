@@ -116,9 +116,7 @@ function App() {
       </head>
       <body className={cn("flex h-full min-h-full flex-col bg-background font-sans text-foreground", theme)}>
         <Header />
-        <div className="mx-auto size-full max-w-screen-2xl">
-          <Outlet />
-        </div>
+        <Outlet />
         <Notifications />
         <GlobalLoader />
         <ScrollRestoration />

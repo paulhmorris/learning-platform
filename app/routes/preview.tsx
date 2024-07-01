@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client";
-import { LoaderFunctionArgs } from "@remix-run/node";
+import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { Link } from "@remix-run/react";
-import { typedjson, useTypedLoaderData } from "remix-typedjson";
+import { redirect, typedjson, useTypedLoaderData } from "remix-typedjson";
 
 import { StrapiImage } from "~/components/common/strapi-image";
 import { CourseHeader } from "~/components/course/course-header";
@@ -19,6 +19,7 @@ import { Separator } from "~/components/ui/separator";
 import { getCourse } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
+import { stripe } from "~/integrations/stripe.server";
 import { handlePrismaError, serverError } from "~/lib/responses.server";
 import { toast } from "~/lib/toast.server";
 import { SessionService } from "~/services/SessionService.server";
@@ -74,6 +75,22 @@ export async function loader({ request }: LoaderFunctionArgs) {
     }
     throw serverError("An error occurred while loading the course. Please try again.");
   }
+}
+
+export async function action({ request }: ActionFunctionArgs) {
+  const url = new URL(request.url);
+  const course = await db.course.findUniqueOrThrow({
+    where: { host: url.host },
+  });
+
+  const session = await stripe.checkout.sessions.create({
+    line_items: [{ price: course.stripePriceId, quantity: 1 }],
+    mode: "payment",
+    success_url: `https://${url.host}/purchase?success=true`,
+    cancel_url: `https://${url.host}/purchase?canceled=true`,
+  });
+
+  return redirect(session.url ?? "/", { status: 303 });
 }
 
 export const meta: TypedMetaFunction<typeof loader> = ({ data }) => {
@@ -166,7 +183,8 @@ export default function CoursePreview() {
                 (acc, curr) => Math.ceil((curr.attributes.required_duration_in_seconds || 0) + acc),
                 0,
               );
-              const isQuizLocked = lessonsInOrder.filter((l) => l.sectionId === section.id).some((l) => !l.isCompleted);
+              const isQuizLocked =
+                !userHasAccess || lessonsInOrder.filter((l) => l.sectionId === section.id).some((l) => !l.isCompleted);
               // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
               const userQuizProgress = quizProgress.find((qp) => qp.quizId === section.quiz?.data?.id) ?? null;
 
@@ -197,17 +215,6 @@ export default function CoursePreview() {
                           (!isCourseCompleted &&
                             !previousLessonIsCompleted &&
                             lessonIndex > lastCompletedLessonIndex + 1);
-
-                        // console.log({
-                        //   previousLessonIsCompleted,
-                        //   lessonIndex,
-                        //   userHasAccess,
-                        //   previousSection,
-                        //   previousSectionQuiz,
-                        //   previousSectionQuizIsCompleted,
-                        //   isCourseCompleted,
-                        //   lastCompletedLessonIndex,
-                        // });
 
                         const userLessonProgress = progress.find((lp) => lp.lessonId === l.id) ?? null;
                         return (

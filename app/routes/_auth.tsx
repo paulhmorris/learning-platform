@@ -26,7 +26,7 @@ export default function AuthLayout() {
                 className="h-20 lg:h-28"
               />
             ) : courseTitle ? (
-              <h1 className="text-lg font-bold uppercase">{courseTitle}</h1>
+              <h1 className="text-pretty text-4xl font-bold uppercase">{courseTitle}</h1>
             ) : (
               <h1 className="text-lg font-bold uppercase">Plumb Media & Education</h1>
             )}

@@ -33,7 +33,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         email: user.email,
         phone: user.phone ?? undefined,
         metadata: {
-          userId: user.id,
+          user_id: user.id,
         },
       });
       await db.user.update({

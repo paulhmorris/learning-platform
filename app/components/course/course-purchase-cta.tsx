@@ -1,5 +1,3 @@
-import { Link } from "@remix-run/react";
-
 import { Button } from "~/components/ui/button";
 
 export function CoursePurchaseCTA() {
@@ -9,9 +7,11 @@ export function CoursePurchaseCTA() {
         <div className="flex flex-col justify-between gap-1">
           <h3 className="text-pretty text-2xl">Enroll in this course to begin.</h3>
         </div>
-        <Button className="sm:ml-auto sm:max-w-60" variant="primary" asChild>
-          <Link to={`/purchase`}>Enroll</Link>
-        </Button>
+        <form method="post">
+          <Button className="sm:ml-auto sm:max-w-60" variant="primary">
+            Enroll
+          </Button>
+        </form>
       </div>
     </div>
   );

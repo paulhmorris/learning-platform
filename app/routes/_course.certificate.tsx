@@ -1,4 +1,5 @@
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
+import { Link } from "@remix-run/react";
 import { withZod } from "@remix-validated-form/with-zod";
 import { typedjson, useTypedActionData, useTypedLoaderData } from "remix-typedjson";
 import { ValidatedForm } from "remix-validated-form";
@@ -45,7 +46,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       completedAt: true,
     },
   });
-  return typedjson({ userCourse });
+  return typedjson({ userCourse, course: linkedCourse });
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -171,10 +172,12 @@ export const meta: TypedMetaFunction<typeof loader, { "routes/_course": typeof c
 };
 
 export default function CourseCertificate() {
-  const { userCourse } = useTypedLoaderData<typeof loader>();
+  const { userCourse, course } = useTypedLoaderData<typeof loader>();
   const actionData = useTypedActionData<typeof action>();
   const data = useCourseData();
   const user = useUser();
+
+  const userHasVerifiedIdentity = course.requiresIdentityVerification ? user.isIdentityVerified : true;
 
   const isCourseComplete =
     data.lessonsInOrder.every((l) => l.isCompleted) &&
@@ -193,6 +196,20 @@ export default function CourseCertificate() {
     );
   }
 
+  if (!userHasVerifiedIdentity) {
+    return (
+      <>
+        <PageTitle>Certificate</PageTitle>
+        <div className="mt-8 rounded-md border border-destructive bg-destructive/5 p-4 text-destructive">
+          <p>You must verify your identity before you can claim your certificate for this course. </p>
+          <Link to="/profile" className="mt-2 block text-lg font-bold underline decoration-2">
+            Verify Now
+          </Link>
+        </div>
+      </>
+    );
+  }
+
   if (userCourse.certificateClaimed && userCourse.certificateS3Key) {
     return (
       <>
@@ -200,7 +217,7 @@ export default function CourseCertificate() {
         <p className="mt-8 rounded-md border border-success bg-success/5 p-4 text-success">
           You have claimed your certificate.{" "}
           <a
-            className="block underline"
+            className="mt-2 block text-lg font-bold underline decoration-2"
             target="_blank"
             rel="noreferrer"
             href={`https://assets.hiphopdriving.com/${userCourse.certificateS3Key}`}
