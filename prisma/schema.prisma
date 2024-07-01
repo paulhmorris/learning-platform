@@ -92,6 +92,7 @@ model UserCourses {
   completedAt        DateTime?
   certificateClaimed Boolean   @default(false)
   certificateS3Key   String?
+  certificateNumber  String?
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   userId String @unique
