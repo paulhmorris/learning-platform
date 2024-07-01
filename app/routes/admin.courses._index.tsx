@@ -6,7 +6,6 @@ import { AdminButton } from "~/components/ui/admin-button";
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "~/components/ui/card";
 import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
-import { toast } from "~/lib/toast.server";
 import { getAllCourses } from "~/models/course.server";
 import { SessionService } from "~/services/SessionService.server";
 
@@ -40,11 +39,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   } catch (error) {
     console.error(error);
     Sentry.captureException(error);
-    throw toast.json(
-      request,
-      { message: "An error occurred while fetching courses." },
-      { type: "error", title: "Error fetching courses", description: "An error occurred while fetching courses." },
-    );
+    throw error;
   }
 }
 

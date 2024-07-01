@@ -47,11 +47,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   } catch (error) {
     console.error(error);
     Sentry.captureException(error);
-    throw toast.redirect(request, "/users", {
-      type: "error",
-      title: "Error fetching user",
-      description: `An error occurred while fetching user ${id}.`,
-    });
+    throw error;
   }
 }
 
@@ -91,7 +87,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       } catch (error) {
         console.error(error);
         Sentry.captureException(error);
-        throw toast.json(
+        return toast.json(
           request,
           { error },
           {
