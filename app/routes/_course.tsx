@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import { LoaderFunctionArgs } from "@remix-run/node";
 import { Outlet, useParams } from "@remix-run/react";
 import { useState } from "react";
@@ -115,38 +116,28 @@ export default function CourseLayout() {
 
   const isCourseCompleted =
     lessonsInOrder.every((l) => l.isCompleted) &&
-    course.attributes.sections.every((s) => {
-      return !s.quiz?.data || quizProgress.find((p) => p.quizId === s.quiz?.data.id)?.isCompleted;
-    });
+    course.attributes.sections.every(
+      (s) => !s.quiz?.data || quizProgress.some((p) => p.quizId === s.quiz?.data.id && p.isCompleted),
+    );
 
-  // Calculate the lesson last completed lesson, defaulting to the first lesson
+  // Simplify the calculation of the next and last completed lesson indices
   const nextLessonIndex = lessonsInOrder.findIndex((l) => !l.isCompleted);
-  const nextLesson = lessonsInOrder.at(nextLessonIndex);
-  const lastCompletedLessonIndex = nextLessonIndex === -1 ? 0 : nextLessonIndex - 1;
+  const lastCompletedLessonIndex = Math.max(0, nextLessonIndex - 1); // Ensures a minimum of 0
+  const nextLesson = lessonsInOrder[nextLessonIndex] ?? lessonsInOrder[0];
 
   const isQuizActive = Boolean(params.quizId);
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   const activeQuiz = sections.find((s) => s.quiz?.data?.id === Number(params.quizId))?.quiz ?? null;
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   const activeQuizProgress = quizProgress.find((p) => p.quizId === activeQuiz?.data?.id);
 
-  const activeLesson = lessonsInOrder.filter((l) => l.slug === params.lessonSlug).at(0) ?? null;
+  const activeLesson = lessonsInOrder.find((l) => l.slug === params.lessonSlug) ?? null;
   const activeLessonProgress = progress.find((p) => p.lessonId === activeLesson?.id);
   const activeSection = activeQuiz
-    ? // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-      sections.find((s) => s.quiz?.data?.attributes.uuid === activeQuiz.data?.attributes.uuid)
-    : sections.find((s) => s.id === activeLesson?.sectionId) ?? sections.at(0);
+    ? sections.find((s) => s.quiz?.data?.attributes.uuid === activeQuiz.data?.attributes.uuid)
+    : sections.find((s) => s.id === activeLesson?.sectionId) ?? sections[0];
 
-  // Sum the user progress to get the total progress
-  const totalProgressInSeconds = progress.reduce((acc, curr) => {
-    return acc + (curr.durationInSeconds ?? 0);
-  }, 0);
-
-  // The total duration of the course
-  const totalDurationInSeconds = lessonsInOrder.reduce((acc, curr) => {
-    return acc + (curr.requiredDurationInSeconds ?? 0);
-  }, 0);
-
+  // Use direct summation for progress and duration, removing unnecessary return statements
+  const totalProgressInSeconds = progress.reduce((acc, curr) => acc + (curr.durationInSeconds ?? 0), 0);
+  const totalDurationInSeconds = lessonsInOrder.reduce((acc, curr) => acc + (curr.requiredDurationInSeconds ?? 0), 0);
   if (!isClient) {
     return null;
   }
@@ -186,7 +177,7 @@ export default function CourseLayout() {
                 return (
                   <li key={`section-${section.id}`} data-sectionid={section.id}>
                     <Section className={cn(isCollapsed && "pb-16")}>
-                      <SectionHeader sectionTitle={section.title} durationInMinutes={(durationInSeconds || 1) / 60} />
+                      <SectionHeader sectionTitle={section.title} durationInMinutes={(durationInSeconds || 0) / 60} />
                       <Separator className={cn(isCollapsed ? "my-2 bg-transparent" : "my-4")} />
                       <ul className="flex flex-col gap-6">
                         {section.lessons?.data

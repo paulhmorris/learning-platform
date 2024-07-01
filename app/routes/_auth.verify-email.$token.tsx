@@ -43,7 +43,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   } catch (error) {
     console.error(error);
     Sentry.captureException(error);
-    return toast.redirect(request, "/login", { type: "error", title: "Error verifying email" });
+    throw error;
   }
 }
 

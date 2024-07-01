@@ -13,6 +13,7 @@ import { FormField } from "~/components/ui/form";
 import { SubmitButton } from "~/components/ui/submit-button";
 import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
+import { verifyEmailJob } from "~/jobs/verify-email.server";
 import { handlePrismaError, serverError } from "~/lib/responses.server";
 import { toast } from "~/lib/toast.server";
 import { loader as rootLoader } from "~/root";
@@ -46,7 +47,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     throw redirect("/");
   }
 
-  // TODO: if search param status=unverified then run the verify email job and update UI
+  // if search param status=unverified then run the verify email job and update UI
 
   return typedjson({});
 };
@@ -70,11 +71,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         });
       }
 
-      const user = await UserService.create(email, password, {
-        data: { firstName, lastName },
-      });
+      const user = await UserService.create(email, password, { data: { firstName, lastName } });
 
-      // await verifyEmailJob.invoke({ email: user.email }, { idempotencyKey: nanoid() });
+      await verifyEmailJob.trigger({ email: user.email });
 
       const url = new URL("/join", request.url);
       url.searchParams.set("step", "verify-email");
@@ -169,27 +168,28 @@ export const meta: TypedMetaFunction<typeof loader, { root: typeof rootLoader }>
 
 export default function Join() {
   const [searchParams] = useSearchParams();
-  const redactedEmail = searchParams.get("email")?.replace(/(?<=.{3}).(?=[^@]*?@)/g, "*");
   const fetcher = useFetcher();
+
+  const status = searchParams.get("status");
+  const email = searchParams.get("email");
+  const step = searchParams.get("step");
 
   useEffect(() => {
     // We need to go back to the first step in case we lose the email param
-    if (searchParams.get("step") === "verify-email" && !searchParams.get("email")) {
+    if (step === "verify-email" && !email) {
       const url = new URL("/join", window.location.href);
       url.searchParams.set("step", "join");
       window.location.replace(url.toString());
     }
-  }, [searchParams]);
+  }, [status, email, step]);
 
   return (
     <>
       <AuthCard>
-        <PageTitle className="mb-8">
-          {searchParams.get("status") === "unverified" ? "Verify Your Account" : "Register"}
-        </PageTitle>
-        {searchParams.get("step") === "verify-email" ? (
+        <PageTitle className="mb-8">{status === "unverified" ? "Verify Your Account" : "Register"}</PageTitle>
+        {step === "verify-email" ? (
           <>
-            <p>Please enter the six digit verification code sent to {redactedEmail}</p>
+            <p>Please enter the six digit verification code sent to {email}.</p>
             <ValidatedForm
               fetcher={fetcher}
               validator={verifyCodeValidator}
@@ -197,7 +197,7 @@ export default function Join() {
               action="/api/verification-code"
               className="mb-8"
             >
-              <input type="hidden" name="email" value={searchParams.get("email") ?? ""} />
+              <input type="hidden" name="email" value={email ?? ""} />
               <button
                 type="submit"
                 className="text-sm text-muted-foreground underline decoration-2 underline-offset-2 hover:text-foreground"
@@ -206,7 +206,7 @@ export default function Join() {
               </button>
             </ValidatedForm>
             <ValidatedForm validator={validator} method="post" className="w-full space-y-4">
-              <input type="hidden" name="email" value={searchParams.get("email") ?? ""} />
+              <input type="hidden" name="email" value={email ?? ""} />
               <FormField key="code" id="code" label="Code" name="code" autoComplete="one-time-code" required />
               <SubmitButton name="step" value="verify-email" variant="primary-md">
                 Verify Email

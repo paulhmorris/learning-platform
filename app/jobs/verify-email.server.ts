@@ -13,7 +13,6 @@ export const verifyEmailJob = task({
   id: "send-email-verification",
   run: async (payload: Payload) => {
     // Generate a verification token
-    // const token = (await io.random("generate-token", { min: 100000, max: 999999, round: true })).toString();
     const token = Math.floor(100000 + Math.random() * 900000).toString();
 
     const user = await UserService.getByEmail(payload.email, { select: { id: true } });
@@ -45,7 +44,7 @@ export const verifyEmailJob = task({
     await EmailService.send({
       from: `${COMPANY_NAME} <no-reply@getcosmic.dev>`,
       to: payload.email,
-      subject: "Verify your email",
+      subject: "Verify Your Email",
       html: `<p>Here's your six digit verification code: <strong>${token}</strong></p>`,
     });
 

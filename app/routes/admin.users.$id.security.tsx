@@ -137,14 +137,41 @@ export const meta: MetaFunction = () => {
 };
 
 export default function AdminUserSecurity() {
-  const rootUser = useTypedRouteLoaderData<typeof userLayoutLoader>("routes/admin.users.$id");
+  const layoutData = useTypedRouteLoaderData<typeof userLayoutLoader>("routes/admin.users.$id");
   const { user } = useTypedLoaderData<typeof loader>();
   const fetcher = useFetcher();
 
   return (
     <>
-      {/* disable the user */}
       {user.isActive ? <DeactivateUserDialog /> : <ActivateUserDialog />}
+      <div className="flex items-center gap-2">
+        <fetcher.Form method="post" action="/api/reset-password">
+          <input type="hidden" name="email" value={layoutData?.user.email} />
+          <AdminButton
+            type="submit"
+            variant="link"
+            className="-ml-3.5 w-auto sm:text-xs"
+            disabled={fetcher.state !== "idle"}
+            name="_action"
+            value="reset-password"
+          >
+            Send Password {user.password ? "Reset" : "Setup"}
+          </AdminButton>
+        </fetcher.Form>
+        {!layoutData?.user.isEmailVerified ? (
+          <fetcher.Form method="post" action="/api/verification-code">
+            <input type="hidden" name="email" value={layoutData?.user.email} />
+            <AdminButton
+              type="submit"
+              variant="link"
+              className="-ml-3.5 w-auto sm:text-xs"
+              disabled={fetcher.state !== "idle"}
+            >
+              Send Email Verification
+            </AdminButton>
+          </fetcher.Form>
+        ) : null}
+      </div>
       <div className="mt-4 max-w-screen-sm space-y-8">
         <div className="max-w-64 space-y-1">
           <h2 className="text-base uppercase tracking-widest text-muted-foreground">User</h2>
@@ -169,19 +196,6 @@ export default function AdminUserSecurity() {
           ) : (
             <p className="text-sm">No password set</p>
           )}
-          <fetcher.Form method="post" action="/api/reset-password">
-            <input type="hidden" name="email" value={rootUser?.user.email} />
-            <AdminButton
-              type="submit"
-              variant="link"
-              className="-ml-3.5 w-auto"
-              disabled={fetcher.state !== "idle"}
-              name="_action"
-              value="reset-password"
-            >
-              Send Password {user.password ? "Reset" : "Setup"}
-            </AdminButton>
-          </fetcher.Form>
         </div>
         <div className="space-y-2">
           <div>
@@ -201,7 +215,7 @@ export default function AdminUserSecurity() {
                       {isActive ? "Active" : isUsed ? "Used" : isExpired ? "Expired" : "Inactive"}
                     </Badge>
                     {isActive ? (
-                      <fetcher.Form method="post" action={`/admin/users/${rootUser?.user.id}/security`}>
+                      <fetcher.Form method="post" action={`/admin/users/${layoutData?.user.id}/security`}>
                         <input type="hidden" name="resetId" value={r.id} />
                         <AdminButton
                           type="submit"

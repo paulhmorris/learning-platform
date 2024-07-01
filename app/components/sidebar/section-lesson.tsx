@@ -26,7 +26,7 @@ export function SectionLesson(props: SectionLessonProps) {
   const isTimed =
     typeof lesson.attributes.required_duration_in_seconds !== "undefined" &&
     lesson.attributes.required_duration_in_seconds > 0;
-  const durationInMinutes = isTimed ? Math.ceil((lesson.attributes.required_duration_in_seconds || 1) / 60) : 0;
+  const durationInMinutes = isTimed ? Math.ceil((lesson.attributes.required_duration_in_seconds || 0) / 60) : 0;
   const Icon = hasVideo ? IconCameraFilled : IconClipboard;
 
   const params = useParams();

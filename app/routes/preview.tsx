@@ -85,35 +85,29 @@ export default function CoursePreview() {
 
   const isCourseCompleted =
     lessonsInOrder.every((l) => l.isCompleted) &&
-    course.attributes.sections.every((s) => {
-      return !s.quiz?.data || quizProgress.find((p) => p.quizId === s.quiz?.data.id)?.isCompleted;
-    });
+    course.attributes.sections.every(
+      (s) => !s.quiz?.data || quizProgress.some((p) => p.quizId === s.quiz?.data.id && p.isCompleted),
+    );
 
-  // Calculate the lesson last completed lesson, defaulting to the first lesson
+  // Find the index of the next lesson to be completed, or use the first lesson if all are completed
   const nextLessonIndex = lessonsInOrder.findIndex((l) => !l.isCompleted);
-  const lastCompletedLessonIndex = nextLessonIndex === -1 ? 0 : nextLessonIndex - 1;
-  const nextLesson = lessonsInOrder.at(nextLessonIndex);
+  const lastCompletedLessonIndex = Math.max(0, nextLessonIndex - 1); // Ensures a minimum of 0
 
-  // Check if a quiz is next
-  const lasCompletedLessonSection = course.attributes.sections.find(
+  // Determine if the next content is a quiz and if it's incomplete
+  const lastCompletedLessonSection = course.attributes.sections.find(
     (s) =>
       s.lessons?.data.some((l) => l.attributes.uuid === lessonsInOrder[lastCompletedLessonIndex]?.uuid) &&
       s.lessons.data.every((l) => lessonsInOrder.find((li) => li.uuid === l.attributes.uuid)?.isCompleted),
   );
-  const lastCompletedLessonSectionHasIncompleteQuiz =
-    lasCompletedLessonSection?.quiz?.data &&
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    !quizProgress.find((p) => p.quizId === lasCompletedLessonSection.quiz?.data?.id)?.isCompleted;
-  const nextQuiz = lastCompletedLessonSectionHasIncompleteQuiz ? lasCompletedLessonSection.quiz?.data : null;
+  const nextQuiz =
+    lastCompletedLessonSection?.quiz?.data &&
+    !quizProgress.some((p) => p.quizId === lastCompletedLessonSection.quiz?.data.id && p.isCompleted)
+      ? lastCompletedLessonSection.quiz.data
+      : null;
 
-  // Sum the user progress to get the total progress
-  const totalProgressInSeconds = progress.reduce((acc, curr) => {
-    return acc + (curr.durationInSeconds ?? 0);
-  }, 0);
-
-  const totalDurationInSeconds = lessonsInOrder.reduce((acc, curr) => {
-    return acc + (curr.requiredDurationInSeconds ?? 0);
-  }, 0);
+  // Calculate total progress and duration in seconds
+  const totalProgressInSeconds = progress.reduce((acc, curr) => acc + (curr.durationInSeconds ?? 0), 0);
+  const totalDurationInSeconds = lessonsInOrder.reduce((acc, curr) => acc + (curr.requiredDurationInSeconds ?? 0), 0);
 
   // Timed Courses
   return (
@@ -157,13 +151,17 @@ export default function CoursePreview() {
               </div>
             ) : nextQuiz ? (
               <CourseUpNext quiz={{ id: nextQuiz.id, numQuestions: nextQuiz.attributes.questions?.length ?? 1 }} />
-            ) : nextLesson ? (
+            ) : (
               <CourseUpNext lesson={lessonsInOrder[lastCompletedLessonIndex + 1]} />
-            ) : null}
+            )}
           </div>
 
           <ul className="relative mt-10 space-y-7">
             {course.attributes.sections.map((section, section_index) => {
+              if (!section.lessons?.data.length && !section.quiz?.data) {
+                return null;
+              }
+
               const durationInSeconds = section.lessons?.data.reduce(
                 (acc, curr) => Math.ceil((curr.attributes.required_duration_in_seconds || 0) + acc),
                 0,
@@ -175,7 +173,7 @@ export default function CoursePreview() {
               return (
                 <li key={`section-${section.id}`}>
                   <Section>
-                    <SectionHeader sectionTitle={section.title} durationInMinutes={(durationInSeconds || 1) / 60} />
+                    <SectionHeader sectionTitle={section.title} durationInMinutes={(durationInSeconds || 0) / 60} />
                     <Separator className="my-4" />
                     <ul className="flex flex-col gap-6">
                       {section.lessons?.data.map((l) => {
@@ -189,10 +187,11 @@ export default function CoursePreview() {
                           // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
                           (p) => p.isCompleted && p.quizId === previousSectionQuiz?.data?.id,
                         );
+
                         const isLessonLocked =
                           !userHasAccess ||
                           (previousSectionQuiz?.data && !previousSectionQuizIsCompleted) ||
-                          lessonIndex > lastCompletedLessonIndex + 1;
+                          (!isCourseCompleted && lessonIndex > lastCompletedLessonIndex + 1);
 
                         const userLessonProgress = progress.find((lp) => lp.lessonId === l.id) ?? null;
                         return (

@@ -199,6 +199,17 @@ export default function Quiz() {
     }
   }, [actionData?.score]);
 
+  if (!quiz.attributes.questions?.length) {
+    return (
+      <>
+        <PageTitle>{quiz.attributes.title}</PageTitle>
+        <div className="mt-4">
+          <p>Oops! This quiz is empty.</p>
+        </div>
+      </>
+    );
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   const quizSection = course.attributes.sections.find((s) => s.quiz?.data?.id === quiz.id);
   const firstLessonInSectionSlug = quizSection?.lessons?.data[0].attributes.slug;
@@ -243,7 +254,7 @@ export default function Quiz() {
         <Form className="mt-8" method="post">
           {/* Questions */}
           <fieldset className={cn("flex flex-col gap-8", progress?.isCompleted && "opacity-50")} disabled={isPassed}>
-            {quiz.attributes.questions?.map((question, q_index) => {
+            {quiz.attributes.questions.map((question, q_index) => {
               if (!question.question) {
                 return null;
               }

@@ -31,7 +31,7 @@ export async function action({ request }: ActionFunctionArgs) {
       { success: true },
       {
         title: "Verification code sent",
-        description: "We've sent a verification code to your email. Please check your inbox and enter the code below.",
+        description: `We've sent a verification code to ${email}. Please check your inbox and enter the code below.`,
         type: "success",
       },
     );
