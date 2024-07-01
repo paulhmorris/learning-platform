@@ -5,7 +5,6 @@ import { typedjson } from "remix-typedjson";
 import { useIsClient, useMediaQuery } from "usehooks-ts";
 
 import { BackLink } from "~/components/common/back-link";
-import { Header } from "~/components/header";
 import { Section, SectionHeader } from "~/components/section";
 import { SectionCertificate } from "~/components/section/section-certificate";
 import { CourseProgressBar } from "~/components/sidebar/course-progress-bar";
@@ -154,7 +153,6 @@ export default function CourseLayout() {
 
   return (
     <>
-      <Header />
       <div className="max-w-screen-xl">
         <nav className="overflow-visible px-4 py-4 lg:fixed lg:bottom-0 lg:left-0 lg:top-20 lg:w-[448px] lg:overflow-auto lg:py-12">
           <BackLink to="/preview">Back to course</BackLink>

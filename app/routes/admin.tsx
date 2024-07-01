@@ -5,7 +5,6 @@ import { CSSProperties } from "react";
 
 import { UserDebugTools } from "~/components/debug/user-debug-tools";
 import { ErrorComponent } from "~/components/error-component";
-import { Header } from "~/components/header";
 import { cn } from "~/lib/utils";
 import { SessionService } from "~/services/SessionService.server";
 
@@ -29,10 +28,9 @@ export default function AdminLayout() {
         } as CSSProperties
       }
     >
-      <Header />
       <div className="flex min-h-[calc(100dvh-80px)] flex-col justify-center">
         <div className="flex-1">
-          <div className="mx-auto w-full border border-transparent bg-background p-6 md:rounded-xl md:p-12">
+          <div className="mx-auto w-full border border-transparent bg-background p-6 md:rounded-xl md:p-12 2xl:px-0">
             <nav>
               <ul className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-muted p-1 text-muted-foreground">
                 {links.map((link) => (

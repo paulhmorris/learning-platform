@@ -55,7 +55,7 @@ export default function UsersIndex() {
     <>
       <BackLink to="/admin/users">Back to users</BackLink>
       <h1 className="text-3xl">{`${user.firstName} ${user.lastName}`}</h1>
-      <div className="mt-1 flex items-center gap-2">
+      <div className="mt-1 flex flex-wrap items-center gap-2">
         <Badge variant={user.isActive ? "secondary" : "destructive"}>
           {user.isActive ? <IconCircleCheckFilled className="size-3.5" /> : <IconCircleXFilled className="size-3.5" />}
           <span>{user.isActive ? "Active" : "Inactive"}</span>

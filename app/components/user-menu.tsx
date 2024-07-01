@@ -55,6 +55,11 @@ export function UserMenu() {
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
+              <Link className="cursor-pointer" to="/preview">
+                Go To Course
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
               <Link className="cursor-pointer" to="/account/profile">
                 Account
               </Link>

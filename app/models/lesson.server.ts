@@ -99,3 +99,71 @@ export async function setUserLessonProgressComplete({
   await redis.set<UserLessonProgress>(`user-lesson-progress:${userId}:${lessonId}`, progress, { ex: 12 });
   return progress;
 }
+
+export async function getAllLessonProgress(userId: string) {
+  return db.userLessonProgress.findMany({ where: { userId } });
+}
+
+export async function resetAllLessonProgress(userId: string) {
+  return db.userLessonProgress.deleteMany({ where: { userId } });
+}
+
+export async function resetLessonProgress(lessonId: number, userId: string) {
+  return db.userLessonProgress.delete({
+    where: {
+      userId_lessonId: {
+        lessonId,
+        userId,
+      },
+    },
+  });
+}
+
+export async function updateLessonProgress(data: {
+  lessonId: number;
+  userId: string;
+  durationInSeconds: number;
+  requiredDurationInSeconds: number;
+}) {
+  return db.userLessonProgress.upsert({
+    where: {
+      userId_lessonId: { userId: data.userId, lessonId: data.lessonId },
+    },
+    create: {
+      userId: data.userId,
+      lessonId: data.lessonId,
+      isCompleted: data.durationInSeconds >= data.requiredDurationInSeconds,
+      durationInSeconds: data.durationInSeconds,
+    },
+    update: {
+      durationInSeconds: data.durationInSeconds,
+      isCompleted: data.durationInSeconds >= data.requiredDurationInSeconds,
+    },
+  });
+}
+
+export async function markLessonComplete(data: {
+  lessonId: number;
+  userId: string;
+  requiredDurationInSeconds: number;
+}) {
+  const lesson = await db.userLessonProgress.upsert({
+    where: {
+      userId_lessonId: {
+        lessonId: data.lessonId,
+        userId: data.userId,
+      },
+    },
+    create: {
+      lessonId: data.lessonId,
+      userId: data.userId,
+      durationInSeconds: data.requiredDurationInSeconds,
+      isCompleted: true,
+    },
+    update: {
+      durationInSeconds: data.requiredDurationInSeconds,
+      isCompleted: true,
+    },
+  });
+  return lesson;
+}

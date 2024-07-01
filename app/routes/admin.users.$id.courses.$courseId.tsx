@@ -13,11 +13,23 @@ import { QuizProgressHeader } from "~/components/admin/courses/quiz-progress-hea
 import { QuizResetForm } from "~/components/admin/courses/quiz-reset-form";
 import { QuizUpdateForm } from "~/components/admin/courses/quiz-update-form";
 import { ResetAllProgressDialog } from "~/components/admin/courses/reset-all-progress-dialog";
-import { db } from "~/integrations/db.server";
 import { toast } from "~/lib/toast.server";
 import { formatSeconds } from "~/lib/utils";
-import { getLessons } from "~/models/lesson.server";
-import { getQuizzes } from "~/models/quiz.server";
+import {
+  getAllLessonProgress,
+  getLessons,
+  markLessonComplete,
+  resetAllLessonProgress,
+  resetLessonProgress,
+  updateLessonProgress,
+} from "~/models/lesson.server";
+import {
+  getAllQuizProgress,
+  getQuizzes,
+  resetAllQuizProgress,
+  resetQuizProgress,
+  updateQuizProgress,
+} from "~/models/quiz.server";
 import { SessionService } from "~/services/SessionService.server";
 
 const schema = z.object({
@@ -30,8 +42,8 @@ const schema = z.object({
     "update-quiz",
   ]),
   quizId: z.coerce.number().optional(),
-  quizScore: z.coerce.number().optional(),
-  quizPassingScore: z.coerce.number().optional(),
+  score: z.coerce.number().optional(),
+  passingScore: z.coerce.number().optional(),
   lessonId: z.coerce.number().optional(),
   durationInSeconds: z.coerce.number().optional(),
   requiredDurationInSeconds: z.coerce.number().optional(),
@@ -48,8 +60,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const [lessons, quizzes, lessonProgress, quizProgress] = await Promise.all([
     getLessons(),
     getQuizzes(),
-    db.userLessonProgress.findMany({ where: { userId } }),
-    db.userQuizProgress.findMany({ where: { userId } }),
+    getAllLessonProgress(userId),
+    getAllQuizProgress(userId),
   ]);
 
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
@@ -74,14 +86,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const { _action, durationInSeconds, lessonId, requiredDurationInSeconds, quizId, quizScore, quizPassingScore } =
-    result.data;
+  const { _action, durationInSeconds, lessonId, requiredDurationInSeconds, quizId, score, passingScore } = result.data;
 
   switch (_action) {
     case "reset-all-progress": {
       // Reset all progress for this user in this course
-      await db.userLessonProgress.deleteMany({ where: { userId } });
-      await db.userQuizProgress.deleteMany({ where: { userId } });
+      await resetAllLessonProgress(userId);
+      await resetAllQuizProgress(userId);
       return toast.json(
         request,
         { ok: true, message: "All progress reset." },
@@ -98,7 +109,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         );
       }
       // Reset progress for this lesson
-      await db.userLessonProgress.deleteMany({ where: { userId, lessonId } });
+      await resetLessonProgress(lessonId, userId);
       return toast.json(
         request,
         { ok: true, message: "Lesson progress reset." },
@@ -118,21 +129,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
           },
         );
       }
-      await db.userLessonProgress.upsert({
-        where: {
-          userId_lessonId: { userId, lessonId },
-        },
-        create: {
-          userId,
-          lessonId,
-          isCompleted: true,
-          durationInSeconds: requiredDurationInSeconds,
-        },
-        update: {
-          isCompleted: true,
-          durationInSeconds: requiredDurationInSeconds,
-        },
-      });
+      await markLessonComplete({ userId, lessonId, requiredDurationInSeconds });
       return toast.json(
         request,
         { ok: true, message: "Lesson completed." },
@@ -149,21 +146,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         );
       }
       // Update progress for this lesson
-      await db.userLessonProgress.upsert({
-        where: {
-          userId_lessonId: { userId, lessonId },
-        },
-        create: {
-          userId,
-          lessonId,
-          isCompleted: durationInSeconds >= requiredDurationInSeconds,
-          durationInSeconds,
-        },
-        update: {
-          durationInSeconds,
-          isCompleted: durationInSeconds >= requiredDurationInSeconds,
-        },
-      });
+      await updateLessonProgress({ lessonId, userId, durationInSeconds, requiredDurationInSeconds });
       return toast.json(
         request,
         { ok: true, message: "Lesson progress updated." },
@@ -179,7 +162,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
           { type: "error", title: "Error", description: "A quiz ID was not found with this request." },
         );
       }
-      await db.userQuizProgress.deleteMany({ where: { userId, quizId } });
+      await resetQuizProgress(quizId, userId);
       return toast.json(
         request,
         { ok: true, message: "Quiz progress reset." },
@@ -188,28 +171,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
 
     case "update-quiz": {
-      if (!quizId || typeof quizScore === "undefined" || typeof quizPassingScore === "undefined") {
+      if (!quizId || typeof score === "undefined" || typeof passingScore === "undefined") {
         return toast.json(
           request,
           { ok: false, message: "Quiz ID and Score are required." },
           { type: "error", title: "Error", description: "A quiz ID or score was not found with this request." },
         );
       }
-      await db.userQuizProgress.upsert({
-        where: {
-          userId_quizId: { userId, quizId },
-        },
-        create: {
-          userId,
-          quizId,
-          isCompleted: quizScore >= quizPassingScore,
-          score: quizScore,
-        },
-        update: {
-          isCompleted: quizScore >= quizPassingScore,
-          score: quizScore,
-        },
-      });
+      await updateQuizProgress({ quizId, userId, score: score, passingScore: passingScore });
       return toast.json(
         request,
         { ok: true, message: "Quiz completed." },
@@ -241,13 +210,32 @@ export default function AdminUserCourse() {
       </div>
 
       <LessonProgressHeader />
-      <ul className="mb-8 divide-y divide-border">
+      <ul className="mb-8 divide-y divide-border/75">
         {lessons.data.map((l) => {
           const progress = lessonProgress.find((lp) => lp.lessonId === l.id);
 
           return (
-            <li key={l.attributes.uuid} className="grid grid-cols-12 items-center py-2">
-              <div className="col-span-1">
+            <li key={l.attributes.uuid} className="items-center py-3 md:grid md:grid-cols-12 md:py-2">
+              {/* Mobile */}
+              <div className="mb-2 flex items-center gap-4 md:hidden">
+                <div className="col-span-1">
+                  {!progress ? (
+                    <IconCircle className="size-6 text-foreground" />
+                  ) : !progress.isCompleted ? (
+                    <IconCircleDashedCheck className="size-6 text-foreground" />
+                  ) : (
+                    <IconCircleCheckFilled className="size-6 text-success" />
+                  )}
+                </div>
+                <h3 className="col-span-2 text-sm font-normal">{l.attributes.title}</h3>
+                <p className="col-span-3 text-sm">
+                  {formatSeconds(progress?.durationInSeconds ?? 0)} /{" "}
+                  {formatSeconds(l.attributes.required_duration_in_seconds ?? 0)}
+                </p>
+              </div>
+
+              {/* Desktop */}
+              <div className="col-span-1 hidden md:block">
                 {!progress ? (
                   <IconCircle className="size-6 text-foreground" />
                 ) : !progress.isCompleted ? (
@@ -256,12 +244,12 @@ export default function AdminUserCourse() {
                   <IconCircleCheckFilled className="size-6 text-success" />
                 )}
               </div>
-              <h3 className="col-span-2 text-sm font-normal">{l.attributes.title}</h3>
-              <p className="col-span-3 text-sm">
+              <h3 className="col-span-2 hidden text-sm font-normal md:block">{l.attributes.title}</h3>
+              <p className="col-span-3 hidden text-sm md:block">
                 {formatSeconds(progress?.durationInSeconds ?? 0)} /{" "}
                 {formatSeconds(l.attributes.required_duration_in_seconds ?? 0)}
               </p>
-              <div className="col-span-6 flex items-center gap-1.5">
+              <div className="col-span-6 flex flex-wrap items-center gap-1.5 md:flex-nowrap">
                 <LessonResetForm lesson={l} progress={progress} />
                 <LessonCompleteForm lesson={l} progress={progress} />
                 <LessonUpdateForm lesson={l} />
@@ -278,8 +266,26 @@ export default function AdminUserCourse() {
           const passingScore = q.attributes.passing_score;
 
           return (
-            <li key={q.attributes.uuid} className="grid grid-cols-12 items-center py-2">
-              <div className="col-span-1">
+            <li key={q.attributes.uuid} className="items-center py-3 md:grid md:grid-cols-12 md:py-2">
+              {/* Mobile */}
+              <div className="mb-2 flex items-center gap-4 md:hidden">
+                <div className="col-span-1">
+                  {!progress ? (
+                    <IconCircle className="size-6 text-foreground" />
+                  ) : progress.score && progress.score < passingScore ? (
+                    <IconCircleXFilled className="size-6 text-destructive" />
+                  ) : (
+                    <IconCircleCheckFilled className="size-6 text-success" />
+                  )}
+                </div>
+                <h3 className="col-span-2 text-sm font-normal">{q.attributes.title}</h3>
+                <p className="col-span-3 text-sm">
+                  {progress?.score ? `${progress.score}%` : "-"} / {q.attributes.passing_score}%
+                </p>
+              </div>
+
+              {/* Desktop */}
+              <div className="col-span-1 hidden md:block">
                 {!progress ? (
                   <IconCircle className="size-6 text-foreground" />
                 ) : progress.score && progress.score < passingScore ? (
@@ -288,8 +294,8 @@ export default function AdminUserCourse() {
                   <IconCircleCheckFilled className="size-6 text-success" />
                 )}
               </div>
-              <h3 className="col-span-2 text-sm font-normal">{q.attributes.title}</h3>
-              <p className="col-span-3 text-sm">
+              <h3 className="col-span-2 hidden text-sm font-normal md:block">{q.attributes.title}</h3>
+              <p className="col-span-3 hidden text-sm md:block">
                 {progress?.score ? `${progress.score}%` : "-"} / {q.attributes.passing_score}%
               </p>
               <div className="col-span-6 flex items-center gap-1.5">

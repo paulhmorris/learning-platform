@@ -178,8 +178,7 @@ export default function AccountProfile() {
               <span>Verify My Identity</span>
             </Button>
             <p className="mt-1 text-xs text-muted-foreground" id="verify-btn-description">
-              This is required to complete a driver safety course. Status:{" "}
-              {identityVerificationStatus?.split("_").join(" ")}
+              This is required to complete a driver safety course.
             </p>
           </>
         ) : (

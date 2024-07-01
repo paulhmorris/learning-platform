@@ -4,7 +4,6 @@ import { IconCreditCard, IconKey, IconUserCircle } from "@tabler/icons-react";
 
 import { UserDebugTools } from "~/components/debug/user-debug-tools";
 import { ErrorComponent } from "~/components/error-component";
-import { Header } from "~/components/header";
 import { IconCertificate } from "~/components/icons";
 import { cn } from "~/lib/utils";
 import { SessionService } from "~/services/SessionService.server";
@@ -24,7 +23,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export default function AccountLayout() {
   return (
     <>
-      <Header />
       <div className="flex min-h-[calc(100dvh-80px)] flex-col justify-center dark:bg-background md:bg-secondary">
         <div className="flex-1">
           <div className="mx-auto w-full max-w-screen-md border border-transparent bg-background p-6 dark:border-border md:mt-40 md:rounded-xl md:p-12">

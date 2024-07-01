@@ -8,7 +8,6 @@ import { CourseHeader } from "~/components/course/course-header";
 import { CoursePurchaseCTA } from "~/components/course/course-purchase-cta";
 import { CourseUpNext } from "~/components/course/course-up-next";
 import { ErrorComponent } from "~/components/error-component";
-import { Header } from "~/components/header";
 import { IconClipboard, IconDocument } from "~/components/icons";
 import { Section, SectionHeader } from "~/components/section";
 import { CoursePreviewLink } from "~/components/sidebar/course-preview-link";
@@ -119,7 +118,6 @@ export default function CoursePreview() {
   // Timed Courses
   return (
     <>
-      <Header />
       <div className="flex flex-col gap-x-12 px-4 py-4 lg:flex-row lg:py-4">
         <nav className="left-0 top-[88px] h-full shrink-0 basis-[448px] py-4 sm:py-10 lg:sticky lg:py-14">
           <StrapiImage

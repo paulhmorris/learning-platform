@@ -19,9 +19,9 @@ export function QuizUpdateForm(props: { quiz: { id: number; attributes: { passin
   return (
     <fetcher.Form method="post" className="flex items-center gap-1.5">
       <input type="hidden" name="quizId" value={quiz.id} />
-      <input type="hidden" name="quizPassingScore" value={quiz.attributes.passing_score} />
+      <input type="hidden" name="passingScore" value={quiz.attributes.passing_score} />
       <Input
-        name="quizScore"
+        name="score"
         placeholder="Percect"
         pattern="[0-9]*"
         defaultValue={100}
