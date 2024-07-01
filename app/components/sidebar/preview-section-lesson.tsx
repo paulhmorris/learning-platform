@@ -33,40 +33,6 @@ export function PreviewSectionLesson(props: SectionLessonProps) {
   // Tracks the timer value from <ProgressTimer /> for a more reactive progress circle
   const [clientProgressPercentage, setClientProgressPercentage] = React.useState<number | null>(null);
 
-  // Locked state
-  if (locked) {
-    return (
-      <div
-        className={cn("-my-1 block rounded-lg py-1")}
-        aria-label="This lesson is locked until previous lessons are completed."
-      >
-        <SectionItemContainer>
-          <ProgressCircle
-            aria-label="Lesson progress"
-            percentage={0}
-            className="border-gray-400 contrast-more:border-gray-500 dark:border-gray-600 contrast-more:dark:border-gray-400"
-          />
-          <SectionItemIconContainer>
-            <Icon
-              className={cn(
-                "text-gray-400 contrast-more:text-gray-500 dark:text-gray-600 contrast-more:dark:text-gray-400",
-                hasVideo ? "h-8 w-7" : "h-7 w-6",
-              )}
-            />
-          </SectionItemIconContainer>
-          <div className="flex flex-col justify-center">
-            <SectionItemTitle className="text-gray-400 contrast-more:text-gray-500 dark:text-gray-600 contrast-more:dark:text-gray-400">
-              {lesson.attributes.title}
-            </SectionItemTitle>
-            <SectionItemDescription className="text-gray-400 contrast-more:text-gray-500 dark:text-gray-600 contrast-more:dark:text-gray-400">
-              {durationInMinutes} min
-            </SectionItemDescription>
-          </div>
-        </SectionItemContainer>
-      </div>
-    );
-  }
-
   // Umtimed states
   if (!isTimed) {
     return (
@@ -146,20 +112,57 @@ export function PreviewSectionLesson(props: SectionLessonProps) {
   }
 
   // Completed state
-  return (
-    <div className={cn("-my-1 block rounded-lg py-1")}>
-      <SectionItemContainer>
-        <ProgressCircle aria-label="Lesson progress" percentage={100} />
-        <SectionItemIconContainer>
-          <Icon className={cn("text-foreground", hasVideo ? "h-8 w-7" : "h-7 w-6")} />
-        </SectionItemIconContainer>
-        <div className="flex flex-col justify-center">
-          <SectionItemTitle>{lesson.attributes.title}</SectionItemTitle>
-          <SectionItemDescription>
-            {durationInMinutes} of {durationInMinutes} min completed
-          </SectionItemDescription>
-        </div>
-      </SectionItemContainer>
-    </div>
-  );
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  if (userProgress.isCompleted) {
+    return (
+      <div className={cn("-my-1 block rounded-lg py-1")}>
+        <SectionItemContainer>
+          <ProgressCircle aria-label="Lesson progress" percentage={100} />
+          <SectionItemIconContainer>
+            <Icon className={cn("text-foreground", hasVideo ? "h-8 w-7" : "h-7 w-6")} />
+          </SectionItemIconContainer>
+          <div className="flex flex-col justify-center">
+            <SectionItemTitle>{lesson.attributes.title}</SectionItemTitle>
+            <SectionItemDescription>
+              {durationInMinutes} of {durationInMinutes} min completed
+            </SectionItemDescription>
+          </div>
+        </SectionItemContainer>
+      </div>
+    );
+  }
+
+  // Locked state
+  if (locked) {
+    return (
+      <div
+        className={cn("-my-1 block rounded-lg py-1")}
+        aria-label="This lesson is locked until previous lessons are completed."
+      >
+        <SectionItemContainer>
+          <ProgressCircle
+            aria-label="Lesson progress"
+            percentage={0}
+            className="border-gray-400 contrast-more:border-gray-500 dark:border-gray-600 contrast-more:dark:border-gray-400"
+          />
+          <SectionItemIconContainer>
+            <Icon
+              className={cn(
+                "text-gray-400 contrast-more:text-gray-500 dark:text-gray-600 contrast-more:dark:text-gray-400",
+                hasVideo ? "h-8 w-7" : "h-7 w-6",
+              )}
+            />
+          </SectionItemIconContainer>
+          <div className="flex flex-col justify-center">
+            <SectionItemTitle className="text-gray-400 contrast-more:text-gray-500 dark:text-gray-600 contrast-more:dark:text-gray-400">
+              {lesson.attributes.title}
+            </SectionItemTitle>
+            <SectionItemDescription className="text-gray-400 contrast-more:text-gray-500 dark:text-gray-600 contrast-more:dark:text-gray-400">
+              {durationInMinutes} min
+            </SectionItemDescription>
+          </div>
+        </SectionItemContainer>
+      </div>
+    );
+  }
 }

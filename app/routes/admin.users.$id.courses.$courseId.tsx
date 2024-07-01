@@ -209,6 +209,11 @@ export default function AdminUserCourse() {
         {/* <CompleteCourseDialog /> */}
       </div>
 
+      <p className="mb-4 max-w-screen-lg text-sm text-muted-foreground">
+        Because of the complexity of locking and unlocking lessons as the course progresses, it is highly recommended to
+        adjust entire sections. If that doesn&apos;t satisfy your use case, avoid having out of order lessons completed.
+      </p>
+
       <LessonProgressHeader />
       <ul className="mb-8 divide-y divide-border/75">
         {lessons.data.map((l) => {

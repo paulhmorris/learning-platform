@@ -33,40 +33,6 @@ export function SectionLesson(props: SectionLessonProps) {
   // Tracks the timer value from <ProgressTimer /> for a more reactive progress circle
   const [clientProgressPercentage, setClientProgressPercentage] = React.useState<number | null>(null);
 
-  // Locked state
-  if (locked) {
-    return (
-      <div
-        className={cn("-my-1 block rounded-lg py-1")}
-        aria-label="This lesson is locked until previous lessons are completed."
-      >
-        <SectionItemContainer>
-          <ProgressCircle
-            aria-label="Lesson progress"
-            percentage={0}
-            className="border-gray-400 contrast-more:border-gray-500 dark:border-gray-600 contrast-more:dark:border-gray-400"
-          />
-          <SectionItemIconContainer>
-            <Icon
-              className={cn(
-                "text-gray-400 contrast-more:text-gray-500 dark:text-gray-600 contrast-more:dark:text-gray-400",
-                hasVideo ? "h-8 w-7" : "h-7 w-6",
-              )}
-            />
-          </SectionItemIconContainer>
-          <div className="flex flex-col justify-center">
-            <SectionItemTitle className="text-gray-400 contrast-more:text-gray-500 dark:text-gray-600 contrast-more:dark:text-gray-400">
-              {lesson.attributes.title}
-            </SectionItemTitle>
-            <SectionItemDescription className="text-gray-400 contrast-more:text-gray-500 dark:text-gray-600 contrast-more:dark:text-gray-400">
-              {durationInMinutes} min
-            </SectionItemDescription>
-          </div>
-        </SectionItemContainer>
-      </div>
-    );
-  }
-
   // Umtimed states
   if (!isTimed) {
     return (
@@ -191,30 +157,71 @@ export function SectionLesson(props: SectionLessonProps) {
   }
 
   // Completed state
-  return (
-    <NavLink
-      to={`/${lesson.attributes.slug}`}
-      className={({ isActive }) =>
-        cn(
-          "block rounded-lg py-1 hover:ring hover:ring-[#e4e4e4] focus:outline-none focus:ring focus:ring-ring motion-safe:transition-all",
-          isActive ? "border border-[#e4e4e4] bg-muted p-2.5" : "-my-1",
-        )
-      }
-    >
-      {({ isActive }) => (
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  if (userProgress.isCompleted) {
+    return (
+      <NavLink
+        to={`/${lesson.attributes.slug}`}
+        className={({ isActive }) =>
+          cn(
+            "block rounded-lg py-1 hover:ring hover:ring-[#e4e4e4] focus:outline-none focus:ring focus:ring-ring motion-safe:transition-all",
+            isActive ? "border border-[#e4e4e4] bg-muted p-2.5" : "-my-1",
+          )
+        }
+      >
+        {({ isActive }) => (
+          <SectionItemContainer>
+            <ProgressCircle
+              className={cn(isActive && "border-success")}
+              aria-label="Lesson progress"
+              percentage={100}
+            />
+            <SectionItemIconContainer>
+              <Icon className={cn(isActive ? "text-success" : "text-foreground", hasVideo ? "h-8 w-7" : "h-7 w-6")} />
+            </SectionItemIconContainer>
+            <div className="flex flex-col justify-center">
+              <SectionItemTitle>{lesson.attributes.title}</SectionItemTitle>
+              <SectionItemDescription>
+                {durationInMinutes} of {durationInMinutes} min completed
+              </SectionItemDescription>
+            </div>
+          </SectionItemContainer>
+        )}
+      </NavLink>
+    );
+  }
+
+  // Locked state
+  if (locked) {
+    return (
+      <div
+        className={cn("-my-1 block rounded-lg py-1")}
+        aria-label="This lesson is locked until previous lessons are completed."
+      >
         <SectionItemContainer>
-          <ProgressCircle className={cn(isActive && "border-success")} aria-label="Lesson progress" percentage={100} />
+          <ProgressCircle
+            aria-label="Lesson progress"
+            percentage={0}
+            className="border-gray-400 contrast-more:border-gray-500 dark:border-gray-600 contrast-more:dark:border-gray-400"
+          />
           <SectionItemIconContainer>
-            <Icon className={cn(isActive ? "text-success" : "text-foreground", hasVideo ? "h-8 w-7" : "h-7 w-6")} />
+            <Icon
+              className={cn(
+                "text-gray-400 contrast-more:text-gray-500 dark:text-gray-600 contrast-more:dark:text-gray-400",
+                hasVideo ? "h-8 w-7" : "h-7 w-6",
+              )}
+            />
           </SectionItemIconContainer>
           <div className="flex flex-col justify-center">
-            <SectionItemTitle>{lesson.attributes.title}</SectionItemTitle>
-            <SectionItemDescription>
-              {durationInMinutes} of {durationInMinutes} min completed
+            <SectionItemTitle className="text-gray-400 contrast-more:text-gray-500 dark:text-gray-600 contrast-more:dark:text-gray-400">
+              {lesson.attributes.title}
+            </SectionItemTitle>
+            <SectionItemDescription className="text-gray-400 contrast-more:text-gray-500 dark:text-gray-600 contrast-more:dark:text-gray-400">
+              {durationInMinutes} min
             </SectionItemDescription>
           </div>
         </SectionItemContainer>
-      )}
-    </NavLink>
-  );
+      </div>
+    );
+  }
 }

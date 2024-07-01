@@ -197,17 +197,24 @@ export default function CourseLayout() {
                           })
                           .map((l) => {
                             const lessonIndex = lessonsInOrder.findIndex((li) => li.uuid === l.attributes.uuid);
+                            const lesson = lessonsInOrder[lessonIndex];
 
                             // Lock the lesson if the previous section's quiz is not completed
-                            const previousSection = section_index > 0 ? sections.at(section_index - 1) : null;
+                            const previousSection =
+                              section_index > 0 ? course.attributes.sections[section_index - 1] : null;
                             const previousSectionQuiz = previousSection?.quiz;
                             const previousSectionQuizIsCompleted = quizProgress.find(
                               // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
                               (p) => p.isCompleted && p.quizId === previousSectionQuiz?.data?.id,
                             );
+
+                            const lastLessonIsCompleted = lessonsInOrder[lastCompletedLessonIndex]?.isCompleted;
                             const isLessonLocked =
+                              !lesson.isCompleted ||
                               (previousSectionQuiz?.data && !previousSectionQuizIsCompleted) ||
-                              lessonIndex > lastCompletedLessonIndex + 1;
+                              (!isCourseCompleted &&
+                                !lastLessonIsCompleted &&
+                                lessonIndex > lastCompletedLessonIndex + 1);
 
                             return (
                               <SectionLesson

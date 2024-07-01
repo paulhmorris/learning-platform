@@ -74,7 +74,7 @@ export default function UsersIndex() {
           href={`https://dashboard.stripe.com/customers/${user.stripeId}`}
           target="_blank"
           rel="noreferrer"
-          className="text-blue-500 inline-flex items-center gap-1.5 text-sm"
+          className="text-blue-500 inline-flex items-center gap-1.5 text-sm decoration-2 hover:underline"
         >
           <span className="leading-9">View on Stripe</span>
           <IconExternalLink className="size-3" />
