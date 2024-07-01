@@ -1,9 +1,11 @@
 import { LoaderFunctionArgs } from "@remix-run/node";
-import { IconExternalLink } from "@tabler/icons-react";
 import dayjs from "dayjs";
 import { typedjson, useTypedLoaderData } from "remix-typedjson";
 
 import { ErrorComponent } from "~/components/error-component";
+import { IconCertificate } from "~/components/icons";
+import { AdminButton } from "~/components/ui/admin-button";
+import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "~/components/ui/card";
 import { db } from "~/integrations/db.server";
 import { getAllCourses } from "~/models/course.server";
 import { loader as rootLoader } from "~/root";
@@ -21,8 +23,11 @@ export const meta: TypedMetaFunction<typeof loader, { root: typeof rootLoader }>
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await SessionService.requireUserId(request);
 
-  const dbCourses = await db.userCourses.findMany({ where: { userId }, include: { course: true } });
-  const cmsCourses = await getAllCourses();
+  const [userCourses, dbCourses, cmsCourses] = await Promise.all([
+    db.userCourses.findMany({ where: { userId }, include: { course: true } }),
+    db.userCourses.findMany({ where: { userId }, include: { course: true } }),
+    getAllCourses(),
+  ]);
 
   if (!cmsCourses.length) {
     throw new Response("Failed to fetch courses", { status: 500 });
@@ -37,11 +42,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
     };
   });
 
-  return typedjson({ courses });
+  return typedjson({ courses, userCourses });
 }
 
 export default function AccountCourses() {
-  const { courses } = useTypedLoaderData<typeof loader>();
+  const { courses, userCourses } = useTypedLoaderData<typeof loader>();
+
   return (
     <>
       <h1 className="sr-only">Courses</h1>
@@ -51,26 +57,45 @@ export default function AccountCourses() {
           : "You are not currently enrolled in any courses"}
       </p>
       <ul className="mt-4">
-        {courses.map((course) => (
-          <li key={course.id}>
-            <a
-              className="flex items-center justify-between rounded-2xl border px-4 py-6 shadow transition hover:bg-secondary"
-              href={new URL("/", `https://${course.course.host}`).toString()}
-              target="_blank"
-              rel="noreferrer"
-            >
-              <div>
-                <h2 className="text-base sm:text-lg">{course.title}</h2>
-                <div className="flex items-center gap-1 text-muted-foreground">
-                  <p className="text-xs">{course.isCompleted ? "Complete" : "Incomplete"}</p>
-                  <span className="text-xs">•</span>
-                  <p className="text-xs">Purchased {dayjs(course.createdAt).format("M/D/YY")}</p>
-                </div>
-              </div>
-              <IconExternalLink />
-            </a>
-          </li>
-        ))}
+        {courses.map((course) => {
+          const userCourse = userCourses.find((uc) => uc.course.strapiId === course.id);
+
+          return (
+            <li key={course.id}>
+              <Card>
+                <CardHeader>
+                  <CardTitle>{course.title}</CardTitle>
+                  <CardDescription>{course.description}</CardDescription>
+                  <div className="flex items-center gap-1 text-muted-foreground">
+                    <p className="text-xs">{course.isCompleted ? "Complete" : "Incomplete"}</p>
+                    <span className="text-xs">•</span>
+                    <p className="text-xs">Purchased {dayjs(course.createdAt).format("M/D/YY")}</p>
+                  </div>
+                </CardHeader>
+                <CardFooter>
+                  <AdminButton asChild>
+                    <a href={new URL("/", `https://${course.course.host}`).toString()} target="_blank" rel="noreferrer">
+                      Go to Course
+                    </a>
+                  </AdminButton>
+                  {userCourse?.certificateClaimed && userCourse.certificateS3Key ? (
+                    <AdminButton variant="outline" asChild>
+                      <a
+                        className="flex items-center gap-1.5"
+                        target="_blank"
+                        rel="noreferrer"
+                        href={`https://assets.hiphopdriving.com/${userCourse.certificateS3Key}`}
+                      >
+                        <IconCertificate className="size-4 shrink-0" />
+                        <span>View Certificate</span>
+                      </a>
+                    </AdminButton>
+                  ) : null}
+                </CardFooter>
+              </Card>
+            </li>
+          );
+        })}
       </ul>
     </>
   );
