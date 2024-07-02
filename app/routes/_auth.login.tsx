@@ -1,6 +1,6 @@
 import { UserRole } from "@prisma/client";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { Link, useSearchParams } from "@remix-run/react";
+import { Link, MetaFunction, useSearchParams } from "@remix-run/react";
 import { withZod } from "@remix-validated-form/with-zod";
 import { redirect, typedjson } from "remix-typedjson";
 import { ValidatedForm, validationError } from "remix-validated-form";
@@ -19,7 +19,6 @@ import { safeRedirect } from "~/lib/utils";
 import { verifyLogin } from "~/models/user.server";
 import { loader as rootLoader } from "~/root";
 import { SessionService } from "~/services/SessionService.server";
-import { TypedMetaFunction } from "~/types/utils";
 
 const validator = withZod(
   z.object({
@@ -89,11 +88,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   });
 };
 
-export const meta: TypedMetaFunction<typeof loader, { root: typeof rootLoader }> = ({ matches }) => {
-  // @ts-expect-error typed meta funtion doesn't support this yet
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+export const meta: MetaFunction<typeof loader, { root: typeof rootLoader }> = ({ matches }) => {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   const match = matches.find((m) => m.id === "root")?.data.course;
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   return [{ title: `Login | ${match?.data?.attributes.title ?? "Plumb Media & Education"}` }];
 };
 

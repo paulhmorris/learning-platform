@@ -2,13 +2,16 @@ import { useEffect } from "react";
 import { Toaster, toast } from "sonner";
 
 import { useRootData } from "~/hooks/useRootData";
+import { Toast } from "~/lib/toast.server";
 
 export function Notifications() {
   const data = useRootData();
 
   useEffect(() => {
     if (!data?.serverToast) return;
-    const { title, type, ...rest } = data.serverToast;
+    const t = data.serverToast as Toast;
+    const { title, type, ...rest } = t;
+
     switch (type) {
       case "success": {
         toast.success(title, rest);

@@ -18,6 +18,7 @@ import { toast } from "~/lib/toast.server";
 import { cn } from "~/lib/utils";
 import { getCoursefromCMSForCourseLayout, getLinkedCourseByHost } from "~/models/course.server";
 import { SessionService } from "~/services/SessionService.server";
+import { APIResponseData } from "~/types/utils";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await SessionService.requireUser(request);
@@ -218,7 +219,7 @@ export default function CourseLayout() {
                             return (
                               <SectionLesson
                                 key={l.attributes.uuid}
-                                lesson={l}
+                                lesson={l as APIResponseData<"api::lesson.lesson">}
                                 userProgress={progress.find((lp) => lp.lessonId === l.id) ?? null}
                                 locked={isLessonLocked}
                               />
@@ -226,7 +227,7 @@ export default function CourseLayout() {
                           })}
                         {section.quiz?.data && shouldShowQuizInSection ? (
                           <SectionQuiz
-                            quiz={section.quiz.data}
+                            quiz={section.quiz.data as APIResponseData<"api::quiz.quiz">}
                             userProgress={quizProgress.find((qp) => qp.quizId === section.quiz?.data.id) ?? null}
                             locked={isQuizLocked}
                           />

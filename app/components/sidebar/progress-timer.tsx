@@ -11,7 +11,7 @@ import { APIResponseData } from "~/types/utils";
 
 interface Props {
   lesson: APIResponseData<"api::lesson.lesson">;
-  progress: UserLessonProgress | null;
+  progress: Omit<UserLessonProgress, "createdAt" | "updatedAt"> | null;
   setClientProgressPercentage: (percentage: number) => void;
 }
 
@@ -40,7 +40,7 @@ export function ProgressTimer({ lesson, progress, setClientProgressPercentage }:
     }
 
     if (shouldSubmit) {
-      fetcher.submit({ userId: user.id, lessonId: lesson.id }, { method: "POST", action: "?index", navigate: false });
+      fetcher.submit({ userId: user.id, lessonId: lesson.id }, { method: "POST", action: "?index" });
     }
 
     // eslint-disable-next-line react-hooks/exhaustive-deps

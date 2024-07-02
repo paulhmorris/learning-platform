@@ -5,7 +5,7 @@ import { Link, MetaFunction, useLoaderData } from "@remix-run/react";
 import { StrapiImage } from "~/components/common/strapi-image";
 import { CourseHeader } from "~/components/course/course-header";
 import { CoursePurchaseCTA } from "~/components/course/course-purchase-cta";
-import { CourseUpNext } from "~/components/course/course-up-next";
+import { CourseUpNext, LessonInOrder } from "~/components/course/course-up-next";
 import { ErrorComponent } from "~/components/error-component";
 import { IconClipboard, IconDocument } from "~/components/icons";
 import { Section, SectionHeader } from "~/components/section";
@@ -22,6 +22,7 @@ import { stripe } from "~/integrations/stripe.server";
 import { handlePrismaError, serverError } from "~/lib/responses.server";
 import { toast } from "~/lib/toast.server";
 import { SessionService } from "~/services/SessionService.server";
+import { APIResponseData } from "~/types/utils";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await SessionService.requireUser(request);
@@ -167,7 +168,7 @@ export default function CoursePreview() {
             ) : nextQuiz ? (
               <CourseUpNext quiz={{ id: nextQuiz.id, numQuestions: nextQuiz.attributes.questions?.length ?? 1 }} />
             ) : (
-              <CourseUpNext lesson={lessonsInOrder[lastCompletedLessonIndex + 1]} />
+              <CourseUpNext lesson={lessonsInOrder[lastCompletedLessonIndex + 1] as LessonInOrder} />
             )}
           </div>
 
@@ -219,7 +220,7 @@ export default function CoursePreview() {
                           <div key={l.attributes.uuid} className="flex flex-wrap items-center justify-between gap-2">
                             <div className="shrink-0 grow">
                               <PreviewSectionLesson
-                                lesson={l}
+                                lesson={l as APIResponseData<"api::lesson.lesson">}
                                 userProgress={userLessonProgress}
                                 locked={isLessonLocked}
                               />
@@ -245,7 +246,7 @@ export default function CoursePreview() {
                           className="flex flex-wrap items-center justify-between gap-2"
                         >
                           <PreviewSectionQuiz
-                            quiz={section.quiz.data}
+                            quiz={section.quiz.data as APIResponseData<"api::quiz.quiz">}
                             userProgress={userQuizProgress}
                             locked={isQuizLocked}
                           />

@@ -12,8 +12,9 @@ const BlocksRenderer = lazy(() =>
 import { getStrapiImgSrcSetAndSizes, useOptionalUser } from "~/lib/utils";
 import { APIResponseData } from "~/types/utils";
 
+export type StrapiContent = StrapiResponse<APIResponseData<"api::lesson.lesson">>["data"]["attributes"]["content"];
 type Props = {
-  content: StrapiResponse<APIResponseData<"api::lesson.lesson">>["data"]["attributes"]["content"];
+  content: StrapiContent;
 };
 
 export function LessonContentRenderer({ content }: Props) {

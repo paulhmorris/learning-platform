@@ -7,7 +7,7 @@ import invariant from "tiny-invariant";
 import { z } from "zod";
 
 import { PageTitle } from "~/components/common/page-title";
-import { LessonContentRenderer } from "~/components/lesson/lesson-content-renderer";
+import { LessonContentRenderer, StrapiContent } from "~/components/lesson/lesson-content-renderer";
 import { LessonProgressBar } from "~/components/lesson/lesson-progress-bar";
 import { db } from "~/integrations/db.server";
 import { redis } from "~/integrations/redis.server";
@@ -130,7 +130,7 @@ export default function Course() {
         />
       </div>
       <div className="mt-8">
-        <LessonContentRenderer content={lesson.attributes.content} />
+        <LessonContentRenderer content={lesson.attributes.content as StrapiContent} />
       </div>
     </>
   );

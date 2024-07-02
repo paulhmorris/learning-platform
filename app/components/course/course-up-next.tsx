@@ -4,19 +4,21 @@ import { IconCameraFilled, IconClipboard, IconDocument } from "~/components/icon
 import { Button } from "~/components/ui/button";
 import { valueIsNotNullishOrZero } from "~/lib/utils";
 
+export type LessonInOrder = {
+  uuid: string;
+  slug: string;
+  title: string;
+  sectionId: number;
+  sectionTitle: string;
+  isCompleted: boolean;
+  isTimed: boolean | 0;
+  hasVideo: boolean;
+  requiredDurationInSeconds: number;
+  progressDuration: number | null;
+};
+
 type Props = {
-  lesson?: {
-    uuid: string | undefined;
-    slug: string;
-    title: string;
-    sectionId: number;
-    sectionTitle: string;
-    isCompleted: boolean;
-    isTimed: boolean | 0 | undefined;
-    hasVideo: boolean;
-    requiredDurationInSeconds: number | undefined;
-    progressDuration: number | null | undefined;
-  };
+  lesson?: LessonInOrder;
   quiz?: {
     id: number;
     numQuestions: number;

@@ -16,7 +16,7 @@ import { APIResponseData } from "~/types/utils";
 
 interface SectionLessonProps extends React.HTMLAttributes<HTMLDivElement> {
   lesson: APIResponseData<"api::lesson.lesson">;
-  userProgress: UserLessonProgress | null;
+  userProgress: Omit<UserLessonProgress, "createdAt" | "updatedAt"> | null;
   locked?: boolean;
 }
 

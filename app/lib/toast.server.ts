@@ -3,13 +3,13 @@ import { ExternalToast, ToastT } from "sonner";
 
 import { SessionService } from "~/services/SessionService.server";
 
-type Toast = ExternalToast & { type: ToastT["type"]; title: ToastT["title"] };
+export type Toast = ExternalToast & { type: ToastT["type"]; title: ToastT["title"] };
 
 export function setGlobalToast(session: Session, toast: Toast) {
   session.flash("globalMessage", toast);
 }
 
-export function getGlobalToast(session: Session): Toast | null {
+export function getGlobalToast(session: Session) {
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   return (session.get("globalMessage") as Toast) || null;
 }
