@@ -1,7 +1,6 @@
 import { Prisma } from "@prisma/client";
-import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { Link } from "@remix-run/react";
-import { redirect, typedjson, useTypedLoaderData } from "remix-typedjson";
+import { ActionFunctionArgs, LoaderFunctionArgs, json, redirect } from "@remix-run/node";
+import { Link, MetaFunction, useLoaderData } from "@remix-run/react";
 
 import { StrapiImage } from "~/components/common/strapi-image";
 import { CourseHeader } from "~/components/course/course-header";
@@ -23,7 +22,6 @@ import { stripe } from "~/integrations/stripe.server";
 import { handlePrismaError, serverError } from "~/lib/responses.server";
 import { toast } from "~/lib/toast.server";
 import { SessionService } from "~/services/SessionService.server";
-import { TypedMetaFunction } from "~/types/utils";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await SessionService.requireUser(request);
@@ -66,7 +64,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       );
     });
 
-    return typedjson({ course: course.data, progress, lessonsInOrder, quizProgress, userHasAccess });
+    return json({ course: course.data, progress, lessonsInOrder, quizProgress, userHasAccess });
   } catch (error) {
     console.error(error);
     Sentry.captureException(error);
@@ -93,12 +91,12 @@ export async function action({ request }: ActionFunctionArgs) {
   return redirect(session.url ?? "/", { status: 303 });
 }
 
-export const meta: TypedMetaFunction<typeof loader> = ({ data }) => {
+export const meta: MetaFunction<typeof loader> = ({ data }) => {
   return [{ title: `Preview | ${data?.course.attributes.title}` }];
 };
 
 export default function CoursePreview() {
-  const { course, progress, lessonsInOrder, quizProgress, userHasAccess } = useTypedLoaderData<typeof loader>();
+  const { course, progress, lessonsInOrder, quizProgress, userHasAccess } = useLoaderData<typeof loader>();
 
   const isCourseCompleted =
     lessonsInOrder.every((l) => l.isCompleted) &&

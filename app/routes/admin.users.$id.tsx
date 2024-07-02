@@ -1,5 +1,5 @@
-import { LoaderFunctionArgs } from "@remix-run/node";
-import { NavLink, Outlet } from "@remix-run/react";
+import { LoaderFunctionArgs, json } from "@remix-run/node";
+import { NavLink, Outlet, useLoaderData } from "@remix-run/react";
 import {
   IconCertificate,
   IconCircleCheckFilled,
@@ -10,7 +10,6 @@ import {
   IconUserCircle,
   IconUserScan,
 } from "@tabler/icons-react";
-import { typedjson, useTypedLoaderData } from "remix-typedjson";
 
 import { BackLink } from "~/components/common/back-link";
 import { Badge } from "~/components/ui/badge";
@@ -42,7 +41,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       const session = await stripe.identity.verificationSessions.retrieve(user.stripeVerificationSessionId);
       identityVerificationStatus = session.status;
     }
-    return typedjson({ user, identityVerificationStatus });
+    return json({ user, identityVerificationStatus });
   } catch (error) {
     console.error(error);
     Sentry.captureException(error);
@@ -51,7 +50,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function UsersIndex() {
-  const { user, identityVerificationStatus } = useTypedLoaderData<typeof loader>();
+  const { user, identityVerificationStatus } = useLoaderData<typeof loader>();
   return (
     <>
       <BackLink to="/admin/users">Back to users</BackLink>

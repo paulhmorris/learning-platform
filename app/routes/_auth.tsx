@@ -1,13 +1,12 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import { Outlet } from "@remix-run/react";
 import { Theme, useTheme } from "remix-themes";
-import { useTypedRouteLoaderData } from "remix-typedjson";
 
-import { loader } from "~/root";
+import { useRootData } from "~/hooks/useRootData";
 
 export default function AuthLayout() {
   const [theme] = useTheme();
-  const rootData = useTypedRouteLoaderData<typeof loader>("root");
+  const rootData = useRootData();
   const course = rootData?.course?.data?.attributes;
   const courseLogoUrl =
     theme === Theme.DARK ? course?.dark_mode_logo?.data?.attributes?.url : course?.logo?.data?.attributes?.url;

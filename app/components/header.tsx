@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
-import { Link, useLocation } from "@remix-run/react";
+import { Link, useLocation, useRouteLoaderData } from "@remix-run/react";
 import { Theme, useTheme } from "remix-themes";
-import { useTypedRouteLoaderData } from "remix-typedjson";
 
 import { ThemeModeToggle } from "~/components/theme-mode-toggle";
 import { UserMenu } from "~/components/user-menu";
@@ -11,7 +10,7 @@ import { loader } from "~/root";
 export function Header() {
   const [theme] = useTheme();
   const user = useOptionalUser();
-  const rootData = useTypedRouteLoaderData<typeof loader>("root");
+  const rootData = useRouteLoaderData<typeof loader>("root");
   const location = useLocation();
 
   if (["join", "login", "passwords"].includes(location.pathname.split("/")[1])) {

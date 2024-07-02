@@ -1,6 +1,6 @@
 /* eslint-disable prefer-const */
 import { Prisma } from "@prisma/client";
-import { TypedJsonResponse, redirect, typedjson } from "remix-typedjson";
+import { TypedResponse, json, redirect } from "@remix-run/node";
 
 /**
  * Create a response receiving a JSON object with the status code 201.
@@ -11,7 +11,7 @@ import { TypedJsonResponse, redirect, typedjson } from "remix-typedjson";
  * }
  */
 export function created<Data = unknown>(data: Data, init?: Omit<ResponseInit, "status">) {
-  return typedjson(data, { ...init, status: 201 });
+  return json(data, { ...init, status: 201 });
 }
 
 /**
@@ -41,7 +41,7 @@ export function redirectBack(request: Request, { fallback, ...init }: ResponseIn
  * }
  */
 export function badRequest<Data = unknown>(data: Data, init?: Omit<ResponseInit, "status">) {
-  return typedjson<Data>(data, { ...init, status: 400 });
+  return json<Data>(data, { ...init, status: 400 });
 }
 
 /**
@@ -53,7 +53,7 @@ export function badRequest<Data = unknown>(data: Data, init?: Omit<ResponseInit,
  * }
  */
 export function conflict<Data = unknown>(data: Data, init?: Omit<ResponseInit, "status">) {
-  return typedjson<Data>(data, { ...init, status: 409 });
+  return json<Data>(data, { ...init, status: 409 });
 }
 
 /**
@@ -65,7 +65,7 @@ export function conflict<Data = unknown>(data: Data, init?: Omit<ResponseInit, "
  * }
  */
 export function unauthorized<Data = unknown>(data: Data, init?: Omit<ResponseInit, "status">) {
-  return typedjson<Data>(data, { ...init, status: 401 });
+  return json<Data>(data, { ...init, status: 401 });
 }
 
 /**
@@ -77,7 +77,7 @@ export function unauthorized<Data = unknown>(data: Data, init?: Omit<ResponseIni
  * }
  */
 export function forbidden<Data = unknown>(data: Data, init?: Omit<ResponseInit, "status">) {
-  return typedjson<Data>(data, { ...init, status: 403 });
+  return json<Data>(data, { ...init, status: 403 });
 }
 
 /**
@@ -89,7 +89,7 @@ export function forbidden<Data = unknown>(data: Data, init?: Omit<ResponseInit, 
  * }
  */
 export function notFound<Data = unknown>(data: Data, init?: Omit<ResponseInit, "status">) {
-  return typedjson<Data>(data, { ...init, status: 404 });
+  return json<Data>(data, { ...init, status: 404 });
 }
 
 /**
@@ -101,7 +101,7 @@ export function notFound<Data = unknown>(data: Data, init?: Omit<ResponseInit, "
  * }
  */
 export function unprocessableEntity<Data = unknown>(data: Data, init?: Omit<ResponseInit, "status">) {
-  return typedjson<Data>(data, { ...init, status: 422 });
+  return json<Data>(data, { ...init, status: 422 });
 }
 
 /**
@@ -113,7 +113,7 @@ export function unprocessableEntity<Data = unknown>(data: Data, init?: Omit<Resp
  * }
  */
 export function serverError<Data = unknown>(data: Data, init?: Omit<ResponseInit, "status">) {
-  return typedjson<Data>(data, { ...init, status: 500 });
+  return json<Data>(data, { ...init, status: 500 });
 }
 
 /**
@@ -317,7 +317,7 @@ export function image(
   });
 }
 
-export function handlePrismaError(error: Prisma.PrismaClientKnownRequestError): TypedJsonResponse<string> {
+export function handlePrismaError(error: Prisma.PrismaClientKnownRequestError): TypedResponse<string> {
   switch (error.code) {
     case "P1000":
       throw unauthorized("Access denied.");

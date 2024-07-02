@@ -1,7 +1,6 @@
-import type { ActionFunctionArgs } from "@remix-run/node";
+import { json, type ActionFunctionArgs } from "@remix-run/node";
 import { withZod } from "@remix-validated-form/with-zod";
 import dayjs from "dayjs";
-import { typedjson } from "remix-typedjson";
 import { validationError } from "remix-validated-form";
 import { z } from "zod";
 
@@ -15,7 +14,7 @@ const validator = withZod(z.object({ email: z.string().email() }));
 
 export async function action({ request }: ActionFunctionArgs) {
   if (request.method !== "POST") {
-    return typedjson({ status: 405 });
+    return json({ status: 405 });
   }
 
   const result = await validator.validate(await request.formData());

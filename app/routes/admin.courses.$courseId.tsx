@@ -1,6 +1,7 @@
-import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
+import { Prisma } from "@prisma/client";
+import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@remix-run/node";
+import { useLoaderData } from "@remix-run/react";
 import { withZod } from "@remix-validated-form/with-zod";
-import { typedjson, useTypedLoaderData } from "remix-typedjson";
 import { ValidatedForm, validationError } from "remix-validated-form";
 import { z } from "zod";
 
@@ -11,6 +12,7 @@ import { Label } from "~/components/ui/label";
 import { SubmitButton } from "~/components/ui/submit-button";
 import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
+import { getPrismaErrorText } from "~/lib/responses.server";
 import { CheckboxSchema } from "~/lib/schemas";
 import { toast } from "~/lib/toast.server";
 import { getCoursefromCMSForRoot } from "~/models/course.server";
@@ -31,7 +33,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       title: cmsCourse.data.attributes.title,
       description: cmsCourse.data.attributes.description ?? "",
     };
-    return typedjson({ course });
+    return json({ course });
   } catch (error) {
     console.error(error);
     Sentry.captureException(error);
@@ -58,29 +60,41 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(result.error);
   }
 
-  const { host } = result.data;
   try {
     const course = await db.course.update({
       where: { id },
-      data: { host },
+      data: result.data,
     });
-    return toast.redirect(request, `/admin/courses/${course.id}`, {
-      title: "Course updated successfully.",
-      type: "success",
-    });
+    return toast.json(
+      request,
+      { course },
+      {
+        title: "Course updated successfully.",
+        type: "success",
+      },
+    );
   } catch (error) {
     console.error(error);
     Sentry.captureException(error);
-    return toast.redirect(request, `/admin/courses/${id}`, {
-      title: "An error occurred while updating the course.",
-      description: error instanceof Error ? error.message : undefined,
-      type: "error",
-    });
+    let message = error instanceof Error ? error.message : "An error occurred while updating the course.";
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      message = getPrismaErrorText(error);
+    }
+    return toast.json(
+      request,
+      { ok: false },
+      {
+        title: "Error.",
+        description: message,
+        type: "error",
+      },
+      { status: 500 },
+    );
   }
 }
 
 export default function AdminEditCourse() {
-  const { course } = useTypedLoaderData<typeof loader>();
+  const { course } = useLoaderData<typeof loader>();
 
   return (
     <div>

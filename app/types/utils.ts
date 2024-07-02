@@ -1,27 +1,4 @@
-/* eslint-disable @typescript-eslint/ban-types */
-import type {
-  LoaderFunctionArgs,
-  SerializeFrom,
-  ServerRuntimeMetaArgs,
-  ServerRuntimeMetaDescriptor,
-} from "@remix-run/server-runtime";
 import type { Attribute, Common, Utils } from "@strapi/strapi";
-import { TypedJsonResponse, UseDataFunctionReturn } from "remix-typedjson";
-
-// Missing from remix-typedjson
-type TypedLoaderFunction = (args: LoaderFunctionArgs) => Promise<TypedJsonResponse>;
-export type TypedMetaFunction<
-  Loader extends TypedLoaderFunction,
-  ParentsLoaders extends Record<string, TypedLoaderFunction> = {},
-> = (
-  args: Omit<ServerRuntimeMetaArgs, "data"> & {
-    data: SerializeFrom<PromiseReturnType<PromiseReturnType<Loader>["typedjson"]>> | undefined;
-    parentsData: {
-      [k in keyof ParentsLoaders]: UseDataFunctionReturn<ParentsLoaders[k]>;
-    };
-  },
-) => Array<ServerRuntimeMetaDescriptor>;
-type PromiseReturnType<T extends (...arguments_: any) => Promise<any>> = Awaited<Promise<ReturnType<T>>>;
 
 // Utilities for Strapi
 type IDProperty = { id: number };

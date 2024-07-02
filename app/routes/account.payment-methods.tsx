@@ -1,9 +1,8 @@
-import { LoaderFunctionArgs } from "@remix-run/node";
-import { Outlet } from "@remix-run/react";
+import { LoaderFunctionArgs, MetaFunction, json } from "@remix-run/node";
+import { Outlet, useLoaderData } from "@remix-run/react";
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import { Theme, useTheme } from "remix-themes";
-import { typedjson, useTypedLoaderData } from "remix-typedjson";
 
 import { ErrorComponent } from "~/components/error-component";
 import { db } from "~/integrations/db.server";
@@ -12,13 +11,11 @@ import { stripe } from "~/integrations/stripe.server";
 import { serverError } from "~/lib/responses.server";
 import { loader as rootLoader } from "~/root";
 import { SessionService } from "~/services/SessionService.server";
-import { TypedMetaFunction } from "~/types/utils";
 
-export const meta: TypedMetaFunction<typeof loader, { root: typeof rootLoader }> = ({ matches }) => {
-  // @ts-expect-error typed meta funtion doesn't support this yet
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+export const meta: MetaFunction<typeof loader, { root: typeof rootLoader }> = ({ matches }) => {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   const match = matches.find((m) => m.id === "root")?.data.course;
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   return [{ title: `Payment Methods | ${match?.data?.attributes.title ?? "Plumb Media & Education"}` }];
 };
 
@@ -47,7 +44,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       customer: user.stripeId ?? undefined,
     });
 
-    return typedjson({ clientSecret: setupIntent.client_secret ?? undefined });
+    return json({ clientSecret: setupIntent.client_secret ?? undefined });
   } catch (error) {
     console.error(error);
     Sentry.captureException(error);
@@ -58,7 +55,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 const stripePromise = typeof window !== "undefined" ? loadStripe(window.ENV.STRIPE_PUBLIC_KEY) : null;
 
 export default function PaymentMethodsLayout() {
-  const { clientSecret } = useTypedLoaderData<typeof loader>();
+  const { clientSecret } = useLoaderData<typeof loader>();
   const [theme] = useTheme();
 
   return (

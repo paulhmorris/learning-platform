@@ -1,6 +1,6 @@
 import { ActionFunctionArgs, MetaFunction } from "@remix-run/node";
+import { useRouteLoaderData } from "@remix-run/react";
 import { withZod } from "@remix-validated-form/with-zod";
-import { useTypedRouteLoaderData } from "remix-typedjson";
 import { ValidatedForm, validationError } from "remix-validated-form";
 import { z } from "zod";
 
@@ -66,7 +66,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function AdminUserIndex() {
-  const userData = useTypedRouteLoaderData<typeof loader>("routes/admin.users.$id");
+  const userData = useRouteLoaderData<typeof loader>("routes/admin.users.$id");
 
   if (!userData) {
     throw new Error("User not found.");

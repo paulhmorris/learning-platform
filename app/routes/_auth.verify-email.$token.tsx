@@ -1,6 +1,5 @@
-import { LoaderFunctionArgs } from "@remix-run/node";
+import { LoaderFunctionArgs, json } from "@remix-run/node";
 import { Link } from "@remix-run/react";
-import { typedjson } from "remix-typedjson";
 
 import { PageTitle } from "~/components/common/page-title";
 import { db } from "~/integrations/db.server";
@@ -39,7 +38,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       }),
     ]);
 
-    return typedjson({ success: true });
+    return json({ success: true });
   } catch (error) {
     console.error(error);
     Sentry.captureException(error);

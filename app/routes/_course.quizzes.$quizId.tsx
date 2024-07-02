@@ -1,8 +1,7 @@
 import { Prisma } from "@prisma/client";
-import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { Form, Link } from "@remix-run/react";
+import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@remix-run/node";
+import { Form, Link, MetaFunction, useActionData, useLoaderData } from "@remix-run/react";
 import { useEffect, useRef } from "react";
-import { typedjson, useTypedActionData, useTypedLoaderData } from "remix-typedjson";
 import invariant from "tiny-invariant";
 
 import { PageTitle } from "~/components/common/page-title";
@@ -19,7 +18,7 @@ import { toast } from "~/lib/toast.server";
 import { cn } from "~/lib/utils";
 import { loader as courseLoader } from "~/routes/_course";
 import { SessionService } from "~/services/SessionService.server";
-import { APIResponseData, TypedMetaFunction } from "~/types/utils";
+import { APIResponseData } from "~/types/utils";
 
 export async function loader({ params, request }: LoaderFunctionArgs) {
   const userId = await SessionService.requireUserId(request);
@@ -55,7 +54,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
       },
     });
 
-    return typedjson({ quiz: quiz.data, progress });
+    return json({ quiz: quiz.data, progress });
   } catch (error) {
     console.error(error);
     Sentry.captureException(error);
@@ -159,7 +158,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       });
     }
 
-    return typedjson({
+    return json({
       score,
       passed,
       userAnswers,
@@ -175,21 +174,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 }
 
-export const meta: TypedMetaFunction<typeof loader, { "routes/_course": typeof courseLoader }> = ({
-  data,
-  matches,
-}) => {
-  // @ts-expect-error typed meta funtion doesn't support this yet
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+export const meta: MetaFunction<typeof loader, { "routes/_course": typeof courseLoader }> = ({ data, matches }) => {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   const match = matches.find((m) => m.id === "routes/_course")?.data.course;
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
   return [{ title: `${data?.quiz.attributes.title} | ${match?.attributes.title}` }];
 };
 
 export default function Quiz() {
   const { course, lessonsInOrder } = useCourseData();
-  const { quiz, progress } = useTypedLoaderData<typeof loader>();
-  const actionData = useTypedActionData<typeof action>();
+  const { quiz, progress } = useLoaderData<typeof loader>();
+  const actionData = useActionData<typeof action>();
   const resultsRef = useRef<HTMLDivElement>(null);
 
   // Scroll to results quiz is submitted

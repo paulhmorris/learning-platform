@@ -1,6 +1,5 @@
-import { useFetchers } from "@remix-run/react";
+import { useFetcher, useFetchers } from "@remix-run/react";
 import { IconLoader } from "@tabler/icons-react";
-import { useTypedFetcher } from "remix-typedjson";
 
 import { AdminButton } from "~/components/ui/admin-button";
 import { loader } from "~/routes/admin.users.$id.courses.$courseId";
@@ -9,7 +8,7 @@ export function LessonResetForm(props: {
   lesson: { id: number; attributes: { required_duration_in_seconds?: number } };
   progress: { durationInSeconds: number | null } | undefined;
 }) {
-  const fetcher = useTypedFetcher<typeof loader>();
+  const fetcher = useFetcher<typeof loader>();
   const fetchers = useFetchers();
 
   const { lesson } = props;

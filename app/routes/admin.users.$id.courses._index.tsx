@@ -1,6 +1,5 @@
-import { LoaderFunctionArgs } from "@remix-run/node";
-import { Link, MetaFunction } from "@remix-run/react";
-import { typedjson, useTypedLoaderData } from "remix-typedjson";
+import { LoaderFunctionArgs, json } from "@remix-run/node";
+import { Link, MetaFunction, useLoaderData } from "@remix-run/react";
 
 import { ErrorComponent } from "~/components/error-component";
 import { Button } from "~/components/ui/button";
@@ -47,11 +46,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     };
   });
 
-  return typedjson({ user, courses });
+  return json({ user, courses });
 }
 
 export default function AdminUserCourses() {
-  const { user, courses } = useTypedLoaderData<typeof loader>();
+  const { user, courses } = useLoaderData<typeof loader>();
   return (
     <>
       <h1 className="sr-only">Courses</h1>
@@ -69,7 +68,7 @@ export default function AdminUserCourses() {
               </CardHeader>
               <CardFooter>
                 <Button variant="admin" asChild className="w-auto">
-                  <Link to={`/admin/users/${user.id}/courses/${course.id}`}>Adjust Progress</Link>
+                  <Link to={`/admin/users/${user.id}/courses/${course.id}`}>View Progress</Link>
                 </Button>
               </CardFooter>
             </Card>

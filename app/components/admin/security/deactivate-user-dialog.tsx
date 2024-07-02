@@ -1,6 +1,6 @@
+import { useFetcher } from "@remix-run/react";
 import { IconLoader } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
-import { useTypedFetcher } from "remix-typedjson";
 
 import { AdminButton } from "~/components/ui/admin-button";
 import {
@@ -15,7 +15,7 @@ import {
 import { action } from "~/routes/admin.users.$id.courses.$courseId";
 
 export function DeactivateUserDialog() {
-  const fetcher = useTypedFetcher<typeof action>();
+  const fetcher = useFetcher<typeof action>();
   const isSubmitting = fetcher.state === "submitting" || fetcher.state === "loading";
   const [deactivateUserModalOpen, setDeactivateUserModalOpen] = useState(false);
 

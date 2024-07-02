@@ -1,4 +1,3 @@
-/* eslint-disable import/namespace */
 import { RemixBrowser, useLocation, useMatches } from "@remix-run/react";
 import { StrictMode, startTransition, useEffect } from "react";
 import { hydrateRoot } from "react-dom/client";

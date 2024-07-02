@@ -45,6 +45,16 @@ async function seed() {
     },
   });
 
+  await prisma.course.create({
+    data: {
+      strapiId: 1,
+      stripePriceId: "price_1PP9UMJWTi6PPwsmDAPQTHvh",
+      stripeProductId: "prod_QFenLoxmawFmBo",
+      host: "localhost:3000",
+      requiresIdentityVerification: true,
+    },
+  });
+
   console.log(`Database has been seeded. 🌱`);
 }
 

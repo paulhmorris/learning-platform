@@ -1,8 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
-import { LoaderFunctionArgs } from "@remix-run/node";
+import { LoaderFunctionArgs, json } from "@remix-run/node";
 import { Outlet, useParams } from "@remix-run/react";
 import { useState } from "react";
-import { typedjson } from "remix-typedjson";
 import { useIsClient, useMediaQuery } from "usehooks-ts";
 
 import { BackLink } from "~/components/common/back-link";
@@ -87,7 +86,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       );
     });
 
-    return typedjson({ course: course.data, progress, lessonsInOrder, quizProgress });
+    return json({ course: course.data, progress, lessonsInOrder, quizProgress });
   } catch (error) {
     console.error(error);
     Sentry.captureException(error);

@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client";
-import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
+import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@remix-run/node";
+import { MetaFunction, useLoaderData } from "@remix-run/react";
 import { withZod } from "@remix-validated-form/with-zod";
-import { typedjson, useTypedLoaderData } from "remix-typedjson";
 import { validationError } from "remix-validated-form";
 import invariant from "tiny-invariant";
 import { z } from "zod";
@@ -22,7 +22,6 @@ import {
 } from "~/models/lesson.server";
 import { loader as courseLoader } from "~/routes/_course";
 import { SessionService } from "~/services/SessionService.server";
-import { TypedMetaFunction } from "~/types/utils";
 
 const validator = withZod(
   z.object({
@@ -41,7 +40,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   try {
     const lesson = await getLessonBySlugWithContent(lessonSlug);
     const progress = await getUserLessonProgress(userId, lesson.id);
-    return typedjson({ lesson, progress });
+    return json({ lesson, progress });
   } catch (error) {
     console.error(error);
     Sentry.captureException(error);
@@ -64,7 +63,7 @@ export async function action({ request }: ActionFunctionArgs) {
     const duration = await getLessonDuration(lessonId);
     // Lessons without required durations
     if (!duration) {
-      return typedjson({ progress: null });
+      return json({ progress: null });
     }
 
     const progress = await getUserLessonProgress(userId, lessonId);
@@ -104,7 +103,7 @@ export async function action({ request }: ActionFunctionArgs) {
     });
     await redis.set(`user-lesson-progress:${userId}:${lessonId}`, currentProgress, { ex: 12 });
 
-    return typedjson({ progress: currentProgress });
+    return json({ progress: currentProgress });
   } catch (error) {
     console.error(error);
     Sentry.captureException(error);
@@ -112,19 +111,14 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 }
 
-export const meta: TypedMetaFunction<typeof loader, { "routes/_course": typeof courseLoader }> = ({
-  data,
-  matches,
-}) => {
-  // @ts-expect-error typed meta funtion not supporting this yet
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+export const meta: MetaFunction<typeof loader, { "routes/_course": typeof courseLoader }> = ({ data, matches }) => {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   const match = matches.find((m) => m.id === "routes/_course")?.data.course;
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
   return [{ title: `${data?.lesson.attributes.title} | ${match?.attributes.title}` }];
 };
 
 export default function Course() {
-  const { lesson, progress } = useTypedLoaderData<typeof loader>();
+  const { lesson, progress } = useLoaderData<typeof loader>();
 
   return (
     <>

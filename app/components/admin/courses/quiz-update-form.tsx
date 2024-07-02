@@ -1,13 +1,12 @@
-import { useFetchers } from "@remix-run/react";
+import { useFetcher, useFetchers } from "@remix-run/react";
 import { IconLoader } from "@tabler/icons-react";
-import { useTypedFetcher } from "remix-typedjson";
 
 import { AdminButton } from "~/components/ui/admin-button";
 import { Input } from "~/components/ui/input";
 import { loader } from "~/routes/admin.users.$id.courses.$courseId";
 
 export function QuizUpdateForm(props: { quiz: { id: number; attributes: { passing_score: number } } }) {
-  const fetcher = useTypedFetcher<typeof loader>();
+  const fetcher = useFetcher<typeof loader>();
   const fetchers = useFetchers();
 
   const { quiz } = props;

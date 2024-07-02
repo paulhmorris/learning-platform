@@ -1,6 +1,5 @@
-import { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
-import { Link } from "@remix-run/react";
-import { typedjson, useTypedLoaderData } from "remix-typedjson";
+import { LoaderFunctionArgs, MetaFunction, json } from "@remix-run/node";
+import { Link, useLoaderData } from "@remix-run/react";
 
 import { AdminButton } from "~/components/ui/admin-button";
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "~/components/ui/card";
@@ -19,7 +18,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   try {
     const dbCourses = await db.course.findMany({ include: { userCourses: true } });
     if (!dbCourses.length) {
-      return typedjson({ courses: [] });
+      return json({ courses: [] });
     }
 
     const cmsCourses = await getAllCourses();
@@ -35,7 +34,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         description: cmsCourse?.attributes.description ?? "",
       };
     });
-    return typedjson({ courses });
+    return json({ courses });
   } catch (error) {
     console.error(error);
     Sentry.captureException(error);
@@ -44,7 +43,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function CoursesIndex() {
-  const { courses } = useTypedLoaderData<typeof loader>();
+  const { courses } = useLoaderData<typeof loader>();
 
   return (
     <ul className="max-w-screen-sm">

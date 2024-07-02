@@ -1,10 +1,9 @@
-import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { useRevalidator } from "@remix-run/react";
+import { ActionFunctionArgs, LoaderFunctionArgs, MetaFunction, json } from "@remix-run/node";
+import { useLoaderData, useRevalidator } from "@remix-run/react";
 import { withZod } from "@remix-validated-form/with-zod";
 import { Stripe, loadStripe } from "@stripe/stripe-js";
 import { IconExclamationCircle } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
-import { typedjson, useTypedLoaderData } from "remix-typedjson";
 import { ValidatedForm, validationError } from "remix-validated-form";
 import { toast as clientToast } from "sonner";
 import { z } from "zod";
@@ -21,7 +20,6 @@ import { toast } from "~/lib/toast.server";
 import { useUser } from "~/lib/utils";
 import { loader as rootLoader } from "~/root";
 import { SessionService } from "~/services/SessionService.server";
-import { TypedMetaFunction } from "~/types/utils";
 
 const validator = withZod(
   z.object({
@@ -41,14 +39,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
     identityVerificationStatus = session.status;
   }
 
-  return typedjson({ identityVerificationStatus });
+  return json({ identityVerificationStatus });
 }
 
-export const meta: TypedMetaFunction<typeof loader, { root: typeof rootLoader }> = ({ matches }) => {
-  // @ts-expect-error typed meta funtion doesn't support this yet
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+export const meta: MetaFunction<typeof loader, { root: typeof rootLoader }> = ({ matches }) => {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   const match = matches.find((m) => m.id === "root")?.data.course;
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   return [{ title: `Profile | ${match?.data?.attributes.title ?? "Plumb Media & Education"}` }];
 };
 
@@ -110,7 +107,7 @@ const stripePromise = typeof window !== "undefined" ? loadStripe(window.ENV.STRI
 export default function AccountProfile() {
   const user = useUser();
   const revalidator = useRevalidator();
-  const { identityVerificationStatus } = useTypedLoaderData<typeof loader>();
+  const { identityVerificationStatus } = useLoaderData<typeof loader>();
   const [stripe, setStripe] = useState<Stripe | null>(null);
 
   useEffect(() => {

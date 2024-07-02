@@ -1,15 +1,13 @@
 import { Prisma } from "@prisma/client";
-import { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
-import { Link } from "@remix-run/react";
+import { LoaderFunctionArgs, MetaFunction, json } from "@remix-run/node";
+import { Link, useLoaderData } from "@remix-run/react";
 import { ColumnDef } from "@tanstack/react-table";
-import { typedjson, useTypedLoaderData } from "remix-typedjson";
 
 import { DataTable } from "~/components/ui/data-table/data-table";
 import { DataTableColumnHeader } from "~/components/ui/data-table/data-table-column-header";
 import { Facet } from "~/components/ui/data-table/data-table-toolbar";
 import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
-import { cn } from "~/lib/utils";
 import { SessionService } from "~/services/SessionService.server";
 
 export const meta: MetaFunction = () => {
@@ -20,8 +18,20 @@ export async function loader({ request }: LoaderFunctionArgs) {
   await SessionService.requireAdmin(request);
 
   try {
-    const users = await db.user.findMany({ include: { courses: true } });
-    return typedjson({ users });
+    const users = await db.user.findMany({
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        phone: true,
+        role: true,
+        courses: {
+          select: { id: true },
+        },
+      },
+    });
+    return json({ users });
   } catch (error) {
     console.error(error);
     Sentry.captureException(error);
@@ -30,7 +40,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function UsersIndex() {
-  const { users } = useTypedLoaderData<typeof loader>();
+  const { users } = useLoaderData<typeof loader>();
 
   return (
     <div>
@@ -39,7 +49,19 @@ export default function UsersIndex() {
   );
 }
 
-type User = Prisma.UserGetPayload<{ include: { courses: true } }>;
+type User = Prisma.UserGetPayload<{
+  select: {
+    id: true;
+    firstName: true;
+    lastName: true;
+    email: true;
+    phone: true;
+    role: true;
+    courses: {
+      select: { id: true };
+    };
+  };
+}>;
 const columns: Array<ColumnDef<User>> = [
   {
     accessorKey: "name",
@@ -93,25 +115,6 @@ const columns: Array<ColumnDef<User>> = [
     enableColumnFilter: false,
   },
   {
-    accessorKey: "isEmailVerified",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Verified" />,
-    cell: ({ row }) => {
-      return (
-        <div className="max-w-[100px]">
-          <span
-            className={cn(
-              "max-w-[500px] truncate font-medium capitalize",
-              !row.getValue("isEmailVerified") ? "text-destructive" : "",
-            )}
-          >
-            {row.getValue("isEmailVerified") === true ? "yes" : "no"}
-          </span>
-        </div>
-      );
-    },
-    enableColumnFilter: false,
-  },
-  {
     accessorKey: "courses",
     accessorFn: (row) => `${row.courses.length}`,
     header: ({ column }) => <DataTableColumnHeader column={column} title="Courses" />,
@@ -128,7 +131,7 @@ const columns: Array<ColumnDef<User>> = [
 
 const facets: Array<Facet> = [
   {
-    columnId: "isEmailVerified",
-    title: "Verified",
+    columnId: "role",
+    title: "Role",
   },
 ];

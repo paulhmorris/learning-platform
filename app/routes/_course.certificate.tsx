@@ -1,7 +1,6 @@
-import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { Link } from "@remix-run/react";
+import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@remix-run/node";
+import { Link, MetaFunction, useActionData, useLoaderData } from "@remix-run/react";
 import { withZod } from "@remix-validated-form/with-zod";
-import { typedjson, useTypedActionData, useTypedLoaderData } from "remix-typedjson";
 import { ValidatedForm } from "remix-validated-form";
 import { z } from "zod";
 
@@ -16,7 +15,7 @@ import { toast } from "~/lib/toast.server";
 import { useUser } from "~/lib/utils";
 import { loader as courseLoader } from "~/routes/_course";
 import { SessionService } from "~/services/SessionService.server";
-import { APIResponseData, TypedMetaFunction } from "~/types/utils";
+import { APIResponseData } from "~/types/utils";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await SessionService.requireUser(request);
@@ -46,7 +45,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       completedAt: true,
     },
   });
-  return typedjson({ userCourse, course: linkedCourse });
+  return json({ userCourse, course: linkedCourse });
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -163,17 +162,15 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 }
 
-export const meta: TypedMetaFunction<typeof loader, { "routes/_course": typeof courseLoader }> = ({ matches }) => {
-  // @ts-expect-error typed meta funtion not supporting this yet
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+export const meta: MetaFunction<typeof loader, { "routes/_course": typeof courseLoader }> = ({ matches }) => {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   const match = matches.find((m) => m.id === "routes/_course")?.data.course;
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
   return [{ title: `Certificate | ${match?.attributes.title}` }];
 };
 
 export default function CourseCertificate() {
-  const { userCourse, course } = useTypedLoaderData<typeof loader>();
-  const actionData = useTypedActionData<typeof action>();
+  const { userCourse, course } = useLoaderData<typeof loader>();
+  const actionData = useActionData<typeof action>();
   const data = useCourseData();
   const user = useUser();
 

@@ -1,5 +1,4 @@
-import type { LoaderFunctionArgs } from "@remix-run/node";
-import { redirect } from "remix-typedjson";
+import { redirect, type LoaderFunctionArgs } from "@remix-run/node";
 
 import { SessionService } from "~/services/SessionService.server";
 

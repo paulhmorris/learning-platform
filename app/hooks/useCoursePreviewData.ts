@@ -1,13 +1,12 @@
-import { useNavigate } from "@remix-run/react";
+import { useNavigate, useRouteLoaderData } from "@remix-run/react";
 import { useEffect } from "react";
-import { useTypedRouteLoaderData } from "remix-typedjson";
 import { toast } from "sonner";
 
 import { loader } from "~/routes/preview";
 
 export function useCoursePreviewData() {
   const navigate = useNavigate();
-  const data = useTypedRouteLoaderData<typeof loader>("routes/preview");
+  const data = useRouteLoaderData<typeof loader>("routes/preview");
 
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
@@ -19,5 +18,5 @@ export function useCoursePreviewData() {
     }
   }, [data, navigate]);
 
-  return data as NonNullable<typeof data>;
+  return data;
 }

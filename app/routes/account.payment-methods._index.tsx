@@ -1,9 +1,8 @@
-import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { Link, useFetcher, useSearchParams } from "@remix-run/react";
+import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@remix-run/node";
+import { Link, MetaFunction, useFetcher, useLoaderData, useSearchParams } from "@remix-run/react";
 import { useStripe } from "@stripe/react-stripe-js";
 import { IconLoader, IconPlus } from "@tabler/icons-react";
 import { useEffect } from "react";
-import { typedjson, useTypedLoaderData } from "remix-typedjson";
 import { toast as clientToast } from "sonner";
 
 import { ErrorComponent } from "~/components/error-component";
@@ -16,7 +15,6 @@ import { serverError } from "~/lib/responses.server";
 import { toast } from "~/lib/toast.server";
 import { loader as rootLoader } from "~/root";
 import { SessionService } from "~/services/SessionService.server";
-import { TypedMetaFunction } from "~/types/utils";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await SessionService.requireUser(request);
@@ -34,7 +32,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       where: { id: user.id },
       data: { stripeId: stripeCustomer.id },
     });
-    return typedjson({ methods: null, stripeCustomer });
+    return json({ methods: null, stripeCustomer });
   }
 
   const methods = await stripe.customers.listPaymentMethods(user.stripeId);
@@ -45,7 +43,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     throw serverError("Error retrieving payment methods. Please contact support.");
   }
 
-  return typedjson({ methods, stripeCustomer });
+  return json({ methods, stripeCustomer });
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -100,18 +98,17 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 }
 
-export const meta: TypedMetaFunction<typeof loader, { root: typeof rootLoader }> = ({ matches }) => {
-  // @ts-expect-error typed meta funtion doesn't support this yet
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+export const meta: MetaFunction<typeof loader, { root: typeof rootLoader }> = ({ matches }) => {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   const match = matches.find((m) => m.id === "root")?.data.course;
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   return [{ title: `Payment Methods | ${match?.data?.attributes.title ?? "Plumb Media & Education"}` }];
 };
 
 export default function PaymentMethodsIndex() {
   const fetcher = useFetcher();
   const stripe = useStripe();
-  const { methods, stripeCustomer } = useTypedLoaderData<typeof loader>();
+  const { methods, stripeCustomer } = useLoaderData<typeof loader>();
   const [searchParams] = useSearchParams();
 
   const isBusy = fetcher.state !== "idle";

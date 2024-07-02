@@ -1,6 +1,6 @@
-import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
+import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@remix-run/node";
+import { MetaFunction } from "@remix-run/react";
 import { withZod } from "@remix-validated-form/with-zod";
-import { typedjson } from "remix-typedjson";
 import { ValidatedForm, validationError } from "remix-validated-form";
 import { z } from "zod";
 
@@ -15,7 +15,6 @@ import { verifyLogin } from "~/models/user.server";
 import { loader as rootLoader } from "~/root";
 import { PasswordService } from "~/services/PasswordService.server";
 import { SessionService } from "~/services/SessionService.server";
-import { TypedMetaFunction } from "~/types/utils";
 
 const validator = withZod(
   z
@@ -42,17 +41,17 @@ const validator = withZod(
     }),
 );
 
-export const meta: TypedMetaFunction<typeof loader, { root: typeof rootLoader }> = ({ matches }) => {
-  // @ts-expect-error typed meta funtion doesn't support this yet
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+export const meta: MetaFunction<typeof loader, { root: typeof rootLoader }> = ({ matches }) => {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   const match = matches.find((m) => m.id === "root")?.data.course;
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   return [{ title: `Password | ${match?.data?.attributes.title ?? "Plumb Media & Education"}` }];
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await SessionService.requireUserId(request);
-  return typedjson({});
+  return json({});
 }
 
 export async function action({ request }: ActionFunctionArgs) {

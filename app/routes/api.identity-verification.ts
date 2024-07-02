@@ -1,6 +1,5 @@
 import { Prisma, User } from "@prisma/client";
-import { ActionFunctionArgs } from "@remix-run/node";
-import { json } from "@vercel/remix";
+import { ActionFunctionArgs, json } from "@remix-run/node";
 
 import { db } from "~/integrations/db.server";
 import { EmailService } from "~/integrations/email.server";

@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client";
-import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
+import { ActionFunctionArgs, LoaderFunctionArgs, json, redirect } from "@remix-run/node";
+import { MetaFunction, useActionData } from "@remix-run/react";
 import { withZod } from "@remix-validated-form/with-zod";
-import { redirect, typedjson, useTypedActionData } from "remix-typedjson";
 import { ValidatedForm, validationError } from "remix-validated-form";
 import { z } from "zod";
 
@@ -15,7 +15,6 @@ import { toast } from "~/lib/toast.server";
 import { loader as rootLoader } from "~/root";
 import { PasswordService } from "~/services/PasswordService.server";
 import { SessionService } from "~/services/SessionService.server";
-import { TypedMetaFunction } from "~/types/utils";
 
 const validator = withZod(z.object({ email: z.string().email() }));
 
@@ -24,7 +23,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   if (userId) {
     throw redirect("/");
   }
-  return typedjson({});
+  return json({});
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -36,7 +35,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   try {
     const reset = await PasswordService.generateReset(result.data.email);
     await EmailService.sendPasswordReset({ email: result.data.email, token: reset.token });
-    return typedjson({ success: true });
+    return json({ success: true });
   } catch (error) {
     // If the user doesn't exist, we don't want to leak that information
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
@@ -44,7 +43,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         extra: { email: result.data.email },
       });
 
-      return typedjson({ success: true });
+      return json({ success: true });
     }
 
     Sentry.captureException(error);
@@ -56,17 +55,16 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   }
 };
 
-export const meta: TypedMetaFunction<typeof loader, { root: typeof rootLoader }> = ({ matches }) => {
-  // @ts-expect-error typed meta funtion doesn't support this yet
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+export const meta: MetaFunction<typeof loader, { root: typeof rootLoader }> = ({ matches }) => {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   const match = matches.find((m) => m.id === "root")?.data.course;
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   return [{ title: `Reset Your Password | ${match?.data?.attributes.title}` }];
 };
 
 export default function ResetPassword() {
   // remix-validated-form validationError breaks inference
-  const data = useTypedActionData() as { success?: boolean } | undefined;
+  const data = useActionData() as { success?: boolean } | undefined;
 
   return (
     <>

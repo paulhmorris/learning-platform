@@ -1,12 +1,10 @@
 import { vitePlugin as remix } from "@remix-run/dev";
 import { installGlobals } from "@remix-run/node";
 import { sentryVitePlugin } from "@sentry/vite-plugin";
-import { vercelPreset } from "@vercel/remix/vite";
 import morgan from "morgan";
 import { ViteDevServer, defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
-const isVercel = !!process.env.VERCEL;
 const isCI = !!process.env.CI;
 
 installGlobals();
@@ -24,7 +22,6 @@ export default defineConfig({
     morganPlugin(),
     tsconfigPaths(),
     remix({
-      ...(isVercel && { presets: [vercelPreset()] }),
       ignoredRouteFiles: ["**/.*", "**/*.test.{ts,tsx}"],
     }),
     isCI &&

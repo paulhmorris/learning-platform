@@ -1,8 +1,7 @@
 import type { LinksFunction, LoaderFunctionArgs } from "@remix-run/node";
-import { Links, Meta, Outlet, Scripts, ScrollRestoration, useRouteError } from "@remix-run/react";
+import { Links, Meta, Outlet, Scripts, ScrollRestoration, json, useLoaderData, useRouteError } from "@remix-run/react";
 import { captureRemixErrorBoundaryError, withSentry } from "@sentry/remix";
 import { PreventFlashOnWrongTheme, ThemeProvider, useTheme } from "remix-themes";
-import { typedjson, useTypedLoaderData } from "remix-typedjson";
 
 import "@fontsource-variable/inter/wght.css";
 import { ErrorComponent } from "~/components/error-component";
@@ -48,7 +47,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         level: "warning",
         user: user ? { username: user.email, id: user.id, email: user.email } : undefined,
       });
-      return typedjson(defaultResponse, {
+      return json(defaultResponse, {
         headers: {
           "Set-Cookie": await SessionService.commitSession(session),
         },
@@ -57,7 +56,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
     const course = await getCoursefromCMSForRoot(linkedCourse.strapiId);
 
-    return typedjson(
+    return json(
       { ...defaultResponse, course },
       {
         headers: {
@@ -78,7 +77,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 function AppWithProviders() {
-  const { theme } = useTypedLoaderData<typeof loader>();
+  const { theme } = useLoaderData<typeof loader>();
   return (
     <ThemeProvider specifiedTheme={theme} themeAction="/set-theme">
       <App />
@@ -87,7 +86,7 @@ function AppWithProviders() {
 }
 
 function App() {
-  const data = useTypedLoaderData<typeof loader>();
+  const data = useLoaderData<typeof loader>();
   const [theme] = useTheme();
 
   return (

@@ -1,6 +1,6 @@
-import { LoaderFunctionArgs } from "@remix-run/node";
+import { LoaderFunctionArgs, json } from "@remix-run/node";
+import { MetaFunction, useLoaderData } from "@remix-run/react";
 import dayjs from "dayjs";
-import { typedjson, useTypedLoaderData } from "remix-typedjson";
 
 import { ErrorComponent } from "~/components/error-component";
 import { IconCertificate } from "~/components/icons";
@@ -10,13 +10,11 @@ import { db } from "~/integrations/db.server";
 import { getAllCourses } from "~/models/course.server";
 import { loader as rootLoader } from "~/root";
 import { SessionService } from "~/services/SessionService.server";
-import { TypedMetaFunction } from "~/types/utils";
 
-export const meta: TypedMetaFunction<typeof loader, { root: typeof rootLoader }> = ({ matches }) => {
-  // @ts-expect-error typed meta funtion doesn't support this yet
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+export const meta: MetaFunction<typeof loader, { root: typeof rootLoader }> = ({ matches }) => {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   const match = matches.find((m) => m.id === "root")?.data.course;
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   return [{ title: `Profile | ${match?.data?.attributes.title ?? "Plumb Media & Education"}` }];
 };
 
@@ -42,11 +40,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
     };
   });
 
-  return typedjson({ courses, userCourses });
+  return json({ courses, userCourses });
 }
 
 export default function AccountCourses() {
-  const { courses, userCourses } = useTypedLoaderData<typeof loader>();
+  const { courses, userCourses } = useLoaderData<typeof loader>();
 
   return (
     <>

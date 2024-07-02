@@ -1,8 +1,7 @@
-import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { MetaFunction, useFetcher } from "@remix-run/react";
+import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@remix-run/node";
+import { MetaFunction, useFetcher, useLoaderData, useRouteLoaderData } from "@remix-run/react";
 import { withZod } from "@remix-validated-form/with-zod";
 import dayjs from "dayjs";
-import { typedjson, useTypedLoaderData, useTypedRouteLoaderData } from "remix-typedjson";
 import { validationError } from "remix-validated-form";
 import { z } from "zod";
 
@@ -43,7 +42,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         },
       },
     });
-    return typedjson({ user });
+    return json({ user });
   } catch (error) {
     console.error(error);
     Sentry.captureException(error);
@@ -137,8 +136,8 @@ export const meta: MetaFunction = () => {
 };
 
 export default function AdminUserSecurity() {
-  const layoutData = useTypedRouteLoaderData<typeof userLayoutLoader>("routes/admin.users.$id");
-  const { user } = useTypedLoaderData<typeof loader>();
+  const layoutData = useRouteLoaderData<typeof userLayoutLoader>("routes/admin.users.$id");
+  const { user } = useLoaderData<typeof loader>();
   const fetcher = useFetcher();
 
   return (

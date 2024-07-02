@@ -1,11 +1,11 @@
 import { useEffect } from "react";
-import { useTypedRouteLoaderData } from "remix-typedjson";
 import { Toaster, toast } from "sonner";
 
-import { loader } from "~/root";
+import { useRootData } from "~/hooks/useRootData";
 
 export function Notifications() {
-  const data = useTypedRouteLoaderData<typeof loader>("root");
+  const data = useRootData();
+
   useEffect(() => {
     if (!data?.serverToast) return;
     const { title, type, ...rest } = data.serverToast;

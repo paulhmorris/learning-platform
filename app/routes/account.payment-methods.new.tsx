@@ -1,24 +1,21 @@
-import { LoaderFunctionArgs } from "@remix-run/node";
-import { Link } from "@remix-run/react";
+import { LoaderFunctionArgs, json } from "@remix-run/node";
+import { Link, MetaFunction } from "@remix-run/react";
 import { IconArrowLeft } from "@tabler/icons-react";
-import { typedjson } from "remix-typedjson";
 
 import { PaymentMethodForm } from "~/components/account/payment-method-form";
 import { ErrorComponent } from "~/components/error-component";
 import { loader as rootLoader } from "~/root";
 import { SessionService } from "~/services/SessionService.server";
-import { TypedMetaFunction } from "~/types/utils";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await SessionService.requireUserId(request);
-  return typedjson({});
+  return json({});
 }
 
-export const meta: TypedMetaFunction<typeof loader, { root: typeof rootLoader }> = ({ matches }) => {
-  // @ts-expect-error typed meta funtion doesn't support this yet
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+export const meta: MetaFunction<typeof loader, { root: typeof rootLoader }> = ({ matches }) => {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   const match = matches.find((m) => m.id === "root")?.data.course;
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   return [{ title: `New Payment Method | ${match?.data?.attributes.title ?? "Plumb Media & Education"}` }];
 };
 

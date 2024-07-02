@@ -1,9 +1,8 @@
 import { Prisma } from "@prisma/client";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { Link, useFetcher, useSearchParams } from "@remix-run/react";
+import { Link, MetaFunction, json, redirect, useFetcher, useSearchParams } from "@remix-run/react";
 import { withZod } from "@remix-validated-form/with-zod";
 import { useEffect } from "react";
-import { redirect, typedjson } from "remix-typedjson";
 import { ValidatedForm, validationError } from "remix-validated-form";
 import { z } from "zod";
 
@@ -21,7 +20,6 @@ import { loader as rootLoader } from "~/root";
 import { validator as verifyCodeValidator } from "~/routes/api.verification-code";
 import { SessionService } from "~/services/SessionService.server";
 import { UserService } from "~/services/UserService.server";
-import { TypedMetaFunction } from "~/types/utils";
 
 const validator = withZod(
   z.discriminatedUnion("step", [
@@ -51,7 +49,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   // if search param status=unverified then run the verify email job and update UI
 
-  return typedjson({});
+  return json({});
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -170,11 +168,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   );
 };
 
-export const meta: TypedMetaFunction<typeof loader, { root: typeof rootLoader }> = ({ matches }) => {
-  // @ts-expect-error typed meta funtion doesn't support this yet
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+export const meta: MetaFunction<typeof loader, { root: typeof rootLoader }> = ({ matches }) => {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   const match = matches.find((m) => m.id === "root")?.data.course;
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   return [{ title: `Join | ${match?.data?.attributes.title ?? "Plumb Media & Education"}` }];
 };
 
