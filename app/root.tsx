@@ -30,8 +30,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     course: null,
     serverToast,
     ENV: {
-      VERCEL_URL: process.env.VERCEL_URL,
-      VERCEL_ENV: process.env.VERCEL_ENV,
       STRAPI_URL: process.env.STRAPI_URL,
       STRIPE_PUBLIC_KEY: process.env.STRIPE_PUBLIC_KEY,
     },

@@ -4,6 +4,9 @@ import { loadEnv } from "vite";
 import { TypeOf, z } from "zod";
 
 const serverEnvValidation = z.object({
+  // General
+  SITE_URL: z.string().url(),
+
   // Remix
   SESSION_SECRET: z.string().min(16),
 
@@ -42,22 +45,15 @@ const clientEnvValidation = z.object({
   STRIPE_PUBLIC_KEY: z.string().startsWith("pk_"),
 });
 
-const deploymentPublicEnvValidation = z.object({
-  // Vercel
-  VERCEL_URL: z.string(),
-  VERCEL_ENV: z.enum(["production", "preview", "development"]),
-});
-
 declare global {
   // Server side
   namespace NodeJS {
-    interface ProcessEnv
-      extends TypeOf<typeof serverEnvValidation & typeof clientEnvValidation & typeof deploymentPublicEnvValidation> {}
+    interface ProcessEnv extends TypeOf<typeof serverEnvValidation & typeof clientEnvValidation> {}
   }
 
   // Client side
   interface Window {
-    ENV: TypeOf<typeof clientEnvValidation & typeof deploymentPublicEnvValidation>;
+    ENV: TypeOf<typeof clientEnvValidation>;
   }
 }
 

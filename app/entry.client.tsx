@@ -10,8 +10,6 @@ Sentry.init({
   replaysSessionSampleRate: 0.01,
   replaysOnErrorSampleRate: 1,
   enabled: window.location.hostname !== "localhost",
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  environment: window?.ENV?.VERCEL_ENV,
   integrations: [
     Sentry.browserTracingIntegration({
       useEffect,

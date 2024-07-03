@@ -22,18 +22,18 @@ export class EmailService {
   }
 
   static async sendPasswordReset({ email, token }: PasswordEmailProps) {
-    const url = new URL("/passwords/reset", process.env.SITE_URL ?? `https://${process.env.VERCEL_URL}`);
+    const url = new URL("/passwords/reset", process.env.SITE_URL);
     url.searchParams.set("token", token);
 
     try {
       const data = await this.send({
-        from: "Alliance 436 <no-reply@getcosmic.dev>",
+        from: "Plumb Media & Education <no-reply@getcosmic.dev>",
         to: email,
         subject: "Reset Your Password",
         html: `
           <p>Hi there,</p>
-          <p>Someone requested a password reset for your Alliance 436 account. If this was you, please click the link below to reset your password. The link will expire in 15 minutes.</p>
-          <p><a style="color:#976bff" href="${url.toString()}" target="_blank">Reset Password</a></p>
+          <p>Someone requested a password reset for your Plumb Media & Education account. If this was you, please click the link below to reset your password. The link will expire in 15 minutes.</p>
+          <p><a style="text-decoration-line:underline;" href="${url.toString()}" target="_blank">Reset Password</a></p>
           <p>If you did not request a password reset, you can safely ignore this email.</p>
         `,
       });
@@ -44,18 +44,18 @@ export class EmailService {
   }
 
   static async sendPasswordSetup({ email, token }: PasswordEmailProps) {
-    const url = new URL("/passwords/new", process.env.SITE_URL ?? `https://${process.env.VERCEL_URL}`);
+    const url = new URL("/passwords/new", process.env.SITE_URL);
     url.searchParams.set("token", token);
 
     try {
       const data = await this.send({
-        from: "Alliance 436 <no-reply@getcosmic.dev>",
+        from: "Plumb Media & Education <no-reply@getcosmic.dev>",
         to: email,
         subject: "Setup Your Password",
         html: `
           <p>Hi there,</p>
-          <p>Someone created an Alliance 436 account for you. Click the link below to setup a password. The link will expire in 15 minutes.</p>
-          <p><a style="color:#976bff" href="${url.toString()}" target="_blank">Setup Password</a></p>
+          <p>Someone created an Plumb Media & Education account for you. Click the link below to setup a password. The link will expire in 15 minutes.</p>
+          <p><a style="text-decoration-line:underline;" href="${url.toString()}" target="_blank">Setup Password</a></p>
         `,
       });
       return { data };

@@ -18,7 +18,6 @@ Sentry.init({
   sampleRate: 1,
   tracesSampleRate: 0.25,
   dsn: "https://3093e529a633d80d697b26390e53886d@o4505496663359488.ingest.us.sentry.io/4506584484151296",
-  environment: process.env.VERCEL_ENV,
   enabled: process.env.NODE_ENV === "production",
   integrations: [nodeProfilingIntegration(), Sentry.prismaIntegration()],
 });
