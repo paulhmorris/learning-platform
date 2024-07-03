@@ -1,8 +1,10 @@
 import { Prisma } from "@prisma/client";
 import { LoaderFunctionArgs, MetaFunction, json } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
+import { IconPlus } from "@tabler/icons-react";
 import { ColumnDef } from "@tanstack/react-table";
 
+import { AdminButton } from "~/components/ui/admin-button";
 import { DataTable } from "~/components/ui/data-table/data-table";
 import { DataTableColumnHeader } from "~/components/ui/data-table/data-table-column-header";
 import { Facet } from "~/components/ui/data-table/data-table-toolbar";
@@ -43,9 +45,16 @@ export default function UsersIndex() {
   const { users } = useLoaderData<typeof loader>();
 
   return (
-    <div>
+    <>
+      <AdminButton asChild variant="secondary">
+        <Link to="/admin/users/new" className="mb-4 flex items-center space-x-2">
+          <IconPlus className="size-5" />
+          <span>New User</span>
+        </Link>
+      </AdminButton>
+
       <DataTable data={users} columns={columns} facets={facets} />
-    </div>
+    </>
   );
 }
 

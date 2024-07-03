@@ -201,7 +201,7 @@ export default function AccountProfile() {
             <FormField required name="firstName" label="First Name" autoComplete="given-name" maxLength={255} />
             <FormField required name="lastName" label="Last Name" autoComplete="family-name" maxLength={255} />
           </div>
-          <FormField required name="email" label="Email" type="email" autoComplete="email" />
+          <FormField required name="email" label="Email" type="email" autoComplete="email" maxLength={255} />
           <FormField name="phone" label="Phone" type="tel" autoComplete="tel" maxLength={20} />
           <SubmitButton variant="admin" className="sm:w-auto">
             Save

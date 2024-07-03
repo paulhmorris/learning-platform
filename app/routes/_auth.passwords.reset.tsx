@@ -76,7 +76,7 @@ export default function ResetPassword() {
           </p>
         ) : (
           <ValidatedForm validator={validator} method="post" className="space-y-4">
-            <FormField label="Email" name="email" type="email" autoComplete="username" required />
+            <FormField label="Email" name="email" type="email" autoComplete="username" required maxLength={255} />
             <SubmitButton variant="primary-md">Get Reset Link</SubmitButton>
           </ValidatedForm>
         )}

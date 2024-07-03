@@ -230,7 +230,16 @@ export default function Join() {
               <input type="hidden" name="redirectTo" value={searchParams.get("redirectTo") ?? ""} />
             </div>
             <FormField name="phone" label="Phone Number" autoComplete="tel" inputMode="tel" maxLength={15} />
-            <FormField required id="email" key="email" type="email" name="email" label="Email" autoComplete="email" />
+            <FormField
+              required
+              id="email"
+              key="email"
+              type="email"
+              name="email"
+              label="Email"
+              autoComplete="email"
+              maxLength={255}
+            />
             <FormField
               required
               name="password"
