@@ -10,10 +10,9 @@ const isCI = !!process.env.CI;
 installGlobals();
 
 export default defineConfig({
-  resolve: {
-    alias: {
-      ".prisma/client/index-browser": "./node_modules/.prisma/client/index-browser.js",
-    },
+  build: {
+    manifest: true,
+    sourcemap: !!process.env.CI,
   },
   server: {
     port: 3000,
@@ -23,6 +22,7 @@ export default defineConfig({
     tsconfigPaths(),
     remix({
       ignoredRouteFiles: ["**/.*", "**/*.test.{ts,tsx}"],
+      serverModuleFormat: "esm",
     }),
     isCI &&
       sentryVitePlugin({
@@ -32,9 +32,10 @@ export default defineConfig({
         authToken: process.env.SENTRY_AUTH_TOKEN,
       }),
   ],
-
-  build: {
-    sourcemap: !!process.env.CI,
+  resolve: {
+    alias: {
+      ".prisma/client/index-browser": "./node_modules/.prisma/client/index-browser.js",
+    },
   },
 });
 

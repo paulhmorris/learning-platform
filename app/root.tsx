@@ -42,11 +42,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     const linkedCourse = await getLinkedCourseByHost(host);
 
     if (!linkedCourse) {
-      Sentry.captureMessage("Received request from unknown host", {
-        extra: { host },
-        level: "warning",
-        user: user ? { username: user.email, id: user.id, email: user.email } : undefined,
-      });
       return json(defaultResponse, {
         headers: {
           "Set-Cookie": await SessionService.commitSession(session),

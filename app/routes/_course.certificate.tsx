@@ -23,11 +23,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const linkedCourse = await db.course.findUnique({ where: { host } });
 
   if (!linkedCourse) {
-    Sentry.captureMessage("Received request from unknown host", {
-      extra: { host },
-      level: "warning",
-      user: { username: user.email, id: user.id, email: user.email },
-    });
     return toast.redirect(request, "/preview", {
       type: "error",
       title: "Error claiming certificate",
@@ -57,11 +52,6 @@ export async function action({ request }: ActionFunctionArgs) {
     const linkedCourse = await db.course.findUnique({ where: { host } });
 
     if (!linkedCourse) {
-      Sentry.captureMessage("Received request from unknown host", {
-        extra: { host },
-        level: "warning",
-        user: { username: user.email, id: user.id, email: user.email },
-      });
       return toast.redirect(request, "/preview", {
         type: "error",
         title: "Error claiming certificate",

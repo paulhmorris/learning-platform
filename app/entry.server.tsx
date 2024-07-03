@@ -8,9 +8,8 @@ import * as isbotModule from "isbot";
 import { renderToPipeableStream } from "react-dom/server";
 
 import { Sentry } from "~/integrations/sentry";
-import { validateEnv } from "~/lib/env.server";
 
-validateEnv();
+// validateEnv();
 const ABORT_DELAY = 5_000;
 
 export const handleError = Sentry.sentryHandleError;
@@ -18,7 +17,7 @@ export const handleError = Sentry.sentryHandleError;
 Sentry.init({
   sampleRate: 1,
   tracesSampleRate: 0.25,
-  dsn: "https://f18051d71458f411f51af7ca0308b1cb@o4505496663359488.ingest.sentry.io/4506395673886720",
+  dsn: "https://3093e529a633d80d697b26390e53886d@o4505496663359488.ingest.us.sentry.io/4506584484151296",
   environment: process.env.VERCEL_ENV,
   enabled: process.env.NODE_ENV === "production",
   integrations: [nodeProfilingIntegration(), Sentry.prismaIntegration()],

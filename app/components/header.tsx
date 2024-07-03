@@ -25,7 +25,7 @@ export function Header() {
   return (
     <>
       <header className="sticky top-0 z-50 h-20 w-full border-b border-transparent bg-background px-6 py-6 text-foreground shadow-[0px_6px_39px_0px_#00000014] sm:px-10">
-        <div className="mx-auto flex w-full max-w-screen-2xl items-center justify-between">
+        <div className="mx-auto flex w-full items-center justify-between">
           <Link to="/preview" className="block text-foreground">
             {courseLogoUrl ? (
               <img src={courseLogoUrl} alt={courseTitle ?? "Plumb Media & Education"} />

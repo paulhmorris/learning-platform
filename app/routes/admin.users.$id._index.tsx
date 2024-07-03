@@ -19,6 +19,7 @@ const validator = withZod(
     lastName: z.string().max(255),
     email: z.string().email(),
     phone: z.string().max(20),
+    stripeId: z.string().optional(),
   }),
 );
 
@@ -81,9 +82,10 @@ export default function AdminUserIndex() {
         action="?index"
         validator={validator}
         defaultValues={{
-          firstName: user.firstName ?? "",
-          lastName: user.lastName ?? "",
           email: user.email,
+          stripeId: user.stripeId ?? "",
+          lastName: user.lastName ?? "",
+          firstName: user.firstName ?? "",
         }}
       >
         <input type="hidden" name="id" value={user.id} />
@@ -94,6 +96,7 @@ export default function AdminUserIndex() {
           </div>
           <FormField required name="email" label="Email" type="email" autoComplete="email" />
           <FormField name="phone" label="Phone" type="tel" autoComplete="tel" maxLength={20} />
+          <FormField name="stripeId" label="Stripe ID" />
           <SubmitButton variant="admin" className="sm:w-auto">
             Save
           </SubmitButton>

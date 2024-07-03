@@ -1,8 +1,7 @@
 import { UserRole } from "@prisma/client";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { Link, MetaFunction, useSearchParams } from "@remix-run/react";
+import { Link, MetaFunction, json, redirect, useSearchParams } from "@remix-run/react";
 import { withZod } from "@remix-validated-form/with-zod";
-import { redirect, typedjson } from "remix-typedjson";
 import { ValidatedForm, validationError } from "remix-validated-form";
 import { z } from "zod";
 
@@ -35,7 +34,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     throw redirect("/");
   }
 
-  return typedjson({});
+  return json({});
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {

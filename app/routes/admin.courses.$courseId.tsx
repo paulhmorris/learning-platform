@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
+import { MetaFunction, useLoaderData } from "@remix-run/react";
 import { withZod } from "@remix-validated-form/with-zod";
 import { ValidatedForm, validationError } from "remix-validated-form";
 import { z } from "zod";
@@ -92,6 +92,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 }
+
+export const meta: MetaFunction = () => [{ title: "Edit Course | Plumb Media & Education" }];
 
 export default function AdminEditCourse() {
   const { course } = useLoaderData<typeof loader>();
