@@ -6,6 +6,8 @@ import { Bucket } from "~/integrations/bucket.server";
 import { db } from "~/integrations/db.server";
 import { EmailService } from "~/integrations/email.server";
 
+// TODO: Add certificate number to pdf
+
 export const claimCertificateTask = task({
   id: "claim-certificate",
   run: async (payload: { userId: string; courseId: string; courseName: string }) => {
@@ -21,6 +23,7 @@ export const claimCertificateTask = task({
             id: true,
             courseId: true,
             certificateClaimed: true,
+            certificateS3Key: true,
           },
         },
       },
@@ -34,9 +37,21 @@ export const claimCertificateTask = task({
       throw new Error("User has not completed this course");
     }
 
+    // Check if certificate has already been claimed
     if (thisCourse.certificateClaimed) {
-      logger.error("Certificate already claimed", user);
-      throw new Error("Certificate already claimed");
+      logger.info("Certificate already claimed. Sending another email.", user);
+      const email = await EmailService.send({
+        from: `${payload.courseName} <no-reply@getcosmic.dev>`,
+        // to: user.email,
+        to: "paulh.morris@gmail.com",
+        subject: "Your certificate is ready!",
+        html: `
+          <p>Hi ${user.firstName},</p>
+          <p>Congratulations on completing the ${payload.courseName} course! Your certificate is ready to download.</p>
+          <p><a href="https://assets.hiphopdriving.com/${thisCourse.certificateS3Key}" target="_blank">Download Certificate</a></p>
+        `,
+      });
+      logger.info("Email sent", email);
     }
 
     // Generate certificate

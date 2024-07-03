@@ -2,6 +2,8 @@ import { LoaderFunctionArgs, json } from "@remix-run/node";
 import { Link, MetaFunction, useLoaderData } from "@remix-run/react";
 
 import { ErrorComponent } from "~/components/error-component";
+import { IconCertificate } from "~/components/icons";
+import { AdminButton } from "~/components/ui/admin-button";
 import { Button } from "~/components/ui/button";
 import { Card, CardFooter, CardHeader, CardTitle } from "~/components/ui/card";
 import { db } from "~/integrations/db.server";
@@ -60,20 +62,40 @@ export default function AdminUserCourses() {
           : `${user.firstName} is not currently enrolled in any courses`}
       </p>
       <ul className="mt-4">
-        {courses.map((course) => (
-          <li key={course.id}>
-            <Card className="inline-block">
-              <CardHeader>
-                <CardTitle>{course.title}</CardTitle>
-              </CardHeader>
-              <CardFooter>
-                <Button variant="admin" asChild className="w-auto">
-                  <Link to={`/admin/users/${user.id}/courses/${course.id}`}>View Progress</Link>
-                </Button>
-              </CardFooter>
-            </Card>
-          </li>
-        ))}
+        {courses.map((course) => {
+          return (
+            <li key={course.id}>
+              <Card className="inline-block">
+                <CardHeader>
+                  <CardTitle>{course.title}</CardTitle>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {course.isCompleted ? "Complete" : "In Progress"} • Purchased{" "}
+                    {new Date(course.createdAt).toLocaleDateString()}
+                  </p>
+                </CardHeader>
+                <CardFooter>
+                  <Button variant="admin" asChild className="w-auto">
+                    <Link to={`/admin/users/${user.id}/courses/${course.id}`}>View Progress</Link>
+                  </Button>
+                  {/* certificate */}
+                  {!course.certificateClaimed ? (
+                    <AdminButton variant="outline" asChild className="w-auto">
+                      <a
+                        href={`https://assets.hiphopdriving.com/${course.certificateS3Key}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-2"
+                      >
+                        <IconCertificate className="size-4" />
+                        <span>Download Certificate</span>
+                      </a>
+                    </AdminButton>
+                  ) : null}
+                </CardFooter>
+              </Card>
+            </li>
+          );
+        })}
       </ul>
     </>
   );
