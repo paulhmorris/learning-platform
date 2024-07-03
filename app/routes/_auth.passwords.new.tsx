@@ -4,6 +4,7 @@ import { withZod } from "@remix-validated-form/with-zod";
 import { ValidatedForm, validationError } from "remix-validated-form";
 import { z } from "zod";
 
+import { AuthCard } from "~/components/common/auth-card";
 import { PageTitle } from "~/components/common/page-title";
 import { ErrorComponent } from "~/components/error-component";
 import { FormField } from "~/components/ui/form";
@@ -12,7 +13,6 @@ import { unauthorized } from "~/lib/responses.server";
 import { sessionStorage } from "~/lib/session.server";
 import { toast } from "~/lib/toast.server";
 import { getSearchParam } from "~/lib/utils";
-import { verifyLogin } from "~/models/user.server";
 import { PasswordService } from "~/services/PasswordService.server";
 import { SessionService } from "~/services/SessionService.server";
 import { UserService } from "~/services/UserService.server";
@@ -21,24 +21,15 @@ export const resetPasswordValidator = withZod(
   z
     .object({
       token: z.string(),
-      isReset: z.string().transform((val) => val === "true"),
-      oldPassword: z.string().min(8, "Password must be at least 8 characters").or(z.literal("")),
       newPassword: z.string().min(8, "Password must be at least 8 characters"),
       confirmation: z.string().min(8, "Password must be at least 8 characters"),
     })
-    .superRefine(({ oldPassword, newPassword, confirmation, isReset }, ctx) => {
+    .superRefine(({ newPassword, confirmation }, ctx) => {
       if (newPassword !== confirmation) {
         ctx.addIssue({
           code: "custom",
           message: "Passwords must match",
           path: ["confirmation"],
-        });
-      }
-      if (isReset && !oldPassword) {
-        ctx.addIssue({
-          code: "custom",
-          message: "Old password is required",
-          path: ["oldPassword"],
         });
       }
     }),
@@ -65,7 +56,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   const tokenParam = getSearchParam("token", request);
-  const isReset = getSearchParam("isReset", request) === "true";
 
   // Validate form
   const result = await resetPasswordValidator.validate(await request.formData());
@@ -74,7 +64,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   // Check token
-  const { oldPassword, newPassword, token } = result.data;
+  const { newPassword, token } = result.data;
   const reset = await PasswordService.getResetByToken(token);
   if (!reset) {
     return toast.json(request, {}, { type: "error", title: "Token not found", description: "Please try again." });
@@ -104,69 +94,36 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  // Reset flow
-  if (isReset) {
-    // Check old password is correct
-    const user = await verifyLogin(userFromToken.email, oldPassword);
-    if (!user) {
-      return validationError({
-        fieldErrors: {
-          oldPassword: "Incorrect password",
-        },
-      });
-    }
-
-    // Reset password
-    await UserService.resetOrSetupPassword({ userId: user.id, password: newPassword });
-  } else {
-    // Setup flow
-    await UserService.resetOrSetupPassword({ userId: userFromToken.id, password: newPassword });
-  }
+  await UserService.resetOrSetupPassword({ userId: userFromToken.id, password: newPassword });
 
   // Use token
   await PasswordService.expireReset(token);
 
-  return toast.redirect(request, "/login", {
-    type: "success",
-    title: `Password ${isReset ? "reset" : "set up"}`,
-    description: `Your password has been ${isReset ? "reset" : "set up"}. Login with your new password.`,
-  });
+  // Logout and redirect to login
+  await SessionService.logout(request);
+
+  return json({ ok: true });
 }
 
 export default function NewPassword() {
   const [searchParams] = useSearchParams();
-  const isReset = searchParams.get("isReset") === "true";
 
   return (
-    <div className="grid h-full place-items-center">
-      <div className="max-w-lg px-8">
-        <PageTitle className="text-4xl font-extrabold">Set a new password.</PageTitle>
-        <ValidatedForm id="password-form" validator={resetPasswordValidator} method="post" className="mt-4 space-y-4">
-          <input type="hidden" name="token" value={searchParams.get("token") ?? ""} />
-          <input type="hidden" name="isReset" value={String(isReset)} />
-          {isReset ? (
-            <FormField
-              label="Old password"
-              name="oldPassword"
-              type="password"
-              autoComplete="current-password"
-              required={isReset}
-            />
-          ) : (
-            <input type="hidden" name="oldPassword" value="" />
-          )}
-          <FormField label="New Password" name="newPassword" type="password" autoComplete="new-password" required />
-          <FormField
-            label="Confirm New Password"
-            name="confirmation"
-            type="password"
-            autoComplete="new-password"
-            required
-          />
-          <SubmitButton>{isReset ? "Reset" : "Create"} Password</SubmitButton>
-        </ValidatedForm>
-      </div>
-    </div>
+    <AuthCard>
+      <PageTitle className="text-4xl font-extrabold">Set a new password.</PageTitle>
+      <ValidatedForm id="password-form" validator={resetPasswordValidator} method="post" className="mt-4 space-y-4">
+        <input type="hidden" name="token" value={searchParams.get("token") ?? ""} />
+        <FormField label="New Password" name="newPassword" type="password" autoComplete="new-password" required />
+        <FormField
+          label="Confirm New Password"
+          name="confirmation"
+          type="password"
+          autoComplete="new-password"
+          required
+        />
+        <SubmitButton>Set Password</SubmitButton>
+      </ValidatedForm>
+    </AuthCard>
   );
 }
 

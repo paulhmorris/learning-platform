@@ -51,7 +51,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const reset = await PasswordService.generateReset(user.email);
-  const { data, error } = await EmailService.sendPasswordSetup({ email: user.email, token: reset.token });
+  const { data, error } = await EmailService.sendPasswordReset({ email: user.email, token: reset.token });
 
   // Unknown email error
   if (error || !data) {

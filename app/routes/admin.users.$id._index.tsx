@@ -1,10 +1,11 @@
+import { UserRole } from "@prisma/client";
 import { ActionFunctionArgs, MetaFunction } from "@remix-run/node";
 import { useRouteLoaderData } from "@remix-run/react";
 import { withZod } from "@remix-validated-form/with-zod";
 import { ValidatedForm, validationError } from "remix-validated-form";
 import { z } from "zod";
 
-import { FormField } from "~/components/ui/form";
+import { FormField, FormSelect } from "~/components/ui/form";
 import { SubmitButton } from "~/components/ui/submit-button";
 import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
@@ -19,6 +20,7 @@ const validator = withZod(
     lastName: z.string().max(255),
     email: z.string().email(),
     phone: z.string().max(20),
+    role: z.nativeEnum(UserRole),
     stripeId: z.string().optional(),
   }),
 );
@@ -75,8 +77,17 @@ export default function AdminUserIndex() {
 
   const { user } = userData;
 
+  const roleOptions: Array<{ value: UserRole; label: string }> = [
+    { value: UserRole.USER, label: "User" },
+    { value: UserRole.ADMIN, label: "Admin" },
+  ];
+
+  if (user.role === UserRole.SUPERADMIN) {
+    roleOptions.push({ value: UserRole.SUPERADMIN, label: "Super Admin" });
+  }
+
   return (
-    <div className="max-w-screen-md">
+    <div className="max-w-md">
       <ValidatedForm
         method="put"
         action="?index"
@@ -86,6 +97,7 @@ export default function AdminUserIndex() {
           stripeId: user.stripeId ?? "",
           lastName: user.lastName ?? "",
           firstName: user.firstName ?? "",
+          role: user.role,
         }}
       >
         <input type="hidden" name="id" value={user.id} />
@@ -95,6 +107,7 @@ export default function AdminUserIndex() {
             <FormField required name="lastName" label="Last Name" autoComplete="family-name" maxLength={255} />
           </div>
           <FormField required name="email" label="Email" type="email" autoComplete="email" maxLength={255} />
+          <FormSelect name="role" label="Role" placeholder="Choose a role" options={roleOptions} required />
           <FormField name="phone" label="Phone" type="tel" autoComplete="tel" maxLength={20} />
           <FormField name="stripeId" label="Stripe ID" />
           <SubmitButton variant="admin" className="sm:w-auto">

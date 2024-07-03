@@ -22,7 +22,7 @@ export class EmailService {
   }
 
   static async sendPasswordReset({ email, token }: PasswordEmailProps) {
-    const url = new URL("/passwords/reset", process.env.SITE_URL);
+    const url = new URL("/passwords/new", process.env.SITE_URL);
     url.searchParams.set("token", token);
 
     try {

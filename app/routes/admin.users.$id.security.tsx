@@ -53,7 +53,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 const schema = withZod(
   z.object({
     resetId: z.string().optional(),
-    _action: z.enum(["reset-password", "deactivate-user", "activate-user"]),
+    _action: z.enum(["expire-password-reset", "deactivate-user", "activate-user"]),
   }),
 );
 
@@ -68,7 +68,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { resetId, _action } = result.data;
 
   switch (_action) {
-    case "reset-password": {
+    case "expire-password-reset": {
       try {
         const reset = await db.passwordReset.update({
           where: { id: resetId },
@@ -151,8 +151,6 @@ export default function AdminUserSecurity() {
             variant="link"
             className="-ml-3.5 w-auto sm:text-xs"
             disabled={fetcher.state !== "idle"}
-            name="_action"
-            value="reset-password"
           >
             Send Password {user.password ? "Reset" : "Setup"}
           </AdminButton>
@@ -221,6 +219,8 @@ export default function AdminUserSecurity() {
                           variant="link"
                           className="-mx-3.5 -my-2.5 w-auto"
                           disabled={fetcher.state !== "idle"}
+                          name="_action"
+                          value="expire-password-reset"
                         >
                           Expire
                         </AdminButton>
@@ -232,10 +232,12 @@ export default function AdminUserSecurity() {
                       <span className="text-muted-foreground">Requested</span>
                       <span>{dayjs(r.createdAt).format("MM/DD/YY h:mma")}</span>
                     </p>
-                    <p className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Expires</span>
-                      <span>{dayjs(r.expiresAt).format("MM/DD/YY h:mma")}</span>
-                    </p>
+                    {!isExpired ? (
+                      <p className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Expires</span>
+                        <span>{dayjs(r.expiresAt).format("MM/DD/YY h:mma")}</span>
+                      </p>
+                    ) : null}
                     {r.usedAt ? (
                       <p className="flex justify-between text-sm text-success">
                         <span>Used At</span>

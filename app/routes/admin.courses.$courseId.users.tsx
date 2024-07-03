@@ -82,19 +82,19 @@ export default function AdminEditCourse() {
       <ul className="mt-4 divide-y divide-border/75">
         {filteredUsers.map((u) => {
           return (
-            <li key={u.id} className="flex w-full items-center gap-8 py-3 md:py-2">
-              <h2 className="text-sm">
+            <li key={u.id} className="grid w-full max-w-lg grid-cols-2 items-center gap-8 py-3 md:py-2">
+              <h2 className="col-span-1 truncate text-sm">
                 {u.firstName} {u.lastName}
               </h2>
               {!data.course.userCourses.some((uc) => uc.userId === u.id) ? (
-                <fetcher.Form method="put">
+                <fetcher.Form method="put" className="col-span-1">
                   <input type="hidden" name="userId" value={u.id} />
                   <AdminButton disabled={fetcher.state !== "idle"} variant="link">
                     Enroll
                   </AdminButton>
                 </fetcher.Form>
               ) : (
-                <p className="h-10 text-sm leading-10 text-muted-foreground">Enrolled</p>
+                <p className="h-10 px-3.5 text-sm leading-10 text-muted-foreground">Enrolled</p>
               )}
             </li>
           );
