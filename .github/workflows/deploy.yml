@@ -18,9 +18,6 @@ jobs:
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
 
-      - name: Typecheck
-        run: tsc --noEmit
-
       - name: Apply pending migrations to the database
         run: npx prisma migrate deploy
         env:
@@ -32,6 +29,9 @@ jobs:
 
       - name: Build Project Artifacts
         run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Typecheck
+        run: tsc --noEmit
 
       - name: Deploy Project Artifacts to Vercel
         run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
