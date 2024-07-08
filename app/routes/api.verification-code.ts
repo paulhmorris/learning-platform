@@ -3,8 +3,8 @@ import { ActionFunctionArgs, json } from "@vercel/remix";
 import { validationError } from "remix-validated-form";
 import { z } from "zod";
 
+import { verifyEmailJob } from "jobs/verify-email.server";
 import { Sentry } from "~/integrations/sentry";
-import { verifyEmailJob } from "~/jobs/verify-email.server";
 import { toast } from "~/lib/toast.server";
 
 export const validator = withZod(

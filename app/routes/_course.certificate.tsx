@@ -4,13 +4,13 @@ import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@vercel/remix";
 import { ValidatedForm } from "remix-validated-form";
 import { z } from "zod";
 
+import { claimCertificateJob } from "jobs/claim-certificate";
 import { PageTitle } from "~/components/common/page-title";
 import { SubmitButton } from "~/components/ui/submit-button";
 import { useCourseData } from "~/hooks/useCourseData";
 import { cms } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
-import { claimCertificateJob } from "~/jobs/claim-certificate";
 import { toast } from "~/lib/toast.server";
 import { useUser } from "~/lib/utils";
 import { loader as courseLoader } from "~/routes/_course";

@@ -64,7 +64,6 @@
     "dayjs": "^1.11.11",
     "embla-carousel-react": "^8.1.6",
     "express": "^4.19.2",
-    "isbot": "^5.1.11",
     "morgan": "^1.10.0",
     "nanoid": "^5.0.7",
     "nprogress": "^0.2.0",

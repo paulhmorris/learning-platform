@@ -13,7 +13,6 @@ installGlobals();
 
 export default defineConfig({
   build: {
-    manifest: true,
     sourcemap: !!process.env.CI,
   },
   server: {

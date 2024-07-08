@@ -16,7 +16,7 @@ export const config: TriggerConfig = {
       randomize: true,
     },
   },
-  triggerDirectories: ["./app/jobs"],
+  triggerDirectories: ["./jobs"],
   dependenciesToBundle: ["nanoid"],
   instrumentations: [new PrismaInstrumentation()],
   additionalFiles: ["./prisma/schema.prisma"],

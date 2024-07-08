@@ -7,6 +7,7 @@ import { useEffect } from "react";
 import { ValidatedForm, validationError } from "remix-validated-form";
 import { z } from "zod";
 
+import { verifyEmailJob } from "jobs/verify-email.server";
 import { AuthCard } from "~/components/common/auth-card";
 import { PageTitle } from "~/components/common/page-title";
 import { FormField } from "~/components/ui/form";
@@ -14,7 +15,6 @@ import { SubmitButton } from "~/components/ui/submit-button";
 import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
 import { stripe } from "~/integrations/stripe.server";
-import { verifyEmailJob } from "~/jobs/verify-email.server";
 import { handlePrismaError, serverError } from "~/lib/responses.server";
 import { toast } from "~/lib/toast.server";
 import { loader as rootLoader } from "~/root";
