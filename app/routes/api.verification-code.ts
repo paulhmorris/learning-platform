@@ -1,5 +1,5 @@
-import { ActionFunctionArgs, json } from "@remix-run/node";
 import { withZod } from "@remix-validated-form/with-zod";
+import { ActionFunctionArgs, json } from "@vercel/remix";
 import { validationError } from "remix-validated-form";
 import { z } from "zod";
 

@@ -1,10 +1,10 @@
 /* eslint-disable no-console */
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
+import { Pool, neonConfig } from "@neondatabase/serverless";
+import { PrismaNeon } from "@prisma/adapter-neon";
 import { PrismaClient } from "@prisma/client";
 import invariant from "tiny-invariant";
-
-// Borrowed & modified from https://github.com/jenseng/abuse-the-platform/blob/main/app/utils/singleton.ts
-// Thanks @jenseng!
+import ws from "ws";
 
 const singleton = <Value>(name: string, valueFactory: () => Value): Value => {
   const g = global as unknown as { __singletons: Record<string, unknown> };
@@ -13,27 +13,17 @@ const singleton = <Value>(name: string, valueFactory: () => Value): Value => {
   return g.__singletons[name] as Value;
 };
 
-// Hard-code a unique key, so we can look up the client when this module gets re-imported
 const db = singleton("prisma", getPrismaClient);
 
 function getPrismaClient() {
   const { DATABASE_URL } = process.env;
   invariant(typeof DATABASE_URL === "string", "DATABASE_URL env var not set");
 
-  const databaseUrl = new URL(DATABASE_URL);
-
-  console.log(`🔌 setting up prisma client to ${databaseUrl.host}`);
-  // NOTE: during development if you change anything in this function, remember
-  // that this only runs once per server restart and won't automatically be
-  // re-run per request like everything else is. So if you need to change
-  // something in this file, you'll need to manually restart the server.
-  const client = new PrismaClient({
-    datasources: {
-      db: {
-        url: databaseUrl.toString(),
-      },
-    },
-  });
+  neonConfig.webSocketConstructor = ws;
+  const connectionString = `${process.env.DATABASE_URL}`;
+  const pool = new Pool({ connectionString });
+  const adapter = new PrismaNeon(pool);
+  const client = new PrismaClient({ adapter });
   // connect eagerly
   void client.$connect();
 

@@ -1,4 +1,4 @@
-import { TypedResponse, json, redirect, type Session } from "@remix-run/node";
+import { json, redirect, Session, TypedResponse } from "@vercel/remix";
 import { ExternalToast, ToastT } from "sonner";
 
 import { SessionService } from "~/services/SessionService.server";

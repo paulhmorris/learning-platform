@@ -1,7 +1,7 @@
-import { LoaderFunctionArgs, MetaFunction, json } from "@remix-run/node";
 import { Outlet, useLoaderData } from "@remix-run/react";
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
+import { LoaderFunctionArgs, MetaFunction, json } from "@vercel/remix";
 import { Theme, useTheme } from "remix-themes";
 
 import { ErrorComponent } from "~/components/error-component";

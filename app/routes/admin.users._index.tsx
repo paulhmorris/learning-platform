@@ -1,8 +1,8 @@
 import { Prisma } from "@prisma/client";
-import { LoaderFunctionArgs, MetaFunction, json } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { IconPlus } from "@tabler/icons-react";
 import { ColumnDef } from "@tanstack/react-table";
+import { LoaderFunctionArgs, MetaFunction, json } from "@vercel/remix";
 
 import { AdminButton } from "~/components/ui/admin-button";
 import { DataTable } from "~/components/ui/data-table/data-table";

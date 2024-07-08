@@ -1,5 +1,5 @@
-import { LoaderFunctionArgs, MetaFunction, json } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
+import { LoaderFunctionArgs, MetaFunction, json } from "@vercel/remix";
 
 import { AdminButton } from "~/components/ui/admin-button";
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "~/components/ui/card";

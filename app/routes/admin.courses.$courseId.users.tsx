@@ -1,5 +1,5 @@
-import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@remix-run/node";
 import { MetaFunction, useFetcher, useLoaderData, useRouteLoaderData } from "@remix-run/react";
+import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@vercel/remix";
 import { useState } from "react";
 import invariant from "tiny-invariant";
 import { z } from "zod";

@@ -1,6 +1,6 @@
-import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@remix-run/node";
 import { MetaFunction, useLoaderData } from "@remix-run/react";
 import { IconCircle, IconCircleCheckFilled, IconCircleDashedCheck, IconCircleXFilled } from "@tabler/icons-react";
+import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@vercel/remix";
 import invariant from "tiny-invariant";
 import { z } from "zod";
 import { fromZodError } from "zod-validation-error";

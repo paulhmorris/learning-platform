@@ -1,7 +1,7 @@
-import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@remix-run/node";
 import { Link, MetaFunction, useFetcher, useLoaderData, useSearchParams } from "@remix-run/react";
 import { useStripe } from "@stripe/react-stripe-js";
 import { IconLoader, IconPlus } from "@tabler/icons-react";
+import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@vercel/remix";
 import { useEffect } from "react";
 import { toast as clientToast } from "sonner";
 

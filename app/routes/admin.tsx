@@ -1,6 +1,6 @@
-import { LoaderFunctionArgs, json } from "@remix-run/node";
 import { NavLink, Outlet } from "@remix-run/react";
 import { IconCertificate, IconUsersGroup } from "@tabler/icons-react";
+import { LoaderFunctionArgs, json } from "@vercel/remix";
 import { CSSProperties } from "react";
 
 import { UserDebugTools } from "~/components/debug/user-debug-tools";

@@ -1,5 +1,5 @@
-import { LoaderFunctionArgs, json } from "@remix-run/node";
 import { Link, MetaFunction, useLoaderData } from "@remix-run/react";
+import { LoaderFunctionArgs, json } from "@vercel/remix";
 
 import { ErrorComponent } from "~/components/error-component";
 import { IconCertificate } from "~/components/icons";

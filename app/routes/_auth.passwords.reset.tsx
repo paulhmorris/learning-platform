@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client";
-import { ActionFunctionArgs, LoaderFunctionArgs, json, redirect } from "@remix-run/node";
 import { Link, MetaFunction, useActionData } from "@remix-run/react";
 import { withZod } from "@remix-validated-form/with-zod";
+import { ActionFunctionArgs, LoaderFunctionArgs, json, redirect } from "@vercel/remix";
 import { ValidatedForm, validationError } from "remix-validated-form";
 import { z } from "zod";
 

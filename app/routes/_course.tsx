@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
-import { LoaderFunctionArgs, json } from "@remix-run/node";
 import { Outlet, useParams } from "@remix-run/react";
+import { LoaderFunctionArgs, json } from "@vercel/remix";
 import { useState } from "react";
 import { useIsClient, useMediaQuery } from "usehooks-ts";
 

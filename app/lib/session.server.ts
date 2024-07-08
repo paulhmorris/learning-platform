@@ -1,4 +1,4 @@
-import { createCookieSessionStorage } from "@remix-run/node";
+import { createCookieSessionStorage } from "@vercel/remix";
 import { createThemeSessionResolver } from "remix-themes";
 
 export const sessionStorage = createCookieSessionStorage({

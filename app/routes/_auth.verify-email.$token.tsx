@@ -1,5 +1,5 @@
-import { LoaderFunctionArgs, json } from "@remix-run/node";
 import { Link } from "@remix-run/react";
+import { json, LoaderFunctionArgs } from "@vercel/remix";
 
 import { PageTitle } from "~/components/common/page-title";
 import { db } from "~/integrations/db.server";

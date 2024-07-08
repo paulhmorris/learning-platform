@@ -1,8 +1,8 @@
-import { ActionFunctionArgs, LoaderFunctionArgs, MetaFunction, json } from "@remix-run/node";
 import { useLoaderData, useRevalidator } from "@remix-run/react";
 import { withZod } from "@remix-validated-form/with-zod";
 import { Stripe, loadStripe } from "@stripe/stripe-js";
 import { IconExclamationCircle } from "@tabler/icons-react";
+import { ActionFunctionArgs, LoaderFunctionArgs, MetaFunction, json } from "@vercel/remix";
 import { useEffect, useState } from "react";
 import { ValidatedForm, validationError } from "remix-validated-form";
 import { toast as clientToast } from "sonner";

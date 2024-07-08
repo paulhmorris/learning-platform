@@ -1,6 +1,6 @@
-import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@remix-run/node";
 import { Link, MetaFunction, useActionData, useLoaderData } from "@remix-run/react";
 import { withZod } from "@remix-validated-form/with-zod";
+import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@vercel/remix";
 import { ValidatedForm } from "remix-validated-form";
 import { z } from "zod";
 

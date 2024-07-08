@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client";
-import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@remix-run/node";
 import { Form, Link, MetaFunction, useActionData, useLoaderData } from "@remix-run/react";
+import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@vercel/remix";
 import { useEffect, useRef } from "react";
 import invariant from "tiny-invariant";
 

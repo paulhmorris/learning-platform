@@ -1,6 +1,6 @@
-import { LoaderFunctionArgs, json } from "@remix-run/node";
 import { Link, MetaFunction } from "@remix-run/react";
 import { IconArrowLeft } from "@tabler/icons-react";
+import { LoaderFunctionArgs, json } from "@vercel/remix";
 
 import { PaymentMethodForm } from "~/components/account/payment-method-form";
 import { ErrorComponent } from "~/components/error-component";

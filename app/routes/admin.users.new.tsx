@@ -1,6 +1,6 @@
 import { UserRole } from "@prisma/client";
-import { ActionFunctionArgs, MetaFunction } from "@remix-run/node";
 import { withZod } from "@remix-validated-form/with-zod";
+import { ActionFunctionArgs, MetaFunction } from "@vercel/remix";
 import { ValidatedForm, validationError } from "remix-validated-form";
 import { z } from "zod";
 

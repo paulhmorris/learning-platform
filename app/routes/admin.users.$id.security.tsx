@@ -1,8 +1,9 @@
-import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@remix-run/node";
 import { MetaFunction, useFetcher, useLoaderData, useRouteLoaderData } from "@remix-run/react";
 import { withZod } from "@remix-validated-form/with-zod";
+import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@vercel/remix";
 import dayjs from "dayjs";
 import { validationError } from "remix-validated-form";
+import { useIsClient } from "usehooks-ts";
 import { z } from "zod";
 
 import { ActivateUserDialog } from "~/components/admin/security/activate-user-dialog";
@@ -139,6 +140,7 @@ export default function AdminUserSecurity() {
   const layoutData = useRouteLoaderData<typeof userLayoutLoader>("routes/admin.users.$id");
   const { user } = useLoaderData<typeof loader>();
   const fetcher = useFetcher();
+  const isClient = useIsClient();
 
   return (
     <>
@@ -183,11 +185,11 @@ export default function AdminUserSecurity() {
             <div>
               <p className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Created</span>
-                {dayjs(user.password.createdAt).format("MM/DD/YY h:mma")}
+                {isClient ? dayjs(user.password.createdAt).format("MM/DD/YY h:mma") : null}
               </p>
               <p className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Last updated</span>
-                {dayjs(user.password.updatedAt).format("MM/DD/YY h:mma")}
+                {isClient ? dayjs(user.password.updatedAt).format("MM/DD/YY h:mma") : null}
               </p>
             </div>
           ) : (
@@ -230,18 +232,18 @@ export default function AdminUserSecurity() {
                   <div className="space-y-1">
                     <p className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Requested</span>
-                      <span>{dayjs(r.createdAt).format("MM/DD/YY h:mma")}</span>
+                      <span>{isClient ? dayjs(r.createdAt).format("MM/DD/YY h:mma") : null}</span>
                     </p>
                     {!isExpired ? (
                       <p className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Expires</span>
-                        <span>{dayjs(r.expiresAt).format("MM/DD/YY h:mma")}</span>
+                        <span>{isClient ? dayjs(r.expiresAt).format("MM/DD/YY h:mma") : null}</span>
                       </p>
                     ) : null}
                     {r.usedAt ? (
                       <p className="flex justify-between text-sm text-success">
                         <span>Used At</span>
-                        <span>{dayjs(r.usedAt).format("MM/DD/YY h:mma")}</span>
+                        <span>{isClient ? dayjs(r.usedAt).format("MM/DD/YY h:mma") : null}</span>
                       </p>
                     ) : null}
                     <p className="flex justify-between text-sm">

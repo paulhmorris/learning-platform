@@ -1,5 +1,5 @@
-import { LoaderFunctionArgs, json } from "@remix-run/node";
 import { MetaFunction, useLoaderData } from "@remix-run/react";
+import { LoaderFunctionArgs, json } from "@vercel/remix";
 import dayjs from "dayjs";
 
 import { ErrorComponent } from "~/components/error-component";

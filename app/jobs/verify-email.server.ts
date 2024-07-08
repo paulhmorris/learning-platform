@@ -19,7 +19,7 @@ export const verifyEmailJob = task({
 
     if (!user) {
       logger.error("User not found", { email: payload.email });
-      return;
+      throw new Error("User not found");
     }
 
     logger.info("User found", { user: user });

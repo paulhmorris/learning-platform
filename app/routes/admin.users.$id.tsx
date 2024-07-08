@@ -1,4 +1,3 @@
-import { LoaderFunctionArgs, json } from "@remix-run/node";
 import { NavLink, Outlet, useLoaderData } from "@remix-run/react";
 import {
   IconCertificate,
@@ -10,6 +9,7 @@ import {
   IconUserCircle,
   IconUserScan,
 } from "@tabler/icons-react";
+import { LoaderFunctionArgs, json } from "@vercel/remix";
 
 import { BackLink } from "~/components/common/back-link";
 import { Badge } from "~/components/ui/badge";

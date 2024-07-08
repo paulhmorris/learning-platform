@@ -1,5 +1,5 @@
-import { json, type ActionFunctionArgs } from "@remix-run/node";
 import { withZod } from "@remix-validated-form/with-zod";
+import { json, type ActionFunctionArgs } from "@vercel/remix";
 import dayjs from "dayjs";
 import { validationError } from "remix-validated-form";
 import { z } from "zod";

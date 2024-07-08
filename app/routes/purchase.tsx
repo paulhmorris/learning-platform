@@ -1,5 +1,5 @@
-import { ActionFunctionArgs, LoaderFunctionArgs, json, redirect } from "@remix-run/node";
 import { useLoaderData, useSearchParams } from "@remix-run/react";
+import { ActionFunctionArgs, LoaderFunctionArgs, json, redirect } from "@vercel/remix";
 import { useEffect, useState } from "react";
 
 import { PageTitle } from "~/components/common/page-title";

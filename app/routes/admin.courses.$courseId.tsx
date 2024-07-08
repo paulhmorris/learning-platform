@@ -1,5 +1,5 @@
-import { LoaderFunctionArgs, json } from "@remix-run/node";
 import { Outlet, useLoaderData } from "@remix-run/react";
+import { LoaderFunctionArgs, json } from "@vercel/remix";
 
 import { BackLink } from "~/components/common/back-link";
 import { ErrorComponent } from "~/components/error-component";
