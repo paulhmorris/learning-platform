@@ -6,7 +6,7 @@ import morgan from "morgan";
 import { ViteDevServer, defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
-const isVercel = !!process.env.VERCEL;
+const isVercel = process.env.VERCEL === "1";
 const isCI = !!process.env.CI;
 
 installGlobals();
@@ -20,10 +20,10 @@ export default defineConfig({
     port: 3000,
   },
   plugins: [
-    isVercel && vercelPreset(),
     morganPlugin(),
     tsconfigPaths(),
     remix({
+      ...(isVercel && { presets: [vercelPreset()] }),
       ignoredRouteFiles: ["**/.*", "**/*.test.{ts,tsx}"],
       serverModuleFormat: "esm",
     }),
