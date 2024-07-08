@@ -10,7 +10,7 @@ import { useCourseData } from "~/hooks/useCourseData";
 import { cms } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
-import { claimCertificateTask } from "~/jobs/claim-certificate";
+import { claimCertificateJob } from "~/jobs/claim-certificate";
 import { toast } from "~/lib/toast.server";
 import { useUser } from "~/lib/utils";
 import { loader as courseLoader } from "~/routes/_course";
@@ -120,7 +120,7 @@ export async function action({ request }: ActionFunctionArgs) {
       });
     }
 
-    const job = await claimCertificateTask.trigger({
+    const job = await claimCertificateJob.trigger({
       userId: user.id,
       courseId: linkedCourse.id,
       courseName: course.data.attributes.title,

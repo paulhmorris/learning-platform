@@ -8,7 +8,7 @@ import { EmailService } from "~/integrations/email.server";
 
 // TODO: Add certificate number to pdf
 
-export const claimCertificateTask = task({
+export const claimCertificateJob = task({
   id: "claim-certificate",
   run: async (payload: { userId: string; courseId: string; courseName: string }) => {
     const user = await db.user.findUniqueOrThrow({

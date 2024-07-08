@@ -13,6 +13,7 @@ export const verifyEmailJob = task({
   run: async (payload: Payload) => {
     // Generate a verification token
     const token = Math.floor(100000 + Math.random() * 900000).toString();
+    logger.info("Generated verification token", { token });
 
     const user = await UserService.getByEmail(payload.email, { select: { id: true } });
 
@@ -21,8 +22,10 @@ export const verifyEmailJob = task({
       return;
     }
 
+    logger.info("User found", { user: user });
+
     // Create verification entry
-    await db.userVerification.upsert({
+    const verification = await db.userVerification.upsert({
       where: { userId: user.id },
       create: {
         expiresAt: new Date(Date.now() + 60 * 60 * 1000),
@@ -39,16 +42,18 @@ export const verifyEmailJob = task({
       },
     });
 
+    logger.info("Verification created", { verification });
+
     // Send email
-    await EmailService.send({
+    const messageId = await EmailService.send({
       from: "Plumb Learning <no-reply@plumblearning.com>",
       to: payload.email,
       subject: "Verify Your Email",
       html: `<p>Here's your six digit verification code: <strong>${token}</strong></p>`,
     });
 
-    return {
-      success: true,
-    };
+    logger.info("Email sent", { messageId });
+
+    return { success: true };
   },
 });

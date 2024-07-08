@@ -1,6 +1,5 @@
 import { ActionFunctionArgs, json } from "@remix-run/node";
 import { withZod } from "@remix-validated-form/with-zod";
-import { nanoid } from "nanoid";
 import { validationError } from "remix-validated-form";
 import { z } from "zod";
 
@@ -25,16 +24,27 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { email } = result.data;
   try {
-    await verifyEmailJob.trigger({ email }, { idempotencyKey: nanoid() });
-    return toast.json(
-      request,
-      { success: true },
-      {
-        title: "Verification code sent",
-        description: `We've sent a verification code to ${email}. Please check your inbox and enter the code below.`,
-        type: "success",
-      },
-    );
+    const { id } = await verifyEmailJob.trigger({ email });
+    if (id) {
+      return toast.json(
+        request,
+        { success: true },
+        {
+          title: "Verification code sent",
+          type: "success",
+        },
+      );
+    } else {
+      return toast.json(
+        request,
+        { error: "An error occurred while sending the verification code. Please try again." },
+        {
+          title: "Error",
+          description: "An error occurred while sending the verification code. Please try again.",
+          type: "error",
+        },
+      );
+    }
   } catch (error) {
     console.error(error);
     Sentry.captureException(error);
