@@ -27,35 +27,13 @@ export class EmailService {
 
     try {
       const data = await this.send({
-        from: "Plumb Media & Education <no-reply@getcosmic.dev>",
+        from: "Plumb Learning <no-reply@plumblearning.com>",
         to: email,
         subject: "Reset Your Password",
         html: `
-          <p>Hi there,</p>
-          <p>Someone requested a password reset for your Plumb Media & Education account. If this was you, please click the link below to reset your password. The link will expire in 15 minutes.</p>
-          <p><a style="text-decoration-line:underline;" href="${url.toString()}" target="_blank">Reset Password</a></p>
+          <p>To reset your Plumb Media & Education password, please click this link. The link will expire in 15 minutes.</p>
+          <p><a style="text-decoration-line:underline;" href="${url.toString()}" target="_blank">${url.toString()}</a></p>
           <p>If you did not request a password reset, you can safely ignore this email.</p>
-        `,
-      });
-      return { data };
-    } catch (error) {
-      return { error };
-    }
-  }
-
-  static async sendPasswordSetup({ email, token }: PasswordEmailProps) {
-    const url = new URL("/passwords/new", process.env.SITE_URL);
-    url.searchParams.set("token", token);
-
-    try {
-      const data = await this.send({
-        from: "Plumb Media & Education <no-reply@getcosmic.dev>",
-        to: email,
-        subject: "Setup Your Password",
-        html: `
-          <p>Hi there,</p>
-          <p>Someone created an Plumb Media & Education account for you. Click the link below to setup a password. The link will expire in 15 minutes.</p>
-          <p><a style="text-decoration-line:underline;" href="${url.toString()}" target="_blank">Setup Password</a></p>
         `,
       });
       return { data };

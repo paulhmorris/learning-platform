@@ -41,10 +41,9 @@ export const claimCertificateTask = task({
     if (thisCourse.certificateClaimed) {
       logger.info("Certificate already claimed. Sending another email.", user);
       const email = await EmailService.send({
-        from: `${payload.courseName} <no-reply@getcosmic.dev>`,
-        // to: user.email,
-        to: "paulh.morris@gmail.com",
-        subject: "Your certificate is ready!",
+        from: `Plumb Learning <no-reply@plumblearning.com>`,
+        to: user.email,
+        subject: "View Your Certificate!",
         html: `
           <p>Hi ${user.firstName},</p>
           <p>Congratulations on completing the ${payload.courseName} course! Your certificate is ready to download.</p>
@@ -83,7 +82,7 @@ export const claimCertificateTask = task({
 
     // send email with link to image
     const email = await EmailService.send({
-      from: `${payload.courseName} <no-reply@getcosmic.dev>`,
+      from: `${payload.courseName} <no-reply@plumblearning.com>`,
       // to: user.email,
       to: "paulh.morris@gmail.com",
       subject: "Your certificate is ready!",

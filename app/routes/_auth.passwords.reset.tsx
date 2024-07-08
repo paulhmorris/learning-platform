@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { ActionFunctionArgs, LoaderFunctionArgs, json, redirect } from "@remix-run/node";
-import { MetaFunction, useActionData } from "@remix-run/react";
+import { Link, MetaFunction, useActionData } from "@remix-run/react";
 import { withZod } from "@remix-validated-form/with-zod";
 import { ValidatedForm, validationError } from "remix-validated-form";
 import { z } from "zod";
@@ -33,6 +33,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   }
 
   try {
+    const existingReset = await PasswordService.getResetByUserId(result.data.email);
+    // If a reset already exists, just exit inconspicuously
+    if (existingReset) {
+      return json({ success: true });
+    }
     const reset = await PasswordService.generateReset(result.data.email);
     await EmailService.sendPasswordReset({ email: result.data.email, token: reset.token });
     return json({ success: true });
@@ -69,7 +74,7 @@ export default function ResetPassword() {
   return (
     <>
       <AuthCard>
-        <PageTitle className="mb-8">Reset your password</PageTitle>
+        <PageTitle className="mb-8 text-center sm:text-left">Reset your password</PageTitle>
         {data && data.success ? (
           <p className="text-lg font-medium">
             Thanks! If your email is registered with us, you will be emailed a link to reset your password.
@@ -81,6 +86,15 @@ export default function ResetPassword() {
           </ValidatedForm>
         )}
       </AuthCard>
+      <p className="text-center text-sm">
+        <Link to="/join" className="text-sm font-bold">
+          Sign up
+        </Link>
+        <span>|</span>
+        <Link to="/login" className="text-sm font-bold">
+          Log in
+        </Link>
+      </p>
     </>
   );
 }

@@ -33,15 +33,26 @@ export async function loader({ request }: LoaderFunctionArgs) {
           user_id: user.id,
         },
       });
-      await db.user.update({
+      const updatedUser = await db.user.update({
         where: { id: user.id },
         data: { stripeId: stripeCustomer.id },
       });
+
+      if (!updatedUser.stripeId) {
+        throw new Error("Error creating Stripe customer. Please try again.");
+      }
+
+      const setupIntent = await stripe.setupIntents.create({
+        payment_method_types: ["card"],
+        customer: updatedUser.stripeId,
+      });
+
+      return json({ clientSecret: setupIntent.client_secret ?? undefined });
     }
 
     const setupIntent = await stripe.setupIntents.create({
       payment_method_types: ["card"],
-      customer: user.stripeId ?? undefined,
+      customer: user.stripeId,
     });
 
     return json({ clientSecret: setupIntent.client_secret ?? undefined });

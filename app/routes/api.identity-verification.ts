@@ -43,7 +43,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
               await EmailService.send({
                 to: user.email,
-                from: "Plumb Media & Education <no-reply@getcosmic.dev>",
+                from: "Plumb Media & Education <no-reply@plumblearning.com>",
                 subject: "Action Required: Verify Your Identity",
                 html: `<p>More information is required to verify your identity. ${event.data.object.last_error?.reason}</p>`,
               });

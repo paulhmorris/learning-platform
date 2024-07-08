@@ -2,7 +2,6 @@ import { logger, task } from "@trigger.dev/sdk/v3";
 
 import { db } from "~/integrations/db.server";
 import { EmailService } from "~/integrations/email.server";
-import { COMPANY_NAME } from "~/lib/constants";
 import { UserService } from "~/services/UserService.server";
 
 type Payload = {
@@ -42,7 +41,7 @@ export const verifyEmailJob = task({
 
     // Send email
     await EmailService.send({
-      from: `${COMPANY_NAME} <no-reply@getcosmic.dev>`,
+      from: "Plumb Learning <no-reply@plumblearning.com>",
       to: payload.email,
       subject: "Verify Your Email",
       html: `<p>Here's your six digit verification code: <strong>${token}</strong></p>`,
