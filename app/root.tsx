@@ -1,6 +1,7 @@
 import type { LinksFunction, LoaderFunctionArgs } from "@remix-run/node";
 import { Links, Meta, Outlet, Scripts, ScrollRestoration, json, useLoaderData, useRouteError } from "@remix-run/react";
 import { captureRemixErrorBoundaryError, withSentry } from "@sentry/remix";
+import { useEffect } from "react";
 import { PreventFlashOnWrongTheme, ThemeProvider, useTheme } from "remix-themes";
 
 import "@fontsource-variable/inter/wght.css";
@@ -81,6 +82,18 @@ function AppWithProviders() {
 function App() {
   const data = useLoaderData<typeof loader>();
   const [theme] = useTheme();
+
+  useEffect(() => {
+    if (data.user) {
+      Sentry.setUser({
+        id: data.user.id,
+        email: data.user.email,
+        username: data.user.email,
+      });
+    } else {
+      Sentry.setUser(null);
+    }
+  }, [data.user]);
 
   return (
     <html lang="en" className={cn(theme, "h-full")} suppressHydrationWarning>

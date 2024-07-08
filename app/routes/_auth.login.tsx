@@ -11,7 +11,6 @@ import { ErrorComponent } from "~/components/error-component";
 import { Checkbox, FormField } from "~/components/ui/form";
 import { Label } from "~/components/ui/label";
 import { SubmitButton } from "~/components/ui/submit-button";
-import { Sentry } from "~/integrations/sentry";
 import { CheckboxSchema } from "~/lib/schemas";
 import { toast } from "~/lib/toast.server";
 import { safeRedirect } from "~/lib/utils";
@@ -76,8 +75,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     url.searchParams.set("status", "unverified");
     return redirect(url.toString());
   }
-
-  Sentry.setUser({ id: user.id, email: user.email });
 
   return SessionService.createUserSession({
     request,
