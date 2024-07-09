@@ -65,7 +65,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     return toast.json(request, defaultResponse, {
       type: "error",
       title: "Course not found",
-      description: `Please try again later. ${error.message}`,
+      description: `Please try again later.`,
       position: "bottom-center",
     });
   }
