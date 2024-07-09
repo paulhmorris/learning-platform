@@ -7,6 +7,7 @@
     "dev": "remix vite:dev",
     "build": "remix vite:build",
     "start": "remix-serve ./build/server/index.js",
+    "postinstall": "prisma generate",
     "copytypes": "node copyTypes.js"
   },
   "overrides": {
