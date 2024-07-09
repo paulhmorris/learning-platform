@@ -34,6 +34,9 @@ export default defineConfig({
         authToken: process.env.SENTRY_AUTH_TOKEN,
       }),
   ],
+  optimizeDeps: {
+    exclude: ["@napi-rs/canvas"],
+  },
   resolve: {
     alias: {
       ".prisma/client/index-browser": "./node_modules/.prisma/client/index-browser.js",

@@ -19,14 +19,24 @@ function getPrismaClient() {
   const { DATABASE_URL } = process.env;
   invariant(typeof DATABASE_URL === "string", "DATABASE_URL env var not set");
 
+  if (process.env.NODE_ENV === "development") {
+    const databaseUrl = new URL(DATABASE_URL);
+    const client = new PrismaClient({
+      datasources: {
+        db: {
+          url: databaseUrl.toString(),
+        },
+      },
+    });
+    void client.$connect();
+    return client;
+  }
+
   neonConfig.webSocketConstructor = ws;
-  const connectionString = `${process.env.DATABASE_URL}`;
-  const pool = new Pool({ connectionString });
+  const pool = new Pool({ connectionString: DATABASE_URL, ...neonConfig });
   const adapter = new PrismaNeon(pool);
   const client = new PrismaClient({ adapter });
-  // connect eagerly
   void client.$connect();
-
   return client;
 }
 

@@ -1,5 +1,5 @@
+import { createCanvas, loadImage } from "@napi-rs/canvas";
 import { logger, task } from "@trigger.dev/sdk/v3";
-import { createCanvas, loadImage } from "canvas";
 import { nanoid } from "nanoid";
 
 import { Bucket } from "~/integrations/bucket.server";
