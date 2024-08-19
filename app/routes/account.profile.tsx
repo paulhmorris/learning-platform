@@ -168,7 +168,7 @@ export default function AccountProfile() {
               onClick={handleVerify}
               disabled={!stripe}
               type="button"
-              className="text-sm text-foreground sm:w-auto"
+              className="w-auto text-sm text-foreground"
               aria-describedby="verify-btn-description"
               variant="link"
             >

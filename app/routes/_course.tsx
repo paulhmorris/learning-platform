@@ -205,7 +205,7 @@ export default function CourseLayout() {
 
                             const lastLessonIsCompleted = lessonsInOrder[lastCompletedLessonIndex]?.isCompleted;
                             const isLessonLocked =
-                              !lesson.isCompleted ||
+                              (lessonIndex > 0 && !lesson.isCompleted) ||
                               (previousSectionQuiz?.data && !previousSectionQuizIsCompleted) ||
                               (!isCourseCompleted &&
                                 !lastLessonIsCompleted &&

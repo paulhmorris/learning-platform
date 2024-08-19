@@ -99,7 +99,7 @@ export default function LoginPage() {
   return (
     <>
       <AuthCard>
-        <PageTitle className="mb-8">Sign in</PageTitle>
+        <PageTitle className="mb-4 sm:mb-8">Sign in</PageTitle>
         <ValidatedForm validator={validator} method="post" className="w-full space-y-6">
           <FormField
             label="Email"
@@ -108,7 +108,7 @@ export default function LoginPage() {
             type="email"
             autoComplete="email"
             required
-            defaultValue={process.env.NODE_ENV === "development" ? "paul@remix.run" : ""}
+            defaultValue={process.env.NODE_ENV === "development" ? "paulh.morris@gmail.com" : ""}
           />
           <FormField
             label="Password"
@@ -117,7 +117,7 @@ export default function LoginPage() {
             type="password"
             autoComplete="current-password"
             required
-            defaultValue={process.env.NODE_ENV === "development" ? "password" : ""}
+            defaultValue={process.env.NODE_ENV === "development" ? "password1" : ""}
           />
 
           <div className="flex items-center justify-between gap-x-2">

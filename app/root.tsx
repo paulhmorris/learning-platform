@@ -42,17 +42,20 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     const linkedCourse = await getLinkedCourseByHost(host);
 
     if (!linkedCourse) {
-      return json(defaultResponse, {
-        headers: {
-          "Set-Cookie": await SessionService.commitSession(session),
+      return json(
+        { ...defaultResponse, hasLinkedCourse: false },
+        {
+          headers: {
+            "Set-Cookie": await SessionService.commitSession(session),
+          },
         },
-      });
+      );
     }
 
     const course = await getCoursefromCMSForRoot(linkedCourse.strapiId);
 
     return json(
-      { ...defaultResponse, course },
+      { ...defaultResponse, course, hasLinkedCourse: true },
       {
         headers: {
           "Set-Cookie": await SessionService.commitSession(session),
@@ -62,12 +65,16 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   } catch (error) {
     console.error(error);
     Sentry.captureException(error);
-    return toast.json(request, defaultResponse, {
-      type: "error",
-      title: "Course not found",
-      description: `Please try again later.`,
-      position: "bottom-center",
-    });
+    return toast.json(
+      request,
+      { ...defaultResponse, hasLinkedCourse: false },
+      {
+        type: "error",
+        title: "Course not found",
+        description: `Please try again later.`,
+        position: "bottom-center",
+      },
+    );
   }
 };
 

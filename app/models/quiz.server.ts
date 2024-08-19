@@ -13,7 +13,7 @@ export async function getAllQuizProgress(userId: string) {
 }
 
 export async function resetAllQuizProgress(userId: string) {
-  return db.userLessonProgress.deleteMany({ where: { userId } });
+  return db.userQuizProgress.deleteMany({ where: { userId } });
 }
 
 export async function resetQuizProgress(quizId: number, userId: string) {

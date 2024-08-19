@@ -74,7 +74,7 @@ export default function ResetPassword() {
   return (
     <>
       <AuthCard>
-        <PageTitle className="mb-8 text-center sm:text-left">Reset your password</PageTitle>
+        <PageTitle className="mb-4 text-center sm:mb-8 sm:text-left">Reset your password</PageTitle>
         {data && data.success ? (
           <p className="text-lg font-medium">
             Thanks! If your email is registered with us, you will be emailed a link to reset your password.
@@ -86,7 +86,7 @@ export default function ResetPassword() {
           </ValidatedForm>
         )}
       </AuthCard>
-      <p className="text-center text-sm">
+      <p className="space-x-2 text-center text-sm">
         <Link to="/join" className="text-sm font-bold">
           Sign up
         </Link>

@@ -64,7 +64,7 @@ export function SectionLesson(props: SectionLessonProps) {
   }
 
   // Unstarted state
-  if (!userProgress) {
+  if (!userProgress && !locked) {
     return (
       <NavLink
         end
@@ -107,7 +107,7 @@ export function SectionLesson(props: SectionLessonProps) {
   }
 
   // In progress state
-  if (!userProgress.isCompleted) {
+  if (userProgress && !userProgress.isCompleted) {
     let percentage = 0;
     if (userProgress.durationInSeconds && lesson.attributes.required_duration_in_seconds) {
       percentage = (userProgress.durationInSeconds / lesson.attributes.required_duration_in_seconds) * 100;
@@ -158,7 +158,7 @@ export function SectionLesson(props: SectionLessonProps) {
 
   // Completed state
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  if (userProgress.isCompleted) {
+  if (userProgress && userProgress.isCompleted) {
     return (
       <NavLink
         to={`/${lesson.attributes.slug}`}

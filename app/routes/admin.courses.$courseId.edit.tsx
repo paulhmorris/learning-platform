@@ -24,7 +24,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 const validator = withZod(
   z.object({
-    host: z.string({ message: "Host is required" }),
+    host: z
+      .string({ message: "Host is required" })
+      .regex(/^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}a-zA-Z0-9+$/, { message: "Must match the expected pattern" })
+      .or(z.string().regex(/localhost/, { message: "Must match the expected pattern" })),
     strapiId: z.coerce.number({ message: "Strapi ID is required" }),
     stripePriceId: z.string({ message: "Stripe price ID is required" }),
     stripeProductId: z.string({ message: "Stripe product ID is required" }),
@@ -91,7 +94,13 @@ export default function AdminEditCourse() {
       defaultValues={{ ...data.course }}
       className="max-w-md space-y-4"
     >
-      <FormField required label="Host" name="host" description="e.g. course.hiphopdriving.com" />
+      <FormField
+        required
+        label="Host"
+        name="host"
+        description="e.g. course.hiphopdriving.com"
+        pattern="^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}a-zA-Z0-9+$"
+      />
       <FormField required label="CMS ID" name="strapiId" description="ID of the course in the CMS" />
       <FormField required label="Stripe Price ID" name="stripePriceId" description="Refer to the Stripe dashboard" />
       <FormField

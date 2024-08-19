@@ -12,10 +12,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
+import { useRootData } from "~/hooks/useRootData";
 import { useOptionalUser } from "~/lib/utils";
 
 export function UserMenu() {
   const user = useOptionalUser();
+  const rootData = useRootData();
 
   if (!user) {
     return null;
@@ -54,11 +56,13 @@ export function UserMenu() {
                 Home
               </Link>
             </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link className="cursor-pointer" to="/preview">
-                Go To Course
-              </Link>
-            </DropdownMenuItem>
+            {rootData?.hasLinkedCourse ? (
+              <DropdownMenuItem asChild>
+                <Link className="cursor-pointer" to="/preview">
+                  Go To Course
+                </Link>
+              </DropdownMenuItem>
+            ) : null}
             <DropdownMenuItem asChild>
               <Link className="cursor-pointer" to="/account/profile">
                 Account

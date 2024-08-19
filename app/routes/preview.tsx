@@ -38,9 +38,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
       });
     }
 
-    const course = await getCourse(linkedCourse.strapiId);
-    const progress = await db.userLessonProgress.findMany({ where: { userId: user.id } });
-    const quizProgress = await db.userQuizProgress.findMany({ where: { userId: user.id } });
+    const [course, progress, quizProgress] = await Promise.all([
+      getCourse(linkedCourse.strapiId),
+      db.userLessonProgress.findMany({ where: { userId: user.id } }),
+      db.userQuizProgress.findMany({ where: { userId: user.id } }),
+    ]);
 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     const userHasAccess = user.courses && user.courses.some((c) => c.courseId === linkedCourse.id);
@@ -107,7 +109,7 @@ export default function CoursePreview() {
 
   // Find the index of the next lesson to be completed, or use the first lesson if all are completed
   const nextLessonIndex = lessonsInOrder.findIndex((l) => !l.isCompleted);
-  const lastCompletedLessonIndex = Math.max(0, nextLessonIndex - 1); // Ensures a minimum of 0
+  const lastCompletedLessonIndex = Math.max(0, nextLessonIndex - 1);
 
   // Determine if the next content is a quiz and if it's incomplete
   const lastCompletedLessonSection = course.attributes.sections.find(
@@ -168,7 +170,7 @@ export default function CoursePreview() {
             ) : nextQuiz ? (
               <CourseUpNext quiz={{ id: nextQuiz.id, numQuestions: nextQuiz.attributes.questions?.length ?? 1 }} />
             ) : (
-              <CourseUpNext lesson={lessonsInOrder[lastCompletedLessonIndex + 1] as LessonInOrder} />
+              <CourseUpNext lesson={lessonsInOrder[nextLessonIndex] as LessonInOrder} />
             )}
           </div>
 
@@ -182,6 +184,8 @@ export default function CoursePreview() {
                 (acc, curr) => Math.ceil((curr.attributes.required_duration_in_seconds || 0) + acc),
                 0,
               );
+
+              // This breaks with just a single quiz on it's own in a section, but that should never happen
               const isQuizLocked =
                 !userHasAccess || lessonsInOrder.filter((l) => l.sectionId === section.id).some((l) => !l.isCompleted);
               // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
@@ -208,7 +212,7 @@ export default function CoursePreview() {
 
                         const previousLessonIsCompleted = lessonsInOrder[lessonIndex - 1]?.isCompleted;
                         const isLessonLocked =
-                          !lesson.isCompleted ||
+                          (lessonIndex > 0 && !lesson.isCompleted) ||
                           !userHasAccess ||
                           (previousSectionQuiz?.data && !previousSectionQuizIsCompleted) ||
                           (!isCourseCompleted &&
