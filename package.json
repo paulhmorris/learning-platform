@@ -8,7 +8,7 @@
     "build": "remix vite:build",
     "start": "remix-serve ./build/server/index.js",
     "postinstall": "prisma generate",
-    "copytypes": "node copyTypes.js"
+    "copytypes": "node copyTypes.cjs && npx prettier --write ."
   },
   "overrides": {
     "react": "^18.3.1",
@@ -144,6 +144,6 @@
     "seed": "tsx prisma/seed.ts"
   },
   "volta": {
-    "node": "20.15.0"
+    "node": "20.18.0"
   }
 }

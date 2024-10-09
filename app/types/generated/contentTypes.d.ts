@@ -1,4 +1,4 @@
-import type { Schema, Attribute } from "@strapi/strapi";
+import type { Attribute, Schema } from "@strapi/strapi";
 
 export interface AdminPermission extends Schema.CollectionType {
   collectionName: "admin_permissions";
@@ -320,6 +320,39 @@ export interface ApiCourseCourse extends Schema.CollectionType {
   };
 }
 
+export interface ApiHipHopLandingPageHipHopLandingPage extends Schema.SingleType {
+  collectionName: "hip_hop_landing_pages";
+  info: {
+    singularName: "hip-hop-landing-page";
+    pluralName: "hip-hop-landing-pages";
+    displayName: "Hip Hop Landing Page";
+    description: "";
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    hero_title: Attribute.String;
+    hero_subtitle: Attribute.String;
+    feature_card: Attribute.Component<"page-content.feature-card", true>;
+    feature: Attribute.Component<"page-content.feature", true>;
+    slide: Attribute.Component<"page-content.slide", true>;
+    cta_dark: Attribute.String & Attribute.Required;
+    faq: Attribute.Component<"page-content.faq", true>;
+    cta_large: Attribute.String;
+    module_card: Attribute.Component<"page-content.module-card", true>;
+    insurance_cta: Attribute.String;
+    hero_highlighted: Attribute.String;
+    createdAt: Attribute.DateTime;
+    updatedAt: Attribute.DateTime;
+    publishedAt: Attribute.DateTime;
+    createdBy: Attribute.Relation<"api::hip-hop-landing-page.hip-hop-landing-page", "oneToOne", "admin::user"> &
+      Attribute.Private;
+    updatedBy: Attribute.Relation<"api::hip-hop-landing-page.hip-hop-landing-page", "oneToOne", "admin::user"> &
+      Attribute.Private;
+  };
+}
+
 export interface ApiLessonLesson extends Schema.CollectionType {
   collectionName: "lessons";
   info: {
@@ -342,13 +375,7 @@ export interface ApiLessonLesson extends Schema.CollectionType {
     content: Attribute.DynamicZone<["blocks.audio", "blocks.image", "blocks.text", "blocks.video", "blocks.slideshow"]>;
     uuid: Attribute.UID & Attribute.CustomField<"plugin::strapi-advanced-uuid.uuid">;
     has_video: Attribute.Boolean & Attribute.Required & Attribute.DefaultTo<true>;
-    required_duration_in_seconds: Attribute.Integer &
-      Attribute.SetMinMax<
-        {
-          min: 60;
-        },
-        number
-      >;
+    required_duration_in_seconds: Attribute.Integer;
     createdAt: Attribute.DateTime;
     updatedAt: Attribute.DateTime;
     publishedAt: Attribute.DateTime;
@@ -769,6 +796,7 @@ declare module "@strapi/types" {
       "admin::transfer-token": AdminTransferToken;
       "admin::transfer-token-permission": AdminTransferTokenPermission;
       "api::course.course": ApiCourseCourse;
+      "api::hip-hop-landing-page.hip-hop-landing-page": ApiHipHopLandingPageHipHopLandingPage;
       "api::lesson.lesson": ApiLessonLesson;
       "api::quiz.quiz": ApiQuizQuiz;
       "plugin::upload.file": PluginUploadFile;

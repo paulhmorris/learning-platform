@@ -1,12 +1,10 @@
 import { NavLink, Outlet } from "@remix-run/react";
 import { IconCreditCard, IconKey, IconUserCircle } from "@tabler/icons-react";
-import { LoaderFunctionArgs, json } from "@vercel/remix";
 
 import { UserDebugTools } from "~/components/debug/user-debug-tools";
 import { ErrorComponent } from "~/components/error-component";
 import { IconCertificate } from "~/components/icons";
 import { cn } from "~/lib/utils";
-import { SessionService } from "~/services/SessionService.server";
 
 const links = [
   { href: "/account/profile", text: "Profile", icon: <IconUserCircle className="size-[1.125rem]" /> },
@@ -14,11 +12,6 @@ const links = [
   { href: "/account/payment-methods", text: "Payment", icon: <IconCreditCard className="size-[1.125rem]" /> },
   { href: "/account/courses", text: "Courses", icon: <IconCertificate className="size-[1.125rem]" /> },
 ];
-
-export async function loader({ request }: LoaderFunctionArgs) {
-  await SessionService.requireUserId(request);
-  return json({});
-}
 
 export default function AccountLayout() {
   return (

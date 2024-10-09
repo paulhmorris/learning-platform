@@ -104,7 +104,7 @@ function App() {
   }, [data.user]);
 
   return (
-    <html lang="en" className={cn(theme, "h-full")} suppressHydrationWarning>
+    <html lang="en" className={cn(theme || "light", "h-full")} suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />

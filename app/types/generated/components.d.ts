@@ -102,6 +102,80 @@ export interface CourseSection extends Schema.Component {
   };
 }
 
+export interface PageContentFaq extends Schema.Component {
+  collectionName: "components_page_content_faqs";
+  info: {
+    displayName: "faq";
+    icon: "question";
+  };
+  attributes: {
+    question: Attribute.String & Attribute.Required;
+    answer: Attribute.Text & Attribute.Required;
+  };
+}
+
+export interface PageContentFeatureCard extends Schema.Component {
+  collectionName: "components_page_content_feature_cards";
+  info: {
+    displayName: "feature-card";
+    icon: "file";
+    description: "";
+  };
+  attributes: {
+    title: Attribute.String;
+    subtitle: Attribute.String;
+  };
+}
+
+export interface PageContentFeature extends Schema.Component {
+  collectionName: "components_page_content_features";
+  info: {
+    displayName: "Feature";
+    description: "";
+  };
+  attributes: {
+    title: Attribute.String;
+    subtitle: Attribute.String;
+    icon: Attribute.String & Attribute.Required;
+  };
+}
+
+export interface PageContentModuleCard extends Schema.Component {
+  collectionName: "components_page_content_module_cards";
+  info: {
+    displayName: "Module Card";
+    icon: "";
+  };
+  attributes: {
+    title: Attribute.String;
+    subtitle: Attribute.String;
+    description: Attribute.String;
+    button_text: Attribute.String;
+  };
+}
+
+export interface PageContentSlide extends Schema.Component {
+  collectionName: "components_page_content_slides";
+  info: {
+    displayName: "Slide";
+    icon: "picture";
+  };
+  attributes: {
+    image: Attribute.Media & Attribute.Required;
+    title: Attribute.String & Attribute.Required;
+    subtitle: Attribute.String;
+    description: Attribute.String;
+  };
+}
+
+export interface PageContentText extends Schema.Component {
+  collectionName: "components_page_content_texts";
+  info: {
+    displayName: "text";
+  };
+  attributes: {};
+}
+
 declare module "@strapi/types" {
   export module Shared {
     export interface Components {
@@ -113,6 +187,12 @@ declare module "@strapi/types" {
       "course.quiz-answer": CourseQuizAnswer;
       "course.quiz-question": CourseQuizQuestion;
       "course.section": CourseSection;
+      "page-content.faq": PageContentFaq;
+      "page-content.feature-card": PageContentFeatureCard;
+      "page-content.feature": PageContentFeature;
+      "page-content.module-card": PageContentModuleCard;
+      "page-content.slide": PageContentSlide;
+      "page-content.text": PageContentText;
     }
   }
 }
