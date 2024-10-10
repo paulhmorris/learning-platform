@@ -9,7 +9,7 @@ import { Card, CardFooter, CardHeader, CardTitle } from "~/components/ui/card";
 import { db } from "~/integrations/db.server";
 import { notFound } from "~/lib/responses.server";
 import { getAllCourses } from "~/models/course.server";
-import { SessionService } from "~/services/SessionService.server";
+import { SessionService } from "~/services/session.server";
 
 export const meta: MetaFunction = () => {
   return [{ title: `User Courses | Plumb Media & Education` }];

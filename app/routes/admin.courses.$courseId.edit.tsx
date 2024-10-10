@@ -12,7 +12,7 @@ import { db } from "~/integrations/db.server";
 import { CheckboxSchema } from "~/lib/schemas";
 import { Toasts } from "~/lib/toast.server";
 import { loader as adminCourseLoader } from "~/routes/admin.courses.$courseId";
-import { SessionService } from "~/services/SessionService.server";
+import { SessionService } from "~/services/session.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await SessionService.requireAdmin(request);

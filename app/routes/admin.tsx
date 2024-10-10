@@ -6,7 +6,7 @@ import { CSSProperties } from "react";
 import { UserDebugTools } from "~/components/debug/user-debug-tools";
 import { ErrorComponent } from "~/components/error-component";
 import { cn } from "~/lib/utils";
-import { SessionService } from "~/services/SessionService.server";
+import { SessionService } from "~/services/session.server";
 
 const links = [
   { href: "/admin/users", text: "Users", icon: <IconUsersGroup className="size-[1.125rem]" /> },

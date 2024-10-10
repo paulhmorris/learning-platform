@@ -1,6 +1,6 @@
 import { redirect, type LoaderFunctionArgs } from "@vercel/remix";
 
-import { SessionService } from "~/services/SessionService.server";
+import { SessionService } from "~/services/session.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await SessionService.getUser(request);

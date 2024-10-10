@@ -18,7 +18,7 @@ import { getCourse } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
 import { stripe } from "~/integrations/stripe.server";
 import { Toasts } from "~/lib/toast.server";
-import { SessionService } from "~/services/SessionService.server";
+import { SessionService } from "~/services/session.server";
 import { APIResponseData } from "~/types/utils";
 
 export async function loader({ request }: LoaderFunctionArgs) {

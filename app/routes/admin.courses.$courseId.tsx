@@ -5,7 +5,7 @@ import { BackLink } from "~/components/common/back-link";
 import { ErrorComponent } from "~/components/error-component";
 import { db } from "~/integrations/db.server";
 import { getCoursefromCMSForRoot } from "~/models/course.server";
-import { SessionService } from "~/services/SessionService.server";
+import { SessionService } from "~/services/session.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   await SessionService.requireAdmin(request);

@@ -19,7 +19,7 @@ import { stripe } from "~/integrations/stripe.server";
 import { Toasts } from "~/lib/toast.server";
 import { useUser } from "~/lib/utils";
 import { loader as rootLoader } from "~/root";
-import { SessionService } from "~/services/SessionService.server";
+import { SessionService } from "~/services/session.server";
 
 const validator = withZod(
   z.object({

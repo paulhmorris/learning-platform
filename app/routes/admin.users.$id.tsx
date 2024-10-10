@@ -17,7 +17,7 @@ import { db } from "~/integrations/db.server";
 import { stripe } from "~/integrations/stripe.server";
 import { notFound } from "~/lib/responses.server";
 import { cn } from "~/lib/utils";
-import { SessionService } from "~/services/SessionService.server";
+import { SessionService } from "~/services/session.server";
 
 const links = [
   { href: "", text: "Profile", end: true, icon: <IconUserCircle className="size-[1.125rem]" /> },

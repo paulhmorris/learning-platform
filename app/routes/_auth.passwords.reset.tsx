@@ -14,7 +14,7 @@ import { Sentry } from "~/integrations/sentry";
 import { Toasts } from "~/lib/toast.server";
 import { loader as rootLoader } from "~/root";
 import { AuthService } from "~/services/auth.server";
-import { SessionService } from "~/services/SessionService.server";
+import { SessionService } from "~/services/session.server";
 
 const validator = withZod(z.object({ email: z.string().email() }));
 

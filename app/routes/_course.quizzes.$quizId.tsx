@@ -15,7 +15,7 @@ import { notFound } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
 import { cn } from "~/lib/utils";
 import { loader as courseLoader } from "~/routes/_course";
-import { SessionService } from "~/services/SessionService.server";
+import { SessionService } from "~/services/session.server";
 import { APIResponseData } from "~/types/utils";
 
 export async function loader({ params, request }: LoaderFunctionArgs) {

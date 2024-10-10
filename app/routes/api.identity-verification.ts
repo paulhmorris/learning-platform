@@ -6,7 +6,7 @@ import { EmailService } from "~/integrations/email.server";
 import { Sentry } from "~/integrations/sentry";
 import { stripe } from "~/integrations/stripe.server";
 import { getPrismaErrorText } from "~/lib/responses.server";
-import { SessionService } from "~/services/SessionService.server";
+import { SessionService } from "~/services/session.server";
 
 const secret = process.env.STRIPE_WEBHOOK_SECRET;
 

@@ -10,7 +10,7 @@ import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
 import { Toasts } from "~/lib/toast.server";
 import { useUser } from "~/lib/utils";
-import { SessionService } from "~/services/SessionService.server";
+import { SessionService } from "~/services/session.server";
 
 const validator = withZod(
   z.object({

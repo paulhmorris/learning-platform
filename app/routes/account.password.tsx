@@ -14,7 +14,7 @@ import { useUser } from "~/lib/utils";
 import { verifyLogin } from "~/models/user.server";
 import { loader as rootLoader } from "~/root";
 import { AuthService } from "~/services/auth.server";
-import { SessionService } from "~/services/SessionService.server";
+import { SessionService } from "~/services/session.server";
 
 const validator = withZod(
   z

@@ -16,7 +16,7 @@ import { stripe } from "~/integrations/stripe.server";
 import { Toasts } from "~/lib/toast.server";
 import { loader as rootLoader } from "~/root";
 import { validator as verifyCodeValidator } from "~/routes/api.verification-code";
-import { SessionService } from "~/services/SessionService.server";
+import { SessionService } from "~/services/session.server";
 import { UserService } from "~/services/UserService.server";
 
 const validator = withZod(

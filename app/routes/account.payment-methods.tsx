@@ -8,7 +8,7 @@ import { ErrorComponent } from "~/components/error-component";
 import { db } from "~/integrations/db.server";
 import { stripe } from "~/integrations/stripe.server";
 import { loader as rootLoader } from "~/root";
-import { SessionService } from "~/services/SessionService.server";
+import { SessionService } from "~/services/session.server";
 
 export const meta: MetaFunction<typeof loader, { root: typeof rootLoader }> = ({ matches }) => {
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition

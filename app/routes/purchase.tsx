@@ -8,7 +8,7 @@ import { PurchaseSuccessModal } from "~/components/purchase-success-modal";
 import { Button } from "~/components/ui/button";
 import { db } from "~/integrations/db.server";
 import { stripe } from "~/integrations/stripe.server";
-import { SessionService } from "~/services/SessionService.server";
+import { SessionService } from "~/services/session.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await SessionService.getUserId(request);

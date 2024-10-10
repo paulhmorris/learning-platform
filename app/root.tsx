@@ -15,7 +15,7 @@ import { themeSessionResolver } from "~/lib/session.server";
 import { getToast, Toasts } from "~/lib/toast.server";
 import { cn, hexToPartialHSL } from "~/lib/utils";
 import { getCoursefromCMSForRoot, getLinkedCourseByHost } from "~/models/course.server";
-import { SessionService } from "~/services/SessionService.server";
+import { SessionService } from "~/services/session.server";
 import globalStyles from "~/tailwind.css?url";
 
 export const links: LinksFunction = () => [{ rel: "stylesheet", href: globalStyles, as: "style" }];

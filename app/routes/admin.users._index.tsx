@@ -9,7 +9,7 @@ import { DataTable } from "~/components/ui/data-table/data-table";
 import { DataTableColumnHeader } from "~/components/ui/data-table/data-table-column-header";
 import { Facet } from "~/components/ui/data-table/data-table-toolbar";
 import { db } from "~/integrations/db.server";
-import { SessionService } from "~/services/SessionService.server";
+import { SessionService } from "~/services/session.server";
 
 export const meta: MetaFunction = () => {
   return [{ title: `Users | Plumb Media & Education}` }];

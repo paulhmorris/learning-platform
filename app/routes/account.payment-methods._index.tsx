@@ -14,7 +14,7 @@ import { stripe } from "~/integrations/stripe.server";
 import { serverError } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
 import { loader as rootLoader } from "~/root";
-import { SessionService } from "~/services/SessionService.server";
+import { SessionService } from "~/services/session.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await SessionService.requireUser(request);

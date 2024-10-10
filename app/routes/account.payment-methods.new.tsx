@@ -5,7 +5,7 @@ import { LoaderFunctionArgs, json } from "@vercel/remix";
 import { PaymentMethodForm } from "~/components/account/payment-method-form";
 import { ErrorComponent } from "~/components/error-component";
 import { loader as rootLoader } from "~/root";
-import { SessionService } from "~/services/SessionService.server";
+import { SessionService } from "~/services/session.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await SessionService.requireUserId(request);

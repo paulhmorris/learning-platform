@@ -19,7 +19,7 @@ import {
   setUserLessonProgressComplete,
 } from "~/models/lesson.server";
 import { loader as courseLoader } from "~/routes/_course";
-import { SessionService } from "~/services/SessionService.server";
+import { SessionService } from "~/services/session.server";
 
 const validator = withZod(
   z.object({

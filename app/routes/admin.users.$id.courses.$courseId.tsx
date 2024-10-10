@@ -30,7 +30,7 @@ import {
   resetQuizProgress,
   updateQuizProgress,
 } from "~/models/quiz.server";
-import { SessionService } from "~/services/SessionService.server";
+import { SessionService } from "~/services/session.server";
 
 const schema = z.object({
   _action: z.enum([

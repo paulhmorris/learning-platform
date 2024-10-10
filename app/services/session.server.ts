@@ -5,29 +5,7 @@ import { forbidden, unauthorized } from "~/lib/responses.server";
 import { sessionStorage } from "~/lib/session.server";
 import { UserService } from "~/services/UserService.server";
 
-interface ISessionService {
-  getSession(request: Request): Promise<RemixSession<SessionData, SessionData>>;
-  commitSession(session: RemixSession<SessionData, SessionData>): Promise<string>;
-  getUserId(request: Request): Promise<User["id"] | undefined>;
-  getUser(request: Request): Promise<User | null>;
-  getSessionUser(request: Request): Promise<User | null>;
-  requireUserId(request: Request, redirectTo?: string): Promise<User["id"]>;
-  requireAdmin(request: Request): Promise<User>;
-  requireSuperAdmin(request: Request): Promise<User>;
-  createUserSession({
-    request,
-    userId,
-    remember,
-    redirectTo,
-  }: {
-    request: Request;
-    userId: string;
-    remember: boolean;
-    redirectTo: string;
-  }): Promise<Response>;
-}
-
-class Session implements ISessionService {
+class Session {
   private static USER_SESSION_KEY = "userId";
 
   async logout(request: Request) {

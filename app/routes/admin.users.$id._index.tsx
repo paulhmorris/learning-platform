@@ -10,7 +10,7 @@ import { SubmitButton } from "~/components/ui/submit-button";
 import { db } from "~/integrations/db.server";
 import { Toasts } from "~/lib/toast.server";
 import { loader } from "~/routes/admin.users.$id";
-import { SessionService } from "~/services/SessionService.server";
+import { SessionService } from "~/services/session.server";
 
 const validator = withZod(
   z.object({

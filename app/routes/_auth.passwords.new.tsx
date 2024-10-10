@@ -15,7 +15,7 @@ import { sessionStorage } from "~/lib/session.server";
 import { Toasts } from "~/lib/toast.server";
 import { getSearchParam } from "~/lib/utils";
 import { AuthService } from "~/services/auth.server";
-import { SessionService } from "~/services/SessionService.server";
+import { SessionService } from "~/services/session.server";
 import { UserService } from "~/services/UserService.server";
 
 export const resetPasswordValidator = withZod(

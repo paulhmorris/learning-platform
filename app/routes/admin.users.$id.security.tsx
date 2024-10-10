@@ -15,7 +15,7 @@ import { Sentry } from "~/integrations/sentry";
 import { notFound } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
 import { loader as userLayoutLoader } from "~/routes/admin.users.$id";
-import { SessionService } from "~/services/SessionService.server";
+import { SessionService } from "~/services/session.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   await SessionService.requireAdmin(request);

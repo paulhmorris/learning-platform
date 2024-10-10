@@ -17,7 +17,7 @@ import { Sentry } from "~/integrations/sentry";
 import { Toasts } from "~/lib/toast.server";
 import { cn } from "~/lib/utils";
 import { getCoursefromCMSForCourseLayout, getLinkedCourseByHost } from "~/models/course.server";
-import { SessionService } from "~/services/SessionService.server";
+import { SessionService } from "~/services/session.server";
 import { APIResponseData } from "~/types/utils";
 
 export async function loader({ request }: LoaderFunctionArgs) {

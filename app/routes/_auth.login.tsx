@@ -17,7 +17,7 @@ import { Toasts } from "~/lib/toast.server";
 import { safeRedirect } from "~/lib/utils";
 import { verifyLogin } from "~/models/user.server";
 import { loader as rootLoader } from "~/root";
-import { SessionService } from "~/services/SessionService.server";
+import { SessionService } from "~/services/session.server";
 
 const validator = withZod(
   z.object({
