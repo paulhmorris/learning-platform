@@ -17,7 +17,7 @@ import { Toasts } from "~/lib/toast.server";
 import { loader as rootLoader } from "~/root";
 import { validator as verifyCodeValidator } from "~/routes/api.verification-code";
 import { SessionService } from "~/services/session.server";
-import { UserService } from "~/services/UserService.server";
+import { UserService } from "~/services/user.server";
 
 const validator = withZod(
   z.discriminatedUnion("step", [
@@ -68,7 +68,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       });
     }
 
-    const user = await UserService.create(email, password, { data: { firstName, lastName } });
+    const user = await UserService.create(email, password, { firstName, lastName });
 
     await verifyEmailJob.trigger({ email: user.email });
 
@@ -122,13 +122,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       },
     });
     await UserService.update(user.id, {
-      data: {
-        stripeId: stripeCustomer.id,
-        isEmailVerified: true,
-        verification: {
-          update: {
-            expiresAt: new Date(),
-          },
+      stripeId: stripeCustomer.id,
+      isEmailVerified: true,
+      verification: {
+        update: {
+          expiresAt: new Date(),
         },
       },
     });

@@ -23,13 +23,7 @@ import {
   resetLessonProgress,
   updateLessonProgress,
 } from "~/models/lesson.server";
-import {
-  getAllQuizProgress,
-  getQuizzes,
-  resetAllQuizProgress,
-  resetQuizProgress,
-  updateQuizProgress,
-} from "~/models/quiz.server";
+import { QuizService } from "~/services/quiz.server";
 import { SessionService } from "~/services/session.server";
 
 const schema = z.object({
@@ -59,9 +53,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // Load user and course data
   const [lessons, quizzes, lessonProgress, quizProgress] = await Promise.all([
     getLessons(),
-    getQuizzes(),
+    QuizService.getAll(),
     getAllLessonProgress(userId),
-    getAllQuizProgress(userId),
+    QuizService.getAllQuizProgress(userId),
   ]);
 
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
@@ -91,7 +85,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     case "reset-all-progress": {
       // Reset all progress for this user in this course
       await resetAllLessonProgress(userId);
-      await resetAllQuizProgress(userId);
+      await QuizService.resetAllQuizProgress(userId);
       return Toasts.jsonWithSuccess(
         { ok: true, message: "All progress reset." },
         { title: "Success", description: "All progress has been reset." },
@@ -149,7 +143,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
           { title: "Error", description: "A quiz ID was not found with this request." },
         );
       }
-      await resetQuizProgress(quizId, userId);
+      await QuizService.resetQuizProgress(quizId, userId);
       return Toasts.jsonWithSuccess(
         { ok: true, message: "Quiz progress reset." },
         { title: "Success", description: "Quiz progress has been reset." },
@@ -163,7 +157,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
           { title: "Error", description: "A quiz ID or score was not found with this request." },
         );
       }
-      await updateQuizProgress({ quizId, userId, score: score, passingScore: passingScore });
+      await QuizService.updateQuizProgress({ quizId, userId, score: score, passingScore: passingScore });
       return Toasts.jsonWithSuccess(
         { ok: true, message: "Quiz completed." },
         { title: "Success", description: "Quiz has been marked complete." },

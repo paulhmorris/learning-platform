@@ -2,7 +2,7 @@ import { logger, task } from "@trigger.dev/sdk/v3";
 
 import { db } from "~/integrations/db.server";
 import { EmailService } from "~/integrations/email.server";
-import { UserService } from "~/services/UserService.server";
+import { UserService } from "~/services/user.server";
 
 type Payload = {
   email: string;
@@ -15,7 +15,7 @@ export const verifyEmailJob = task({
     const token = Math.floor(100000 + Math.random() * 900000).toString();
     logger.info("Generated verification token", { token });
 
-    const user = await UserService.getByEmail(payload.email, { select: { id: true } });
+    const user = await UserService.getByEmail(payload.email);
 
     if (!user) {
       logger.error("User not found", { email: payload.email });

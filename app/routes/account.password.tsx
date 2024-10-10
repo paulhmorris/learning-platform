@@ -11,7 +11,6 @@ import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
 import { Toasts } from "~/lib/toast.server";
 import { useUser } from "~/lib/utils";
-import { verifyLogin } from "~/models/user.server";
 import { loader as rootLoader } from "~/root";
 import { AuthService } from "~/services/auth.server";
 import { SessionService } from "~/services/session.server";
@@ -66,7 +65,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   try {
     // Verify the old password
-    const verifiedUser = await verifyLogin(user.email, oldPassword);
+    const verifiedUser = await AuthService.verifyLogin(user.email, oldPassword);
     if (!verifiedUser) {
       return validationError({
         fieldErrors: {

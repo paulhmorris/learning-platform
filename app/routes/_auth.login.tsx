@@ -15,8 +15,8 @@ import { SubmitButton } from "~/components/ui/submit-button";
 import { CheckboxSchema } from "~/lib/schemas";
 import { Toasts } from "~/lib/toast.server";
 import { safeRedirect } from "~/lib/utils";
-import { verifyLogin } from "~/models/user.server";
 import { loader as rootLoader } from "~/root";
+import { AuthService } from "~/services/auth.server";
 import { SessionService } from "~/services/session.server";
 
 const validator = withZod(
@@ -45,7 +45,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   }
 
   const { email, password, remember, redirectTo } = result.data;
-  const user = await verifyLogin(email, password);
+  const user = await AuthService.verifyLogin(email, password);
 
   if (!user) {
     return validationError({

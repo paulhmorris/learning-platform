@@ -8,7 +8,7 @@ import { EmailService } from "~/integrations/email.server";
 import { Sentry } from "~/integrations/sentry";
 import { Toasts } from "~/lib/toast.server";
 import { AuthService } from "~/services/auth.server";
-import { UserService } from "~/services/UserService.server";
+import { UserService } from "~/services/user.server";
 
 const validator = withZod(z.object({ email: z.string().email() }));
 

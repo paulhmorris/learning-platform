@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 
 import { db } from "~/integrations/db.server";
+import { UserService } from "~/services/user.server";
 
 class Service {
   public hashPassword(password: string) {
@@ -9,6 +10,24 @@ class Service {
 
   public compare(password: string, hash: string) {
     return bcrypt.compare(password, hash);
+  }
+
+  public async verifyLogin(email: string, password: string) {
+    const userWithPassword = await UserService.getByEmailWithPassword(email);
+
+    if (!userWithPassword || !userWithPassword.password) {
+      return null;
+    }
+
+    const isValid = await bcrypt.compare(password, userWithPassword.password.hash);
+
+    if (!isValid) {
+      return null;
+    }
+
+    const { password: _password, ...userWithoutPassword } = userWithPassword;
+
+    return userWithoutPassword;
   }
 
   public async generateReset(email: string) {

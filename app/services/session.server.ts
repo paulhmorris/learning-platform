@@ -3,7 +3,7 @@ import { Session as RemixSession, SessionData, redirect } from "@vercel/remix";
 
 import { forbidden, unauthorized } from "~/lib/responses.server";
 import { sessionStorage } from "~/lib/session.server";
-import { UserService } from "~/services/UserService.server";
+import { UserService } from "~/services/user.server";
 
 class Session {
   private static USER_SESSION_KEY = "userId";
@@ -70,7 +70,7 @@ class Session {
     const defaultAllowedRoles: Array<UserRole> = ["USER", "ADMIN"];
     const userId = await this.requireUserId(request);
 
-    const user = await UserService.getById(userId, { include: { courses: true } });
+    const user = await UserService.getById(userId);
 
     if (user && user.role === UserRole.SUPERADMIN) {
       return user;
