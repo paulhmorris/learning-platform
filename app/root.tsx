@@ -12,7 +12,7 @@ import { Header } from "~/components/header";
 import { Notifications } from "~/components/notifications";
 import { Sentry } from "~/integrations/sentry";
 import { themeSessionResolver } from "~/lib/session.server";
-import { getGlobalToast, toast } from "~/lib/toast.server";
+import { getToast, Toasts } from "~/lib/toast.server";
 import { cn, hexToPartialHSL } from "~/lib/utils";
 import { getCoursefromCMSForRoot, getLinkedCourseByHost } from "~/models/course.server";
 import { SessionService } from "~/services/SessionService.server";
@@ -24,13 +24,13 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const session = await SessionService.getSession(request);
   const user = await SessionService.getUser(request);
   const theme = (await themeSessionResolver(request)).getTheme();
-  const serverToast = getGlobalToast(session);
+  const { toast, headers } = await getToast(request);
 
   const defaultResponse = {
     user,
     theme,
     course: null,
-    serverToast,
+    toast,
     ENV: {
       STRAPI_URL: process.env.STRAPI_URL,
       STRIPE_PUBLIC_KEY: process.env.STRIPE_PUBLIC_KEY,
@@ -42,14 +42,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     const linkedCourse = await getLinkedCourseByHost(host);
 
     if (!linkedCourse) {
-      return json(
-        { ...defaultResponse, hasLinkedCourse: false },
-        {
-          headers: {
-            "Set-Cookie": await SessionService.commitSession(session),
-          },
-        },
-      );
+      return json({ ...defaultResponse, hasLinkedCourse: false }, { headers });
     }
 
     const course = await getCoursefromCMSForRoot(linkedCourse.strapiId);
@@ -65,15 +58,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   } catch (error) {
     console.error(error);
     Sentry.captureException(error);
-    return toast.json(
-      request,
+    return Toasts.jsonWithError(
       { ...defaultResponse, hasLinkedCourse: false },
-      {
-        type: "error",
-        title: "Course not found",
-        description: `Please try again later.`,
-        position: "bottom-center",
-      },
+      { title: "Course not found", description: `Please try again later.` },
     );
   }
 };

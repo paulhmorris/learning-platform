@@ -2,14 +2,13 @@ import { useEffect } from "react";
 import { Toaster, toast } from "sonner";
 
 import { useRootData } from "~/hooks/useRootData";
-import { Toast } from "~/lib/toast.server";
 
 export function Notifications() {
   const data = useRootData();
 
   useEffect(() => {
-    if (!data?.serverToast) return;
-    const t = data.serverToast as Toast;
+    if (!data?.toast) return;
+    const t = data.toast;
     const { title, type, ...rest } = t;
 
     switch (type) {
@@ -29,7 +28,6 @@ export function Notifications() {
         toast.info(title, rest);
         break;
       }
-      case "normal":
       default: {
         toast(title, rest);
         break;

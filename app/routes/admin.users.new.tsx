@@ -8,7 +8,7 @@ import { FormField, FormSelect } from "~/components/ui/form";
 import { SubmitButton } from "~/components/ui/submit-button";
 import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
-import { toast } from "~/lib/toast.server";
+import { Toasts } from "~/lib/toast.server";
 import { useUser } from "~/lib/utils";
 import { SessionService } from "~/services/SessionService.server";
 
@@ -37,18 +37,13 @@ export async function action({ request }: ActionFunctionArgs) {
 
   try {
     const newUser = await db.user.create({ data: result.data });
-    return toast.redirect(request, `/admin/users/${newUser.id}`, { title: "User Created", type: "success" });
+    return Toasts.redirectWithSuccess(`/admin/users/${newUser.id}`, { title: "User Created" });
   } catch (error) {
     console.error(error);
     Sentry.captureException(error);
-    return toast.json(
-      request,
+    return Toasts.jsonWithError(
       { message: "An error occurred while creating this user." },
-      {
-        title: "Unknown Error",
-        description: "An error occurred while creating this user.",
-        type: "error",
-      },
+      { title: "Unknown Error", description: "An error occurred while creating this user." },
     );
   }
 }

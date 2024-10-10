@@ -16,7 +16,7 @@ import { SubmitButton } from "~/components/ui/submit-button";
 import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
 import { stripe } from "~/integrations/stripe.server";
-import { toast } from "~/lib/toast.server";
+import { Toasts } from "~/lib/toast.server";
 import { useUser } from "~/lib/utils";
 import { loader as rootLoader } from "~/root";
 import { SessionService } from "~/services/SessionService.server";
@@ -61,13 +61,11 @@ export async function action({ request }: ActionFunctionArgs) {
 
   // Ensure the user is updating their own account
   if (id !== user.id) {
-    return toast.json(
-      request,
+    return Toasts.jsonWithError(
       { message: "You are not authorized to perform this action." },
       {
         title: "Unauthorized",
         description: "You are not authorized to perform this action.",
-        type: "error",
       },
       { status: 403 },
     );
@@ -78,25 +76,21 @@ export async function action({ request }: ActionFunctionArgs) {
       where: { id: user.id },
       data: { ...rest },
     });
-    return toast.json(
-      request,
+    return Toasts.jsonWithSuccess(
       { updatedUser },
       {
         title: "Account Updated",
         description: "Your account has been updated successfully.",
-        type: "success",
       },
     );
   } catch (error) {
     console.error(error);
     Sentry.captureException(error);
-    return toast.json(
-      request,
+    return Toasts.jsonWithError(
       { message: "An error occurred while updating your account." },
       {
         title: "Unknown Error",
         description: "An error occurred while updating your account.",
-        type: "error",
       },
     );
   }

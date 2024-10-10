@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { Link, MetaFunction, useLoaderData } from "@remix-run/react";
-import { ActionFunctionArgs, LoaderFunctionArgs, json, redirect } from "@vercel/remix";
+import { ActionFunctionArgs, json, LoaderFunctionArgs, redirect } from "@vercel/remix";
 
 import { StrapiImage } from "~/components/common/strapi-image";
 import { CourseHeader } from "~/components/course/course-header";
@@ -20,7 +20,7 @@ import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
 import { stripe } from "~/integrations/stripe.server";
 import { handlePrismaError, serverError } from "~/lib/responses.server";
-import { toast } from "~/lib/toast.server";
+import { Toasts } from "~/lib/toast.server";
 import { SessionService } from "~/services/SessionService.server";
 import { APIResponseData } from "~/types/utils";
 
@@ -31,8 +31,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const { host } = new URL(request.url);
     const linkedCourse = await db.course.findUnique({ where: { host } });
     if (!linkedCourse) {
-      return toast.redirect(request, "/", {
-        type: "error",
+      return Toasts.redirectWithError("/", {
         title: "Course not found.",
         description: "Please try again later",
       });

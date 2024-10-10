@@ -16,7 +16,7 @@ import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
 import { stripe } from "~/integrations/stripe.server";
 import { handlePrismaError, serverError } from "~/lib/responses.server";
-import { toast } from "~/lib/toast.server";
+import { Toasts } from "~/lib/toast.server";
 import { loader as rootLoader } from "~/root";
 import { validator as verifyCodeValidator } from "~/routes/api.verification-code";
 import { SessionService } from "~/services/SessionService.server";
@@ -162,10 +162,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     }
   }
 
-  return toast.json(
-    request,
+  return Toasts.jsonWithError(
     { message: "Invalid step" },
-    { title: "Something went wrong", description: "Please try again.", type: "error" },
+    { title: "Something went wrong", description: "Please try again." },
   );
 };
 

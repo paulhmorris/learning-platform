@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { Form, Link, MetaFunction, useActionData, useLoaderData } from "@remix-run/react";
-import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@vercel/remix";
+import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@vercel/remix";
 import { useEffect, useRef } from "react";
 import invariant from "tiny-invariant";
 
@@ -14,7 +14,7 @@ import { cms } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
 import { handlePrismaError, notFound } from "~/lib/responses.server";
-import { toast } from "~/lib/toast.server";
+import { Toasts } from "~/lib/toast.server";
 import { cn } from "~/lib/utils";
 import { loader as courseLoader } from "~/routes/_course";
 import { SessionService } from "~/services/SessionService.server";
@@ -107,13 +107,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
       .filter((a) => typeof a !== "undefined");
 
     if (!correctQuizAnswers || !correctQuizAnswers.length) {
-      return toast.json(
-        request,
+      return Toasts.jsonWithError(
         { score: 0, passed: false, userAnswers: [], passingScore: quiz.data.attributes.passing_score },
         {
           title: "Error",
           description: "There was an error processing your quiz. Please try again later.",
-          type: "error",
         },
       );
     }

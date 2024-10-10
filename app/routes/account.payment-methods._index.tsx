@@ -1,7 +1,7 @@
 import { Link, MetaFunction, useFetcher, useLoaderData, useSearchParams } from "@remix-run/react";
 import { useStripe } from "@stripe/react-stripe-js";
 import { IconLoader, IconPlus } from "@tabler/icons-react";
-import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@vercel/remix";
+import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@vercel/remix";
 import { useEffect } from "react";
 import { toast as clientToast } from "sonner";
 
@@ -12,7 +12,7 @@ import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
 import { stripe } from "~/integrations/stripe.server";
 import { serverError } from "~/lib/responses.server";
-import { toast } from "~/lib/toast.server";
+import { Toasts } from "~/lib/toast.server";
 import { loader as rootLoader } from "~/root";
 import { SessionService } from "~/services/SessionService.server";
 
@@ -50,12 +50,11 @@ export async function action({ request }: ActionFunctionArgs) {
   const user = await SessionService.requireUser(request);
 
   if (!user.stripeId) {
-    return toast.json(
-      request,
-      { ok: false },
+    return Toasts.jsonWithError(
+      { success: false },
       {
         title: "Error",
-        type: "error",
+
         description: "Error retrieving your payment profile. Please contact support.",
       },
       { status: 404 },
@@ -69,10 +68,9 @@ export async function action({ request }: ActionFunctionArgs) {
   try {
     if (_action === "delete") {
       await stripe.paymentMethods.detach(id);
-      return toast.json(
-        request,
-        { ok: true },
-        { title: "Success", type: "success", description: "Payment method has been deleted successfully." },
+      return Toasts.jsonWithSuccess(
+        { success: true },
+        { title: "Success", description: "Payment method has been deleted successfully." },
       );
     }
 
@@ -81,19 +79,17 @@ export async function action({ request }: ActionFunctionArgs) {
       await stripe.customers.update(user.stripeId, {
         invoice_settings: { default_payment_method: id },
       });
-      return toast.json(
-        request,
-        { ok: true },
-        { title: "Success", type: "success", description: "Payment method has been set as default." },
+      return Toasts.jsonWithSuccess(
+        { success: true },
+        { title: "Success", description: "Payment method has been set as default." },
       );
     }
   } catch (error) {
     console.error(error);
     Sentry.captureException(error);
-    return toast.json(
-      request,
-      { ok: false },
-      { title: "Unknown Error", type: "error", description: "There was an error updating your payment method." },
+    return Toasts.jsonWithError(
+      { success: false },
+      { title: "Unknown Error", description: "There was an error updating your payment method." },
     );
   }
 }

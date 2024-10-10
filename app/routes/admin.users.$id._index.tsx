@@ -9,7 +9,7 @@ import { FormField, FormSelect } from "~/components/ui/form";
 import { SubmitButton } from "~/components/ui/submit-button";
 import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
-import { toast } from "~/lib/toast.server";
+import { Toasts } from "~/lib/toast.server";
 import { loader } from "~/routes/admin.users.$id";
 import { SessionService } from "~/services/SessionService.server";
 
@@ -44,26 +44,13 @@ export async function action({ request }: ActionFunctionArgs) {
       where: { id },
       data: { ...rest },
     });
-    return toast.json(
-      request,
-      { updatedUser },
-      {
-        title: "Success",
-        description: "User updated successfully.",
-        type: "success",
-      },
-    );
+    return Toasts.jsonWithSuccess({ updatedUser }, { title: "Success", description: "User updated successfully." });
   } catch (error) {
     console.error(error);
     Sentry.captureException(error);
-    return toast.json(
-      request,
+    return Toasts.jsonWithError(
       { message: "An error occurred while updating this user." },
-      {
-        title: "Unknown Error",
-        description: "An error occurred while updating this user.",
-        type: "error",
-      },
+      { title: "Unknown Error", description: "An error occurred while updating this user." },
     );
   }
 }

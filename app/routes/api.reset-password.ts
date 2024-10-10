@@ -6,7 +6,7 @@ import { z } from "zod";
 
 import { EmailService } from "~/integrations/email.server";
 import { Sentry } from "~/integrations/sentry";
-import { toast } from "~/lib/toast.server";
+import { Toasts } from "~/lib/toast.server";
 import { PasswordService } from "~/services/PasswordService.server";
 import { UserService } from "~/services/UserService.server";
 
@@ -24,24 +24,17 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const user = await UserService.getByEmail(result.data.email);
   if (!user) {
-    return toast.json(
-      request,
+    return Toasts.jsonWithError(
       { message: "User not found" },
-      {
-        type: "error",
-        title: "User not found",
-        description: `There is no user with email ${result.data.email}.`,
-      },
+      { title: "User not found", description: `There is no user with email ${result.data.email}.` },
     );
   }
 
   const existingReset = await PasswordService.getResetByUserId(user.id);
   if (existingReset) {
-    return toast.json(
-      request,
+    return Toasts.jsonWithWarning(
       { message: "User not found" },
       {
-        type: "warning",
         title: "Existing request found",
         description: `A password reset request has already been sent. It expires in ${dayjs(
           existingReset.expiresAt,
@@ -57,14 +50,9 @@ export async function action({ request }: ActionFunctionArgs) {
   if (error || !data) {
     Sentry.captureException(error);
     await PasswordService.deleteReset(reset.id);
-    return toast.json(
-      request,
+    return Toasts.jsonWithError(
       { error },
-      {
-        type: "error",
-        title: "Something went wrong",
-        description: "There was an error sending the password reset email.",
-      },
+      { title: "Something went wrong", description: "There was an error sending the password reset email." },
     );
   }
 
@@ -72,25 +60,15 @@ export async function action({ request }: ActionFunctionArgs) {
   if ("statusCode" in data && data.statusCode !== 200) {
     // Delete the reset if there was an error emailing the user
     await PasswordService.deleteReset(reset.id);
-    return toast.json(
-      request,
+    return Toasts.jsonWithError(
       { data },
-      {
-        type: "error",
-        title: "Something went wrong",
-        description: "There was an error sending the password reset email.",
-      },
+      { title: "Something went wrong", description: "There was an error sending the password reset email." },
     );
   }
 
   // Success
-  return toast.json(
-    request,
+  return Toasts.jsonWithSuccess(
     { data },
-    {
-      type: "default",
-      title: "Email sent",
-      description: "Check the email for a link to reset the password.",
-    },
+    { title: "Email sent", description: "Check the email for a link to reset the password." },
   );
 }

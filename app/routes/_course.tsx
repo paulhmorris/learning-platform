@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import { Outlet, useParams } from "@remix-run/react";
-import { LoaderFunctionArgs, json } from "@vercel/remix";
+import { json, LoaderFunctionArgs } from "@vercel/remix";
 import { useState } from "react";
 import { useIsClient, useMediaQuery } from "usehooks-ts";
 
@@ -14,7 +14,7 @@ import { Separator } from "~/components/ui/separator";
 import { useCourseData } from "~/hooks/useCourseData";
 import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
-import { toast } from "~/lib/toast.server";
+import { Toasts } from "~/lib/toast.server";
 import { cn } from "~/lib/utils";
 import { getCoursefromCMSForCourseLayout, getLinkedCourseByHost } from "~/models/course.server";
 import { SessionService } from "~/services/SessionService.server";
@@ -28,33 +28,27 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const linkedCourse = await getLinkedCourseByHost(host);
 
     if (!linkedCourse) {
-      return toast.redirect(request, "/preview", {
-        type: "error",
+      return Toasts.redirectWithError("/preview", {
         title: "Course not found",
         description: "Please try again later",
-        position: "bottom-center",
       });
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     const userHasAccess = user.courses && user.courses.some((c) => c.courseId === linkedCourse.id);
     if (!userHasAccess) {
-      return toast.redirect(request, "/preview", {
-        type: "error",
+      return Toasts.redirectWithError("/preview", {
         title: "No access to course",
         description: "Please purchase the course to access it.",
-        position: "bottom-center",
       });
     }
 
     const course = await getCoursefromCMSForCourseLayout(linkedCourse.strapiId);
 
     if (!course) {
-      return toast.redirect(request, "/preview", {
-        type: "error",
+      return Toasts.redirectWithError("/preview", {
         title: "Failed to load course",
         description: "Please try again later",
-        position: "bottom-center",
       });
     }
 
@@ -86,11 +80,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
   } catch (error) {
     console.error(error);
     Sentry.captureException(error);
-    return toast.redirect(request, "/preview", {
-      type: "error",
+    return Toasts.redirectWithError("/preview", {
       title: "Failed to load course",
       description: "Please try again later",
-      position: "bottom-center",
     });
   }
 }

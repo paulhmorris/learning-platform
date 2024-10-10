@@ -1,6 +1,6 @@
 import { MetaFunction, useFetcher, useLoaderData, useRouteLoaderData } from "@remix-run/react";
 import { withZod } from "@remix-validated-form/with-zod";
-import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@vercel/remix";
+import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@vercel/remix";
 import dayjs from "dayjs";
 import { validationError } from "remix-validated-form";
 import { useIsClient } from "usehooks-ts";
@@ -13,7 +13,7 @@ import { Badge } from "~/components/ui/badge";
 import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
 import { notFound } from "~/lib/responses.server";
-import { toast } from "~/lib/toast.server";
+import { Toasts } from "~/lib/toast.server";
 import { loader as userLayoutLoader } from "~/routes/admin.users.$id";
 import { SessionService } from "~/services/SessionService.server";
 
@@ -75,26 +75,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
           where: { id: resetId },
           data: { expiresAt: new Date(0) },
         });
-        return toast.json(
-          request,
+        return Toasts.jsonWithSuccess(
           { reset },
-          {
-            type: "success",
-            title: "Reset expired",
-            description: `Reset ${resetId} has been expired.`,
-          },
+          { title: "Reset expired", description: `Reset ${resetId} has been expired.` },
         );
       } catch (error) {
         console.error(error);
         Sentry.captureException(error);
-        return toast.json(
-          request,
+        return Toasts.jsonWithError(
           { error },
-          {
-            type: "error",
-            title: "Error expiring reset",
-            description: `An error occurred while expiring reset ${resetId}.`,
-          },
+          { title: "Error expiring reset", description: `An error occurred while expiring reset ${resetId}.` },
         );
       }
     }
@@ -106,23 +96,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
           where: { id: userId },
           data: { isActive: _action === "activate-user" ? true : false },
         });
-        return toast.json(
-          request,
+        return Toasts.jsonWithSuccess(
           { user },
-          {
-            type: "success",
-            title: "Success",
-            description: `User has been ${_action === "deactivate-user" ? "de" : ""}activated.`,
-          },
+          { title: "Success", description: `User has been ${_action === "deactivate-user" ? "de" : ""}activated.` },
         );
       } catch (error) {
         console.error(error);
         Sentry.captureException(error);
-        return toast.json(
-          request,
+        return Toasts.jsonWithError(
           { error },
           {
-            type: "error",
             title: "Error",
             description: `An error occurred while deactivating the user. ${error instanceof Error && error.message}`,
           },

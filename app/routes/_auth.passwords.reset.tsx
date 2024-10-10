@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { Link, MetaFunction, useActionData } from "@remix-run/react";
 import { withZod } from "@remix-validated-form/with-zod";
-import { ActionFunctionArgs, LoaderFunctionArgs, json, redirect } from "@vercel/remix";
+import { ActionFunctionArgs, json, LoaderFunctionArgs, redirect } from "@vercel/remix";
 import { ValidatedForm, validationError } from "remix-validated-form";
 import { z } from "zod";
 
@@ -11,7 +11,7 @@ import { FormField } from "~/components/ui/form";
 import { SubmitButton } from "~/components/ui/submit-button";
 import { EmailService } from "~/integrations/email.server";
 import { Sentry } from "~/integrations/sentry";
-import { toast } from "~/lib/toast.server";
+import { Toasts } from "~/lib/toast.server";
 import { loader as rootLoader } from "~/root";
 import { PasswordService } from "~/services/PasswordService.server";
 import { SessionService } from "~/services/SessionService.server";
@@ -52,10 +52,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     }
 
     Sentry.captureException(error);
-    return toast.json(
-      request,
+    return Toasts.jsonWithError(
       { success: false },
-      { type: "error", title: "Error resetting passord", description: "Please try again later." },
+      { title: "Error resetting password", description: "Please try again later." },
     );
   }
 };

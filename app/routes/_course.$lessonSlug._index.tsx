@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { MetaFunction, useLoaderData } from "@remix-run/react";
 import { withZod } from "@remix-validated-form/with-zod";
-import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@vercel/remix";
+import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@vercel/remix";
 import { validationError } from "remix-validated-form";
 import invariant from "tiny-invariant";
 import { z } from "zod";
@@ -13,7 +13,7 @@ import { db } from "~/integrations/db.server";
 import { redis } from "~/integrations/redis.server";
 import { Sentry } from "~/integrations/sentry";
 import { badRequest, handlePrismaError, serverError } from "~/lib/responses.server";
-import { toast } from "~/lib/toast.server";
+import { Toasts } from "~/lib/toast.server";
 import {
   getLessonBySlugWithContent,
   getLessonDuration,
@@ -83,10 +83,9 @@ export async function action({ request }: ActionFunctionArgs) {
           lessonId,
           duration,
         });
-        return toast.json(
-          request,
+        return Toasts.jsonWithSuccess(
           { progress: completedProgress },
-          { title: "Lesson completed!", type: "success", description: "You may now move on to the next item." },
+          { title: "Lesson completed!", description: "You may now move on to the next item." },
         );
       }
     }

@@ -1,6 +1,6 @@
 import { MetaFunction } from "@remix-run/react";
 import { withZod } from "@remix-validated-form/with-zod";
-import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@vercel/remix";
+import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@vercel/remix";
 import { ValidatedForm, validationError } from "remix-validated-form";
 import { z } from "zod";
 
@@ -9,7 +9,7 @@ import { FormField } from "~/components/ui/form";
 import { SubmitButton } from "~/components/ui/submit-button";
 import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
-import { toast } from "~/lib/toast.server";
+import { Toasts } from "~/lib/toast.server";
 import { useUser } from "~/lib/utils";
 import { verifyLogin } from "~/models/user.server";
 import { loader as rootLoader } from "~/root";
@@ -88,26 +88,16 @@ export async function action({ request }: ActionFunctionArgs) {
       },
     });
 
-    return toast.json(
-      request,
+    return Toasts.jsonWithSuccess(
       { success: true },
-      {
-        title: "Success",
-        type: "success",
-        description: "Your password has been updated",
-      },
+      { title: "Success", description: "Your password has been updated" },
     );
   } catch (error) {
     console.error(error);
     Sentry.captureException(error);
-    return toast.json(
-      request,
+    return Toasts.jsonWithError(
       { message: "Error updating password" },
-      {
-        title: "Error",
-        type: "error",
-        description: "There was an error updating your password",
-      },
+      { title: "Error", description: "There was an error updating your password" },
     );
   }
 }

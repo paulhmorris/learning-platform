@@ -13,7 +13,7 @@ import { Checkbox, FormField } from "~/components/ui/form";
 import { Label } from "~/components/ui/label";
 import { SubmitButton } from "~/components/ui/submit-button";
 import { CheckboxSchema } from "~/lib/schemas";
-import { toast } from "~/lib/toast.server";
+import { Toasts } from "~/lib/toast.server";
 import { safeRedirect } from "~/lib/utils";
 import { verifyLogin } from "~/models/user.server";
 import { loader as rootLoader } from "~/root";
@@ -56,11 +56,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   }
 
   if (!user.isActive) {
-    return toast.json(
-      request,
-      {},
+    return Toasts.jsonWithError(
+      { message: "Your account has been deactivated." },
       {
-        type: "error",
         title: "Account Deactivated",
         description: "Your account has been deactivated. Please contact support.",
       },

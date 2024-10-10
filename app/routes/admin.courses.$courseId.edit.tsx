@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { MetaFunction, useRouteLoaderData } from "@remix-run/react";
 import { withZod } from "@remix-validated-form/with-zod";
-import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@vercel/remix";
+import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@vercel/remix";
 import { ValidatedForm, validationError } from "remix-validated-form";
 import { z } from "zod";
 
@@ -13,7 +13,7 @@ import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
 import { getPrismaErrorText } from "~/lib/responses.server";
 import { CheckboxSchema } from "~/lib/schemas";
-import { toast } from "~/lib/toast.server";
+import { Toasts } from "~/lib/toast.server";
 import { loader as adminCourseLoader } from "~/routes/admin.courses.$courseId";
 import { SessionService } from "~/services/SessionService.server";
 
@@ -49,14 +49,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       where: { id },
       data: result.data,
     });
-    return toast.json(
-      request,
-      { course },
-      {
-        title: "Course updated successfully.",
-        type: "success",
-      },
-    );
+    return Toasts.jsonWithSuccess({ course }, { title: "Course updated successfully." });
   } catch (error) {
     console.error(error);
     Sentry.captureException(error);
@@ -64,16 +57,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       message = getPrismaErrorText(error);
     }
-    return toast.json(
-      request,
-      { ok: false },
-      {
-        title: "Error.",
-        description: message,
-        type: "error",
-      },
-      { status: 500 },
-    );
+    return Toasts.jsonWithError({ ok: false }, { title: "Error.", description: message });
   }
 }
 

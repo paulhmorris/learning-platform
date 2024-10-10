@@ -12,7 +12,7 @@ import { FormField } from "~/components/ui/form";
 import { SubmitButton } from "~/components/ui/submit-button";
 import { unauthorized } from "~/lib/responses.server";
 import { sessionStorage } from "~/lib/session.server";
-import { toast } from "~/lib/toast.server";
+import { Toasts } from "~/lib/toast.server";
 import { getSearchParam } from "~/lib/utils";
 import { PasswordService } from "~/services/PasswordService.server";
 import { SessionService } from "~/services/SessionService.server";
@@ -68,31 +68,23 @@ export async function action({ request }: ActionFunctionArgs) {
   const { newPassword, token } = result.data;
   const reset = await PasswordService.getResetByToken(token);
   if (!reset) {
-    return toast.json(request, {}, { type: "error", title: "Token not found", description: "Please try again." });
+    return Toasts.jsonWithError({ success: false }, { title: "Token not found", description: "Please try again." });
   }
 
   // Check expiration
   if (reset.expiresAt < new Date()) {
-    return toast.json(request, {}, { type: "error", title: "Token expired", description: "Please try again." });
+    return Toasts.jsonWithError({ success: false }, { title: "Token expired", description: "Please try again." });
   }
 
   // Check token against param
   if (token !== tokenParam) {
-    return toast.json(
-      request,
-      { success: false },
-      { type: "error", title: "Invalid token", description: "Please try again." },
-    );
+    return Toasts.jsonWithError({ success: false }, { title: "Invalid token", description: "Please try again." });
   }
 
   // Check user
   const userFromToken = await UserService.getById(reset.userId);
   if (!userFromToken) {
-    return toast.json(
-      request,
-      { success: false },
-      { type: "error", title: "User not found", description: "Please try again." },
-    );
+    return Toasts.jsonWithError({ success: false }, { title: "User not found", description: "Please try again." });
   }
 
   await UserService.resetOrSetupPassword({ userId: userFromToken.id, password: newPassword });

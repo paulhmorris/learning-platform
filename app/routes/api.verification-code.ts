@@ -5,7 +5,7 @@ import { z } from "zod";
 
 import { verifyEmailJob } from "jobs/verify-email.server";
 import { Sentry } from "~/integrations/sentry";
-import { toast } from "~/lib/toast.server";
+import { Toasts } from "~/lib/toast.server";
 
 export const validator = withZod(
   z.object({
@@ -26,36 +26,19 @@ export async function action({ request }: ActionFunctionArgs) {
   try {
     const { id } = await verifyEmailJob.trigger({ email });
     if (id) {
-      return toast.json(
-        request,
-        { success: true },
-        {
-          title: "Verification code sent",
-          type: "success",
-        },
-      );
+      return Toasts.jsonWithSuccess({ success: true }, { title: "Verification code sent" });
     } else {
-      return toast.json(
-        request,
+      return Toasts.jsonWithError(
         { error: "An error occurred while sending the verification code. Please try again." },
-        {
-          title: "Error",
-          description: "An error occurred while sending the verification code. Please try again.",
-          type: "error",
-        },
+        { title: "Error", description: "An error occurred while sending the verification code. Please try again." },
       );
     }
   } catch (error) {
     console.error(error);
     Sentry.captureException(error);
-    return toast.json(
-      request,
+    return Toasts.jsonWithError(
       { error: "An error occurred while sending the verification code. Please try again." },
-      {
-        title: "Error",
-        description: "An error occurred while sending the verification code. Please try again.",
-        type: "error",
-      },
+      { title: "Error", description: "An error occurred while sending the verification code. Please try again." },
     );
   }
 }
