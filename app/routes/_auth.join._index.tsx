@@ -1,4 +1,3 @@
-import { Prisma } from "@prisma/client";
 import { Link, MetaFunction, useFetcher, useSearchParams } from "@remix-run/react";
 import { withZod } from "@remix-validated-form/with-zod";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
@@ -13,9 +12,7 @@ import { PageTitle } from "~/components/common/page-title";
 import { FormField } from "~/components/ui/form";
 import { SubmitButton } from "~/components/ui/submit-button";
 import { db } from "~/integrations/db.server";
-import { Sentry } from "~/integrations/sentry";
 import { stripe } from "~/integrations/stripe.server";
-import { handlePrismaError, serverError } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
 import { loader as rootLoader } from "~/root";
 import { validator as verifyCodeValidator } from "~/routes/api.verification-code";
@@ -62,104 +59,86 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   if (result.data.step === "join") {
     const { firstName, lastName, email, password, redirectTo } = result.data;
-    try {
-      const existingUser = await UserService.getByEmail(email);
-      if (existingUser) {
-        return validationError({
-          fieldErrors: {
-            email: "An account with this email already exists.",
-          },
-        });
-      }
-
-      const user = await UserService.create(email, password, { data: { firstName, lastName } });
-
-      await verifyEmailJob.trigger({ email: user.email });
-
-      const url = new URL("/join", request.url);
-      url.searchParams.set("step", "verify-email");
-      url.searchParams.set("email", email);
-      if (redirectTo) {
-        url.searchParams.set("redirectTo", redirectTo);
-      }
-
-      return redirect(url.toString());
-    } catch (error) {
-      console.error(error);
-      Sentry.captureException(error);
-      if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        handlePrismaError(error);
-      }
-      throw serverError("An error occurred while loading the course. Please try again.");
+    const existingUser = await UserService.getByEmail(email);
+    if (existingUser) {
+      return validationError({
+        fieldErrors: {
+          email: "An account with this email already exists.",
+        },
+      });
     }
+
+    const user = await UserService.create(email, password, { data: { firstName, lastName } });
+
+    await verifyEmailJob.trigger({ email: user.email });
+
+    const url = new URL("/join", request.url);
+    url.searchParams.set("step", "verify-email");
+    url.searchParams.set("email", email);
+    if (redirectTo) {
+      url.searchParams.set("redirectTo", redirectTo);
+    }
+
+    return redirect(url.toString());
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (result.data.step === "verify-email") {
     const { email, code, redirectTo } = result.data;
-    try {
-      const user = await UserService.getByEmail(email);
-      if (!user) {
-        return validationError({
-          fieldErrors: {
-            // TODO: change to form error with conform
-            email: "An account with this email does not exist.",
-          },
-        });
-      }
-
-      const verification = await db.userVerification.findFirst({
-        where: {
-          userId: user.id,
-          token: code,
-          expiresAt: {
-            gte: new Date(),
-          },
+    const user = await UserService.getByEmail(email);
+    if (!user) {
+      return validationError({
+        fieldErrors: {
+          // TODO: change to form error with conform
+          email: "An account with this email does not exist.",
         },
       });
-
-      if (!verification) {
-        return validationError({
-          fieldErrors: {
-            code: "The code you entered is incorrect.",
-          },
-        });
-      }
-
-      const stripeCustomer = await stripe.customers.create({
-        name: `${user.firstName}${user.lastName ? " " + user.lastName : ""}`,
-        email: user.email,
-        phone: user.phone ?? undefined,
-        metadata: {
-          user_id: user.id,
-        },
-      });
-      await UserService.update(user.id, {
-        data: {
-          stripeId: stripeCustomer.id,
-          isEmailVerified: true,
-          verification: {
-            update: {
-              expiresAt: new Date(),
-            },
-          },
-        },
-      });
-
-      return SessionService.createUserSession({
-        request,
-        userId: user.id,
-        redirectTo: redirectTo ?? "/preview",
-        remember: false,
-      });
-    } catch (error) {
-      console.error(error);
-      Sentry.captureException(error);
-      if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        handlePrismaError(error);
-      }
-      throw serverError("An error occurred while loading the course. Please try again.");
     }
+
+    const verification = await db.userVerification.findFirst({
+      where: {
+        userId: user.id,
+        token: code,
+        expiresAt: {
+          gte: new Date(),
+        },
+      },
+    });
+
+    if (!verification) {
+      return validationError({
+        fieldErrors: {
+          code: "The code you entered is incorrect.",
+        },
+      });
+    }
+
+    const stripeCustomer = await stripe.customers.create({
+      name: `${user.firstName}${user.lastName ? " " + user.lastName : ""}`,
+      email: user.email,
+      phone: user.phone ?? undefined,
+      metadata: {
+        user_id: user.id,
+      },
+    });
+    await UserService.update(user.id, {
+      data: {
+        stripeId: stripeCustomer.id,
+        isEmailVerified: true,
+        verification: {
+          update: {
+            expiresAt: new Date(),
+          },
+        },
+      },
+    });
+
+    return SessionService.createUserSession({
+      request,
+      userId: user.id,
+      redirectTo: redirectTo ?? "/preview",
+      remember: false,
+    });
   }
 
   return Toasts.jsonWithError(

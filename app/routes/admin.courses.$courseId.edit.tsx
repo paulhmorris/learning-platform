@@ -1,4 +1,3 @@
-import { Prisma } from "@prisma/client";
 import { MetaFunction, useRouteLoaderData } from "@remix-run/react";
 import { withZod } from "@remix-validated-form/with-zod";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@vercel/remix";
@@ -10,8 +9,6 @@ import { Checkbox, FormField } from "~/components/ui/form";
 import { Label } from "~/components/ui/label";
 import { SubmitButton } from "~/components/ui/submit-button";
 import { db } from "~/integrations/db.server";
-import { Sentry } from "~/integrations/sentry";
-import { getPrismaErrorText } from "~/lib/responses.server";
 import { CheckboxSchema } from "~/lib/schemas";
 import { Toasts } from "~/lib/toast.server";
 import { loader as adminCourseLoader } from "~/routes/admin.courses.$courseId";
@@ -44,21 +41,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(result.error);
   }
 
-  try {
-    const course = await db.course.update({
-      where: { id },
-      data: result.data,
-    });
-    return Toasts.jsonWithSuccess({ course }, { title: "Course updated successfully." });
-  } catch (error) {
-    console.error(error);
-    Sentry.captureException(error);
-    let message = error instanceof Error ? error.message : "An error occurred while updating the course.";
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      message = getPrismaErrorText(error);
-    }
-    return Toasts.jsonWithError({ ok: false }, { title: "Error.", description: message });
-  }
+  const course = await db.course.update({
+    where: { id },
+    data: result.data,
+  });
+  return Toasts.jsonWithSuccess({ course }, { title: "Course updated successfully." });
 }
 
 export const meta: MetaFunction = () => [{ title: "Edit Course | Plumb Media & Education" }];

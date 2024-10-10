@@ -88,10 +88,7 @@ export async function action({ request }: ActionFunctionArgs) {
     Sentry.captureException(error);
     return Toasts.jsonWithError(
       { message: "An error occurred while updating your account." },
-      {
-        title: "Unknown Error",
-        description: "An error occurred while updating your account.",
-      },
+      { title: "Unknown Error", description: "An error occurred while updating your account." },
     );
   }
 }

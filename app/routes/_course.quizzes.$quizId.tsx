@@ -1,4 +1,3 @@
-import { Prisma } from "@prisma/client";
 import { Form, Link, MetaFunction, useActionData, useLoaderData } from "@remix-run/react";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@vercel/remix";
 import { useEffect, useRef } from "react";
@@ -12,8 +11,7 @@ import { Button } from "~/components/ui/button";
 import { useCourseData } from "~/hooks/useCourseData";
 import { cms } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
-import { Sentry } from "~/integrations/sentry";
-import { handlePrismaError, notFound } from "~/lib/responses.server";
+import { notFound } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
 import { cn } from "~/lib/utils";
 import { loader as courseLoader } from "~/routes/_course";
@@ -26,43 +24,34 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   const quizId = params.quizId;
   invariant(quizId, "Quiz ID is required");
 
-  try {
-    const quiz = await cms.findOne<APIResponseData<"api::quiz.quiz">>("quizzes", quizId, {
-      populate: {
-        questions: {
-          fields: "*",
-          populate: {
-            answers: {
-              fields: ["answer", "id"],
-            },
+  const quiz = await cms.findOne<APIResponseData<"api::quiz.quiz">>("quizzes", quizId, {
+    populate: {
+      questions: {
+        fields: "*",
+        populate: {
+          answers: {
+            fields: ["answer", "id"],
           },
         },
       },
-    });
+    },
+  });
 
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (!quiz) {
-      throw notFound("Quiz not found.");
-    }
-
-    const progress = await db.userQuizProgress.findUnique({
-      where: {
-        userId_quizId: {
-          quizId: quiz.data.id,
-          userId,
-        },
-      },
-    });
-
-    return json({ quiz: quiz.data, progress });
-  } catch (error) {
-    console.error(error);
-    Sentry.captureException(error);
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      handlePrismaError(error);
-    }
-    throw error;
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  if (!quiz) {
+    throw notFound("Quiz not found.");
   }
+
+  const progress = await db.userQuizProgress.findUnique({
+    where: {
+      userId_quizId: {
+        quizId: quiz.data.id,
+        userId,
+      },
+    },
+  });
+
+  return json({ quiz: quiz.data, progress });
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -77,99 +66,90 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // }
   const formData = Object.fromEntries(await request.formData());
 
-  try {
-    const quiz = await cms.findOne<APIResponseData<"api::quiz.quiz">>("quizzes", quizId, {
-      populate: {
-        questions: {
-          fields: ["question_type"],
-          populate: {
-            answers: {
-              fields: ["is_correct"],
-            },
+  const quiz = await cms.findOne<APIResponseData<"api::quiz.quiz">>("quizzes", quizId, {
+    populate: {
+      questions: {
+        fields: ["question_type"],
+        populate: {
+          answers: {
+            fields: ["is_correct"],
           },
         },
       },
-    });
+    },
+  });
 
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (!quiz) {
-      throw notFound("Quiz not found.");
-    }
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  if (!quiz) {
+    throw notFound("Quiz not found.");
+  }
 
-    // [2, 1]
-    const correctQuizAnswers = quiz.data.attributes.questions
-      ?.map((question) => {
-        if (!question.answers) {
-          return;
-        }
-        return question.answers.findIndex((answer) => answer.is_correct);
-      })
-      .filter((a) => typeof a !== "undefined");
-
-    if (!correctQuizAnswers || !correctQuizAnswers.length) {
-      return Toasts.jsonWithError(
-        { score: 0, passed: false, userAnswers: [], passingScore: quiz.data.attributes.passing_score },
-        {
-          title: "Error",
-          description: "There was an error processing your quiz. Please try again later.",
-        },
-      );
-    }
-
-    // [2, 1]
-    const userAnswers = Object.entries(formData).map(([_question, answer]) => {
-      if (typeof answer !== "string") {
+  // [2, 1]
+  const correctQuizAnswers = quiz.data.attributes.questions
+    ?.map((question) => {
+      if (!question.answers) {
         return;
       }
-      return parseInt(answer);
-    });
+      return question.answers.findIndex((answer) => answer.is_correct);
+    })
+    .filter((a) => typeof a !== "undefined");
 
-    // Calculate score
-    let score = 0;
-    correctQuizAnswers.forEach((correctAnswer, index) => {
-      if (correctAnswer === userAnswers[index]) {
-        score++;
-      }
-    });
-
-    score = Math.ceil((score / correctQuizAnswers.length) * 100);
-    const passed = score >= quiz.data.attributes.passing_score;
-
-    if (passed) {
-      await db.userQuizProgress.upsert({
-        where: {
-          userId_quizId: {
-            quizId: quiz.data.id,
-            userId,
-          },
-        },
-        create: {
-          userId,
-          quizId: quiz.data.id,
-          isCompleted: true,
-          score,
-        },
-        update: {
-          isCompleted: true,
-          score,
-        },
-      });
-    }
-
-    return json({
-      score,
-      passed,
-      userAnswers,
-      passingScore: quiz.data.attributes.passing_score,
-    });
-  } catch (error) {
-    console.error(error);
-    Sentry.captureException(error);
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      handlePrismaError(error);
-    }
-    throw error;
+  if (!correctQuizAnswers || !correctQuizAnswers.length) {
+    return Toasts.jsonWithError(
+      { score: 0, passed: false, userAnswers: [], passingScore: quiz.data.attributes.passing_score },
+      {
+        title: "Error",
+        description: "There was an error processing your quiz. Please try again later.",
+      },
+    );
   }
+
+  // [2, 1]
+  const userAnswers = Object.entries(formData).map(([_question, answer]) => {
+    if (typeof answer !== "string") {
+      return;
+    }
+    return parseInt(answer);
+  });
+
+  // Calculate score
+  let score = 0;
+  correctQuizAnswers.forEach((correctAnswer, index) => {
+    if (correctAnswer === userAnswers[index]) {
+      score++;
+    }
+  });
+
+  score = Math.ceil((score / correctQuizAnswers.length) * 100);
+  const passed = score >= quiz.data.attributes.passing_score;
+
+  if (passed) {
+    await db.userQuizProgress.upsert({
+      where: {
+        userId_quizId: {
+          quizId: quiz.data.id,
+          userId,
+        },
+      },
+      create: {
+        userId,
+        quizId: quiz.data.id,
+        isCompleted: true,
+        score,
+      },
+      update: {
+        isCompleted: true,
+        score,
+      },
+    });
+  }
+
+  return json({
+    score,
+    passed,
+    userAnswers,
+    passingScore: quiz.data.attributes.passing_score,
+  });
 }
 
 export const meta: MetaFunction<typeof loader, { "routes/_course": typeof courseLoader }> = ({ data, matches }) => {

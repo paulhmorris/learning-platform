@@ -9,7 +9,6 @@ import { DataTable } from "~/components/ui/data-table/data-table";
 import { DataTableColumnHeader } from "~/components/ui/data-table/data-table-column-header";
 import { Facet } from "~/components/ui/data-table/data-table-toolbar";
 import { db } from "~/integrations/db.server";
-import { Sentry } from "~/integrations/sentry";
 import { SessionService } from "~/services/SessionService.server";
 
 export const meta: MetaFunction = () => {
@@ -18,27 +17,20 @@ export const meta: MetaFunction = () => {
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await SessionService.requireAdmin(request);
-
-  try {
-    const users = await db.user.findMany({
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        email: true,
-        phone: true,
-        role: true,
-        courses: {
-          select: { id: true },
-        },
+  const users = await db.user.findMany({
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      email: true,
+      phone: true,
+      role: true,
+      courses: {
+        select: { id: true },
       },
-    });
-    return json({ users });
-  } catch (error) {
-    console.error(error);
-    Sentry.captureException(error);
-    throw error;
-  }
+    },
+  });
+  return json({ users });
 }
 
 export default function UsersIndex() {

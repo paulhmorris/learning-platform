@@ -8,7 +8,6 @@ import { z } from "zod";
 import { FormField, FormSelect } from "~/components/ui/form";
 import { SubmitButton } from "~/components/ui/submit-button";
 import { db } from "~/integrations/db.server";
-import { Sentry } from "~/integrations/sentry";
 import { Toasts } from "~/lib/toast.server";
 import { loader } from "~/routes/admin.users.$id";
 import { SessionService } from "~/services/SessionService.server";
@@ -39,20 +38,11 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { id, ...rest } = result.data;
 
-  try {
-    const updatedUser = await db.user.update({
-      where: { id },
-      data: { ...rest },
-    });
-    return Toasts.jsonWithSuccess({ updatedUser }, { title: "Success", description: "User updated successfully." });
-  } catch (error) {
-    console.error(error);
-    Sentry.captureException(error);
-    return Toasts.jsonWithError(
-      { message: "An error occurred while updating this user." },
-      { title: "Unknown Error", description: "An error occurred while updating this user." },
-    );
-  }
+  const updatedUser = await db.user.update({
+    where: { id },
+    data: { ...rest },
+  });
+  return Toasts.jsonWithSuccess({ updatedUser }, { title: "Success", description: "User updated successfully." });
 }
 
 export default function AdminUserIndex() {

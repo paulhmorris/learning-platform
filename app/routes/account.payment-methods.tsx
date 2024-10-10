@@ -6,9 +6,7 @@ import { Theme, useTheme } from "remix-themes";
 
 import { ErrorComponent } from "~/components/error-component";
 import { db } from "~/integrations/db.server";
-import { Sentry } from "~/integrations/sentry";
 import { stripe } from "~/integrations/stripe.server";
-import { serverError } from "~/lib/responses.server";
 import { loader as rootLoader } from "~/root";
 import { SessionService } from "~/services/SessionService.server";
 
@@ -22,45 +20,39 @@ export const meta: MetaFunction<typeof loader, { root: typeof rootLoader }> = ({
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await SessionService.requireUser(request);
 
-  try {
-    // In case the user doesn't have a Stripe customer, create one
-    if (!user.stripeId) {
-      const stripeCustomer = await stripe.customers.create({
-        name: `${user.firstName}${user.lastName ? " " + user.lastName : ""}`,
-        email: user.email,
-        phone: user.phone ?? undefined,
-        metadata: {
-          user_id: user.id,
-        },
-      });
-      const updatedUser = await db.user.update({
-        where: { id: user.id },
-        data: { stripeId: stripeCustomer.id },
-      });
+  // In case the user doesn't have a Stripe customer, create one
+  if (!user.stripeId) {
+    const stripeCustomer = await stripe.customers.create({
+      name: `${user.firstName}${user.lastName ? " " + user.lastName : ""}`,
+      email: user.email,
+      phone: user.phone ?? undefined,
+      metadata: {
+        user_id: user.id,
+      },
+    });
+    const updatedUser = await db.user.update({
+      where: { id: user.id },
+      data: { stripeId: stripeCustomer.id },
+    });
 
-      if (!updatedUser.stripeId) {
-        throw new Error("Error creating Stripe customer. Please try again.");
-      }
-
-      const setupIntent = await stripe.setupIntents.create({
-        payment_method_types: ["card"],
-        customer: updatedUser.stripeId,
-      });
-
-      return json({ clientSecret: setupIntent.client_secret ?? undefined });
+    if (!updatedUser.stripeId) {
+      throw new Error("Error creating Stripe customer. Please try again.");
     }
 
     const setupIntent = await stripe.setupIntents.create({
       payment_method_types: ["card"],
-      customer: user.stripeId,
+      customer: updatedUser.stripeId,
     });
 
     return json({ clientSecret: setupIntent.client_secret ?? undefined });
-  } catch (error) {
-    console.error(error);
-    Sentry.captureException(error);
-    throw serverError("Error creating payment method setup intent. Please try again.");
   }
+
+  const setupIntent = await stripe.setupIntents.create({
+    payment_method_types: ["card"],
+    customer: user.stripeId,
+  });
+
+  return json({ clientSecret: setupIntent.client_secret ?? undefined });
 }
 
 const stripePromise = typeof window !== "undefined" ? loadStripe(window.ENV.STRIPE_PUBLIC_KEY) : null;

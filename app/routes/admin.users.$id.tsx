@@ -14,7 +14,6 @@ import { LoaderFunctionArgs, json } from "@vercel/remix";
 import { BackLink } from "~/components/common/back-link";
 import { Badge } from "~/components/ui/badge";
 import { db } from "~/integrations/db.server";
-import { Sentry } from "~/integrations/sentry";
 import { stripe } from "~/integrations/stripe.server";
 import { notFound } from "~/lib/responses.server";
 import { cn } from "~/lib/utils";
@@ -34,19 +33,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw notFound("User not found.");
   }
 
-  try {
-    const user = await db.user.findUniqueOrThrow({ where: { id }, include: { verification: true } });
-    let identityVerificationStatus;
-    if (user.stripeVerificationSessionId) {
-      const session = await stripe.identity.verificationSessions.retrieve(user.stripeVerificationSessionId);
-      identityVerificationStatus = session.status;
-    }
-    return json({ user, identityVerificationStatus });
-  } catch (error) {
-    console.error(error);
-    Sentry.captureException(error);
-    throw error;
+  const user = await db.user.findUniqueOrThrow({ where: { id }, include: { verification: true } });
+  let identityVerificationStatus;
+  if (user.stripeVerificationSessionId) {
+    const session = await stripe.identity.verificationSessions.retrieve(user.stripeVerificationSessionId);
+    identityVerificationStatus = session.status;
   }
+  return json({ user, identityVerificationStatus });
 }
 
 export default function UsersIndex() {

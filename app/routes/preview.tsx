@@ -1,4 +1,3 @@
-import { Prisma } from "@prisma/client";
 import { Link, MetaFunction, useLoaderData } from "@remix-run/react";
 import { ActionFunctionArgs, json, LoaderFunctionArgs, redirect } from "@vercel/remix";
 
@@ -17,9 +16,7 @@ import { Button } from "~/components/ui/button";
 import { Separator } from "~/components/ui/separator";
 import { getCourse } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
-import { Sentry } from "~/integrations/sentry";
 import { stripe } from "~/integrations/stripe.server";
-import { handlePrismaError, serverError } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
 import { SessionService } from "~/services/SessionService.server";
 import { APIResponseData } from "~/types/utils";
@@ -27,54 +24,45 @@ import { APIResponseData } from "~/types/utils";
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await SessionService.requireUser(request);
 
-  try {
-    const { host } = new URL(request.url);
-    const linkedCourse = await db.course.findUnique({ where: { host } });
-    if (!linkedCourse) {
-      return Toasts.redirectWithError("/", {
-        title: "Course not found.",
-        description: "Please try again later",
-      });
-    }
-
-    const [course, progress, quizProgress] = await Promise.all([
-      getCourse(linkedCourse.strapiId),
-      db.userLessonProgress.findMany({ where: { userId: user.id } }),
-      db.userQuizProgress.findMany({ where: { userId: user.id } }),
-    ]);
-
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    const userHasAccess = user.courses && user.courses.some((c) => c.courseId === linkedCourse.id);
-
-    const lessonsInOrder = course.data.attributes.sections.flatMap((section) => {
-      return (
-        section.lessons?.data.map((l) => {
-          const lessonProgress = progress.find((p) => p.lessonId === l.id);
-          return {
-            uuid: l.attributes.uuid,
-            slug: l.attributes.slug,
-            title: l.attributes.title,
-            sectionId: section.id,
-            sectionTitle: section.title,
-            isCompleted: lessonProgress?.isCompleted ?? false,
-            isTimed: l.attributes.required_duration_in_seconds && l.attributes.required_duration_in_seconds > 0,
-            hasVideo: l.attributes.has_video,
-            requiredDurationInSeconds: l.attributes.required_duration_in_seconds,
-            progressDuration: lessonProgress?.durationInSeconds,
-          };
-        }) ?? []
-      );
+  const { host } = new URL(request.url);
+  const linkedCourse = await db.course.findUnique({ where: { host } });
+  if (!linkedCourse) {
+    return Toasts.redirectWithError("/", {
+      title: "Course not found.",
+      description: "Please try again later",
     });
-
-    return json({ course: course.data, progress, lessonsInOrder, quizProgress, userHasAccess });
-  } catch (error) {
-    console.error(error);
-    Sentry.captureException(error);
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      handlePrismaError(error);
-    }
-    throw serverError("An error occurred while loading the course. Please try again.");
   }
+
+  const [course, progress, quizProgress] = await Promise.all([
+    getCourse(linkedCourse.strapiId),
+    db.userLessonProgress.findMany({ where: { userId: user.id } }),
+    db.userQuizProgress.findMany({ where: { userId: user.id } }),
+  ]);
+
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  const userHasAccess = user.courses && user.courses.some((c) => c.courseId === linkedCourse.id);
+
+  const lessonsInOrder = course.data.attributes.sections.flatMap((section) => {
+    return (
+      section.lessons?.data.map((l) => {
+        const lessonProgress = progress.find((p) => p.lessonId === l.id);
+        return {
+          uuid: l.attributes.uuid,
+          slug: l.attributes.slug,
+          title: l.attributes.title,
+          sectionId: section.id,
+          sectionTitle: section.title,
+          isCompleted: lessonProgress?.isCompleted ?? false,
+          isTimed: l.attributes.required_duration_in_seconds && l.attributes.required_duration_in_seconds > 0,
+          hasVideo: l.attributes.has_video,
+          requiredDurationInSeconds: l.attributes.required_duration_in_seconds,
+          progressDuration: lessonProgress?.durationInSeconds,
+        };
+      }) ?? []
+    );
+  });
+
+  return json({ course: course.data, progress, lessonsInOrder, quizProgress, userHasAccess });
 }
 
 export async function action({ request }: ActionFunctionArgs) {

@@ -24,31 +24,25 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw notFound("User not found.");
   }
 
-  try {
-    const user = await db.user.findUniqueOrThrow({
-      where: { id },
-      select: {
-        isActive: true,
-        createdAt: true,
-        password: {
-          select: {
-            userId: true,
-            createdAt: true,
-            updatedAt: true,
-          },
-        },
-        passwordResets: {
-          take: 10,
-          orderBy: { createdAt: "desc" },
+  const user = await db.user.findUniqueOrThrow({
+    where: { id },
+    select: {
+      isActive: true,
+      createdAt: true,
+      password: {
+        select: {
+          userId: true,
+          createdAt: true,
+          updatedAt: true,
         },
       },
-    });
-    return json({ user });
-  } catch (error) {
-    console.error(error);
-    Sentry.captureException(error);
-    throw error;
-  }
+      passwordResets: {
+        take: 10,
+        orderBy: { createdAt: "desc" },
+      },
+    },
+  });
+  return json({ user });
 }
 
 const schema = withZod(

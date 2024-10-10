@@ -1,4 +1,3 @@
-import { Prisma } from "@prisma/client";
 import { MetaFunction, useLoaderData } from "@remix-run/react";
 import { withZod } from "@remix-validated-form/with-zod";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@vercel/remix";
@@ -11,8 +10,7 @@ import { LessonContentRenderer, StrapiContent } from "~/components/lesson/lesson
 import { LessonProgressBar } from "~/components/lesson/lesson-progress-bar";
 import { db } from "~/integrations/db.server";
 import { redis } from "~/integrations/redis.server";
-import { Sentry } from "~/integrations/sentry";
-import { badRequest, handlePrismaError, serverError } from "~/lib/responses.server";
+import { badRequest } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
 import {
   getLessonBySlugWithContent,
@@ -37,18 +35,9 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   const lessonSlug = params.lessonSlug;
   invariant(lessonSlug, "Lesson slug is required");
 
-  try {
-    const lesson = await getLessonBySlugWithContent(lessonSlug);
-    const progress = await getUserLessonProgress(userId, lesson.id);
-    return json({ lesson, progress });
-  } catch (error) {
-    console.error(error);
-    Sentry.captureException(error);
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      handlePrismaError(error);
-    }
-    throw error;
-  }
+  const lesson = await getLessonBySlugWithContent(lessonSlug);
+  const progress = await getUserLessonProgress(userId, lesson.id);
+  return json({ lesson, progress });
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -59,55 +48,49 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { lessonId, userId } = result.data;
 
-  try {
-    const duration = await getLessonDuration(lessonId);
-    // Lessons without required durations
-    if (!duration) {
-      return json({ progress: null });
-    }
-
-    const progress = await getUserLessonProgress(userId, lessonId);
-
-    // Completion flow
-    if (progress && progress.durationInSeconds !== null) {
-      if (progress.isCompleted) {
-        throw badRequest({ message: "Can't update progress on a lesson that's already completed." });
-      }
-
-      // TODO: prevent spamming the endpoint
-
-      // Mark lesson complete if we're about to hit the required duration;
-      if (progress.durationInSeconds + SUBMIT_INTERVAL_MS / 1_000 >= duration) {
-        const completedProgress = await setUserLessonProgressComplete({
-          userId,
-          lessonId,
-          duration,
-        });
-        return Toasts.jsonWithSuccess(
-          { progress: completedProgress },
-          { title: "Lesson completed!", description: "You may now move on to the next item." },
-        );
-      }
-    }
-
-    // Create or update progress
-    const currentProgress = await db.userLessonProgress.upsert({
-      where: { userId_lessonId: { lessonId, userId } },
-      create: {
-        lessonId,
-        userId,
-        durationInSeconds: SUBMIT_INTERVAL_MS / 1_000,
-      },
-      update: { durationInSeconds: { increment: SUBMIT_INTERVAL_MS / 1_000 } },
-    });
-    await redis.set(`user-lesson-progress:${userId}:${lessonId}`, currentProgress, { ex: 12 });
-
-    return json({ progress: currentProgress });
-  } catch (error) {
-    console.error(error);
-    Sentry.captureException(error);
-    throw serverError("Failed to update lesson progress.");
+  const duration = await getLessonDuration(lessonId);
+  // Lessons without required durations
+  if (!duration) {
+    return json({ progress: null });
   }
+
+  const progress = await getUserLessonProgress(userId, lessonId);
+
+  // Completion flow
+  if (progress && progress.durationInSeconds !== null) {
+    if (progress.isCompleted) {
+      throw badRequest({ message: "Can't update progress on a lesson that's already completed." });
+    }
+
+    // TODO: prevent spamming the endpoint
+
+    // Mark lesson complete if we're about to hit the required duration;
+    if (progress.durationInSeconds + SUBMIT_INTERVAL_MS / 1_000 >= duration) {
+      const completedProgress = await setUserLessonProgressComplete({
+        userId,
+        lessonId,
+        duration,
+      });
+      return Toasts.jsonWithSuccess(
+        { progress: completedProgress },
+        { title: "Lesson completed!", description: "You may now move on to the next item." },
+      );
+    }
+  }
+
+  // Create or update progress
+  const currentProgress = await db.userLessonProgress.upsert({
+    where: { userId_lessonId: { lessonId, userId } },
+    create: {
+      lessonId,
+      userId,
+      durationInSeconds: SUBMIT_INTERVAL_MS / 1_000,
+    },
+    update: { durationInSeconds: { increment: SUBMIT_INTERVAL_MS / 1_000 } },
+  });
+  await redis.set(`user-lesson-progress:${userId}:${lessonId}`, currentProgress, { ex: 12 });
+
+  return json({ progress: currentProgress });
 }
 
 export const meta: MetaFunction<typeof loader, { "routes/_course": typeof courseLoader }> = ({ data, matches }) => {

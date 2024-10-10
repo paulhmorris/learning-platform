@@ -52,12 +52,7 @@ export async function action({ request }: ActionFunctionArgs) {
   if (!user.stripeId) {
     return Toasts.jsonWithError(
       { success: false },
-      {
-        title: "Error",
-
-        description: "Error retrieving your payment profile. Please contact support.",
-      },
-      { status: 404 },
+      { title: "Error", description: "Error retrieving your payment profile. Please contact support." },
     );
   }
 
