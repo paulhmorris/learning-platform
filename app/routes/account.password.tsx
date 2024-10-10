@@ -13,7 +13,7 @@ import { Toasts } from "~/lib/toast.server";
 import { useUser } from "~/lib/utils";
 import { verifyLogin } from "~/models/user.server";
 import { loader as rootLoader } from "~/root";
-import { PasswordService } from "~/services/PasswordService.server";
+import { AuthService } from "~/services/auth.server";
 import { SessionService } from "~/services/SessionService.server";
 
 const validator = withZod(
@@ -76,7 +76,7 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     // Update the password
-    const hashedPassword = await PasswordService.hashPassword(newPassword);
+    const hashedPassword = await AuthService.hashPassword(newPassword);
     await db.user.update({
       where: { id: user.id },
       data: {

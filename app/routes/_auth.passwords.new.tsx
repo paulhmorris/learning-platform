@@ -14,7 +14,7 @@ import { unauthorized } from "~/lib/responses.server";
 import { sessionStorage } from "~/lib/session.server";
 import { Toasts } from "~/lib/toast.server";
 import { getSearchParam } from "~/lib/utils";
-import { PasswordService } from "~/services/PasswordService.server";
+import { AuthService } from "~/services/auth.server";
 import { SessionService } from "~/services/SessionService.server";
 import { UserService } from "~/services/UserService.server";
 
@@ -43,7 +43,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     throw unauthorized("No token provided");
   }
 
-  const reset = await PasswordService.getResetByToken(token);
+  const reset = await AuthService.getResetByToken(token);
   if (!reset || reset.expiresAt < new Date()) {
     throw unauthorized("Invalid token");
   }
@@ -66,7 +66,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   // Check token
   const { newPassword, token } = result.data;
-  const reset = await PasswordService.getResetByToken(token);
+  const reset = await AuthService.getResetByToken(token);
   if (!reset) {
     return Toasts.jsonWithError({ success: false }, { title: "Token not found", description: "Please try again." });
   }
@@ -90,7 +90,7 @@ export async function action({ request }: ActionFunctionArgs) {
   await UserService.resetOrSetupPassword({ userId: userFromToken.id, password: newPassword });
 
   // Use token
-  await PasswordService.expireReset(token);
+  await AuthService.expireReset(token);
 
   // Logout and redirect to login
   await SessionService.logout(request);

@@ -4,8 +4,8 @@ import bcrypt from "bcryptjs";
 
 import { db } from "~/integrations/db.server";
 import { redis } from "~/integrations/redis.server";
+import { AuthService } from "~/services/auth.server";
 import { withServiceErrorHandling } from "~/services/helpers";
-import { PasswordService } from "~/services/PasswordService.server";
 import { OmitFromData, OmitFromWhere, Operation } from "~/services/types";
 
 type Model = typeof db.user;
@@ -49,7 +49,7 @@ class Service implements IUserService {
     password: string;
   }) {
     return withServiceErrorHandling<Model, T, "update">(async () => {
-      const hashedPassword = await PasswordService.hashPassword(password);
+      const hashedPassword = await AuthService.hashPassword(password);
 
       const user = await db.user.update({
         where: { id: userId },

@@ -13,7 +13,7 @@ import { EmailService } from "~/integrations/email.server";
 import { Sentry } from "~/integrations/sentry";
 import { Toasts } from "~/lib/toast.server";
 import { loader as rootLoader } from "~/root";
-import { PasswordService } from "~/services/PasswordService.server";
+import { AuthService } from "~/services/auth.server";
 import { SessionService } from "~/services/SessionService.server";
 
 const validator = withZod(z.object({ email: z.string().email() }));
@@ -33,12 +33,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   }
 
   try {
-    const existingReset = await PasswordService.getResetByUserId(result.data.email);
+    const existingReset = await AuthService.getResetByUserId(result.data.email);
     // If a reset already exists, just exit inconspicuously
     if (existingReset) {
       return json({ success: true });
     }
-    const reset = await PasswordService.generateReset(result.data.email);
+    const reset = await AuthService.generateReset(result.data.email);
     await EmailService.sendPasswordReset({ email: result.data.email, token: reset.token });
     return json({ success: true });
   } catch (error) {

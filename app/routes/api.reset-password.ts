@@ -7,7 +7,7 @@ import { z } from "zod";
 import { EmailService } from "~/integrations/email.server";
 import { Sentry } from "~/integrations/sentry";
 import { Toasts } from "~/lib/toast.server";
-import { PasswordService } from "~/services/PasswordService.server";
+import { AuthService } from "~/services/auth.server";
 import { UserService } from "~/services/UserService.server";
 
 const validator = withZod(z.object({ email: z.string().email() }));
@@ -30,7 +30,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const existingReset = await PasswordService.getResetByUserId(user.id);
+  const existingReset = await AuthService.getResetByUserId(user.id);
   if (existingReset) {
     return Toasts.jsonWithWarning(
       { message: "User not found" },
@@ -43,13 +43,13 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const reset = await PasswordService.generateReset(user.email);
+  const reset = await AuthService.generateReset(user.email);
   const { data, error } = await EmailService.sendPasswordReset({ email: user.email, token: reset.token });
 
   // Unknown email error
   if (error || !data) {
     Sentry.captureException(error);
-    await PasswordService.deleteReset(reset.id);
+    await AuthService.deleteReset(reset.id);
     return Toasts.jsonWithError(
       { error },
       { title: "Something went wrong", description: "There was an error sending the password reset email." },
@@ -59,7 +59,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // Email not sent
   if ("statusCode" in data && data.statusCode !== 200) {
     // Delete the reset if there was an error emailing the user
-    await PasswordService.deleteReset(reset.id);
+    await AuthService.deleteReset(reset.id);
     return Toasts.jsonWithError(
       { data },
       { title: "Something went wrong", description: "There was an error sending the password reset email." },
