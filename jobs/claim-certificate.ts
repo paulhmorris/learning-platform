@@ -2,6 +2,7 @@ import { createCanvas, loadImage } from "@napi-rs/canvas";
 import { logger, task } from "@trigger.dev/sdk/v3";
 import { nanoid } from "nanoid";
 
+import { EMAIL_FROM_DOMAIN } from "~/config";
 import { Bucket } from "~/integrations/bucket.server";
 import { db } from "~/integrations/db.server";
 import { EmailService } from "~/integrations/email.server";
@@ -41,7 +42,7 @@ export const claimCertificateJob = task({
     if (thisCourse.certificateClaimed) {
       logger.info("Certificate already claimed. Sending another email.", user);
       const email = await EmailService.send({
-        from: `Plumb Learning <no-reply@plumblearning.com>`,
+        from: `Plumb Media & Education <no-reply@${EMAIL_FROM_DOMAIN}>`,
         to: user.email,
         subject: "View Your Certificate!",
         html: `
@@ -82,9 +83,8 @@ export const claimCertificateJob = task({
 
     // send email with link to image
     const email = await EmailService.send({
-      from: `${payload.courseName} <no-reply@plumblearning.com>`,
-      // to: user.email,
-      to: "paulh.morris@gmail.com",
+      from: `${payload.courseName} <no-reply@${EMAIL_FROM_DOMAIN}>`,
+      to: user.email,
       subject: "Your certificate is ready!",
       html: `
         <p>Hi ${user.firstName},</p>

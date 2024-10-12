@@ -73,6 +73,35 @@ class Service {
     const reset = await db.passwordReset.delete({ where: { id }, select: {} });
     return reset;
   }
+
+  public async generateVerification(userId: string) {
+    const token = Math.floor(100000 + Math.random() * 900000).toString();
+    const verification = await db.userVerification.upsert({
+      where: { userId },
+      create: {
+        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+        token,
+        user: {
+          connect: { id: userId },
+        },
+      },
+      update: {
+        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+        token,
+      },
+      select: {
+        token: true,
+      },
+    });
+    return verification;
+  }
+
+  public async getVerificationByUserId(userId: string) {
+    const verification = await db.userVerification.findUnique({
+      where: { userId, expiresAt: { gte: new Date() } },
+    });
+    return verification;
+  }
 }
 
 export const AuthService = new Service();

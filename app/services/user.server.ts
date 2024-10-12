@@ -2,6 +2,7 @@ import { Prisma, User } from "@prisma/client";
 
 import { db } from "~/integrations/db.server";
 import { redis } from "~/integrations/redis.server";
+import { stripe } from "~/integrations/stripe.server";
 import { AuthService } from "~/services/auth.server";
 
 class Service {
@@ -53,7 +54,6 @@ class Service {
 
   public async create(email: User["email"], password: string, data: Omit<Prisma.UserCreateArgs["data"], "email">) {
     const hashedPassword = await AuthService.hashPassword(password);
-
     const user = await db.user.create({
       data: {
         ...data,
@@ -65,7 +65,26 @@ class Service {
         },
       },
     });
+
+    const stripeCus = await stripe.customers.create({
+      email: user.email,
+      name: `${user.firstName}${user.lastName ? " " + user.lastName : ""}`,
+      phone: user.phone ?? undefined,
+      metadata: {
+        user_id: user.id,
+      },
+    });
+
+    await db.user.update({
+      where: { id: user.id },
+      data: { stripeId: stripeCus.id },
+    });
     return user;
+  }
+
+  public async exists(email: User["email"]) {
+    const count = await db.user.count({ where: { email } });
+    return count > 0;
   }
 
   public async update(id: User["id"], data: Prisma.UserUpdateArgs["data"]) {

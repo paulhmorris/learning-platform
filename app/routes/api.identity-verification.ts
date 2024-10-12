@@ -1,6 +1,7 @@
 import { Prisma, User } from "@prisma/client";
 import { ActionFunctionArgs, json } from "@vercel/remix";
 
+import { EMAIL_FROM_DOMAIN } from "~/config";
 import { db } from "~/integrations/db.server";
 import { EmailService } from "~/integrations/email.server";
 import { Sentry } from "~/integrations/sentry";
@@ -43,7 +44,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
               await EmailService.send({
                 to: user.email,
-                from: "Plumb Media & Education <no-reply@plumblearning.com>",
+                from: `Plumb Media & Education <no-reply@${EMAIL_FROM_DOMAIN}>`,
                 subject: "Action Required: Verify Your Identity",
                 html: `<p>More information is required to verify your identity. ${event.data.object.last_error?.reason}</p>`,
               });

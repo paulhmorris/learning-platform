@@ -6,16 +6,16 @@ import { useEffect } from "react";
 import { ValidatedForm, validationError } from "remix-validated-form";
 import { z } from "zod";
 
-import { verifyEmailJob } from "jobs/verify-email.server";
 import { AuthCard } from "~/components/common/auth-card";
 import { PageTitle } from "~/components/common/page-title";
 import { FormField } from "~/components/ui/form";
 import { SubmitButton } from "~/components/ui/submit-button";
-import { db } from "~/integrations/db.server";
-import { stripe } from "~/integrations/stripe.server";
+import { EMAIL_FROM_DOMAIN } from "~/config";
+import { EmailService } from "~/integrations/email.server";
 import { Toasts } from "~/lib/toast.server";
 import { loader as rootLoader } from "~/root";
 import { validator as verifyCodeValidator } from "~/routes/api.verification-code";
+import { AuthService } from "~/services/auth.server";
 import { SessionService } from "~/services/session.server";
 import { UserService } from "~/services/user.server";
 
@@ -59,7 +59,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   if (result.data.step === "join") {
     const { firstName, lastName, email, password, redirectTo } = result.data;
-    const existingUser = await UserService.getByEmail(email);
+    const existingUser = await UserService.exists(email);
     if (existingUser) {
       return validationError({
         fieldErrors: {
@@ -69,8 +69,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     }
 
     const user = await UserService.create(email, password, { firstName, lastName });
+    const verification = await AuthService.generateVerification(user.id);
 
-    await verifyEmailJob.trigger({ email: user.email });
+    await EmailService.send({
+      from: `Plumb Media & Education <no-reply@${EMAIL_FROM_DOMAIN}>`,
+      to: user.email,
+      subject: "Verify Your Email",
+      html: `<p>Here's your six digit verification code: <strong>${verification.token}</strong></p>`,
+    });
 
     const url = new URL("/join", request.url);
     url.searchParams.set("step", "verify-email");
@@ -95,17 +101,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       });
     }
 
-    const verification = await db.userVerification.findFirst({
-      where: {
-        userId: user.id,
-        token: code,
-        expiresAt: {
-          gte: new Date(),
-        },
-      },
-    });
+    const verification = await AuthService.getVerificationByUserId(user.id);
 
-    if (!verification) {
+    if (!verification || verification.token !== code) {
       return validationError({
         fieldErrors: {
           code: "The code you entered is incorrect.",
@@ -113,21 +111,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       });
     }
 
-    const stripeCustomer = await stripe.customers.create({
-      name: `${user.firstName}${user.lastName ? " " + user.lastName : ""}`,
-      email: user.email,
-      phone: user.phone ?? undefined,
-      metadata: {
-        user_id: user.id,
-      },
-    });
     await UserService.update(user.id, {
-      stripeId: stripeCustomer.id,
       isEmailVerified: true,
       verification: {
-        update: {
-          expiresAt: new Date(),
-        },
+        update: { expiresAt: new Date() },
       },
     });
 

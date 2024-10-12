@@ -3,6 +3,8 @@ import { SESv2Client, SendEmailCommand } from "@aws-sdk/client-sesv2";
 import { PasswordReset, User } from "@prisma/client";
 import { nanoid } from "nanoid";
 
+import { EMAIL_FROM_DOMAIN } from "~/config";
+
 const client = new SESv2Client({ region: "us-east-1" });
 
 export type SendEmailInput = {
@@ -27,7 +29,7 @@ export class EmailService {
 
     try {
       const data = await this.send({
-        from: "Plumb Learning <no-reply@plumblearning.com>",
+        from: `Plumb Media & Education <no-reply@${EMAIL_FROM_DOMAIN}>`,
         to: email,
         subject: "Reset Your Password",
         html: `
