@@ -1,6 +1,5 @@
-import { Link } from "@remix-run/react";
-
 import { AdminButton } from "~/components/ui/admin-button";
+import { ButtonGroup } from "~/components/ui/button-group";
 import {
   Dialog,
   DialogContent,
@@ -23,12 +22,12 @@ export function PurchaseSuccessModal(props: Props) {
           <DialogDescription>You&apos;ve successfully enrolled. You can now proceed to the course.</DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <AdminButton variant="secondary" onClick={() => props.onOpenChange(false)}>
-            Close
-          </AdminButton>
-          <AdminButton asChild>
-            <Link to="/preview">Go to course</Link>
-          </AdminButton>
+          <ButtonGroup>
+            <AdminButton variant="secondary" onClick={() => props.onOpenChange(false)}>
+              Close
+            </AdminButton>
+            <AdminButton onClick={() => props.onOpenChange(false)}>Start Course</AdminButton>
+          </ButtonGroup>
         </DialogFooter>
       </DialogContent>
     </Dialog>

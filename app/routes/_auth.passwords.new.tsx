@@ -56,6 +56,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export async function action({ request }: ActionFunctionArgs) {
+  const session = await SessionService.getSession(request);
   const tokenParam = getSearchParam("token", request);
 
   // Validate form
@@ -92,10 +93,11 @@ export async function action({ request }: ActionFunctionArgs) {
   // Use token
   await AuthService.expireReset(token);
 
-  // Logout and redirect to login
-  await SessionService.logout(request);
-
-  return json({ ok: true });
+  return Toasts.redirectWithSuccess(
+    "/login",
+    { title: "Password reset", description: "Your password has been reset." },
+    { headers: { "Set-Cookie": await sessionStorage.destroySession(session) } },
+  );
 }
 
 export default function NewPassword() {

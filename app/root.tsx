@@ -21,7 +21,6 @@ import globalStyles from "~/tailwind.css?url";
 export const links: LinksFunction = () => [{ rel: "stylesheet", href: globalStyles, as: "style" }];
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const session = await SessionService.getSession(request);
   const user = await SessionService.getUser(request);
   const theme = (await themeSessionResolver(request)).getTheme();
   const { toast, headers } = await getToast(request);
@@ -47,20 +46,14 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
     const course = await getCoursefromCMSForRoot(linkedCourse.strapiId);
 
-    return json(
-      { ...defaultResponse, course, hasLinkedCourse: true },
-      {
-        headers: {
-          "Set-Cookie": await SessionService.commitSession(session),
-        },
-      },
-    );
+    return json({ ...defaultResponse, course, hasLinkedCourse: true }, { headers });
   } catch (error) {
     console.error(error);
     Sentry.captureException(error);
     return Toasts.jsonWithError(
       { ...defaultResponse, hasLinkedCourse: false },
       { title: "Course not found", description: `Please try again later.` },
+      { headers },
     );
   }
 };

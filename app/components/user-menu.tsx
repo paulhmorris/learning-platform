@@ -59,7 +59,7 @@ export function UserMenu() {
             {rootData?.hasLinkedCourse ? (
               <DropdownMenuItem asChild>
                 <Link className="cursor-pointer" to="/preview">
-                  Go To Course
+                  Go to Course
                 </Link>
               </DropdownMenuItem>
             ) : null}

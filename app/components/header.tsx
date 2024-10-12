@@ -3,6 +3,7 @@ import { Link, useLocation, useRouteLoaderData } from "@remix-run/react";
 import { Theme, useTheme } from "remix-themes";
 
 import { ThemeModeToggle } from "~/components/theme-mode-toggle";
+import { Button } from "~/components/ui/button";
 import { UserMenu } from "~/components/user-menu";
 import { useOptionalUser } from "~/lib/utils";
 import { loader } from "~/root";
@@ -36,6 +37,13 @@ export function Header() {
             )}
           </Link>
           <div className="flex items-center gap-4">
+            {rootData?.hasLinkedCourse ? (
+              <Button asChild variant="secondary">
+                <Link className="cursor-pointer" to="/preview">
+                  Go to Course
+                </Link>
+              </Button>
+            ) : null}
             <div className="hidden sm:block">
               {user ? (
                 <form action="/logout" method="post" className="blo">

@@ -14,12 +14,12 @@ class Service {
 
   public async verifyLogin(email: string, password: string) {
     const userWithPassword = await UserService.getByEmailWithPassword(email);
-
     if (!userWithPassword || !userWithPassword.password) {
       return null;
     }
 
     const isValid = await bcrypt.compare(password, userWithPassword.password.hash);
+    console.log({ isValid });
 
     if (!isValid) {
       return null;

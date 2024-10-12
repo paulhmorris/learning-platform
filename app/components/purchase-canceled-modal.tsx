@@ -1,6 +1,5 @@
-import { Link } from "@remix-run/react";
-
 import { AdminButton } from "~/components/ui/admin-button";
+import { ButtonGroup } from "~/components/ui/button-group";
 import {
   Dialog,
   DialogContent,
@@ -26,12 +25,12 @@ export function PurchaseCanceledModal(props: Props) {
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <AdminButton variant="secondary" onClick={() => props.onOpenChange(false)}>
-            Close
-          </AdminButton>
-          <AdminButton asChild>
-            <Link to="/preview">Go to preview</Link>
-          </AdminButton>
+          <ButtonGroup>
+            <AdminButton variant="secondary" onClick={() => props.onOpenChange(false)}>
+              Close
+            </AdminButton>
+            <AdminButton onClick={() => props.onOpenChange(false)}>Try again</AdminButton>
+          </ButtonGroup>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -1,5 +1,6 @@
-import { Link, MetaFunction, useLoaderData } from "@remix-run/react";
+import { Link, MetaFunction, useLoaderData, useSearchParams } from "@remix-run/react";
 import { ActionFunctionArgs, json, LoaderFunctionArgs, redirect } from "@vercel/remix";
+import { useEffect, useState } from "react";
 
 import { StrapiImage } from "~/components/common/strapi-image";
 import { CourseHeader } from "~/components/course/course-header";
@@ -7,6 +8,8 @@ import { CoursePurchaseCTA } from "~/components/course/course-purchase-cta";
 import { CourseUpNext, LessonInOrder } from "~/components/course/course-up-next";
 import { ErrorComponent } from "~/components/error-component";
 import { IconClipboard, IconDocument } from "~/components/icons";
+import { PurchaseCanceledModal } from "~/components/purchase-canceled-modal";
+import { PurchaseSuccessModal } from "~/components/purchase-success-modal";
 import { Section, SectionHeader } from "~/components/section";
 import { CoursePreviewLink } from "~/components/sidebar/course-preview-link";
 import { CourseProgressBar } from "~/components/sidebar/course-progress-bar";
@@ -24,8 +27,8 @@ import { APIResponseData } from "~/types/utils";
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await SessionService.requireUser(request);
 
-  const { host } = new URL(request.url);
-  const linkedCourse = await db.course.findUnique({ where: { host } });
+  const url = new URL(request.url);
+  const linkedCourse = await db.course.findUnique({ where: { host: url.host } });
   if (!linkedCourse) {
     return Toasts.redirectWithError("/", {
       title: "Course not found.",
@@ -66,16 +69,23 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export async function action({ request }: ActionFunctionArgs) {
+  const user = await SessionService.requireUser(request);
   const url = new URL(request.url);
   const course = await db.course.findUniqueOrThrow({
     where: { host: url.host },
   });
 
+  const success_url = new URL("/purchase?success=true&session_id={CHECKOUT_SESSION_ID}", request.url).toString();
+  const cancel_url = new URL("/purchase?success=false", request.url).toString();
   const session = await stripe.checkout.sessions.create({
-    line_items: [{ price: course.stripePriceId, quantity: 1 }],
+    customer: user.stripeId ?? undefined,
     mode: "payment",
-    success_url: `https://${url.host}/purchase?success=true`,
-    cancel_url: `https://${url.host}/purchase?canceled=true`,
+    line_items: [{ price: course.stripePriceId, quantity: 1 }],
+    success_url,
+    cancel_url,
+    metadata: {
+      user_id: user.id,
+    },
   });
 
   return redirect(session.url ?? "/", { status: 303 });
@@ -86,7 +96,22 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
 };
 
 export default function CoursePreview() {
+  const [searchParams] = useSearchParams();
+  const [successModalOpen, setSuccessModalOpen] = useState(false);
+  const [canceledModalOpen, setCanceledModalOpen] = useState(false);
   const { course, progress, lessonsInOrder, quizProgress, userHasAccess } = useLoaderData<typeof loader>();
+
+  const isSuccessful = searchParams.get("purchase_success") === "true";
+  const isCanceled = searchParams.get("purchase_canceled") === "true";
+
+  // handle success or cancel
+  useEffect(() => {
+    if (isSuccessful) {
+      setSuccessModalOpen(true);
+    } else if (isCanceled) {
+      setCanceledModalOpen(true);
+    }
+  }, [isSuccessful, isCanceled]);
 
   const isCourseCompleted =
     lessonsInOrder.every((l) => l.isCompleted) &&
@@ -259,6 +284,8 @@ export default function CoursePreview() {
           </ul>
         </main>
       </div>
+      <PurchaseSuccessModal open={successModalOpen} onOpenChange={setSuccessModalOpen} />
+      <PurchaseCanceledModal open={canceledModalOpen} onOpenChange={setCanceledModalOpen} />
     </>
   );
 }
