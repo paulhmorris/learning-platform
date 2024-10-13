@@ -1,4 +1,4 @@
-name: 🔫 Deploy to Trigger.dev (prod)
+name: 🔫 Deploy to Trigger.dev
 
 on:
   push:
@@ -22,8 +22,8 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: 🚀 Deploy to Trigger.dev
+      - name: 🚀 Deploy
         env:
           TRIGGER_ACCESS_TOKEN: ${{ secrets.TRIGGER_ACCESS_TOKEN }}
         run: |
-          npx trigger.dev@beta deploy
+          npx trigger.dev@latest deploy
