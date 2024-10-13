@@ -79,6 +79,7 @@ class Service {
       where: { id: user.id },
       data: { stripeId: stripeCus.id },
     });
+    await redis.set<User>(`user-${user.id}`, user, { ex: 30 });
     return user;
   }
 
@@ -89,15 +90,19 @@ class Service {
 
   public async update(id: User["id"], data: Prisma.UserUpdateArgs["data"]) {
     const user = await db.user.update({ where: { id }, data });
+    await redis.del(`user-${user.id}`);
     return user;
   }
+
   public async delete(id: User["id"]) {
     const user = await db.user.delete({ where: { id } });
+    await redis.del(`user-${user.id}`);
     return user;
   }
 
   public async deleteByEmail(email: User["email"]) {
     const user = await db.user.delete({ where: { email } });
+    await redis.del(`user-${user.id}`);
     return user;
   }
 }

@@ -4,6 +4,7 @@ import { db } from "~/integrations/db.server";
 import { stripe } from "~/integrations/stripe.server";
 import { Toasts } from "~/lib/toast.server";
 import { SessionService } from "~/services/session.server";
+import { UserService } from "~/services/user.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await SessionService.requireUser(request);
@@ -39,13 +40,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   // Add the course to the user's courses
-  await db.user.update({
-    where: { id: user.id },
-    data: {
-      courses: {
-        create: {
-          courseId: linkedCourse.id,
-        },
+  await UserService.update(user.id, {
+    courses: {
+      create: {
+        courseId: linkedCourse.id,
       },
     },
   });
