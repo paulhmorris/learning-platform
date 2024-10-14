@@ -28,6 +28,12 @@ jobs:
       - name: Typecheck
         run: tsc --noEmit
 
+      - name: Deploy Trigger.dev
+        env:
+          TRIGGER_ACCESS_TOKEN: ${{ secrets.TRIGGER_ACCESS_TOKEN }}
+        run: |
+          npx trigger.dev@latest deploy
+
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -47,12 +53,6 @@ jobs:
         with:
           name: build-artifacts
           path: .vercel/output
-
-      - name: Deploy Trigger.dev
-        env:
-          TRIGGER_ACCESS_TOKEN: ${{ secrets.TRIGGER_ACCESS_TOKEN }}
-        run: |
-          npx trigger.dev@latest deploy --log-level debug
 
       - name: Deploy Project Artifacts to Vercel
         run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
