@@ -24,7 +24,7 @@ jobs:
         run: npx tsc --noEmit --pretty
 
       - name: Lint
-        run: eslint . --quiet
+        run: npx eslint . --quiet
 
   deploy:
     name: 🚀 Deploy
