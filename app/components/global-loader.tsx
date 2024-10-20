@@ -7,7 +7,7 @@ export function GlobalLoader() {
   const fetchers = useFetchers();
 
   useEffect(() => {
-    const fetchersIdle = fetchers.every((f) => f.state === "idle");
+    const fetchersIdle = fetchers.filter((f) => f.key !== "lesson-progress").every((f) => f.state === "idle");
     NProgress.configure({ showSpinner: false });
     if (navigation.state === "idle" && fetchersIdle) {
       NProgress.done();

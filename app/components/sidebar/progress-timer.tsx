@@ -18,7 +18,7 @@ interface Props {
 export function ProgressTimer({ lesson, progress, setClientProgressPercentage }: Props) {
   const duration = lesson.attributes.required_duration_in_seconds ?? 0;
   const user = useUser();
-  const fetcher = useFetcher();
+  const fetcher = useFetcher({ key: "lesson-progress" });
   const countdownStart = duration - (progress?.durationInSeconds ?? 0);
   const [countdownValue, { pause, resume, isPaused }] = useCountdown(countdownStart, 0, {
     startOnMount: true,

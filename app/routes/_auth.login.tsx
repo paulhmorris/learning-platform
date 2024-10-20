@@ -115,7 +115,7 @@ export default function LoginPage() {
             type="password"
             autoComplete="current-password"
             required
-            defaultValue={process.env.NODE_ENV === "development" ? "password1" : ""}
+            defaultValue={process.env.NODE_ENV === "development" ? "password" : ""}
           />
 
           <div className="flex items-center justify-between gap-x-2">

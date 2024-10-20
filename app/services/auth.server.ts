@@ -19,7 +19,6 @@ class Service {
     }
 
     const isValid = await bcrypt.compare(password, userWithPassword.password.hash);
-    console.log({ isValid });
 
     if (!isValid) {
       return null;
