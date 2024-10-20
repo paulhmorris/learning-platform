@@ -92,7 +92,7 @@ export const meta: MetaFunction<typeof loader, { root: typeof rootLoader }> = ({
 
 export default function LoginPage() {
   const [searchParams] = useSearchParams();
-  const redirectTo = searchParams.get("redirectTo") || "";
+  const redirectTo = searchParams.get("redirectTo") || "/preview";
 
   return (
     <>

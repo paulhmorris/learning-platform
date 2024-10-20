@@ -211,7 +211,6 @@ export default function CoursePreview() {
                     <ul className="flex flex-col gap-6">
                       {section.lessons?.data.map((l) => {
                         const lessonIndex = lessonsInOrder.findIndex((li) => li.uuid === l.attributes.uuid);
-                        const lesson = lessonsInOrder[lessonIndex];
 
                         // Lock the lesson if the previous section's quiz is not completed
                         const previousSection =
@@ -223,13 +222,12 @@ export default function CoursePreview() {
                         );
 
                         const previousLessonIsCompleted = lessonsInOrder[lessonIndex - 1]?.isCompleted;
+
                         const isLessonLocked =
-                          (lessonIndex > 0 && !lesson.isCompleted) ||
-                          !userHasAccess ||
-                          (previousSectionQuiz?.data && !previousSectionQuizIsCompleted) ||
-                          (!isCourseCompleted &&
-                            !previousLessonIsCompleted &&
-                            lessonIndex > lastCompletedLessonIndex + 1);
+                          !userHasAccess || // User does not have access
+                          (lessonIndex > 0 && !previousLessonIsCompleted) || // Previous lesson is not completed
+                          (previousSectionQuiz?.data && !previousSectionQuizIsCompleted) || // Previous section quiz is not completed
+                          (!isCourseCompleted && lessonIndex > lastCompletedLessonIndex + 1); // Course is not completed and lesson index is greater than last completed lesson index + 1
 
                         const userLessonProgress = progress.find((lp) => lp.lessonId === l.id) ?? null;
                         return (

@@ -107,9 +107,8 @@ export default function CourseLayout() {
       (s) => !s.quiz?.data || quizProgress.some((p) => p.quizId === s.quiz?.data.id && p.isCompleted),
     );
 
-  // Simplify the calculation of the next and last completed lesson indices
   const nextLessonIndex = lessonsInOrder.findIndex((l) => !l.isCompleted);
-  const lastCompletedLessonIndex = Math.max(0, nextLessonIndex - 1); // Ensures a minimum of 0
+  const lastCompletedLessonIndex = Math.max(0, nextLessonIndex - 1);
   const nextLesson = lessonsInOrder[nextLessonIndex] ?? lessonsInOrder[0];
 
   const isQuizActive = Boolean(params.quizId);
@@ -122,7 +121,6 @@ export default function CourseLayout() {
     ? sections.find((s) => s.quiz?.data?.attributes.uuid === activeQuiz.data?.attributes.uuid)
     : sections.find((s) => s.id === activeLesson?.sectionId) ?? sections[0];
 
-  // Use direct summation for progress and duration, removing unnecessary return statements
   const totalProgressInSeconds = progress.reduce((acc, curr) => acc + (curr.durationInSeconds ?? 0), 0);
   const totalDurationInSeconds = lessonsInOrder.reduce((acc, curr) => acc + (curr.requiredDurationInSeconds ?? 0), 0);
   if (!isClient) {
@@ -133,7 +131,7 @@ export default function CourseLayout() {
     <>
       <div className="max-w-screen-xl">
         <nav className="overflow-visible px-4 py-4 lg:fixed lg:bottom-0 lg:left-0 lg:top-20 lg:w-[448px] lg:overflow-auto lg:py-12">
-          <BackLink to="/preview">Back to course</BackLink>
+          <BackLink to="/preview">Back to overview</BackLink>
           {/* TODO: Adjust for non timed courses */}
           <div className="my-7">
             <CourseProgressBar progress={totalProgressInSeconds} duration={totalDurationInSeconds} />
@@ -184,7 +182,6 @@ export default function CourseLayout() {
                           })
                           .map((l) => {
                             const lessonIndex = lessonsInOrder.findIndex((li) => li.uuid === l.attributes.uuid);
-                            const lesson = lessonsInOrder[lessonIndex];
 
                             // Lock the lesson if the previous section's quiz is not completed
                             const previousSection =
@@ -195,13 +192,11 @@ export default function CourseLayout() {
                               (p) => p.isCompleted && p.quizId === previousSectionQuiz?.data?.id,
                             );
 
-                            const lastLessonIsCompleted = lessonsInOrder[lastCompletedLessonIndex]?.isCompleted;
+                            const previousLessonIsCompleted = lessonsInOrder[lastCompletedLessonIndex]?.isCompleted;
                             const isLessonLocked =
-                              (lessonIndex > 0 && !lesson.isCompleted) ||
-                              (previousSectionQuiz?.data && !previousSectionQuizIsCompleted) ||
-                              (!isCourseCompleted &&
-                                !lastLessonIsCompleted &&
-                                lessonIndex > lastCompletedLessonIndex + 1);
+                              (lessonIndex > 0 && !previousLessonIsCompleted) || // Previous lesson is not completed
+                              (previousSectionQuiz?.data && !previousSectionQuizIsCompleted) || // Previous section quiz is not completed
+                              (!isCourseCompleted && lessonIndex > lastCompletedLessonIndex + 1); // Course is not completed and lesson index is greater than last completed lesson index + 1
 
                             return (
                               <SectionLesson

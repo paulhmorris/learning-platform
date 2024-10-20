@@ -10,9 +10,10 @@ interface Props extends HTMLAttributes<HTMLDivElement> {
 
 export function CourseHeader({ className, courseTitle, numLessons }: Props) {
   return (
-    <header className={cn("space-y-8", className)}>
+    <header className={cn(className)}>
       <h1 className="text-pretty text-3xl font-bold leading-tight sm:text-4xl md:text-5xl">{courseTitle}</h1>
-      <ul className="space-y-1 text-sm">
+      <h2 className="mt-8 text-xl font-semibold">Overview</h2>
+      <ul className="mt-1 space-y-1 text-sm">
         {numLessons ? (
           <li className="flex items-center gap-1">
             <div className="basis-7">
