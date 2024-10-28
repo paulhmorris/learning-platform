@@ -7,8 +7,8 @@ import { AdminButton } from "~/components/ui/admin-button";
 import { Button } from "~/components/ui/button";
 import { Card, CardFooter, CardHeader, CardTitle } from "~/components/ui/card";
 import { db } from "~/integrations/db.server";
-import { notFound } from "~/lib/responses.server";
-import { getAllCourses } from "~/models/course.server";
+import { notFound, serverError } from "~/lib/responses.server";
+import { CourseService } from "~/services/course.server";
 import { SessionService } from "~/services/session.server";
 
 export const meta: MetaFunction = () => {
@@ -33,10 +33,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       },
     },
   });
-  const cmsCourses = await getAllCourses();
+  const cmsCourses = await CourseService.getAll();
 
   if (!cmsCourses.length) {
-    throw new Response("Failed to fetch courses", { status: 500 });
+    throw serverError("Failed to fetch courses");
   }
 
   const courses = user.courses.map((dbCourse) => {

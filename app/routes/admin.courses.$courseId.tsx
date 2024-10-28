@@ -4,7 +4,7 @@ import { LoaderFunctionArgs, json } from "@vercel/remix";
 import { BackLink } from "~/components/common/back-link";
 import { ErrorComponent } from "~/components/error-component";
 import { db } from "~/integrations/db.server";
-import { getCoursefromCMSForRoot } from "~/models/course.server";
+import { CourseService } from "~/services/course.server";
 import { SessionService } from "~/services/session.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -12,7 +12,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const id = params.courseId;
 
   const dbCourse = await db.course.findUniqueOrThrow({ where: { id }, include: { userCourses: true } });
-  const cmsCourse = await getCoursefromCMSForRoot(dbCourse.strapiId);
+  const cmsCourse = await CourseService.getFromCMSForRoot(dbCourse.strapiId);
   if (!cmsCourse) {
     throw new Error("No course found in CMS.");
   }

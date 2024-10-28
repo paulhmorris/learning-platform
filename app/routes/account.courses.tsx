@@ -7,8 +7,9 @@ import { IconCertificate } from "~/components/icons";
 import { AdminButton } from "~/components/ui/admin-button";
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "~/components/ui/card";
 import { db } from "~/integrations/db.server";
-import { getAllCourses } from "~/models/course.server";
+import { serverError } from "~/lib/responses.server";
 import { loader as rootLoader } from "~/root";
+import { CourseService } from "~/services/course.server";
 import { SessionService } from "~/services/session.server";
 
 export const meta: MetaFunction<typeof loader, { root: typeof rootLoader }> = ({ matches }) => {
@@ -21,17 +22,16 @@ export const meta: MetaFunction<typeof loader, { root: typeof rootLoader }> = ({
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await SessionService.requireUserId(request);
 
-  const [userCourses, dbCourses, cmsCourses] = await Promise.all([
+  const [userCourses, cmsCourses] = await Promise.all([
     db.userCourses.findMany({ where: { userId }, include: { course: true } }),
-    db.userCourses.findMany({ where: { userId }, include: { course: true } }),
-    getAllCourses(),
+    CourseService.getAll(),
   ]);
 
   if (!cmsCourses.length) {
-    throw new Response("Failed to fetch courses", { status: 500 });
+    throw serverError("Failed to fetch courses");
   }
 
-  const courses = dbCourses.map((dbCourse) => {
+  const courses = userCourses.map((dbCourse) => {
     const cmsCourse = cmsCourses.find((course) => course.id === dbCourse.course.strapiId);
     return {
       ...dbCourse,
@@ -72,7 +72,11 @@ export default function AccountCourses() {
                 </CardHeader>
                 <CardFooter>
                   <AdminButton asChild>
-                    <a href={new URL("/", `https://${course.course.host}`).toString()} target="_blank" rel="noreferrer">
+                    <a
+                      href={new URL("/preview", `https://${course.course.host}`).toString()}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
                       Go to Course
                     </a>
                   </AdminButton>

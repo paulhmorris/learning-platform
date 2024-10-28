@@ -136,11 +136,17 @@ export default function AccountProfile() {
     }
   }
 
-  const shouldShowVerifyButton =
-    !user.isIdentityVerified ||
-    !identityVerificationStatus ||
-    identityVerificationStatus === "requires_input" ||
-    identityVerificationStatus === "canceled";
+  const shouldShowVerifyButton = () => {
+    const hasCourseThatRequiresVerification = user.courses.some((c) => c.course.requiresIdentityVerification);
+    if (hasCourseThatRequiresVerification && !user.isIdentityVerified) {
+      return false;
+    }
+    return (
+      !identityVerificationStatus ||
+      identityVerificationStatus === "requires_input" ||
+      identityVerificationStatus === "canceled"
+    );
+  };
 
   return (
     <div>
@@ -153,7 +159,7 @@ export default function AccountProfile() {
               processed.
             </span>
           </p>
-        ) : shouldShowVerifyButton ? (
+        ) : shouldShowVerifyButton() ? (
           <>
             <Button
               onClick={handleVerify}
@@ -166,15 +172,15 @@ export default function AccountProfile() {
               <span>Verify My Identity</span>
             </Button>
             <p className="mt-1 text-xs text-muted-foreground" id="verify-btn-description">
-              This is required to complete a driver safety course.
+              This is required to complete one of your purchased courses.
             </p>
           </>
-        ) : (
+        ) : user.isIdentityVerified ? (
           <div className="flex items-center gap-2">
             <IconCheck className="size-5 text-success" />
             <p className="text-sm">Identity Verified</p>
           </div>
-        )}
+        ) : null}
       </div>
       <ValidatedForm
         method="post"

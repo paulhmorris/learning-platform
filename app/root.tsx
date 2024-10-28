@@ -14,7 +14,7 @@ import { Sentry } from "~/integrations/sentry";
 import { themeSessionResolver } from "~/lib/session.server";
 import { getToast, Toasts } from "~/lib/toast.server";
 import { cn, hexToPartialHSL } from "~/lib/utils";
-import { getCoursefromCMSForRoot, getLinkedCourseByHost } from "~/models/course.server";
+import { CourseService } from "~/services/course.server";
 import { SessionService } from "~/services/session.server";
 import globalStyles from "~/tailwind.css?url";
 
@@ -38,13 +38,13 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   try {
     const { host } = new URL(request.url);
-    const linkedCourse = await getLinkedCourseByHost(host);
+    const linkedCourse = await CourseService.getByHost(host);
 
     if (!linkedCourse) {
       return json({ ...defaultResponse, hasLinkedCourse: false }, { headers });
     }
 
-    const course = await getCoursefromCMSForRoot(linkedCourse.strapiId);
+    const course = await CourseService.getFromCMSForRoot(linkedCourse.strapiId);
 
     return json({ ...defaultResponse, course, hasLinkedCourse: true }, { headers });
   } catch (error) {

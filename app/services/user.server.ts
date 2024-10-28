@@ -23,11 +23,18 @@ class Service {
     return user;
   }
   public async getById(id: User["id"]) {
-    const cachedUser = await redis.get<Prisma.UserGetPayload<{ include: { courses: true } }>>(`user-${id}`);
+    const cachedUser = await redis.get<
+      Prisma.UserGetPayload<{
+        include: { courses: { include: { course: { select: { requiresIdentityVerification: true } } } } };
+      }>
+    >(`user-${id}`);
     if (cachedUser) {
       return cachedUser;
     }
-    const user = await db.user.findUnique({ where: { id }, include: { courses: true } });
+    const user = await db.user.findUnique({
+      where: { id },
+      include: { courses: { include: { course: { select: { requiresIdentityVerification: true } } } } },
+    });
     if (user) {
       await redis.set<User>(`user-${id}`, user, { ex: 30 });
     }

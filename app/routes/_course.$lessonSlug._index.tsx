@@ -12,13 +12,8 @@ import { db } from "~/integrations/db.server";
 import { redis } from "~/integrations/redis.server";
 import { badRequest } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
-import {
-  getLessonBySlugWithContent,
-  getLessonDuration,
-  getUserLessonProgress,
-  setUserLessonProgressComplete,
-} from "~/models/lesson.server";
 import { loader as courseLoader } from "~/routes/_course";
+import { LessonService } from "~/services/lesson.server";
 import { SessionService } from "~/services/session.server";
 
 const validator = withZod(
@@ -35,8 +30,8 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   const lessonSlug = params.lessonSlug;
   invariant(lessonSlug, "Lesson slug is required");
 
-  const lesson = await getLessonBySlugWithContent(lessonSlug);
-  const progress = await getUserLessonProgress(userId, lesson.id);
+  const lesson = await LessonService.getBySlugWithContent(lessonSlug);
+  const progress = await LessonService.getProgress(userId, lesson.id);
   return json({ lesson, progress });
 }
 
@@ -48,13 +43,13 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { lessonId, userId } = result.data;
 
-  const duration = await getLessonDuration(lessonId);
+  const duration = await LessonService.getDuration(lessonId);
   // Lessons without required durations
   if (!duration) {
     return json({ progress: null });
   }
 
-  const progress = await getUserLessonProgress(userId, lessonId);
+  const progress = await LessonService.getProgress(userId, lessonId);
 
   // Completion flow
   if (progress && progress.durationInSeconds !== null) {
@@ -66,10 +61,10 @@ export async function action({ request }: ActionFunctionArgs) {
 
     // Mark lesson complete if we're about to hit the required duration;
     if (progress.durationInSeconds + SUBMIT_INTERVAL_MS / 1_000 >= duration) {
-      const completedProgress = await setUserLessonProgressComplete({
+      const completedProgress = await LessonService.markComplete({
         userId,
         lessonId,
-        duration,
+        requiredDurationInSeconds: duration,
       });
       return Toasts.jsonWithSuccess(
         { progress: completedProgress },

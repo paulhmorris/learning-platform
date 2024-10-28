@@ -16,7 +16,7 @@ import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
 import { Toasts } from "~/lib/toast.server";
 import { cn } from "~/lib/utils";
-import { getCoursefromCMSForCourseLayout, getLinkedCourseByHost } from "~/models/course.server";
+import { CourseService } from "~/services/course.server";
 import { SessionService } from "~/services/session.server";
 import { APIResponseData } from "~/types/utils";
 
@@ -25,7 +25,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   try {
     const { host } = new URL(request.url);
-    const linkedCourse = await getLinkedCourseByHost(host);
+    const linkedCourse = await CourseService.getByHost(host);
 
     if (!linkedCourse) {
       return Toasts.redirectWithError("/preview", {
@@ -43,7 +43,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       });
     }
 
-    const course = await getCoursefromCMSForCourseLayout(linkedCourse.strapiId);
+    const course = await CourseService.getFromCMSForCourseLayout(linkedCourse.strapiId);
 
     if (!course) {
       return Toasts.redirectWithError("/preview", {

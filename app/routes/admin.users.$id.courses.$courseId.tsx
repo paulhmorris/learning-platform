@@ -15,14 +15,7 @@ import { QuizUpdateForm } from "~/components/admin/courses/quiz-update-form";
 import { ResetAllProgressDialog } from "~/components/admin/courses/reset-all-progress-dialog";
 import { Toasts } from "~/lib/toast.server";
 import { formatSeconds } from "~/lib/utils";
-import {
-  getAllLessonProgress,
-  getLessons,
-  markLessonComplete,
-  resetAllLessonProgress,
-  resetLessonProgress,
-  updateLessonProgress,
-} from "~/models/lesson.server";
+import { LessonService } from "~/services/lesson.server";
 import { QuizService } from "~/services/quiz.server";
 import { SessionService } from "~/services/session.server";
 
@@ -52,9 +45,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   // Load user and course data
   const [lessons, quizzes, lessonProgress, quizProgress] = await Promise.all([
-    getLessons(),
+    LessonService.getAllFromCMS(),
     QuizService.getAll(),
-    getAllLessonProgress(userId),
+    LessonService.getAllProgress(userId),
     QuizService.getAllQuizProgress(userId),
   ]);
 
@@ -84,7 +77,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   switch (_action) {
     case "reset-all-progress": {
       // Reset all progress for this user in this course
-      await resetAllLessonProgress(userId);
+      await LessonService.resetAllProgress(userId);
       await QuizService.resetAllQuizProgress(userId);
       return Toasts.jsonWithSuccess(
         { ok: true, message: "All progress reset." },
@@ -100,7 +93,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         );
       }
       // Reset progress for this lesson
-      await resetLessonProgress(lessonId, userId);
+      await LessonService.resetProgress(lessonId, userId);
       return Toasts.jsonWithSuccess(
         { ok: true, message: "Lesson progress reset." },
         { title: "Success", description: "Lesson progress has been reset." },
@@ -114,7 +107,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
           { title: "Error", description: "A lesson ID or required duration was not found with this request." },
         );
       }
-      await markLessonComplete({ userId, lessonId, requiredDurationInSeconds });
+      await LessonService.markComplete({ userId, lessonId, requiredDurationInSeconds });
       return Toasts.jsonWithSuccess(
         { ok: true, message: "Lesson completed." },
         { title: "Success", description: "Lesson has been marked complete." },
@@ -129,7 +122,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         );
       }
       // Update progress for this lesson
-      await updateLessonProgress({ lessonId, userId, durationInSeconds, requiredDurationInSeconds });
+      await LessonService.updateProgress({ lessonId, userId, durationInSeconds, requiredDurationInSeconds });
       return Toasts.jsonWithSuccess(
         { ok: true, message: "Lesson progress updated." },
         { title: "Success", description: "Lesson progress has been updated." },

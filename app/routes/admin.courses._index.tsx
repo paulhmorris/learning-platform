@@ -4,7 +4,7 @@ import { LoaderFunctionArgs, MetaFunction, json } from "@vercel/remix";
 import { AdminButton } from "~/components/ui/admin-button";
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "~/components/ui/card";
 import { db } from "~/integrations/db.server";
-import { getAllCourses } from "~/models/course.server";
+import { CourseService } from "~/services/course.server";
 import { SessionService } from "~/services/session.server";
 
 export const meta: MetaFunction = () => {
@@ -19,9 +19,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return json({ courses: [] });
   }
 
-  const cmsCourses = await getAllCourses();
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  if (!cmsCourses) {
+  const cmsCourses = await CourseService.getAll();
+  if (!cmsCourses.length) {
     throw new Error(`No courses found in CMS: ${JSON.stringify(cmsCourses)}`);
   }
   const courses = dbCourses.map((course) => {

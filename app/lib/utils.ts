@@ -1,9 +1,12 @@
 import { User } from "@prisma/client";
-import { useMatches } from "@remix-run/react";
+import { SerializeFrom } from "@remix-run/node";
+import { useMatches, useRouteLoaderData } from "@remix-run/react";
 import type { Attribute } from "@strapi/strapi";
 import clsx, { ClassValue } from "clsx";
 import { useMemo } from "react";
 import { twMerge } from "tailwind-merge";
+
+import { loader } from "~/root";
 
 const DEFAULT_REDIRECT = "/";
 
@@ -45,15 +48,15 @@ function isUser(user: unknown): user is User {
   return user != null && typeof user === "object" && "email" in user && typeof user.email === "string";
 }
 
-export function useOptionalUser(): User | undefined {
-  const data = useMatchesData("root");
+export function useOptionalUser() {
+  const data = useRouteLoaderData<typeof loader>("root");
   if (!data || !isUser(data.user)) {
     return undefined;
   }
   return data.user;
 }
 
-export function useUser(): User {
+export function useUser(): NonNullable<SerializeFrom<typeof loader>["user"]> {
   const maybeUser = useOptionalUser();
   if (!maybeUser) {
     throw new Error(
