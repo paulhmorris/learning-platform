@@ -25,36 +25,30 @@ export function Header() {
 
   return (
     <>
-      <header className="h-20 w-full border-b border-transparent bg-background px-6 py-6 text-foreground shadow-[0px_6px_39px_0px_#00000014] sm:px-10">
+      <header className="h-20 w-full border-b border-transparent bg-background px-6 py-4 text-foreground shadow-[0px_6px_39px_0px_#00000014] sm:px-10 sm:py-6">
         <div className="mx-auto flex w-full items-center justify-between">
           <Link to="/preview" className="block text-foreground">
             {courseLogoUrl ? (
               <img src={courseLogoUrl} alt={courseTitle ?? "Plumb Media & Education"} />
             ) : courseTitle ? (
-              <span className="text-lg font-bold uppercase">{courseTitle}</span>
+              <span className="text-balance text-base font-bold sm:text-lg">{courseTitle}</span>
             ) : (
               <span className="text-lg font-bold uppercase">Plumb Media & Education</span>
             )}
           </Link>
           <div className="flex items-center gap-4">
             {rootData?.hasLinkedCourse ? (
-              <Button asChild variant="secondary">
+              <Button asChild variant="secondary" className="hidden sm:block">
                 <Link className="cursor-pointer" to="/preview">
                   Go to Course
                 </Link>
               </Button>
             ) : null}
-            <div className="hidden sm:block">
-              {user ? (
-                <form action="/logout" method="post" className="blo">
-                  <button className="rounded font-bold ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
-                    Logout
-                  </button>
-                </form>
-              ) : (
+            {user ? null : (
+              <div>
                 <Link to="/login">Log in</Link>
-              )}
-            </div>
+              </div>
+            )}
             <ThemeModeToggle />
             <UserMenu />
           </div>

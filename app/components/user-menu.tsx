@@ -1,5 +1,5 @@
 import { UserRole } from "@prisma/client";
-import { Form, Link } from "@remix-run/react";
+import { Link } from "@remix-run/react";
 
 import { IconAvatar } from "~/components/icons";
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
@@ -76,11 +76,11 @@ export function UserMenu() {
               </DropdownMenuItem>
             ) : null}
           </DropdownMenuGroup>
-          <DropdownMenuSeparator className="sm:hidden" />
-          <DropdownMenuItem className="px-0 py-0 sm:hidden">
-            <Form className="w-full" method="post" action="/logout" navigate={false}>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem className="px-0 py-0">
+            <form className="w-full" method="post" action="/logout">
               <button className="w-full px-2 py-1.5 text-left">Log out</button>
-            </Form>
+            </form>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

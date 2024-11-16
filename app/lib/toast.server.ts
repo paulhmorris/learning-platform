@@ -34,7 +34,7 @@ type ToastCookieOptions = Partial<SessionIdStorageStrategy["cookie"]>;
 
 const secret = nanoid();
 const toastCookieOptions = {
-  name: "toast-session",
+  name: "__plumb_toasts",
   sameSite: "lax",
   path: "/",
   httpOnly: true,
