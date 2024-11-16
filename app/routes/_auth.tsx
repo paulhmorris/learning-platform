@@ -16,8 +16,8 @@ export default function AuthLayout() {
     <div className="flex min-h-full flex-col dark:bg-background sm:bg-secondary">
       <main className="flex flex-col justify-center">
         <div className="flex-1">
-          <div className="mx-auto mt-40 w-full max-w-screen-sm space-y-10">
-            <div className="flex justify-center rounded-lg px-6">
+          <div className="mx-auto w-full max-w-screen-sm space-y-4 sm:mt-40">
+            <div className="flex justify-center rounded-lg p-6">
               {courseLogoUrl ? (
                 <img
                   src={courseLogoUrl}
