@@ -24,6 +24,9 @@ const serverEnvValidation = z.object({
   R2_ACCESS_KEY_ID: z.string().min(1),
   R2_SECRET_ACCESS_KEY: z.string().min(1),
 
+  // Vercel
+  VERCEL_URL: z.string(),
+
   // Database
   DATABASE_URL: z.string().url(),
 
@@ -43,6 +46,8 @@ const serverEnvValidation = z.object({
 const clientEnvValidation = z.object({
   STRAPI_URL: z.string().url(),
   STRIPE_PUBLIC_KEY: z.string().startsWith("pk_"),
+  VERCEL_ENV: z.enum(["development", "preview", "production"]),
+  VERCEL_GIT_COMMIT_SHA: z.string(),
 });
 
 declare global {

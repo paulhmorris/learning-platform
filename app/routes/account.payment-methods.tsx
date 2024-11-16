@@ -5,9 +5,9 @@ import { LoaderFunctionArgs, MetaFunction, json } from "@vercel/remix";
 import { Theme, useTheme } from "remix-themes";
 
 import { ErrorComponent } from "~/components/error-component";
-import { db } from "~/integrations/db.server";
 import { stripe } from "~/integrations/stripe.server";
 import { loader as rootLoader } from "~/root";
+import { PaymentService } from "~/services/payment.server";
 import { SessionService } from "~/services/session.server";
 
 export const meta: MetaFunction<typeof loader, { root: typeof rootLoader }> = ({ matches }) => {
@@ -22,26 +22,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   // In case the user doesn't have a Stripe customer, create one
   if (!user.stripeId) {
-    const stripeCustomer = await stripe.customers.create({
-      name: `${user.firstName}${user.lastName ? " " + user.lastName : ""}`,
-      email: user.email,
-      phone: user.phone ?? undefined,
-      metadata: {
-        user_id: user.id,
-      },
-    });
-    const updatedUser = await db.user.update({
-      where: { id: user.id },
-      data: { stripeId: stripeCustomer.id },
-    });
-
-    if (!updatedUser.stripeId) {
-      throw new Error("Error creating Stripe customer. Please try again.");
-    }
-
+    const customer = await PaymentService.createCustomer(user.id);
     const setupIntent = await stripe.setupIntents.create({
       payment_method_types: ["card"],
-      customer: updatedUser.stripeId,
+      customer: customer.stripeId,
     });
 
     return json({ clientSecret: setupIntent.client_secret ?? undefined });

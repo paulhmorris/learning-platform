@@ -13,7 +13,7 @@ import { Notifications } from "~/components/notifications";
 import { Sentry } from "~/integrations/sentry";
 import { themeSessionResolver } from "~/lib/session.server";
 import { getToast, Toasts } from "~/lib/toast.server";
-import { cn, hexToPartialHSL } from "~/lib/utils";
+import { hexToPartialHSL } from "~/lib/utils";
 import { CourseService } from "~/services/course.server";
 import { SessionService } from "~/services/session.server";
 import globalStyles from "~/tailwind.css?url";
@@ -33,6 +33,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     ENV: {
       STRAPI_URL: process.env.STRAPI_URL,
       STRIPE_PUBLIC_KEY: process.env.STRIPE_PUBLIC_KEY,
+      VERCEL_ENV: process.env.VERCEL_ENV,
+      VERCEL_GIT_COMMIT_SHA: process.env.VERCEL_GIT_COMMIT_SHA,
     },
   };
 
@@ -84,12 +86,14 @@ function App() {
   }, [data.user]);
 
   return (
-    <html lang="en" className={cn(theme || "light", "h-full")} suppressHydrationWarning>
+    <html lang="en" data-theme={theme || ""} className="h-full">
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
         <meta name="theme-color" media="(prefers-color-scheme: light)" content="#fff" />
         <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#030712" />
+        {/* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition */}
+        <meta name="git-sha" content={data.ENV.VERCEL_GIT_COMMIT_SHA} />
         <link
           rel="icon"
           href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎓</text></svg>"
@@ -107,7 +111,7 @@ function App() {
         <Meta />
         <Links />
       </head>
-      <body className={cn("flex h-full min-h-full flex-col bg-background font-sans text-foreground", theme)}>
+      <body className="flex h-full min-h-full flex-col bg-background font-sans text-foreground">
         <Header />
         <Outlet />
         <Notifications />
@@ -133,9 +137,14 @@ export function ErrorBoundary() {
     <html lang="en">
       <head>
         <title>Oh no!</title>
+        <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <meta name="theme-color" media="(prefers-color-scheme: light)" content="#fff" />
+        <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#030712" />
+        {/* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition */}
         <link
           rel="icon"
-          href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌐</text></svg>"
+          href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎓</text></svg>"
         />
         <Meta />
         <Links />

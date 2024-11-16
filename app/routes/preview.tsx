@@ -19,8 +19,8 @@ import { Button } from "~/components/ui/button";
 import { Separator } from "~/components/ui/separator";
 import { getCourse } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
-import { stripe } from "~/integrations/stripe.server";
 import { Toasts } from "~/lib/toast.server";
+import { PaymentService } from "~/services/payment.server";
 import { SessionService } from "~/services/session.server";
 import { APIResponseData } from "~/types/utils";
 
@@ -80,19 +80,11 @@ export async function action({ request }: ActionFunctionArgs) {
     });
   }
 
-  const success_url = new URL("/purchase?success=true&session_id={CHECKOUT_SESSION_ID}", request.url).toString();
-  const cancel_url = new URL("/purchase?success=false", request.url).toString();
-  const session = await stripe.checkout.sessions.create({
-    customer: user.stripeId ?? undefined,
-    mode: "payment",
-    line_items: [{ price: course.stripePriceId, quantity: 1 }],
-    success_url,
-    cancel_url,
-    metadata: {
-      user_id: user.id,
-    },
-  });
+  if (!user.stripeId) {
+    await PaymentService.createCustomer(user.id);
+  }
 
+  const session = await PaymentService.createCourseCheckoutSession(user.id, course.stripePriceId);
   return redirect(session.url ?? "/", { status: 303 });
 }
 

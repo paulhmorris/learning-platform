@@ -1,5 +1,6 @@
 import { IconCheck, IconDeviceDesktop, IconMoon, IconSun } from "@tabler/icons-react";
 import { Theme, useTheme } from "remix-themes";
+import { ClientOnly } from "remix-utils/client-only";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -17,12 +18,16 @@ export function ThemeModeToggle() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="icon" className="aspect-square transition-none">
-          {theme === Theme.LIGHT ? <IconSun /> : <IconMoon />}
-          <span className="sr-only">Set visual theme</span>
-        </Button>
-      </DropdownMenuTrigger>
+      <ClientOnly fallback={null}>
+        {() => (
+          <DropdownMenuTrigger asChild>
+            <Button variant="icon" className="aspect-square transition-none">
+              {theme === Theme.LIGHT ? <IconSun /> : <IconMoon />}
+              <span className="sr-only">Set visual theme</span>
+            </Button>
+          </DropdownMenuTrigger>
+        )}
+      </ClientOnly>
       <DropdownMenuContent align="end" className="min-w-36">
         <DropdownMenuItem onClick={() => setTheme(null)}>
           <div className="flex w-full items-center gap-x-2">
