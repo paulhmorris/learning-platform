@@ -136,8 +136,8 @@ export default function AccountProfile() {
     }
   }
 
+  const hasCourseThatRequiresVerification = user.courses.some((c) => c.course.requiresIdentityVerification);
   const shouldShowVerifyButton = () => {
-    const hasCourseThatRequiresVerification = user.courses.some((c) => c.course.requiresIdentityVerification);
     if (hasCourseThatRequiresVerification && !user.isIdentityVerified) {
       return false;
     }
@@ -171,8 +171,11 @@ export default function AccountProfile() {
             >
               <span>Verify My Identity</span>
             </Button>
+
             <p className="mt-1 text-xs text-muted-foreground" id="verify-btn-description">
-              This is required to complete one of your purchased courses.
+              {hasCourseThatRequiresVerification
+                ? "This is required to complete one of your purchased courses."
+                : "This is required to complete some courses"}
             </p>
           </>
         ) : user.isIdentityVerified ? (
