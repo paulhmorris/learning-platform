@@ -108,13 +108,6 @@ class Service {
     return verification;
   }
 
-  public async expireUnusedVerification(userId: string) {
-    await db.userVerification.update({
-      where: { userId, expiresAt: { gte: new Date() } },
-      data: { expiresAt: new Date(0) },
-    });
-  }
-
   public async getVerificationByUserId(userId: string) {
     const verification = await db.userVerification.findUnique({
       where: { userId, expiresAt: { gte: new Date() } },

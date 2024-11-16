@@ -27,15 +27,13 @@ export async function action({ request }: ActionFunctionArgs) {
 
   try {
     const { token, user } = await AuthService.generateVerificationByEmail(result.data.email);
-    await Promise.allSettled([
-      AuthService.expireUnusedVerification(user.id),
-      EmailService.send({
-        from: `Plumb Media & Education <no-reply@${EMAIL_FROM_DOMAIN}>`,
-        to: user.email,
-        subject: "Verify Your Email",
-        html: `<p>Here's your six digit verification code: <strong>${token}</strong></p>`,
-      }),
-    ]);
+    await EmailService.send({
+      from: `Plumb Media & Education <no-reply@${EMAIL_FROM_DOMAIN}>`,
+      to: user.email,
+      subject: "Verify Your Email",
+      html: `<p>Here's your six digit verification code: <strong>${token}</strong></p>`,
+    });
+    return new Response(null, { status: 201 });
   } catch (error) {
     console.error(error);
     Sentry.captureException(error);

@@ -76,15 +76,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     url.searchParams.set("status", "unverified");
 
     const { token } = await AuthService.generateVerificationByEmail(email);
-    await Promise.allSettled([
-      AuthService.expireUnusedVerification(user.id),
-      EmailService.send({
-        from: `Plumb Media & Education <no-reply@${EMAIL_FROM_DOMAIN}>`,
-        to: user.email,
-        subject: "Verify Your Email",
-        html: `<p>Here's your six digit verification code: <strong>${token}</strong></p>`,
-      }),
-    ]);
+    await EmailService.send({
+      from: `Plumb Media & Education <no-reply@${EMAIL_FROM_DOMAIN}>`,
+      to: user.email,
+      subject: "Verify Your Email",
+      html: `<p>Here's your six digit verification code: <strong>${token}</strong></p>`,
+    });
 
     return redirect(url.toString());
   }
