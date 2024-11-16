@@ -12,6 +12,8 @@ import { ErrorComponent } from "~/components/error-component";
 import { Checkbox, FormField } from "~/components/ui/form";
 import { Label } from "~/components/ui/label";
 import { SubmitButton } from "~/components/ui/submit-button";
+import { EMAIL_FROM_DOMAIN } from "~/config";
+import { EmailService } from "~/integrations/email.server";
 import { CheckboxSchema } from "~/lib/schemas";
 import { Toasts } from "~/lib/toast.server";
 import { safeRedirect } from "~/lib/utils";
@@ -72,6 +74,18 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     url.searchParams.set("step", "verify-email");
     url.searchParams.set("email", email);
     url.searchParams.set("status", "unverified");
+
+    const { token } = await AuthService.generateVerificationByEmail(email);
+    await Promise.allSettled([
+      AuthService.expireUnusedVerification(user.id),
+      EmailService.send({
+        from: `Plumb Media & Education <no-reply@${EMAIL_FROM_DOMAIN}>`,
+        to: user.email,
+        subject: "Verify Your Email",
+        html: `<p>Here's your six digit verification code: <strong>${token}</strong></p>`,
+      }),
+    ]);
+
     return redirect(url.toString());
   }
 
