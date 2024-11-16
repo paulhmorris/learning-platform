@@ -6,6 +6,7 @@ import invariant from "tiny-invariant";
 import { z } from "zod";
 
 import { PageTitle } from "~/components/common/page-title";
+import { ErrorComponent } from "~/components/error-component";
 import { LessonContentRenderer, StrapiContent } from "~/components/lesson/lesson-content-renderer";
 import { LessonProgressBar } from "~/components/lesson/lesson-progress-bar";
 import { db } from "~/integrations/db.server";
@@ -32,7 +33,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 
   const lesson = await LessonService.getBySlugWithContent(lessonSlug);
   const progress = await LessonService.getProgress(userId, lesson.id);
-  return json({ lesson, progress });
+  return json({ lesson, progress }, { headers: { "Cache-Control": "public, max-age=15" } });
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -111,4 +112,8 @@ export default function Course() {
       </div>
     </>
   );
+}
+
+export function ErrorBoundary() {
+  return <ErrorComponent />;
 }

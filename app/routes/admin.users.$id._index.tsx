@@ -5,6 +5,7 @@ import { ActionFunctionArgs, MetaFunction } from "@vercel/remix";
 import { ValidatedForm, validationError } from "remix-validated-form";
 import { z } from "zod";
 
+import { ErrorComponent } from "~/components/error-component";
 import { FormField, FormSelect } from "~/components/ui/form";
 import { SubmitButton } from "~/components/ui/submit-button";
 import { db } from "~/integrations/db.server";
@@ -94,4 +95,8 @@ export default function AdminUserIndex() {
       </ValidatedForm>
     </div>
   );
+}
+
+export function ErrorBoundary() {
+  return <ErrorComponent />;
 }

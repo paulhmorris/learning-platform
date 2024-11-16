@@ -4,6 +4,7 @@ import { IconPlus } from "@tabler/icons-react";
 import { ColumnDef } from "@tanstack/react-table";
 import { LoaderFunctionArgs, MetaFunction, json } from "@vercel/remix";
 
+import { ErrorComponent } from "~/components/error-component";
 import { AdminButton } from "~/components/ui/admin-button";
 import { DataTable } from "~/components/ui/data-table/data-table";
 import { DataTableColumnHeader } from "~/components/ui/data-table/data-table-column-header";
@@ -48,6 +49,10 @@ export default function UsersIndex() {
       <DataTable data={users} columns={columns} facets={facets} />
     </>
   );
+}
+
+export function ErrorBoundary() {
+  return <ErrorComponent />;
 }
 
 type User = Prisma.UserGetPayload<{

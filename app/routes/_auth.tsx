@@ -2,6 +2,7 @@
 import { Outlet } from "@remix-run/react";
 import { Theme, useTheme } from "remix-themes";
 
+import { ErrorComponent } from "~/components/error-component";
 import { useRootData } from "~/hooks/useRootData";
 
 export default function AuthLayout() {
@@ -42,4 +43,8 @@ export default function AuthLayout() {
       </footer>
     </div>
   );
+}
+
+export function ErrorBoundary() {
+  return <ErrorComponent />;
 }

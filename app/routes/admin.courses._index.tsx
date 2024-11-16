@@ -1,6 +1,7 @@
 import { Link, useLoaderData } from "@remix-run/react";
 import { LoaderFunctionArgs, MetaFunction, json } from "@vercel/remix";
 
+import { ErrorComponent } from "~/components/error-component";
 import { AdminButton } from "~/components/ui/admin-button";
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "~/components/ui/card";
 import { db } from "~/integrations/db.server";
@@ -60,4 +61,8 @@ export default function CoursesIndex() {
       ))}
     </ul>
   );
+}
+
+export function ErrorBoundary() {
+  return <ErrorComponent />;
 }

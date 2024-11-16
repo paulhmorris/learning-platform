@@ -13,6 +13,7 @@ import { QuizProgressHeader } from "~/components/admin/courses/quiz-progress-hea
 import { QuizResetForm } from "~/components/admin/courses/quiz-reset-form";
 import { QuizUpdateForm } from "~/components/admin/courses/quiz-update-form";
 import { ResetAllProgressDialog } from "~/components/admin/courses/reset-all-progress-dialog";
+import { ErrorComponent } from "~/components/error-component";
 import { Toasts } from "~/lib/toast.server";
 import { formatSeconds } from "~/lib/utils";
 import { LessonService } from "~/services/lesson.server";
@@ -283,4 +284,8 @@ export default function AdminUserCourse() {
       </ul>
     </>
   );
+}
+
+export function ErrorBoundary() {
+  return <ErrorComponent />;
 }

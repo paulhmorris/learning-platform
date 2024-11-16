@@ -7,6 +7,7 @@ import { z } from "zod";
 
 import { AuthCard } from "~/components/common/auth-card";
 import { PageTitle } from "~/components/common/page-title";
+import { ErrorComponent } from "~/components/error-component";
 import { FormField } from "~/components/ui/form";
 import { SubmitButton } from "~/components/ui/submit-button";
 import { EmailService } from "~/integrations/email.server";
@@ -96,4 +97,8 @@ export default function ResetPassword() {
       </p>
     </>
   );
+}
+
+export function ErrorBoundary() {
+  return <ErrorComponent />;
 }

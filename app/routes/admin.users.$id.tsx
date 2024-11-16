@@ -12,6 +12,7 @@ import {
 import { LoaderFunctionArgs, json } from "@vercel/remix";
 
 import { BackLink } from "~/components/common/back-link";
+import { ErrorComponent } from "~/components/error-component";
 import { Badge } from "~/components/ui/badge";
 import { db } from "~/integrations/db.server";
 import { stripe } from "~/integrations/stripe.server";
@@ -102,4 +103,8 @@ export default function UsersIndex() {
       </main>
     </>
   );
+}
+
+export function ErrorBoundary() {
+  return <ErrorComponent />;
 }

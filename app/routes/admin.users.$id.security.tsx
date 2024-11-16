@@ -8,6 +8,7 @@ import { z } from "zod";
 
 import { ActivateUserDialog } from "~/components/admin/security/activate-user-dialog";
 import { DeactivateUserDialog } from "~/components/admin/security/deactivate-user-dialog";
+import { ErrorComponent } from "~/components/error-component";
 import { AdminButton } from "~/components/ui/admin-button";
 import { Badge } from "~/components/ui/badge";
 import { db } from "~/integrations/db.server";
@@ -239,4 +240,8 @@ export default function AdminUserSecurity() {
       </div>
     </>
   );
+}
+
+export function ErrorBoundary() {
+  return <ErrorComponent />;
 }
