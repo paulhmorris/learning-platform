@@ -78,7 +78,7 @@ model Password {
 model PasswordReset {
   id        String    @id @default(cuid())
   token     String    @unique @default(uuid())
-  user      User      @relation(fields: [userId], references: [id])
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   userId    String
   expiresAt DateTime
   usedAt    DateTime?

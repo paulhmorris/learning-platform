@@ -33,7 +33,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw notFound("User not found.");
   }
 
-  const user = await db.user.findUniqueOrThrow({ where: { id }, include: { verification: true } });
+  const user = await db.user.findUnique({ where: { id }, include: { verification: true } });
+  if (!user) {
+    throw notFound({ message: "User not found." });
+  }
+
   let identityVerificationStatus;
   if (user.stripeVerificationSessionId) {
     const session = await stripe.identity.verificationSessions.retrieve(user.stripeVerificationSessionId);

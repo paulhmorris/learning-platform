@@ -29,7 +29,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     });
   }
 
-  const userCourse = await db.userCourses.findUniqueOrThrow({
+  const userCourse = await db.userCourses.findUnique({
     where: { userId_courseId: { userId: user.id, courseId: linkedCourse.id } },
     select: {
       certificateClaimed: true,
@@ -38,6 +38,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
       completedAt: true,
     },
   });
+
+  if (!userCourse) {
+    return Toasts.redirectWithError("/preview", {
+      title: "No access to course",
+      description: "Please purchase the course to access it.",
+    });
+  }
+
   return json({ userCourse, course: linkedCourse });
 }
 

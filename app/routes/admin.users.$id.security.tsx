@@ -24,7 +24,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw notFound("User not found.");
   }
 
-  const user = await db.user.findUniqueOrThrow({
+  const user = await db.user.findUnique({
     where: { id },
     select: {
       isActive: true,
@@ -42,6 +42,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       },
     },
   });
+  if (!user) {
+    throw notFound({ message: "User not found." });
+  }
   return json({ user });
 }
 

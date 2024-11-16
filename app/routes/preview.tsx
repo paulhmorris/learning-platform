@@ -71,9 +71,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export async function action({ request }: ActionFunctionArgs) {
   const user = await SessionService.requireUser(request);
   const url = new URL(request.url);
-  const course = await db.course.findUniqueOrThrow({
-    where: { host: url.host },
-  });
+  const course = await db.course.findUnique({ where: { host: url.host } });
+
+  if (!course) {
+    return Toasts.redirectWithError("/", {
+      title: "Course not found.",
+      description: "Please try again later",
+    });
+  }
 
   const success_url = new URL("/purchase?success=true&session_id={CHECKOUT_SESSION_ID}", request.url).toString();
   const cancel_url = new URL("/purchase?success=false", request.url).toString();

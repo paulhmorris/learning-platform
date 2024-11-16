@@ -15,12 +15,19 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   // If the purchase was not successful
   if (!isSuccessful) {
-    return redirect("/preview?purchase_cancelled=true");
+    return redirect("/preview?purchase_canceled=true");
   }
 
   // If it's successful but for some reason there's no session id parameter
   if (!stripeSessionId) {
-    return redirect("/preview?purchase_cancelled=true");
+    return redirect("/preview?purchase_canceled=true");
+  }
+
+  // Retrieve the session from Stripe
+  const session = await stripe.checkout.sessions.retrieve(stripeSessionId);
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  if (!session || session.payment_status === "unpaid") {
+    return redirect("/preview?purchase_canceled=true");
   }
 
   // Find the course that the user is trying to purchase
@@ -30,13 +37,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
       title: "Course not found.",
       description: "Please try again later",
     });
-  }
-
-  // Retrieve the session from Stripe
-  const session = await stripe.checkout.sessions.retrieve(stripeSessionId);
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  if (!session || session.payment_status === "unpaid") {
-    return redirect("/preview?purchase_cancelled=true");
   }
 
   // Add the course to the user's courses

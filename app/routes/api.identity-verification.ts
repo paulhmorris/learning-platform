@@ -40,7 +40,12 @@ export async function action({ request }: ActionFunctionArgs) {
                 return new Response("Webhook Error", { status: 400 });
               }
 
-              const user = await db.user.findUniqueOrThrow({ where: { id: event.data.object.metadata.user_id } });
+              const user = await db.user.findUnique({ where: { id: event.data.object.metadata.user_id } });
+
+              if (!user) {
+                console.error("User not found");
+                return new Response("Webhook Error", { status: 400 });
+              }
 
               await EmailService.send({
                 to: user.email,
