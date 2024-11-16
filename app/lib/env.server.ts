@@ -24,9 +24,6 @@ const serverEnvValidation = z.object({
   R2_ACCESS_KEY_ID: z.string().min(1),
   R2_SECRET_ACCESS_KEY: z.string().min(1),
 
-  // Vercel
-  VERCEL_URL: z.string(),
-
   // Database
   DATABASE_URL: z.string().url(),
 

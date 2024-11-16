@@ -25,9 +25,9 @@ export const PaymentService = {
   async createCourseCheckoutSession(userId: User["id"], stripePriceId: string) {
     const success_url = new URL(
       "/purchase?success=true&session_id={CHECKOUT_SESSION_ID}",
-      process.env.VERCEL_URL,
+      process.env.SITE_URL,
     ).toString();
-    const cancel_url = new URL("/purchase?success=false", process.env.VERCEL_URL).toString();
+    const cancel_url = new URL("/purchase?success=false", process.env.SITE_URL).toString();
 
     const user = await UserService.getById(userId);
     if (!user) {
