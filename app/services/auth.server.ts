@@ -1,4 +1,5 @@
 import bcrypt from "bcryptjs";
+import { customAlphabet } from "nanoid";
 
 import { db } from "~/integrations/db.server";
 import { UserService } from "~/services/user.server";
@@ -73,8 +74,8 @@ class Service {
     return reset;
   }
 
-  public async generateVerification(userId: string) {
-    const token = Math.floor(100000 + Math.random() * 900000).toString();
+  public async generateVerificationById(userId: string) {
+    const token = customAlphabet("1234567890", 6)();
     const verification = await db.userVerification.upsert({
       where: { userId },
       create: {
@@ -90,9 +91,28 @@ class Service {
       },
       select: {
         token: true,
+        user: {
+          select: {
+            id: true,
+            email: true,
+          },
+        },
       },
     });
     return verification;
+  }
+
+  public async generateVerificationByEmail(email: string) {
+    const user = await db.user.findUniqueOrThrow({ where: { email } });
+    const verification = await this.generateVerificationById(user.id);
+    return verification;
+  }
+
+  public async expireUnusedVerification(userId: string) {
+    await db.userVerification.update({
+      where: { userId, expiresAt: { gte: new Date() } },
+      data: { expiresAt: new Date(0) },
+    });
   }
 
   public async getVerificationByUserId(userId: string) {
