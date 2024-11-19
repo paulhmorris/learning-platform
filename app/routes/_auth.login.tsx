@@ -97,8 +97,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 export const meta: MetaFunction<typeof loader, { root: typeof rootLoader }> = ({ matches }) => {
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   const match = matches.find((m) => m.id === "root")?.data.course;
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  return [{ title: `Login | ${match?.data?.attributes.title ?? "Plumb Media & Education"}` }];
+  return [
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    { title: `Login | ${match?.data?.attributes.title ?? "Plumb Media & Education"}` },
+    {
+      name: "description",
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      content: `Sign in to your account for ${match?.data?.attributes.title ?? "Plumb Media & Education"}`,
+    },
+  ];
 };
 
 export default function LoginPage() {

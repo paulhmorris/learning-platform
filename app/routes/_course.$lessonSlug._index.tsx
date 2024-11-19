@@ -13,6 +13,7 @@ import { db } from "~/integrations/db.server";
 import { redis } from "~/integrations/redis.server";
 import { badRequest } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
+import { cacheHeader } from "~/lib/utils";
 import { loader as courseLoader } from "~/routes/_course";
 import { LessonService } from "~/services/lesson.server";
 import { SessionService } from "~/services/session.server";
@@ -33,7 +34,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 
   const lesson = await LessonService.getBySlugWithContent(lessonSlug);
   const progress = await LessonService.getProgress(userId, lesson.id);
-  return json({ lesson, progress }, { headers: { "Cache-Control": "public, max-age=15" } });
+  return json({ lesson, progress }, { headers: cacheHeader(15) });
 }
 
 export async function action({ request }: ActionFunctionArgs) {

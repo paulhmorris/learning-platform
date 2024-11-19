@@ -1,0 +1,73 @@
+name: Deploy Production
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+  SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - staging
+
+jobs:
+  test:
+    name: 🧪 Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.18.0
+          cache: "npm"
+
+      - uses: actions/cache@v4
+        id: cache
+        env:
+          cache-name: cache-node-modules
+        with:
+          path: ./node_modules
+          key: modules-${{ hashFiles('**/package-lock.json') }}
+
+      - name: Install Dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: npm ci --no-audit --no-fund
+
+      - name: Type Check
+        run: npx tsc --noEmit --pretty
+
+      - name: Lint
+        run: npx eslint . --quiet
+
+  deploy:
+    name: 🚀 Deploy
+    runs-on: ubuntu-latest
+    environment: production
+    needs: test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Pull Vercel Environment Information
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build Project Artifacts
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy to Vercel
+        run: vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Migrate Database
+        id: migrate
+        run: npx prisma migrate deploy
+        continue-on-error: true
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+
+      - name: Rollback Deployment
+        if: steps.migrate.outcome == 'failure'
+        run: vercel rollback --token=${{ secrets.VERCEL_TOKEN }} && exit 1

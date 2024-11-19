@@ -179,3 +179,9 @@ export function hexToPartialHSL(H: string | undefined) {
 
   return `${h} ${s}% ${l}%`;
 }
+
+export function cacheHeader(seconds: number) {
+  return {
+    "Cache-Control": `private, max-age=${seconds}`,
+  };
+}

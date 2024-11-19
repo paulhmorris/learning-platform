@@ -6,7 +6,7 @@ import morgan from "morgan";
 import { ViteDevServer, defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
-const isVercel = process.env.VERCEL === "1";
+const isVercel = process.env.VERCEL == "1";
 const isCI = !!process.env.CI;
 
 installGlobals();
@@ -32,9 +32,6 @@ export default defineConfig({
         org: process.env.SENTRY_ORG,
         project: process.env.SENTRY_PROJECT,
         authToken: process.env.SENTRY_AUTH_TOKEN,
-        sourcemaps: {
-          filesToDeleteAfterUpload: ["**/*.js.map"],
-        },
       }),
   ],
   optimizeDeps: {
