@@ -1,4 +1,4 @@
-name: Deploy Production
+name: Deploy Staging
 env:
   VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
   VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
@@ -40,7 +40,7 @@ jobs:
         run: npx eslint . --quiet
 
   deploy:
-    name: 🚀 Deploy
+    name: 🚧 Deploy to Staging
     runs-on: ubuntu-latest
     environment: production
     needs: test
