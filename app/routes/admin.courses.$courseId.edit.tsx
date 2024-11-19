@@ -23,7 +23,9 @@ const validator = withZod(
   z.object({
     host: z
       .string({ message: "Host is required" })
-      .regex(/^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}a-zA-Z0-9+$/, { message: "Must match the expected pattern" })
+      .regex(/^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z]{2,})+$/, {
+        message: "Must match the expected pattern",
+      })
       .or(z.string().regex(/localhost/, { message: "Must match the expected pattern" })),
     strapiId: z.coerce.number({ message: "Strapi ID is required" }),
     stripePriceId: z.string({ message: "Stripe price ID is required" }),
