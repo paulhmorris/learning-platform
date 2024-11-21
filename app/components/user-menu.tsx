@@ -1,5 +1,5 @@
 import { UserRole } from "@prisma/client";
-import { Link } from "@remix-run/react";
+import { Link, useMatches } from "@remix-run/react";
 
 import { IconAvatar } from "~/components/icons";
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
@@ -18,6 +18,9 @@ import { useOptionalUser } from "~/lib/utils";
 export function UserMenu() {
   const user = useOptionalUser();
   const rootData = useRootData();
+  const matches = useMatches();
+  const shouldShowGoToCourse =
+    matches.findIndex((m) => m.id.includes("$lessonSlug") || m.id.includes("preview")) === -1;
 
   if (!user) {
     return null;
@@ -56,7 +59,7 @@ export function UserMenu() {
                 Home
               </Link>
             </DropdownMenuItem>
-            {rootData?.hasLinkedCourse ? (
+            {rootData?.hasLinkedCourse && shouldShowGoToCourse ? (
               <DropdownMenuItem asChild>
                 <Link className="cursor-pointer" to="/preview">
                   Go to Course

@@ -1,9 +1,9 @@
+import type { Config } from "tailwindcss";
 import colors from "tailwindcss/colors";
 import { fontFamily } from "tailwindcss/defaultTheme";
 
-/** @type {import('tailwindcss').Config} */
 export default {
-  darkMode: ["class"],
+  darkMode: ["selector", '[data-theme="dark"]'],
   content: ["./pages/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
   theme: {
     container: {
@@ -93,4 +93,4 @@ export default {
     },
   },
   plugins: [require("tailwindcss-animate"), require("@tailwindcss/typography"), require("@tailwindcss/forms")],
-};
+} satisfies Config;

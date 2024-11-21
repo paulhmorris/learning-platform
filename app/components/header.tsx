@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
-import { Link, useLocation, useRouteLoaderData } from "@remix-run/react";
+import { Link, useLocation, useMatches, useRouteLoaderData } from "@remix-run/react";
 import { Theme, useTheme } from "remix-themes";
 
 import { ThemeModeToggle } from "~/components/theme-mode-toggle";
@@ -13,6 +13,7 @@ export function Header() {
   const user = useOptionalUser();
   const rootData = useRouteLoaderData<typeof loader>("root");
   const location = useLocation();
+  const matches = useMatches();
 
   if (["join", "login", "passwords"].includes(location.pathname.split("/")[1])) {
     return null;
@@ -22,6 +23,8 @@ export function Header() {
   const courseLogoUrl =
     theme === Theme.LIGHT ? course?.logo?.data?.attributes?.url : course?.dark_mode_logo?.data?.attributes?.url;
   const courseTitle = course?.title;
+  const shouldShowGoToCourse =
+    matches.findIndex((m) => m.id.includes("$lessonSlug") || m.id.includes("preview")) === -1;
 
   return (
     <>
@@ -37,7 +40,7 @@ export function Header() {
             )}
           </Link>
           <div className="flex items-center gap-4">
-            {rootData?.hasLinkedCourse ? (
+            {rootData?.hasLinkedCourse && shouldShowGoToCourse ? (
               <Button asChild variant="secondary" className="hidden sm:block">
                 <Link className="cursor-pointer" to="/preview">
                   Go to Course
