@@ -2,11 +2,14 @@ import { User } from "@prisma/client";
 import { SerializeFrom } from "@remix-run/node";
 import { useMatches, useRouteLoaderData } from "@remix-run/react";
 import type { Attribute } from "@strapi/strapi";
+import { IconClipboard } from "@tabler/icons-react";
 import clsx, { ClassValue } from "clsx";
 import { useMemo } from "react";
 import { twMerge } from "tailwind-merge";
 
+import { IconCameraFilled } from "~/components/icons";
 import { loader } from "~/root";
+import { APIResponseData } from "~/types/utils";
 
 const DEFAULT_REDIRECT = "/";
 
@@ -184,4 +187,15 @@ export function cacheHeader(seconds: number) {
   return {
     "Cache-Control": `private, max-age=${seconds}`,
   };
+}
+
+export function getPreviewAttributes(lesson: APIResponseData<"api::lesson.lesson">) {
+  const { has_video: hasVideo } = lesson.attributes;
+  const isTimed =
+    typeof lesson.attributes.required_duration_in_seconds !== "undefined" &&
+    lesson.attributes.required_duration_in_seconds > 0;
+  const durationInMinutes = isTimed ? Math.ceil((lesson.attributes.required_duration_in_seconds || 0) / 60) : 0;
+  const Icon = hasVideo ? IconCameraFilled : IconClipboard;
+
+  return { hasVideo, isTimed, durationInMinutes, Icon, title: lesson.attributes.title, slug: lesson.attributes.slug };
 }

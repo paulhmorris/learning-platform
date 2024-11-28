@@ -118,7 +118,7 @@ export const LessonService = {
     });
   },
 
-  async markComplete(data: { lessonId: number; userId: string; requiredDurationInSeconds: number }) {
+  async markComplete(data: { lessonId: number; userId: string; requiredDurationInSeconds?: number }) {
     const progress = await db.userLessonProgress.upsert({
       where: {
         userId_lessonId: {

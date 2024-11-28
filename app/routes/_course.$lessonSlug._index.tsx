@@ -1,5 +1,6 @@
-import { MetaFunction, useLoaderData } from "@remix-run/react";
+import { MetaFunction, useFetcher, useLoaderData } from "@remix-run/react";
 import { withZod } from "@remix-validated-form/with-zod";
+import { IconLoader } from "@tabler/icons-react";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@vercel/remix";
 import { validationError } from "remix-validated-form";
 import invariant from "tiny-invariant";
@@ -9,19 +10,19 @@ import { PageTitle } from "~/components/common/page-title";
 import { ErrorComponent } from "~/components/error-component";
 import { LessonContentRenderer, StrapiContent } from "~/components/lesson/lesson-content-renderer";
 import { LessonProgressBar } from "~/components/lesson/lesson-progress-bar";
+import { Button } from "~/components/ui/button";
 import { db } from "~/integrations/db.server";
 import { redis } from "~/integrations/redis.server";
 import { badRequest } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
-import { cacheHeader } from "~/lib/utils";
 import { loader as courseLoader } from "~/routes/_course";
 import { LessonService } from "~/services/lesson.server";
 import { SessionService } from "~/services/session.server";
 
 const validator = withZod(
   z.object({
-    userId: z.string().cuid(),
     lessonId: z.coerce.number(),
+    intent: z.enum(["mark-complete", "increment-duration"]),
   }),
 );
 export const SUBMIT_INTERVAL_MS = 15_000;
@@ -34,24 +35,34 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 
   const lesson = await LessonService.getBySlugWithContent(lessonSlug);
   const progress = await LessonService.getProgress(userId, lesson.id);
-  return json({ lesson, progress }, { headers: cacheHeader(15) });
+  const isTimed = lesson.attributes.required_duration_in_seconds && lesson.attributes.required_duration_in_seconds > 0;
+  return json({ lesson, progress, isTimed });
 }
 
 export async function action({ request }: ActionFunctionArgs) {
+  const userId = await SessionService.requireUserId(request);
   const result = await validator.validate(await request.formData());
   if (result.error) {
     throw validationError(result.error);
   }
 
-  const { lessonId, userId } = result.data;
+  const { lessonId, intent } = result.data;
 
   const duration = await LessonService.getDuration(lessonId);
+
   // Lessons without required durations
-  if (!duration) {
-    return json({ progress: null });
+  if (intent === "mark-complete" && !duration) {
+    const progress = await LessonService.markComplete({ userId, lessonId });
+    return Toasts.jsonWithSuccess(
+      { progress },
+      { title: "Lesson completed!", description: "You may now move on to the next item." },
+    );
   }
 
   const progress = await LessonService.getProgress(userId, lessonId);
+  if (!duration) {
+    return json({ progress });
+  }
 
   // Completion flow
   if (progress && progress.durationInSeconds !== null) {
@@ -97,7 +108,9 @@ export const meta: MetaFunction<typeof loader, { "routes/_course": typeof course
 };
 
 export default function Course() {
-  const { lesson, progress } = useLoaderData<typeof loader>();
+  const { lesson, progress, isTimed } = useLoaderData<typeof loader>();
+  const markCompleteFetcher = useFetcher();
+  const isSubmitting = markCompleteFetcher.state === "submitting" || markCompleteFetcher.state === "loading";
 
   return (
     <>
@@ -111,6 +124,23 @@ export default function Course() {
       <div className="mt-8">
         <LessonContentRenderer content={lesson.attributes.content as StrapiContent} />
       </div>
+      {!isTimed ? (
+        <div className="mt-12 flex w-full justify-center">
+          <markCompleteFetcher.Form method="POST">
+            <input type="hidden" name="lessonId" value={lesson.id} />
+            <Button
+              disabled={progress?.isCompleted || isSubmitting}
+              variant="primary-md"
+              className="w-auto"
+              name="intent"
+              value="mark-complete"
+            >
+              {isSubmitting ? <IconLoader className="size-4 animate-spin" /> : null}
+              <span>Mark Complete</span>
+            </Button>
+          </markCompleteFetcher.Form>
+        </div>
+      ) : null}
     </>
   );
 }
