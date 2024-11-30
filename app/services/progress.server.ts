@@ -35,6 +35,10 @@ export const ProgressService = {
     return db.userLessonProgress.findMany({ where: { userId } });
   },
 
+  async getAllQuiz(userId: string) {
+    return db.userQuizProgress.findMany({ where: { userId } });
+  },
+
   async resetAll(userId: string) {
     return db.userLessonProgress.deleteMany({ where: { userId } });
   },

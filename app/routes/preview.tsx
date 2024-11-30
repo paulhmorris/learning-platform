@@ -1,11 +1,11 @@
 import { Link, MetaFunction, useLoaderData, useSearchParams } from "@remix-run/react";
-import { ActionFunctionArgs, json, LoaderFunctionArgs, redirect } from "@vercel/remix";
+import { ActionFunctionArgs, json, LoaderFunctionArgs, redirect, SerializeFrom } from "@vercel/remix";
 import { useEffect, useState } from "react";
 
 import { StrapiImage } from "~/components/common/strapi-image";
 import { CourseHeader } from "~/components/course/course-header";
 import { CoursePurchaseCTA } from "~/components/course/course-purchase-cta";
-import { CourseUpNext, LessonInOrder } from "~/components/course/course-up-next";
+import { CourseUpNext } from "~/components/course/course-up-next";
 import { ErrorComponent } from "~/components/error-component";
 import { IconClipboard, IconDocument } from "~/components/icons";
 import { CoursePreviewLink } from "~/components/preview/course-preview-link";
@@ -20,7 +20,9 @@ import { Separator } from "~/components/ui/separator";
 import { getCourse } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
 import { Toasts } from "~/lib/toast.server";
+import { getLessonsInOrder, getPreviewValues } from "~/lib/utils";
 import { PaymentService } from "~/services/payment.server";
+import { ProgressService } from "~/services/progress.server";
 import { SessionService } from "~/services/session.server";
 import { APIResponseData } from "~/types/utils";
 
@@ -36,37 +38,19 @@ export async function loader({ request }: LoaderFunctionArgs) {
     });
   }
 
-  const [course, progress, quizProgress] = await Promise.all([
+  const [course, lessonProgress, quizProgress] = await Promise.all([
     getCourse(linkedCourse.strapiId),
-    db.userLessonProgress.findMany({ where: { userId: user.id } }),
-    db.userQuizProgress.findMany({ where: { userId: user.id } }),
+    ProgressService.getAll(user.id),
+    ProgressService.getAllQuiz(user.id),
   ]);
 
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   const userHasAccess = user.courses && user.courses.some((c) => c.courseId === linkedCourse.id);
+  const lessons = getLessonsInOrder({ course, progress: lessonProgress });
 
-  const lessonsInOrder = course.data.attributes.sections.flatMap((section) => {
-    return (
-      section.lessons?.data.map((l) => {
-        const lessonProgress = progress.find((p) => p.lessonId === l.id);
-        return {
-          uuid: l.attributes.uuid,
-          slug: l.attributes.slug,
-          title: l.attributes.title,
-          sectionId: section.id,
-          sectionTitle: section.title,
-          isCompleted: lessonProgress?.isCompleted ?? false,
-          isTimed: l.attributes.required_duration_in_seconds && l.attributes.required_duration_in_seconds > 0,
-          hasVideo: l.attributes.has_video,
-          requiredDurationInSeconds: l.attributes.required_duration_in_seconds,
-          progressDuration: lessonProgress?.durationInSeconds,
-        };
-      }) ?? []
-    );
-  });
-
-  return json({ course: course.data, progress, lessonsInOrder, quizProgress, userHasAccess });
+  return json({ course: course.data, lessonProgress, lessons, quizProgress, userHasAccess });
 }
+export type LessonInOrder = SerializeFrom<typeof loader>["lessons"][number];
 
 export async function action({ request }: ActionFunctionArgs) {
   const user = await SessionService.requireUser(request);
@@ -96,7 +80,7 @@ export default function CoursePreview() {
   const [searchParams] = useSearchParams();
   const [successModalOpen, setSuccessModalOpen] = useState(false);
   const [canceledModalOpen, setCanceledModalOpen] = useState(false);
-  const { course, progress, lessonsInOrder, quizProgress, userHasAccess } = useLoaderData<typeof loader>();
+  const { course, lessonProgress, lessons, quizProgress, userHasAccess } = useLoaderData<typeof loader>();
 
   const isSuccessful = searchParams.get("purchase_success") === "true";
   const isCanceled = searchParams.get("purchase_canceled") === "true";
@@ -110,41 +94,15 @@ export default function CoursePreview() {
     }
   }, [isSuccessful, isCanceled]);
 
-  const isCourseCompleted =
-    lessonsInOrder.every((l) => l.isCompleted) &&
-    course.attributes.sections.every(
-      (s) => !s.quiz?.data || quizProgress.some((p) => p.quizId === s.quiz?.data.id && p.isCompleted),
-    );
-
-  // Find the index of the next lesson to be completed, or use the first lesson if all are completed
-  const nextLessonIndex = lessonsInOrder.findIndex((l) => !l.isCompleted);
-  const lastCompletedLessonIndex = Math.max(0, nextLessonIndex - 1);
-
-  // Determine if the next content is a quiz and if it's incomplete
-  const lastCompletedLessonSection = course.attributes.sections.find(
-    (s) =>
-      s.lessons?.data.some((l) => l.attributes.uuid === lessonsInOrder[lastCompletedLessonIndex]?.uuid) &&
-      s.lessons.data.every((l) => lessonsInOrder.find((li) => li.uuid === l.attributes.uuid)?.isCompleted),
-  );
-  const nextQuiz =
-    lastCompletedLessonSection?.quiz?.data &&
-    !quizProgress.some((p) => p.quizId === lastCompletedLessonSection.quiz?.data.id && p.isCompleted)
-      ? lastCompletedLessonSection.quiz.data
-      : null;
-
-  // Calculate total progress and duration in seconds, or number of lessons and quizzes
-  const numberOfLessons = lessonsInOrder.length;
-  const numberOfQuizzes = course.attributes.sections.filter((s) => s.quiz?.data).length;
-  const completedLessonCount = lessonsInOrder.filter((l) => l.isCompleted).length;
-  const completedQuizCount = quizProgress.filter((p) => p.isCompleted).length;
-
-  const courseIsTimed = lessonsInOrder.some((l) => l.isTimed);
-  const totalProgressInSeconds = courseIsTimed
-    ? progress.reduce((acc, curr) => acc + (curr.durationInSeconds ?? 0), 0)
-    : completedLessonCount + completedQuizCount;
-  const totalDurationInSeconds = courseIsTimed
-    ? lessonsInOrder.reduce((acc, curr) => acc + (curr.requiredDurationInSeconds ?? 0), 0)
-    : numberOfLessons + numberOfQuizzes;
+  const {
+    nextQuiz,
+    courseIsTimed,
+    nextLessonIndex,
+    isCourseCompleted,
+    totalProgressInSeconds,
+    totalDurationInSeconds,
+    lastCompletedLessonIndex,
+  } = getPreviewValues({ lessons, course, quizProgress, lessonProgress });
 
   // Timed Courses
   return (
@@ -176,7 +134,7 @@ export default function CoursePreview() {
 
         <main className="max-w-screen-md lg:py-14">
           <div className="space-y-8">
-            <CourseHeader courseTitle={course.attributes.title} numLessons={lessonsInOrder.length || 0} />
+            <CourseHeader courseTitle={course.attributes.title} numLessons={lessons.length || 0} />
             <CourseProgressBar
               progress={totalProgressInSeconds}
               duration={totalDurationInSeconds}
@@ -193,7 +151,7 @@ export default function CoursePreview() {
             ) : nextQuiz ? (
               <CourseUpNext quiz={{ id: nextQuiz.id, numQuestions: nextQuiz.attributes.questions?.length ?? 1 }} />
             ) : (
-              <CourseUpNext lesson={lessonsInOrder[nextLessonIndex] as LessonInOrder} />
+              <CourseUpNext lesson={lessons[nextLessonIndex]} />
             )}
           </div>
 
@@ -210,7 +168,7 @@ export default function CoursePreview() {
 
               // This breaks with just a single quiz on it's own in a section, but that should never happen
               const isQuizLocked =
-                !userHasAccess || lessonsInOrder.filter((l) => l.sectionId === section.id).some((l) => !l.isCompleted);
+                !userHasAccess || lessons.filter((l) => l.sectionId === section.id).some((l) => !l.isCompleted);
               // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
               const userQuizProgress = quizProgress.find((qp) => qp.quizId === section.quiz?.data?.id) ?? null;
 
@@ -221,7 +179,7 @@ export default function CoursePreview() {
                     <Separator className="my-4" />
                     <ul className="flex flex-col gap-6">
                       {section.lessons?.data.map((l) => {
-                        const lessonIndex = lessonsInOrder.findIndex((li) => li.uuid === l.attributes.uuid);
+                        const lessonIndex = lessons.findIndex((li) => li.uuid === l.attributes.uuid);
 
                         // Lock the lesson if the previous section's quiz is not completed
                         const previousSection =
@@ -232,7 +190,7 @@ export default function CoursePreview() {
                           (p) => p.isCompleted && p.quizId === previousSectionQuiz?.data?.id,
                         );
 
-                        const previousLessonIsCompleted = lessonsInOrder[lessonIndex - 1]?.isCompleted;
+                        const previousLessonIsCompleted = lessons[lessonIndex - 1]?.isCompleted;
 
                         const isLessonLocked =
                           !userHasAccess || // User does not have access
@@ -240,7 +198,7 @@ export default function CoursePreview() {
                           (previousSectionQuiz?.data && !previousSectionQuizIsCompleted) || // Previous section quiz is not completed
                           (!isCourseCompleted && lessonIndex > lastCompletedLessonIndex + 1); // Course is not completed and lesson index is greater than last completed lesson index + 1
 
-                        const userLessonProgress = progress.find((lp) => lp.lessonId === l.id) ?? null;
+                        const userLessonProgress = lessonProgress.find((lp) => lp.lessonId === l.id) ?? null;
                         return (
                           <div key={l.attributes.uuid} className="flex flex-wrap items-center justify-between gap-2">
                             <div className="shrink-0 grow">

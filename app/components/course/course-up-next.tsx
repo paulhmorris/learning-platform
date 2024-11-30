@@ -3,19 +3,7 @@ import { Link } from "@remix-run/react";
 import { IconCameraFilled, IconClipboard, IconDocument } from "~/components/icons";
 import { Button } from "~/components/ui/button";
 import { valueIsNotNullishOrZero } from "~/lib/utils";
-
-export type LessonInOrder = {
-  uuid: string;
-  slug: string;
-  title: string;
-  sectionId: number;
-  sectionTitle: string;
-  isCompleted: boolean;
-  isTimed: boolean | 0;
-  hasVideo: boolean;
-  requiredDurationInSeconds: number;
-  progressDuration: number | null;
-};
+import { LessonInOrder } from "~/routes/preview";
 
 type Props = {
   lesson?: LessonInOrder;
