@@ -121,8 +121,20 @@ export default function CourseLayout() {
     ? sections.find((s) => s.quiz?.data?.attributes.uuid === activeQuiz.data?.attributes.uuid)
     : sections.find((s) => s.id === activeLesson?.sectionId) ?? sections[0];
 
-  const totalProgressInSeconds = progress.reduce((acc, curr) => acc + (curr.durationInSeconds ?? 0), 0);
-  const totalDurationInSeconds = lessonsInOrder.reduce((acc, curr) => acc + (curr.requiredDurationInSeconds ?? 0), 0);
+  const numberOfLessons = lessonsInOrder.length;
+  const numberOfQuizzes = course.attributes.sections.filter((s) => s.quiz?.data).length;
+  const completedLessonCount = lessonsInOrder.filter((l) => l.isCompleted).length;
+  const completedQuizCount = quizProgress.filter((p) => p.isCompleted).length;
+
+  const courseIsTimed = lessonsInOrder.some((l) => l.isTimed);
+
+  const totalProgressInSeconds = courseIsTimed
+    ? progress.reduce((acc, curr) => acc + (curr.durationInSeconds ?? 0), 0)
+    : completedLessonCount + completedQuizCount;
+  const totalDurationInSeconds = courseIsTimed
+    ? lessonsInOrder.reduce((acc, curr) => acc + (curr.requiredDurationInSeconds ?? 0), 0)
+    : numberOfLessons + numberOfQuizzes;
+
   if (!isClient) {
     return null;
   }
@@ -134,7 +146,11 @@ export default function CourseLayout() {
           <BackLink to="/preview">Back to overview</BackLink>
           {/* TODO: Adjust for non timed courses */}
           <div className="my-7">
-            <CourseProgressBar progress={totalProgressInSeconds} duration={totalDurationInSeconds} />
+            <CourseProgressBar
+              progress={totalProgressInSeconds}
+              duration={totalDurationInSeconds}
+              isTimed={courseIsTimed}
+            />
           </div>
 
           <ul className="relative space-y-7">

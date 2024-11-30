@@ -132,9 +132,19 @@ export default function CoursePreview() {
       ? lastCompletedLessonSection.quiz.data
       : null;
 
-  // Calculate total progress and duration in seconds
-  const totalProgressInSeconds = progress.reduce((acc, curr) => acc + (curr.durationInSeconds ?? 0), 0);
-  const totalDurationInSeconds = lessonsInOrder.reduce((acc, curr) => acc + (curr.requiredDurationInSeconds ?? 0), 0);
+  // Calculate total progress and duration in seconds, or number of lessons and quizzes
+  const numberOfLessons = lessonsInOrder.length;
+  const numberOfQuizzes = course.attributes.sections.filter((s) => s.quiz?.data).length;
+  const completedLessonCount = lessonsInOrder.filter((l) => l.isCompleted).length;
+  const completedQuizCount = quizProgress.filter((p) => p.isCompleted).length;
+
+  const courseIsTimed = lessonsInOrder.some((l) => l.isTimed);
+  const totalProgressInSeconds = courseIsTimed
+    ? progress.reduce((acc, curr) => acc + (curr.durationInSeconds ?? 0), 0)
+    : completedLessonCount + completedQuizCount;
+  const totalDurationInSeconds = courseIsTimed
+    ? lessonsInOrder.reduce((acc, curr) => acc + (curr.requiredDurationInSeconds ?? 0), 0)
+    : numberOfLessons + numberOfQuizzes;
 
   // Timed Courses
   return (
@@ -167,7 +177,11 @@ export default function CoursePreview() {
         <main className="max-w-screen-md lg:py-14">
           <div className="space-y-8">
             <CourseHeader courseTitle={course.attributes.title} numLessons={lessonsInOrder.length || 0} />
-            <CourseProgressBar progress={totalProgressInSeconds} duration={totalDurationInSeconds} />
+            <CourseProgressBar
+              progress={totalProgressInSeconds}
+              duration={totalDurationInSeconds}
+              isTimed={courseIsTimed}
+            />
             {!userHasAccess ? (
               <CoursePurchaseCTA />
             ) : isCourseCompleted ? (
