@@ -5,7 +5,7 @@ import {
   SectionItemTitle,
 } from "~/components/section";
 import { ProgressCircle } from "~/components/sidebar/progress-circle";
-import { cn, getPreviewAttributes } from "~/lib/utils";
+import { cn, getLessonAttributes } from "~/lib/utils";
 import { APIResponseData } from "~/types/utils";
 
 type Props = {
@@ -13,7 +13,7 @@ type Props = {
 };
 
 export function PreviewCompleted({ lesson }: Props) {
-  const { hasVideo, title, durationInMinutes, Icon } = getPreviewAttributes(lesson);
+  const { hasVideo, title, durationInMinutes, Icon } = getLessonAttributes(lesson);
 
   return (
     <div className={cn("-my-1 block rounded-lg py-1")}>

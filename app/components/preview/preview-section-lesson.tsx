@@ -2,9 +2,9 @@ import { UserLessonProgress } from "@prisma/client";
 import { useParams } from "@remix-run/react";
 import React from "react";
 
+import { LessonLocked } from "~/components/preview/lesson-locked";
 import { PreviewCompleted } from "~/components/preview/preview-completed";
 import { PreviewInProgress } from "~/components/preview/preview-in-progress";
-import { LockedPreview } from "~/components/preview/preview-locked";
 import {
   SectionItemContainer,
   SectionItemDescription,
@@ -13,7 +13,7 @@ import {
 } from "~/components/section";
 import { ProgressCircle } from "~/components/sidebar/progress-circle";
 import { ProgressTimer } from "~/components/sidebar/progress-timer";
-import { cn, getPreviewAttributes } from "~/lib/utils";
+import { cn, getLessonAttributes } from "~/lib/utils";
 import { APIResponseData } from "~/types/utils";
 
 interface SectionLessonProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -24,7 +24,7 @@ interface SectionLessonProps extends React.HTMLAttributes<HTMLDivElement> {
 
 export function PreviewSectionLesson(props: SectionLessonProps) {
   const { lesson, locked, userProgress } = props;
-  const { hasVideo, isTimed, durationInMinutes, Icon } = getPreviewAttributes(lesson);
+  const { hasVideo, isTimed, durationInMinutes, Icon } = getLessonAttributes(lesson);
 
   const params = useParams();
   // Tracks the timer value from <ProgressTimer /> for a more reactive progress circle
@@ -33,7 +33,7 @@ export function PreviewSectionLesson(props: SectionLessonProps) {
   // Umtimed states
   if (!isTimed) {
     if (locked) {
-      return <LockedPreview lesson={lesson} />;
+      return <LessonLocked lesson={lesson} />;
     }
 
     return (
@@ -97,6 +97,6 @@ export function PreviewSectionLesson(props: SectionLessonProps) {
 
   // Locked state
   if (locked) {
-    return <LockedPreview lesson={lesson} />;
+    return <LessonLocked lesson={lesson} />;
   }
 }

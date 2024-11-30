@@ -9,7 +9,7 @@ import {
 } from "~/components/section";
 import { ProgressCircle } from "~/components/sidebar/progress-circle";
 import { ProgressTimer } from "~/components/sidebar/progress-timer";
-import { cn, formatSeconds, getLessonAttributes } from "~/lib/utils";
+import { cn, getLessonAttributes } from "~/lib/utils";
 import { APIResponseData } from "~/types/utils";
 
 type Props = {
@@ -19,24 +19,19 @@ type Props = {
   setClientProgressPercentage: (value: number | null) => void;
 };
 
-export function PreviewInProgress({
-  userProgress,
+export function PreviewUnstarted({
   lesson,
+  userProgress,
   clientProgressPercentage,
   setClientProgressPercentage,
 }: Props) {
   const params = useParams();
-  const { hasVideo, title, durationInMinutes, slug, Icon } = getLessonAttributes(lesson);
-
-  let percentage = 0;
-  if (userProgress.durationInSeconds && lesson.attributes.required_duration_in_seconds) {
-    percentage = (userProgress.durationInSeconds / lesson.attributes.required_duration_in_seconds) * 100;
-  }
+  const { hasVideo, durationInMinutes, title, slug, Icon } = getLessonAttributes(lesson);
 
   return (
     <div className={cn("-my-1 block rounded-lg py-1")}>
       <SectionItemContainer>
-        <ProgressCircle aria-label="Lesson progress" percentage={clientProgressPercentage || percentage} />
+        <ProgressCircle aria-label="Lesson progress" percentage={clientProgressPercentage ?? 0} />
         <SectionItemIconContainer>
           <Icon className={cn("text-foreground", hasVideo ? "h-8 w-7" : "h-7 w-6")} />
         </SectionItemIconContainer>
@@ -51,9 +46,7 @@ export function PreviewInProgress({
               />
             </SectionItemDescription>
           ) : (
-            <SectionItemDescription>
-              {formatSeconds(userProgress.durationInSeconds ?? 0)} of {durationInMinutes} min completed
-            </SectionItemDescription>
+            <SectionItemDescription>{durationInMinutes} min</SectionItemDescription>
           )}
         </div>
       </SectionItemContainer>

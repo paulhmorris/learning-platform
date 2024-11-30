@@ -21,6 +21,7 @@ export function MarkCompleteButton({ lessonId, isCompleted }: Props) {
         className="w-auto"
         name="intent"
         value="mark-complete"
+        title={isCompleted ? "Lesson is already completed" : undefined}
       >
         {isSubmitting ? <IconLoader className="size-4 animate-spin" /> : null}
         <span>Mark Complete</span>

@@ -11,17 +11,18 @@ generator client {
 }
 
 model User {
-  id                          String   @id @default(cuid())
-  email                       String   @unique
-  firstName                   String?
-  lastName                    String?
-  phone                       String?
-  role                        UserRole @default(USER)
-  isActive                    Boolean  @default(true)
-  isEmailVerified             Boolean  @default(false)
-  isIdentityVerified          Boolean  @default(false)
-  stripeId                    String?
+  id              String   @id @default(cuid())
+  email           String   @unique
+  firstName       String?
+  lastName        String?
+  phone           String?
+  role            UserRole @default(USER)
+  isActive        Boolean  @default(true)
+  isEmailVerified Boolean  @default(false)
+  stripeId        String?
+
   stripeVerificationSessionId String?
+  isIdentityVerified          Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

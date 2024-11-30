@@ -189,7 +189,7 @@ export function cacheHeader(seconds: number) {
   };
 }
 
-export function getPreviewAttributes(lesson: APIResponseData<"api::lesson.lesson">) {
+export function getLessonAttributes(lesson: APIResponseData<"api::lesson.lesson">) {
   const { has_video: hasVideo } = lesson.attributes;
   const isTimed =
     typeof lesson.attributes.required_duration_in_seconds !== "undefined" &&
