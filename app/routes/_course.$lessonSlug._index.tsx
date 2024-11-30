@@ -1,6 +1,5 @@
-import { MetaFunction, useFetcher, useLoaderData } from "@remix-run/react";
+import { MetaFunction, useLoaderData } from "@remix-run/react";
 import { withZod } from "@remix-validated-form/with-zod";
-import { IconLoader } from "@tabler/icons-react";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@vercel/remix";
 import { validationError } from "remix-validated-form";
 import invariant from "tiny-invariant";
@@ -10,13 +9,12 @@ import { PageTitle } from "~/components/common/page-title";
 import { ErrorComponent } from "~/components/error-component";
 import { LessonContentRenderer, StrapiContent } from "~/components/lesson/lesson-content-renderer";
 import { LessonProgressBar } from "~/components/lesson/lesson-progress-bar";
-import { Button } from "~/components/ui/button";
-import { db } from "~/integrations/db.server";
-import { redis } from "~/integrations/redis.server";
+import { MarkCompleteButton } from "~/components/lesson/mark-complete-button";
 import { badRequest } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
 import { loader as courseLoader } from "~/routes/_course";
 import { LessonService } from "~/services/lesson.server";
+import { ProgressService } from "~/services/progress.server";
 import { SessionService } from "~/services/session.server";
 
 const validator = withZod(
@@ -34,7 +32,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   invariant(lessonSlug, "Lesson slug is required");
 
   const lesson = await LessonService.getBySlugWithContent(lessonSlug);
-  const progress = await LessonService.getProgress(userId, lesson.id);
+  const progress = await ProgressService.getByLessonId(userId, lesson.id);
   const isTimed = lesson.attributes.required_duration_in_seconds && lesson.attributes.required_duration_in_seconds > 0;
   return json({ lesson, progress, isTimed });
 }
@@ -52,14 +50,14 @@ export async function action({ request }: ActionFunctionArgs) {
 
   // Lessons without required durations
   if (intent === "mark-complete" && !duration) {
-    const progress = await LessonService.markComplete({ userId, lessonId });
+    const progress = await ProgressService.markComplete({ userId, lessonId });
     return Toasts.jsonWithSuccess(
       { progress },
       { title: "Lesson completed!", description: "You may now move on to the next item." },
     );
   }
 
-  const progress = await LessonService.getProgress(userId, lessonId);
+  const progress = await ProgressService.getByLessonId(userId, lessonId);
   if (!duration) {
     return json({ progress });
   }
@@ -74,7 +72,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
     // Mark lesson complete if we're about to hit the required duration;
     if (progress.durationInSeconds + SUBMIT_INTERVAL_MS / 1_000 >= duration) {
-      const completedProgress = await LessonService.markComplete({
+      const completedProgress = await ProgressService.markComplete({
         userId,
         lessonId,
         requiredDurationInSeconds: duration,
@@ -86,17 +84,8 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
-  // Create or update progress
-  const currentProgress = await db.userLessonProgress.upsert({
-    where: { userId_lessonId: { lessonId, userId } },
-    create: {
-      lessonId,
-      userId,
-      durationInSeconds: SUBMIT_INTERVAL_MS / 1_000,
-    },
-    update: { durationInSeconds: { increment: SUBMIT_INTERVAL_MS / 1_000 } },
-  });
-  await redis.set(`user-lesson-progress:${userId}:${lessonId}`, currentProgress, { ex: 12 });
+  // Upsert progress
+  const currentProgress = await ProgressService.incrementProgress(userId, lessonId);
 
   return json({ progress: currentProgress });
 }
@@ -109,8 +98,6 @@ export const meta: MetaFunction<typeof loader, { "routes/_course": typeof course
 
 export default function Course() {
   const { lesson, progress, isTimed } = useLoaderData<typeof loader>();
-  const markCompleteFetcher = useFetcher();
-  const isSubmitting = markCompleteFetcher.state === "submitting" || markCompleteFetcher.state === "loading";
 
   return (
     <>
@@ -126,19 +113,7 @@ export default function Course() {
       </div>
       {!isTimed ? (
         <div className="mt-12 flex w-full justify-center">
-          <markCompleteFetcher.Form method="POST">
-            <input type="hidden" name="lessonId" value={lesson.id} />
-            <Button
-              disabled={progress?.isCompleted || isSubmitting}
-              variant="primary-md"
-              className="w-auto"
-              name="intent"
-              value="mark-complete"
-            >
-              {isSubmitting ? <IconLoader className="size-4 animate-spin" /> : null}
-              <span>Mark Complete</span>
-            </Button>
-          </markCompleteFetcher.Form>
+          <MarkCompleteButton lessonId={lesson.id} isCompleted={Boolean(progress?.isCompleted)} />
         </div>
       ) : null}
     </>
