@@ -163,7 +163,7 @@ export default function CourseCertificate() {
   const userHasVerifiedIdentity = course.requiresIdentityVerification ? user.isIdentityVerified : true;
 
   const isCourseComplete =
-    data.lessonsInOrder.every((l) => l.isCompleted) &&
+    data.lessons.every((l) => l.isCompleted) &&
     data.course.attributes.sections.every((s) => {
       return !s.quiz?.data || data.quizProgress.find((p) => p.quizId === s.quiz?.data.id)?.isCompleted;
     });

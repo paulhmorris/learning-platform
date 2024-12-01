@@ -94,7 +94,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     if (!user) {
       return validationError({
         fieldErrors: {
-          // TODO: change to form error with conform
           email: "An account with this email does not exist.",
         },
       });

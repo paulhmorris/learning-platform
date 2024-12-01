@@ -159,7 +159,7 @@ export const meta: MetaFunction<typeof loader, { "routes/_course": typeof course
 };
 
 export default function Quiz() {
-  const { course, lessonsInOrder } = useCourseData();
+  const { course, lessons } = useCourseData();
   const { quiz, progress } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const resultsRef = useRef<HTMLDivElement>(null);
@@ -187,7 +187,7 @@ export default function Quiz() {
   const firstLessonInSectionSlug = quizSection?.lessons?.data[0].attributes.slug;
 
   // Quiz is locked if any lesson in the quiz section is not completed
-  const isQuizLocked = lessonsInOrder.filter((l) => l.sectionId === quizSection?.id).some((l) => !l.isCompleted);
+  const isQuizLocked = lessons.filter((l) => l.sectionId === quizSection?.id).some((l) => !l.isCompleted);
 
   const isPassed = Boolean(progress?.isCompleted || (actionData?.passed && actionData.score));
   const isFailed = Boolean(!progress?.isCompleted && actionData && !actionData.passed);

@@ -86,12 +86,10 @@ export default function CourseLayout() {
 
   const {
     nextLesson,
-    activeQuiz,
     activeLesson,
     isQuizActive,
     activeSection,
     courseIsTimed,
-    nextLessonIndex,
     isCourseCompleted,
     activeQuizProgress,
     activeLessonProgress,
@@ -115,7 +113,6 @@ export default function CourseLayout() {
       <div className="max-w-screen-xl">
         <nav className="overflow-visible px-4 py-4 lg:fixed lg:bottom-0 lg:left-0 lg:top-20 lg:w-[448px] lg:overflow-auto lg:py-12">
           <BackLink to="/preview">Back to overview</BackLink>
-          {/* TODO: Adjust for non timed courses */}
           <div className="my-7">
             <CourseProgressBar
               progress={totalProgressInSeconds}

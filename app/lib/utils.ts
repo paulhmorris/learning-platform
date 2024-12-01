@@ -208,8 +208,8 @@ interface GetPreviewValueArgs {
   quizProgress: SerializeFrom<Array<UserQuizProgress>>;
   lessonProgress: SerializeFrom<Array<UserLessonProgress>>;
 }
-
-export function getPreviewValues({ lessons, course, quizProgress, lessonProgress }: GetPreviewValueArgs) {
+export function getPreviewValues(data: GetPreviewValueArgs) {
+  const { lessons, course, quizProgress, lessonProgress } = data;
   const isCourseCompleted =
     lessons.every((l) => l.isCompleted) &&
     course.attributes.sections.every(
@@ -261,14 +261,8 @@ export function getPreviewValues({ lessons, course, quizProgress, lessonProgress
 interface GetCourseLayoutValueArgs extends GetPreviewValueArgs {
   params: Readonly<Params<string>>;
 }
-
-export function getCourseLayoutValues({
-  lessons,
-  course,
-  quizProgress,
-  lessonProgress,
-  params,
-}: GetCourseLayoutValueArgs) {
+export function getCourseLayoutValues(data: GetCourseLayoutValueArgs) {
+  const { lessons, course, quizProgress, lessonProgress, params } = data;
   const { sections } = course.attributes;
   const isCourseCompleted =
     lessons.every((l) => l.isCompleted) &&
@@ -308,12 +302,10 @@ export function getCourseLayoutValues({
 
   return {
     nextLesson,
-    activeQuiz,
     activeLesson,
     isQuizActive,
     activeSection,
     courseIsTimed,
-    nextLessonIndex,
     isCourseCompleted,
     activeQuizProgress,
     activeLessonProgress,
@@ -323,17 +315,14 @@ export function getCourseLayoutValues({
   };
 }
 
-export function getLessonsInOrder({
-  course,
-  progress,
-}: {
+export function getLessonsInOrder(data: {
   course: StrapiResponse<APIResponseData<"api::course.course">>;
   progress: Array<UserLessonProgress>;
 }) {
-  return course.data.attributes.sections.flatMap((section) => {
+  return data.course.data.attributes.sections.flatMap((section) => {
     return (
       section.lessons?.data.map((l) => {
-        const lessonProgress = progress.find((p) => p.lessonId === l.id);
+        const lessonProgress = data.progress.find((p) => p.lessonId === l.id);
         return {
           id: l.id,
           uuid: l.attributes.uuid,
