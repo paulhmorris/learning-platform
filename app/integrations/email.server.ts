@@ -20,6 +20,11 @@ type PasswordEmailProps = {
 };
 export class EmailService {
   static async send(props: SendEmailInput) {
+    if (process.env.NODE_ENV === "development") {
+      console.info("DEVELOPMENT: Email sent", props);
+      return;
+    }
+
     return send(props);
   }
 

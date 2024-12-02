@@ -1,114 +1,45 @@
 import { Prisma, User } from "@prisma/client";
 import { ActionFunctionArgs, json } from "@vercel/remix";
 
-import { EMAIL_FROM_DOMAIN } from "~/config";
-import { db } from "~/integrations/db.server";
-import { EmailService } from "~/integrations/email.server";
 import { Sentry } from "~/integrations/sentry";
 import { stripe } from "~/integrations/stripe.server";
 import { getPrismaErrorText } from "~/lib/responses.server";
 import { SessionService } from "~/services/session.server";
+import { UserService } from "~/services/user.server";
 
-const secret = process.env.STRIPE_WEBHOOK_SECRET;
-
+// POST or PUT /api/identity-verification
 export async function action({ request }: ActionFunctionArgs) {
-  const user_id = await SessionService.getUserId(request);
+  const user = await SessionService.requireUser(request);
 
-  switch (request.method.toUpperCase()) {
-    case "POST": {
-      // Is a Stripe webhook event
-      const sig = request.headers.get("stripe-signature");
-      if (sig) {
-        let event: ReturnType<typeof stripe.webhooks.constructEvent>;
+  if (user.isIdentityVerified) {
+    return new Response("User is already verified or has an active session", { status: 400 });
+  }
 
-        try {
-          event = stripe.webhooks.constructEvent(JSON.stringify(request.body), sig, secret);
-        } catch (error) {
-          console.error(error);
-          Sentry.captureException(error);
-          return new Response("Webook Error", { status: 400 });
-        }
+  if (user.stripeVerificationSessionId) {
+    const session = await stripe.identity.verificationSessions.retrieve(user.stripeVerificationSessionId);
+    return json({ client_secret: session.client_secret });
+  }
 
-        try {
-          switch (event.type) {
-            // The user must provide additional information to verify their identity
-            case "identity.verification_session.requires_input": {
-              console.info("Verification check failed: " + event.data.object.last_error?.reason);
-
-              if (!event.data.object.metadata.user_id) {
-                console.error("User ID not found in metadata");
-                return new Response("Webhook Error", { status: 400 });
-              }
-
-              const user = await db.user.findUnique({ where: { id: event.data.object.metadata.user_id } });
-
-              if (!user) {
-                console.error("User not found");
-                return new Response("Webhook Error", { status: 400 });
-              }
-
-              await EmailService.send({
-                to: user.email,
-                from: `Plumb Media & Education <no-reply@${EMAIL_FROM_DOMAIN}>`,
-                subject: "Action Required: Verify Your Identity",
-                html: `<p>More information is required to verify your identity. ${event.data.object.last_error?.reason}</p>`,
-              });
-
-              break;
-            }
-            case "identity.verification_session.verified": {
-              // TODO: Send email to user that verification was successful
-              await db.user.update({
-                where: { id: user_id },
-                data: { isIdentityVerified: true, stripeVerificationSessionId: null },
-              });
-              return new Response("Webhook Success", { status: 200 });
-            }
-            default: {
-              console.error(`Unhandled event type: ${event.type}`);
-              return new Response("Webhook Error", { status: 400 });
-            }
-          }
-        } catch (error) {
-          console.error(error);
-          Sentry.captureException(error);
-          return new Response("Webook Error", { status: 500 });
-        }
-      }
-
-      // Create a new verification session
-      try {
-        if (!user_id) {
-          throw new Error("User ID not found in session");
-        }
-        const result = await createVerificationSession(user_id);
-        return json({ client_secret: result.client_secret });
-      } catch (error) {
-        console.error(error);
-        Sentry.captureException(error);
-        let message =
-          error instanceof Error ? error.message : "An error occurred while creating a verification session.";
-        if (error instanceof Prisma.PrismaClientKnownRequestError) {
-          message = getPrismaErrorText(error);
-        }
-        return json({ message }, { status: 500 });
-      }
+  try {
+    const { client_secret } = await createVerificationSession(user.id, user.email);
+    return json({ client_secret });
+  } catch (error) {
+    console.error(error);
+    Sentry.captureException(error);
+    let message = error instanceof Error ? error.message : "An error occurred while creating a verification session.";
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      message = getPrismaErrorText(error);
     }
-
-    default: {
-      return new Response(null, { status: 405 });
-    }
+    return json({ message }, { status: 500 });
   }
 }
 
-async function createVerificationSession(user_id: User["id"]) {
+async function createVerificationSession(user_id: User["id"], email: User["email"]) {
   const verificationSession = await stripe.identity.verificationSessions.create({
     type: "document",
+    provided_details: { email },
     metadata: { user_id },
   });
-  await db.user.update({
-    where: { id: user_id },
-    data: { stripeVerificationSessionId: verificationSession.id },
-  });
+  await UserService.update(user_id, { stripeVerificationSessionId: verificationSession.id });
   return verificationSession;
 }
