@@ -122,7 +122,7 @@ model UserLessonProgress {
   /// The lesson id from Strapi
   lessonId Int
 
-  durationInSeconds Int? @default(0)
+  durationInSeconds Int?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

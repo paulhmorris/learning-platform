@@ -2,7 +2,7 @@ import { UserLessonProgress } from "@prisma/client";
 
 import { db } from "~/integrations/db.server";
 import { redis } from "~/integrations/redis.server";
-import { SUBMIT_INTERVAL_MS } from "~/routes/_course.$lessonSlug._index";
+import { SUBMIT_INTERVAL_MS } from "~/routes/api.lesson-progress";
 
 export const ProgressService = {
   async incrementProgress(userId: string, lessonId: number) {

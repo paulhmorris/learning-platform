@@ -1,5 +1,5 @@
 import { MetaFunction, useLoaderData } from "@remix-run/react";
-import { IconCircle, IconCircleCheckFilled, IconCircleDashedCheck, IconCircleXFilled } from "@tabler/icons-react";
+import { IconCircleCheckFilled, IconCircleDashed, IconCircleDashedCheck, IconCircleXFilled } from "@tabler/icons-react";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@vercel/remix";
 import invariant from "tiny-invariant";
 import { z } from "zod";
@@ -173,6 +173,7 @@ export const meta: MetaFunction = () => {
 
 export default function AdminUserCourse() {
   const { lessons, lessonProgress, quizzes, quizProgress } = useLoaderData<typeof loader>();
+  const isTimed = lessons.data.some((l) => l.attributes.required_duration_in_seconds);
 
   return (
     <>
@@ -197,39 +198,47 @@ export default function AdminUserCourse() {
               <div className="mb-2 flex items-center gap-4 md:hidden">
                 <div className="col-span-1">
                   {!progress ? (
-                    <IconCircle className="size-6 text-foreground" />
+                    <IconCircleDashed className="size-6 text-muted-foreground" />
                   ) : !progress.isCompleted ? (
-                    <IconCircleDashedCheck className="size-6 text-foreground" />
+                    <IconCircleDashedCheck className="size-6 text-muted-foreground" />
                   ) : (
                     <IconCircleCheckFilled className="size-6 text-success" />
                   )}
                 </div>
                 <h3 className="col-span-2 text-sm font-normal">{l.attributes.title}</h3>
-                <p className="col-span-3 text-sm">
-                  {formatSeconds(progress?.durationInSeconds ?? 0)} /{" "}
-                  {formatSeconds(l.attributes.required_duration_in_seconds ?? 0)}
-                </p>
+                {isTimed ? (
+                  <p className="col-span-3 text-sm">
+                    {formatSeconds(progress?.durationInSeconds ?? 0)} /{" "}
+                    {formatSeconds(l.attributes.required_duration_in_seconds ?? 0)}
+                  </p>
+                ) : (
+                  <p className="col-span-3 text-sm">Untimed</p>
+                )}
               </div>
 
               {/* Desktop */}
               <div className="col-span-1 hidden md:block">
                 {!progress ? (
-                  <IconCircle className="size-6 text-foreground" />
+                  <IconCircleDashed className="size-6 text-muted-foreground" />
                 ) : !progress.isCompleted ? (
-                  <IconCircleDashedCheck className="size-6 text-foreground" />
+                  <IconCircleDashedCheck className="size-6 text-muted-foreground" />
                 ) : (
                   <IconCircleCheckFilled className="size-6 text-success" />
                 )}
               </div>
               <h3 className="col-span-2 hidden text-sm font-normal md:block">{l.attributes.title}</h3>
-              <p className="col-span-3 hidden text-sm md:block">
-                {formatSeconds(progress?.durationInSeconds ?? 0)} /{" "}
-                {formatSeconds(l.attributes.required_duration_in_seconds ?? 0)}
-              </p>
+              {isTimed ? (
+                <p className="col-span-3 hidden text-sm md:block">
+                  {formatSeconds(progress?.durationInSeconds ?? 0)} /{" "}
+                  {formatSeconds(l.attributes.required_duration_in_seconds ?? 0)}
+                </p>
+              ) : (
+                <p className="col-span-3 text-sm">Untimed</p>
+              )}
               <div className="col-span-6 flex flex-wrap items-center gap-1.5 md:flex-nowrap">
                 <LessonResetForm lesson={l} progress={progress} />
                 <LessonCompleteForm lesson={l} progress={progress} />
-                <LessonUpdateForm lesson={l} />
+                {isTimed ? <LessonUpdateForm lesson={l} /> : null}
               </div>
             </li>
           );
@@ -248,7 +257,7 @@ export default function AdminUserCourse() {
               <div className="mb-2 flex items-center gap-4 md:hidden">
                 <div className="col-span-1">
                   {!progress ? (
-                    <IconCircle className="size-6 text-foreground" />
+                    <IconCircleDashed className="size-6 text-muted-foreground" />
                   ) : progress.score && progress.score < passingScore ? (
                     <IconCircleXFilled className="size-6 text-destructive" />
                   ) : (
@@ -264,7 +273,7 @@ export default function AdminUserCourse() {
               {/* Desktop */}
               <div className="col-span-1 hidden md:block">
                 {!progress ? (
-                  <IconCircle className="size-6 text-foreground" />
+                  <IconCircleDashed className="size-6 text-muted-foreground" />
                 ) : progress.score && progress.score < passingScore ? (
                   <IconCircleXFilled className="size-6 text-destructive" />
                 ) : (

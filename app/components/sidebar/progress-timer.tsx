@@ -6,7 +6,7 @@ import { createPortal } from "react-dom";
 import { useCountdown } from "react-timing-hooks";
 
 import { cn, formatSeconds } from "~/lib/utils";
-import { SUBMIT_INTERVAL_MS } from "~/routes/_course.$lessonSlug._index";
+import { SUBMIT_INTERVAL_MS } from "~/routes/api.lesson-progress";
 import { APIResponseData } from "~/types/utils";
 
 interface Props {
@@ -37,7 +37,10 @@ export function ProgressTimer({ lesson, progress, setClientProgressPercentage }:
     }
 
     if (shouldSubmit) {
-      fetcher.submit({ lessonId: lesson.id, intent: "increment-duration" }, { method: "POST", action: "?index" });
+      fetcher.submit(
+        { lessonId: lesson.id, intent: "increment-duration" },
+        { method: "POST", action: "/api/lesson-progress" },
+      );
     }
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
