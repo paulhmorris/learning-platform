@@ -60,9 +60,9 @@ export default function UsersIndex() {
           {user.isActive ? <IconCircleCheckFilled className="size-3.5" /> : <IconCircleXFilled className="size-3.5" />}
           <span>{user.isActive ? "Active" : "Inactive"}</span>
         </Badge>
-        <Badge variant={user.verification ? "success" : "destructive"}>
+        <Badge variant={user.isEmailVerified ? "success" : "destructive"}>
           <IconMail strokeWidth={2.5} className="size-3.5" />
-          <span>Email: {user.verification ? "Verified" : "Unverified"}</span>
+          <span>Email: {user.isEmailVerified ? "Verified" : "Unverified"}</span>
         </Badge>
         <Badge variant={identityVerificationStatus === "verified" ? "success" : "destructive"}>
           <IconUserScan strokeWidth={2.5} className="size-3.5" />

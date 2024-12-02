@@ -4,7 +4,7 @@ import { IconCircleCheckFilled, IconExclamationCircle, IconFileSearch } from "@t
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-import { Button } from "~/components/ui/button";
+import { AdminButton } from "~/components/ui/admin-button";
 import { Sentry } from "~/integrations/sentry";
 import { useUser } from "~/lib/utils";
 import { loader } from "~/routes/account.profile";
@@ -103,16 +103,15 @@ export function IdentityVerification() {
           This is required to complete some courses. If you have purchased a course that requires identity verification,
           you must complete this process before you can receive a certificate.
         </p>
-        <Button
+        <AdminButton
           onClick={handleStartVerification}
           disabled={!stripe}
           type="button"
-          className="h-8 w-auto bg-muted text-xs text-foreground"
+          className="w-auto bg-muted text-foreground sm:h-8 sm:text-xs"
           aria-describedby="verify-btn-description"
-          variant="admin"
         >
           <span>Verify Me</span>
-        </Button>
+        </AdminButton>
       </Wrapper>
     );
   }
