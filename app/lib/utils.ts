@@ -2,13 +2,12 @@ import { User, UserLessonProgress, UserQuizProgress } from "@prisma/client";
 import { SerializeFrom } from "@remix-run/node";
 import { Params, useMatches, useRouteLoaderData } from "@remix-run/react";
 import type { Attribute } from "@strapi/strapi";
-import { IconClipboard } from "@tabler/icons-react";
 import clsx, { ClassValue } from "clsx";
 import { useMemo } from "react";
 import { StrapiResponse } from "strapi-sdk-js";
 import { twMerge } from "tailwind-merge";
 
-import { IconCameraFilled } from "~/components/icons";
+import { IconCameraFilled, IconClipboard } from "~/components/icons";
 import { loader } from "~/root";
 import { LessonInOrder } from "~/routes/preview";
 import { APIResponseData } from "~/types/utils";
@@ -183,12 +182,6 @@ export function hexToPartialHSL(H: string | undefined) {
   l = +(l * 100).toFixed(1);
 
   return `${h} ${s}% ${l}%`;
-}
-
-export function cacheHeader(seconds: number) {
-  return {
-    "Cache-Control": `private, max-age=${seconds}`,
-  };
 }
 
 export function getLessonAttributes(lesson: APIResponseData<"api::lesson.lesson">) {

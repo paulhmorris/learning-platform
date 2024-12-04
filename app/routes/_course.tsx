@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
-import { Outlet, useParams } from "@remix-run/react";
+import { Outlet, useLoaderData, useParams } from "@remix-run/react";
 import { json, LoaderFunctionArgs } from "@vercel/remix";
 import { useState } from "react";
 import { useIsClient, useMediaQuery } from "usehooks-ts";
@@ -11,7 +11,6 @@ import { CourseProgressBar } from "~/components/sidebar/course-progress-bar";
 import { SectionLesson } from "~/components/sidebar/section-lesson";
 import { SectionQuiz } from "~/components/sidebar/section-quiz";
 import { Separator } from "~/components/ui/separator";
-import { useCourseData } from "~/hooks/useCourseData";
 import { Sentry } from "~/integrations/sentry";
 import { Toasts } from "~/lib/toast.server";
 import { cn, getCourseLayoutValues, getLessonsInOrder } from "~/lib/utils";
@@ -71,7 +70,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function CourseLayout() {
-  const { course, lessons, lessonProgress, quizProgress } = useCourseData();
+  const { course, lessons, lessonProgress, quizProgress } = useLoaderData<typeof loader>();
   const params = useParams();
   const [isShowingMore, setIsShowingMore] = useState(false);
   const isClient = useIsClient();

@@ -18,6 +18,9 @@ export function CourseUpNext({ lesson, quiz }: Props) {
     return null;
   }
 
+  const isTimed = typeof lesson?.requiredDurationInSeconds !== "undefined" && lesson.requiredDurationInSeconds > 0;
+  const durationInMinutes = isTimed ? Math.ceil((lesson.requiredDurationInSeconds || 0) / 60) : 0;
+
   return (
     <div className="space-y-4">
       <h2 className="text-3.5xl">Up next:</h2>
@@ -48,7 +51,7 @@ export function CourseUpNext({ lesson, quiz }: Props) {
                 <div className="flex items-center gap-2">
                   {lesson.hasVideo ? <IconCameraFilled className="size-7" /> : <IconClipboard className="size-5" />}
                   <p className="text-sm font-light" id="video-duration">
-                    {lesson.requiredDurationInSeconds / 60} min
+                    {durationInMinutes} min
                   </p>
                 </div>
               ) : null}
