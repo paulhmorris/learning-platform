@@ -163,7 +163,7 @@ export default function CourseCertificate() {
   const userHasVerifiedIdentity = course.requiresIdentityVerification ? user.isIdentityVerified : true;
 
   const isCourseComplete =
-    data.lessonsInOrder.every((l) => l.isCompleted) &&
+    data.lessons.every((l) => l.isCompleted) &&
     data.course.attributes.sections.every((s) => {
       return !s.quiz?.data || data.quizProgress.find((p) => p.quizId === s.quiz?.data.id)?.isCompleted;
     });
@@ -185,7 +185,7 @@ export default function CourseCertificate() {
         <PageTitle>Certificate</PageTitle>
         <div className="mt-8 rounded-md border border-destructive bg-destructive/5 p-4 text-destructive">
           <p>You must verify your identity before you can claim your certificate for this course. </p>
-          <Link to="/profile" className="mt-2 block text-lg font-bold underline decoration-2">
+          <Link to="/account/profile" className="mt-2 block text-lg font-bold underline decoration-2">
             Verify Now
           </Link>
         </div>

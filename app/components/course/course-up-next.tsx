@@ -3,19 +3,7 @@ import { Link } from "@remix-run/react";
 import { IconCameraFilled, IconClipboard, IconDocument } from "~/components/icons";
 import { Button } from "~/components/ui/button";
 import { valueIsNotNullishOrZero } from "~/lib/utils";
-
-export type LessonInOrder = {
-  uuid: string;
-  slug: string;
-  title: string;
-  sectionId: number;
-  sectionTitle: string;
-  isCompleted: boolean;
-  isTimed: boolean | 0;
-  hasVideo: boolean;
-  requiredDurationInSeconds: number;
-  progressDuration: number | null;
-};
+import { LessonInOrder } from "~/routes/preview";
 
 type Props = {
   lesson?: LessonInOrder;
@@ -29,6 +17,9 @@ export function CourseUpNext({ lesson, quiz }: Props) {
   if (!lesson && !quiz) {
     return null;
   }
+
+  const isTimed = typeof lesson?.requiredDurationInSeconds !== "undefined" && lesson.requiredDurationInSeconds > 0;
+  const durationInMinutes = isTimed ? Math.ceil((lesson.requiredDurationInSeconds || 0) / 60) : 0;
 
   return (
     <div className="space-y-4">
@@ -60,7 +51,7 @@ export function CourseUpNext({ lesson, quiz }: Props) {
                 <div className="flex items-center gap-2">
                   {lesson.hasVideo ? <IconCameraFilled className="size-7" /> : <IconClipboard className="size-5" />}
                   <p className="text-sm font-light" id="video-duration">
-                    {lesson.requiredDurationInSeconds / 60} min
+                    {durationInMinutes} min
                   </p>
                 </div>
               ) : null}

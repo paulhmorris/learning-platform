@@ -22,7 +22,11 @@ export function LessonCompleteForm(props: {
   return (
     <fetcher.Form method="post" className="flex items-center gap-1.5">
       <input type="hidden" name="lessonId" value={lesson.id} />
-      <input type="hidden" name="requiredDurationInSeconds" value={lesson.attributes.required_duration_in_seconds} />
+      <input
+        type="hidden"
+        name="requiredDurationInSeconds"
+        value={lesson.attributes.required_duration_in_seconds || 0}
+      />
       <AdminButton
         variant="secondary"
         type="submit"

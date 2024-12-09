@@ -21,7 +21,11 @@ export function LessonUpdateForm(props: {
   return (
     <fetcher.Form method="post" className="flex items-center gap-1.5">
       <input type="hidden" name="lessonId" value={lesson.id} />
-      <input type="hidden" name="requiredDurationInSeconds" value={lesson.attributes.required_duration_in_seconds} />
+      <input
+        type="hidden"
+        name="requiredDurationInSeconds"
+        value={lesson.attributes.required_duration_in_seconds || 0}
+      />
       <Input name="durationInSeconds" placeholder="Seconds" pattern="[0-9]*" disabled={isBeingUpdated} required />
       <AdminButton variant="secondary" type="submit" name="_action" value="update-lesson" disabled={isBeingUpdated}>
         {isBeingUpdated ? <IconLoader className="size-4 animate-spin" /> : null}

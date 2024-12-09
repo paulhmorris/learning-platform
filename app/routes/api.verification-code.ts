@@ -9,11 +9,7 @@ import { Sentry } from "~/integrations/sentry";
 import { Toasts } from "~/lib/toast.server";
 import { AuthService } from "~/services/auth.server";
 
-export const validator = withZod(
-  z.object({
-    email: z.string().email(),
-  }),
-);
+export const validator = withZod(z.object({ email: z.string().email() }));
 
 export async function action({ request }: ActionFunctionArgs) {
   if (request.method.toLowerCase() !== "post") {

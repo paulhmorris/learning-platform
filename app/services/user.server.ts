@@ -48,6 +48,9 @@ class Service {
         password: true,
       },
     });
+    if (user) {
+      await redis.set<User>(`user-${user.id}`, user, { ex: 30 });
+    }
     return user;
   }
 

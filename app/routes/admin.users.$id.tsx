@@ -53,15 +53,16 @@ export default function UsersIndex() {
     <>
       <BackLink to="/admin/users">Back to users</BackLink>
       <h1 className="text-3xl">{`${user.firstName} ${user.lastName}`}</h1>
+      <p className="text-xs text-muted-foreground">{user.email}</p>
 
       <div className="mt-1 flex flex-wrap items-center gap-2">
         <Badge variant={user.isActive ? "secondary" : "destructive"}>
           {user.isActive ? <IconCircleCheckFilled className="size-3.5" /> : <IconCircleXFilled className="size-3.5" />}
           <span>{user.isActive ? "Active" : "Inactive"}</span>
         </Badge>
-        <Badge variant={user.verification ? "success" : "destructive"}>
+        <Badge variant={user.isEmailVerified ? "success" : "destructive"}>
           <IconMail strokeWidth={2.5} className="size-3.5" />
-          <span>Email: {user.verification ? "Verified" : "Unverified"}</span>
+          <span>Email: {user.isEmailVerified ? "Verified" : "Unverified"}</span>
         </Badge>
         <Badge variant={identityVerificationStatus === "verified" ? "success" : "destructive"}>
           <IconUserScan strokeWidth={2.5} className="size-3.5" />
@@ -71,13 +72,13 @@ export default function UsersIndex() {
           href={`https://dashboard.stripe.com/customers/${user.stripeId}`}
           target="_blank"
           rel="noreferrer"
-          className="text-blue-500 inline-flex items-center gap-1.5 text-sm decoration-2 hover:underline"
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-[#533AFD] decoration-2 hover:underline"
         >
           <span className="leading-9">View on Stripe</span>
-          <IconExternalLink className="size-3" />
+          <IconExternalLink className="size-3.5 shrink-0" />
         </a>
       </div>
-      <nav className="mt-12">
+      <nav className="mt-8">
         <ul className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-muted p-1 text-muted-foreground">
           {links.map((link) => (
             <li key={link.href}>
@@ -98,7 +99,7 @@ export default function UsersIndex() {
           ))}
         </ul>
       </nav>
-      <main className="mt-8">
+      <main className="mt-4">
         <Outlet />
       </main>
     </>

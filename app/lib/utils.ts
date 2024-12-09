@@ -1,12 +1,16 @@
-import { User } from "@prisma/client";
+import { User, UserLessonProgress, UserQuizProgress } from "@prisma/client";
 import { SerializeFrom } from "@remix-run/node";
-import { useMatches, useRouteLoaderData } from "@remix-run/react";
+import { Params, useMatches, useRouteLoaderData } from "@remix-run/react";
 import type { Attribute } from "@strapi/strapi";
 import clsx, { ClassValue } from "clsx";
 import { useMemo } from "react";
+import { StrapiResponse } from "strapi-sdk-js";
 import { twMerge } from "tailwind-merge";
 
+import { IconCameraFilled, IconClipboard } from "~/components/icons";
 import { loader } from "~/root";
+import { LessonInOrder } from "~/routes/preview";
+import { APIResponseData } from "~/types/utils";
 
 const DEFAULT_REDIRECT = "/";
 
@@ -180,8 +184,152 @@ export function hexToPartialHSL(H: string | undefined) {
   return `${h} ${s}% ${l}%`;
 }
 
-export function cacheHeader(seconds: number) {
+export function getLessonAttributes(lesson: APIResponseData<"api::lesson.lesson">) {
+  const { has_video: hasVideo } = lesson.attributes;
+  const isTimed =
+    typeof lesson.attributes.required_duration_in_seconds !== "undefined" &&
+    lesson.attributes.required_duration_in_seconds > 0;
+  const durationInMinutes = isTimed ? Math.ceil((lesson.attributes.required_duration_in_seconds || 0) / 60) : 0;
+  const Icon = hasVideo ? IconCameraFilled : IconClipboard;
+
+  return { hasVideo, isTimed, durationInMinutes, Icon, title: lesson.attributes.title, slug: lesson.attributes.slug };
+}
+
+interface GetPreviewValueArgs {
+  lessons: Array<LessonInOrder>;
+  course: APIResponseData<"api::course.course">;
+  quizProgress: SerializeFrom<Array<UserQuizProgress>>;
+  lessonProgress: SerializeFrom<Array<UserLessonProgress>>;
+}
+export function getPreviewValues(data: GetPreviewValueArgs) {
+  const { lessons, course, quizProgress, lessonProgress } = data;
+  const isCourseCompleted =
+    lessons.every((l) => l.isCompleted) &&
+    course.attributes.sections.every(
+      (s) => !s.quiz?.data || quizProgress.some((p) => p.quizId === s.quiz?.data.id && p.isCompleted),
+    );
+
+  // Find the index of the next lesson to be completed, or use the first lesson if all are completed
+  const nextLessonIndex = lessons.findIndex((l) => !l.isCompleted);
+  const lastCompletedLessonIndex = Math.max(0, nextLessonIndex - 1);
+
+  // Determine if the next content is a quiz and if it's incomplete
+  const lastCompletedLessonSection = course.attributes.sections.find(
+    (s) =>
+      s.lessons?.data.some((l) => l.attributes.uuid === lessons[lastCompletedLessonIndex]?.uuid) &&
+      s.lessons.data.every((l) => lessons.find((li) => li.uuid === l.attributes.uuid)?.isCompleted),
+  );
+  const nextQuiz =
+    lastCompletedLessonSection?.quiz?.data &&
+    !quizProgress.some((p) => p.quizId === lastCompletedLessonSection.quiz?.data.id && p.isCompleted)
+      ? lastCompletedLessonSection.quiz.data
+      : null;
+
+  // Calculate total progress and duration in seconds, or number of lessons and quizzes
+  const numberOfLessons = lessons.length;
+  const numberOfQuizzes = course.attributes.sections.filter((s) => s.quiz?.data).length;
+  const completedLessonCount = lessons.filter((l) => l.isCompleted).length;
+  const completedQuizCount = quizProgress.filter((p) => p.isCompleted).length;
+
+  const courseIsTimed = lessons.some((l) => l.isTimed);
+  const totalProgressInSeconds = courseIsTimed
+    ? lessonProgress.reduce((acc, curr) => acc + (curr.durationInSeconds ?? 0), 0)
+    : completedLessonCount + completedQuizCount;
+  const totalDurationInSeconds = courseIsTimed
+    ? // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      lessons.reduce((acc, curr) => acc + (curr.requiredDurationInSeconds ?? 0), 0)
+    : numberOfLessons + numberOfQuizzes;
+
   return {
-    "Cache-Control": `private, max-age=${seconds}`,
+    nextQuiz,
+    courseIsTimed,
+    nextLessonIndex,
+    isCourseCompleted,
+    totalProgressInSeconds,
+    totalDurationInSeconds,
+    lastCompletedLessonIndex,
   };
+}
+
+interface GetCourseLayoutValueArgs extends GetPreviewValueArgs {
+  params: Readonly<Params<string>>;
+}
+export function getCourseLayoutValues(data: GetCourseLayoutValueArgs) {
+  const { lessons, course, quizProgress, lessonProgress, params } = data;
+  const { sections } = course.attributes;
+  const isCourseCompleted =
+    lessons.every((l) => l.isCompleted) &&
+    sections.every((s) => !s.quiz?.data || quizProgress.some((p) => p.quizId === s.quiz?.data.id && p.isCompleted));
+
+  const nextLessonIndex = lessons.findIndex((l) => !l.isCompleted);
+  const lastCompletedLessonIndex = Math.max(0, nextLessonIndex - 1);
+  const nextLesson = lessons[nextLessonIndex] ?? lessons[0];
+
+  const isQuizActive = Boolean(params.quizId);
+
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  const activeQuiz = sections.find((s) => s.quiz?.data?.id === Number(params.quizId))?.quiz ?? null;
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  const activeQuizProgress = quizProgress.find((p) => p.quizId === activeQuiz?.data?.id);
+
+  const activeLesson = lessons.find((l) => l.slug === params.lessonSlug) ?? null;
+  const activeLessonProgress = lessonProgress.find((p) => p.lessonId === activeLesson?.id);
+  const activeSection = activeQuiz
+    ? // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      sections.find((s) => s.quiz?.data?.attributes.uuid === activeQuiz.data?.attributes.uuid)
+    : sections.find((s) => s.id === activeLesson?.sectionId) ?? sections[0];
+
+  const numberOfLessons = lessons.length;
+  const numberOfQuizzes = course.attributes.sections.filter((s) => s.quiz?.data).length;
+  const completedLessonCount = lessons.filter((l) => l.isCompleted).length;
+  const completedQuizCount = quizProgress.filter((p) => p.isCompleted).length;
+
+  const courseIsTimed = lessons.some((l) => l.isTimed);
+
+  const totalProgressInSeconds = courseIsTimed
+    ? lessonProgress.reduce((acc, curr) => acc + (curr.durationInSeconds ?? 0), 0)
+    : completedLessonCount + completedQuizCount;
+  const totalDurationInSeconds = courseIsTimed
+    ? lessons.reduce((acc, curr) => acc + (curr.requiredDurationInSeconds ?? 0), 0)
+    : numberOfLessons + numberOfQuizzes;
+
+  return {
+    nextLesson,
+    activeLesson,
+    isQuizActive,
+    activeSection,
+    courseIsTimed,
+    isCourseCompleted,
+    activeQuizProgress,
+    activeLessonProgress,
+    totalProgressInSeconds,
+    totalDurationInSeconds,
+    lastCompletedLessonIndex,
+  };
+}
+
+export function getLessonsInOrder(data: {
+  course: StrapiResponse<APIResponseData<"api::course.course">>;
+  progress: Array<UserLessonProgress>;
+}) {
+  return data.course.data.attributes.sections.flatMap((section) => {
+    return (
+      section.lessons?.data.map((l) => {
+        const lessonProgress = data.progress.find((p) => p.lessonId === l.id);
+        return {
+          id: l.id,
+          uuid: l.attributes.uuid,
+          slug: l.attributes.slug.toLowerCase(),
+          title: l.attributes.title,
+          sectionId: section.id,
+          sectionTitle: section.title,
+          isCompleted: lessonProgress?.isCompleted ?? false,
+          isTimed: l.attributes.required_duration_in_seconds && l.attributes.required_duration_in_seconds > 0,
+          hasVideo: l.attributes.has_video,
+          requiredDurationInSeconds: l.attributes.required_duration_in_seconds,
+          progressDuration: lessonProgress?.durationInSeconds,
+        };
+      }) ?? []
+    );
+  });
 }

@@ -1,4 +1,4 @@
-import { Link } from "@remix-run/react";
+import { Link, NavLink, NavLinkProps } from "@remix-run/react";
 
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
@@ -64,5 +64,23 @@ export function SectionItemContainer({ children, ...props }: React.HTMLAttribute
     <div {...props} className={cn("flex items-center gap-2", props.className)}>
       {children}
     </div>
+  );
+}
+
+export function SectionItemLink({ children, className, ...props }: Omit<NavLinkProps, "end">) {
+  return (
+    <NavLink
+      end
+      className={({ isActive }) =>
+        cn(
+          "block rounded-lg py-1 hover:ring hover:ring-[#e4e4e4] focus:outline-none focus:ring focus:ring-ring motion-safe:transition-all",
+          isActive ? "border border-[#e4e4e4] bg-muted p-2.5" : "-my-1",
+          className,
+        )
+      }
+      {...props}
+    >
+      {(props) => (typeof children === "function" ? children(props) : children)}
+    </NavLink>
   );
 }

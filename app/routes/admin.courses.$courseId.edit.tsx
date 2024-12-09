@@ -23,7 +23,9 @@ const validator = withZod(
   z.object({
     host: z
       .string({ message: "Host is required" })
-      .regex(/^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}a-zA-Z0-9+$/, { message: "Must match the expected pattern" })
+      .regex(/^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z]{2,})+$/, {
+        message: "Must match the expected pattern",
+      })
       .or(z.string().regex(/localhost/, { message: "Must match the expected pattern" })),
     strapiId: z.coerce.number({ message: "Strapi ID is required" }),
     stripePriceId: z.string({ message: "Stripe price ID is required" }),
@@ -88,7 +90,7 @@ export default function AdminEditCourse() {
           defaultChecked={data.course.requiresIdentityVerification}
         />
         <Label id="identity-label" htmlFor="requiresIdentityVerification" className="cursor-pointer">
-          Require identity verification to complete
+          Require identity verification to receive certificate
         </Label>
       </div>
       <SubmitButton variant="admin" className="mt-4">

@@ -1,25 +1,26 @@
-import { useLoaderData, useRevalidator } from "@remix-run/react";
 import { withZod } from "@remix-validated-form/with-zod";
-import { Stripe, loadStripe } from "@stripe/stripe-js";
-import { IconExclamationCircle } from "@tabler/icons-react";
 import { ActionFunctionArgs, LoaderFunctionArgs, MetaFunction, json } from "@vercel/remix";
-import { useEffect, useState } from "react";
 import { ValidatedForm, validationError } from "remix-validated-form";
-import { toast as clientToast } from "sonner";
 import { z } from "zod";
 
+import { IdentityVerification } from "~/components/account/identity-verification";
 import { ErrorComponent } from "~/components/error-component";
-import { IconCheck } from "~/components/icons";
-import { Button } from "~/components/ui/button";
 import { FormField } from "~/components/ui/form";
 import { SubmitButton } from "~/components/ui/submit-button";
-import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
 import { stripe } from "~/integrations/stripe.server";
 import { Toasts } from "~/lib/toast.server";
 import { useUser } from "~/lib/utils";
 import { loader as rootLoader } from "~/root";
 import { SessionService } from "~/services/session.server";
+import { UserService } from "~/services/user.server";
+
+export const meta: MetaFunction<typeof loader, { root: typeof rootLoader }> = ({ matches }) => {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  const match = matches.find((m) => m.id === "root")?.data.course;
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  return [{ title: `Profile | ${match?.data?.attributes.title ?? "Plumb Media & Education"}` }];
+};
 
 const validator = withZod(
   z.object({
@@ -33,21 +34,13 @@ const validator = withZod(
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await SessionService.requireUser(request);
-  let identityVerificationStatus;
+  let session = null;
   if (user.stripeVerificationSessionId) {
-    const session = await stripe.identity.verificationSessions.retrieve(user.stripeVerificationSessionId);
-    identityVerificationStatus = session.status;
+    session = await stripe.identity.verificationSessions.retrieve(user.stripeVerificationSessionId);
   }
 
-  return json({ identityVerificationStatus });
+  return json({ identitySession: session });
 }
-
-export const meta: MetaFunction<typeof loader, { root: typeof rootLoader }> = ({ matches }) => {
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  const match = matches.find((m) => m.id === "root")?.data.course;
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  return [{ title: `Profile | ${match?.data?.attributes.title ?? "Plumb Media & Education"}` }];
-};
 
 export async function action({ request }: ActionFunctionArgs) {
   const user = await SessionService.requireUser(request);
@@ -72,10 +65,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   try {
-    const updatedUser = await db.user.update({
-      where: { id: user.id },
-      data: { ...rest },
-    });
+    const updatedUser = await UserService.update(user.id, rest);
     return Toasts.jsonWithSuccess(
       { updatedUser },
       {
@@ -93,98 +83,12 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 }
 
-const stripePromise = typeof window !== "undefined" ? loadStripe(window.ENV.STRIPE_PUBLIC_KEY) : null;
-
 export default function AccountProfile() {
   const user = useUser();
-  const revalidator = useRevalidator();
-  const { identityVerificationStatus } = useLoaderData<typeof loader>();
-  const [stripe, setStripe] = useState<Stripe | null>(null);
-
-  useEffect(() => {
-    if (!stripePromise) return;
-
-    async function loadStripe() {
-      setStripe(await stripePromise);
-    }
-    void loadStripe();
-  }, []);
-
-  async function handleVerify() {
-    if (!stripe) return;
-
-    try {
-      const response = await fetch("/api/identity-verification", { method: "POST" });
-      if (!response.ok) {
-        throw new Error("Failed to create a verification session.");
-      }
-
-      const { client_secret } = (await response.json()) as { client_secret: string };
-      const { error } = await stripe.verifyIdentity(client_secret);
-      if (error) {
-        Sentry.captureException(error);
-        clientToast.error("An error occurred while verifying your identity.");
-      } else {
-        clientToast.info("We're processing your identity verification. You'll receive an email with the results.");
-      }
-    } catch (error) {
-      console.error(error);
-      Sentry.captureException(error);
-      clientToast.error("An error occurred while trying to verify your identity.");
-    } finally {
-      revalidator.revalidate();
-    }
-  }
-
-  const hasCourseThatRequiresVerification = user.courses.some((c) => c.course.requiresIdentityVerification);
-  const shouldShowVerifyButton = () => {
-    if (hasCourseThatRequiresVerification && !user.isIdentityVerified) {
-      return false;
-    }
-    return (
-      !identityVerificationStatus ||
-      identityVerificationStatus === "requires_input" ||
-      identityVerificationStatus === "canceled"
-    );
-  };
 
   return (
-    <div>
-      <div className="mb-8">
-        {identityVerificationStatus === "processing" ? (
-          <p className="flex gap-2 text-sm">
-            <IconExclamationCircle />
-            <span>
-              Your identity verification is in progress. You will receive an email with the results once it has
-              processed.
-            </span>
-          </p>
-        ) : shouldShowVerifyButton() ? (
-          <>
-            <Button
-              onClick={handleVerify}
-              disabled={!stripe}
-              type="button"
-              className="w-auto text-sm text-foreground"
-              aria-describedby="verify-btn-description"
-              variant="link"
-            >
-              <span>Verify My Identity</span>
-            </Button>
-
-            <p className="mt-1 text-xs text-muted-foreground" id="verify-btn-description">
-              {hasCourseThatRequiresVerification
-                ? "This is required to complete one of your purchased courses."
-                : "This is required to complete some courses"}
-            </p>
-          </>
-        ) : user.isIdentityVerified ? (
-          <div className="flex items-center gap-2">
-            <IconCheck className="size-5 text-success" />
-            <p className="text-sm">Identity Verified</p>
-          </div>
-        ) : null}
-      </div>
+    <div className="space-y-8">
+      <IdentityVerification />
       <ValidatedForm
         method="post"
         action="/account/profile"

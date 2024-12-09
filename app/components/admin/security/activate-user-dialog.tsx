@@ -29,7 +29,7 @@ export function ActivateUserDialog() {
   return (
     <Dialog open={activateUserModalOpen} onOpenChange={setActivateUserModalOpen}>
       <DialogTrigger asChild>
-        <AdminButton variant="secondary" className="hover:bg-destructive hover:text-destructive-foreground">
+        <AdminButton variant="link" className="-ml-3.5 hover:text-destructive sm:text-xs">
           Activate User
         </AdminButton>
       </DialogTrigger>

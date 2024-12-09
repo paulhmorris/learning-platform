@@ -5,8 +5,8 @@ import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useCountdown } from "react-timing-hooks";
 
-import { cn, formatSeconds, useUser } from "~/lib/utils";
-import { SUBMIT_INTERVAL_MS } from "~/routes/_course.$lessonSlug._index";
+import { cn, formatSeconds } from "~/lib/utils";
+import { SUBMIT_INTERVAL_MS } from "~/routes/api.lesson-progress";
 import { APIResponseData } from "~/types/utils";
 
 interface Props {
@@ -17,12 +17,9 @@ interface Props {
 
 export function ProgressTimer({ lesson, progress, setClientProgressPercentage }: Props) {
   const duration = lesson.attributes.required_duration_in_seconds ?? 0;
-  const user = useUser();
   const fetcher = useFetcher({ key: "lesson-progress" });
   const countdownStart = duration - (progress?.durationInSeconds ?? 0);
-  const [countdownValue, { pause, resume, isPaused }] = useCountdown(countdownStart, 0, {
-    startOnMount: true,
-  });
+  const [countdownValue, { pause, resume, isPaused }] = useCountdown(countdownStart, 0, { startOnMount: true });
 
   // Update client side progress percentage
   useEffect(() => {
@@ -40,7 +37,10 @@ export function ProgressTimer({ lesson, progress, setClientProgressPercentage }:
     }
 
     if (shouldSubmit) {
-      fetcher.submit({ userId: user.id, lessonId: lesson.id }, { method: "POST", action: "?index" });
+      fetcher.submit(
+        { lessonId: lesson.id, intent: "increment-duration" },
+        { method: "POST", action: "/api/lesson-progress" },
+      );
     }
 
     // eslint-disable-next-line react-hooks/exhaustive-deps

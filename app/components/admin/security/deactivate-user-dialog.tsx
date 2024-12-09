@@ -29,7 +29,7 @@ export function DeactivateUserDialog() {
   return (
     <Dialog open={deactivateUserModalOpen} onOpenChange={setDeactivateUserModalOpen}>
       <DialogTrigger asChild>
-        <AdminButton variant="secondary" className="hover:bg-destructive hover:text-destructive-foreground">
+        <AdminButton variant="link" className="-ml-3.5 hover:text-destructive sm:text-xs">
           Deactivate User
         </AdminButton>
       </DialogTrigger>
