@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "remix vite:dev",
     "build": "remix vite:build",
-    "start": "NODE_OPTIONS='--import=./instrument.server.mjs' remix-serve ./build/server/index.js",
+    "start": "remix-serve ./build/server/index.js",
     "postinstall": "prisma generate",
     "copytypes": "node copyTypes.cjs && npx prettier --write ."
   },

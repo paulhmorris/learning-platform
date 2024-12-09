@@ -9,7 +9,7 @@ Sentry.init({
   tracesSampleRate: window.ENV.VERCEL_ENV === "preview" ? 0.5 : 0.1,
   replaysSessionSampleRate: window.ENV.VERCEL_ENV === "production" ? 0.01 : 0,
   replaysOnErrorSampleRate: 1,
-  enabled: window.location.hostname !== "localhost",
+  enabled: process.env.NODE_ENV === "production",
   integrations: [
     Sentry.browserTracingIntegration({
       useEffect,
