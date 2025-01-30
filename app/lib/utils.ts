@@ -201,7 +201,23 @@ interface GetPreviewValueArgs {
   quizProgress: SerializeFrom<Array<UserQuizProgress>>;
   lessonProgress: SerializeFrom<Array<UserLessonProgress>>;
 }
-export function getPreviewValues(data: GetPreviewValueArgs) {
+type GetPreviewValuesReturn = {
+  nextQuiz: APIResponseData<"api::quiz.quiz"> | null;
+  courseIsTimed: boolean;
+  nextLessonIndex: number;
+  isCourseCompleted: boolean;
+  totalProgressInSeconds: number;
+  totalDurationInSeconds: number;
+  lastCompletedLessonIndex: number;
+};
+const getPreviewValuesCache = new Map<string, GetPreviewValuesReturn>();
+export function getPreviewValues(data: GetPreviewValueArgs): GetPreviewValuesReturn {
+  const cacheKey = JSON.stringify(data);
+
+  if (getPreviewValuesCache.has(cacheKey)) {
+    return getPreviewValuesCache.get(cacheKey) as GetPreviewValuesReturn;
+  }
+
   const { lessons, course, quizProgress, lessonProgress } = data;
   const isCourseCompleted =
     lessons.every((l) => l.isCompleted) &&
@@ -247,7 +263,7 @@ export function getPreviewValues(data: GetPreviewValueArgs) {
       lessons.reduce((acc, curr) => acc + (curr.requiredDurationInSeconds ?? 0), 0)
     : numberOfLessons + numberOfQuizzes;
 
-  return {
+  const result = {
     nextQuiz,
     courseIsTimed,
     nextLessonIndex,
@@ -256,12 +272,36 @@ export function getPreviewValues(data: GetPreviewValueArgs) {
     totalDurationInSeconds: totalLessonDurationInSeconds + totalQuizDurationInSeconds,
     lastCompletedLessonIndex,
   };
+
+  getPreviewValuesCache.set(cacheKey, result);
+  return result;
 }
 
 interface GetCourseLayoutValueArgs extends GetPreviewValueArgs {
   params: Readonly<Params<string>>;
 }
-export function getCourseLayoutValues(data: GetCourseLayoutValueArgs) {
+type GetCourseLayoutReturn = {
+  nextLesson: LessonInOrder;
+  activeLesson: LessonInOrder | null;
+  isQuizActive: boolean;
+  activeSection?: APIResponseData<"api::course.course">["attributes"]["sections"][number];
+  courseIsTimed: boolean;
+  isCourseCompleted: boolean;
+  activeQuizProgress: SerializeFrom<UserQuizProgress> | undefined;
+  activeLessonProgress: SerializeFrom<UserLessonProgress> | undefined;
+  totalProgressInSeconds: number;
+  totalDurationInSeconds: number;
+  lastCompletedLessonIndex: number;
+};
+const courseLayoutCache = new Map<string, GetCourseLayoutReturn>();
+
+export function getCourseLayoutValues(data: GetCourseLayoutValueArgs): GetCourseLayoutReturn {
+  const cacheKey = JSON.stringify(data);
+
+  if (courseLayoutCache.has(cacheKey)) {
+    return courseLayoutCache.get(cacheKey) as GetCourseLayoutReturn;
+  }
+
   const { lessons, course, quizProgress, lessonProgress, params } = data;
   const { sections } = course.attributes;
   const isCourseCompleted =
@@ -307,7 +347,7 @@ export function getCourseLayoutValues(data: GetCourseLayoutValueArgs) {
     ? lessons.reduce((acc, curr) => acc + (curr.requiredDurationInSeconds ?? 0), 0)
     : numberOfLessons + numberOfQuizzes;
 
-  return {
+  const result = {
     nextLesson,
     activeLesson,
     isQuizActive,
@@ -320,6 +360,9 @@ export function getCourseLayoutValues(data: GetCourseLayoutValueArgs) {
     totalDurationInSeconds: totalLessonDurationInSeconds + totalQuizDurationInSeconds,
     lastCompletedLessonIndex,
   };
+
+  courseLayoutCache.set(cacheKey, result);
+  return result;
 }
 
 export function getLessonsInOrder(data: {
