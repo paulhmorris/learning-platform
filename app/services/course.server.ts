@@ -73,7 +73,7 @@ export const CourseService = {
           fields: ["title"],
           populate: {
             quiz: {
-              fields: ["title", "uuid"],
+              fields: ["title", "uuid", "required_duration_in_seconds"],
               populate: {
                 questions: {
                   count: true,

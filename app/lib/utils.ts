@@ -231,11 +231,18 @@ export function getPreviewValues(data: GetPreviewValueArgs) {
   const completedLessonCount = lessons.filter((l) => l.isCompleted).length;
   const completedQuizCount = quizProgress.filter((p) => p.isCompleted).length;
 
+  const totalQuizDurationInSeconds = course.attributes.sections.reduce((acc, curr) => {
+    const quizDuration = curr.quiz?.data.attributes.required_duration_in_seconds
+      ? curr.quiz.data.attributes.required_duration_in_seconds
+      : 0;
+    return acc + quizDuration;
+  }, 0);
+
   const courseIsTimed = lessons.some((l) => l.isTimed);
   const totalProgressInSeconds = courseIsTimed
     ? lessonProgress.reduce((acc, curr) => acc + (curr.durationInSeconds ?? 0), 0)
     : completedLessonCount + completedQuizCount;
-  const totalDurationInSeconds = courseIsTimed
+  const totalLessonDurationInSeconds = courseIsTimed
     ? // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       lessons.reduce((acc, curr) => acc + (curr.requiredDurationInSeconds ?? 0), 0)
     : numberOfLessons + numberOfQuizzes;
@@ -246,7 +253,7 @@ export function getPreviewValues(data: GetPreviewValueArgs) {
     nextLessonIndex,
     isCourseCompleted,
     totalProgressInSeconds,
-    totalDurationInSeconds,
+    totalDurationInSeconds: totalLessonDurationInSeconds + totalQuizDurationInSeconds,
     lastCompletedLessonIndex,
   };
 }
@@ -286,10 +293,17 @@ export function getCourseLayoutValues(data: GetCourseLayoutValueArgs) {
 
   const courseIsTimed = lessons.some((l) => l.isTimed);
 
+  const totalQuizDurationInSeconds = course.attributes.sections.reduce((acc, curr) => {
+    const quizDuration = curr.quiz?.data.attributes.required_duration_in_seconds
+      ? curr.quiz.data.attributes.required_duration_in_seconds
+      : 0;
+    return acc + quizDuration;
+  }, 0);
+
   const totalProgressInSeconds = courseIsTimed
     ? lessonProgress.reduce((acc, curr) => acc + (curr.durationInSeconds ?? 0), 0)
     : completedLessonCount + completedQuizCount;
-  const totalDurationInSeconds = courseIsTimed
+  const totalLessonDurationInSeconds = courseIsTimed
     ? lessons.reduce((acc, curr) => acc + (curr.requiredDurationInSeconds ?? 0), 0)
     : numberOfLessons + numberOfQuizzes;
 
@@ -303,7 +317,7 @@ export function getCourseLayoutValues(data: GetCourseLayoutValueArgs) {
     activeQuizProgress,
     activeLessonProgress,
     totalProgressInSeconds,
-    totalDurationInSeconds,
+    totalDurationInSeconds: totalLessonDurationInSeconds + totalQuizDurationInSeconds,
     lastCompletedLessonIndex,
   };
 }
