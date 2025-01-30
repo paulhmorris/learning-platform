@@ -375,7 +375,13 @@ export interface ApiLessonLesson extends Schema.CollectionType {
     content: Attribute.DynamicZone<["blocks.audio", "blocks.image", "blocks.text", "blocks.video", "blocks.slideshow"]>;
     uuid: Attribute.UID & Attribute.CustomField<"plugin::strapi-advanced-uuid.uuid">;
     has_video: Attribute.Boolean & Attribute.Required & Attribute.DefaultTo<true>;
-    required_duration_in_seconds: Attribute.Integer;
+    required_duration_in_seconds: Attribute.Integer &
+      Attribute.SetMinMax<
+        {
+          min: 60;
+        },
+        number
+      >;
     createdAt: Attribute.DateTime;
     updatedAt: Attribute.DateTime;
     publishedAt: Attribute.DateTime;
@@ -408,6 +414,13 @@ export interface ApiQuizQuiz extends Schema.CollectionType {
         number
       > &
       Attribute.DefaultTo<60>;
+    required_duration_in_seconds: Attribute.Integer &
+      Attribute.SetMinMax<
+        {
+          min: 60;
+        },
+        number
+      >;
     createdAt: Attribute.DateTime;
     updatedAt: Attribute.DateTime;
     publishedAt: Attribute.DateTime;
