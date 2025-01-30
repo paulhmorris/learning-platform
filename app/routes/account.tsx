@@ -16,9 +16,9 @@ const links = [
 export default function AccountLayout() {
   return (
     <>
-      <div className="flex min-h-[calc(100dvh-80px)] flex-col justify-center dark:bg-background md:bg-secondary">
+      <div className="flex min-h-[calc(100dvh-80px)] flex-col justify-center md:bg-secondary dark:bg-background">
         <div className="flex-1">
-          <div className="mx-auto w-full max-w-screen-md border border-transparent bg-background p-6 dark:border-border md:mt-40 md:rounded-xl md:p-12">
+          <div className="mx-auto w-full max-w-screen-md border border-transparent bg-background p-6 md:mt-40 md:rounded-xl md:p-12 dark:border-border">
             <nav>
               <ul className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-muted p-1 text-muted-foreground">
                 {links.map((link) => (

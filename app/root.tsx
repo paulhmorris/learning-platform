@@ -2,10 +2,12 @@ import { Links, Meta, Outlet, Scripts, ScrollRestoration, useLoaderData, useRout
 import { captureRemixErrorBoundaryError, withSentry } from "@sentry/remix";
 import type { LinksFunction, LoaderFunctionArgs } from "@vercel/remix";
 import { json } from "@vercel/remix";
+import { usePostHog } from "posthog-js/react";
 import { useEffect } from "react";
 import { PreventFlashOnWrongTheme, ThemeProvider, useTheme } from "remix-themes";
 
 import "@fontsource-variable/inter/wght.css";
+import { AnalyticsPageViews } from "~/components/analytics-page-views";
 import { ErrorComponent } from "~/components/error-component";
 import { GlobalLoader } from "~/components/global-loader";
 import { Header } from "~/components/header";
@@ -72,6 +74,7 @@ function AppWithProviders() {
 function App() {
   const data = useLoaderData<typeof loader>();
   const [theme] = useTheme();
+  const analytics = usePostHog();
 
   useEffect(() => {
     if (data.user) {
@@ -80,13 +83,20 @@ function App() {
         email: data.user.email,
         username: data.user.email,
       });
+      analytics.identify(data.user.id, {
+        email: data.user.email,
+        firstName: data.user.firstName,
+        lastName: data.user.lastName,
+        createdAt: data.user.createdAt,
+      });
     } else {
       Sentry.setUser(null);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data.user]);
 
   return (
-    <html lang="en" data-theme={theme || ""} className="h-full">
+    <html lang="en" data-theme={theme || "light"} className="h-full">
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -125,6 +135,7 @@ function App() {
           }}
         />
         <Scripts />
+        <AnalyticsPageViews />
       </body>
     </html>
   );

@@ -47,7 +47,7 @@ export function SectionQuiz(props: SectionQuizProps) {
             </SectionItemTitle>
             <SectionItemDescription className="text-gray-400 contrast-more:text-gray-500 dark:text-gray-600 contrast-more:dark:text-gray-400">
               {/* @ts-expect-error see query in _course */}
-              {quiz.attributes.questions?.count} questions
+              {quiz.attributes.questions?.count} question{quiz.attributes.questions?.count === 1 ? "" : "s"}
             </SectionItemDescription>
           </div>
         </SectionItemContainer>
@@ -75,8 +75,10 @@ export function SectionQuiz(props: SectionQuizProps) {
             </SectionItemIconContainer>
             <div className="flex flex-col justify-center">
               <SectionItemTitle>Quiz</SectionItemTitle>
-              {/* @ts-expect-error see query in _course */}
-              <SectionItemDescription>{quiz.attributes.questions?.count} questions</SectionItemDescription>
+              <SectionItemDescription>
+                {/* @ts-expect-error see query in _course */}
+                {quiz.attributes.questions?.count} question{quiz.attributes.questions?.count === 1 ? "" : "s"}
+              </SectionItemDescription>
             </div>
           </SectionItemContainer>
         )}

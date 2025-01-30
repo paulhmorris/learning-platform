@@ -2,6 +2,7 @@ import { RemixBrowser, useLocation, useMatches } from "@remix-run/react";
 import { StrictMode, startTransition, useEffect } from "react";
 import { hydrateRoot } from "react-dom/client";
 
+import { AnalyticsInit } from "~/components/analytics-init";
 import { Sentry } from "~/integrations/sentry";
 
 Sentry.init({
@@ -29,6 +30,7 @@ startTransition(() => {
     document,
     <StrictMode>
       <RemixBrowser />
+      <AnalyticsInit />
     </StrictMode>,
   );
 });

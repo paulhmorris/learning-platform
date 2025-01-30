@@ -14,7 +14,7 @@ export default function AuthLayout() {
   const courseTitle = course?.title;
 
   return (
-    <div className="flex min-h-full flex-col dark:bg-background sm:bg-secondary">
+    <div className="flex min-h-full flex-col sm:bg-secondary dark:bg-background">
       <main className="flex flex-col justify-center">
         <div className="flex-1">
           <div className="mx-auto w-full max-w-screen-sm space-y-4 sm:mt-40">
