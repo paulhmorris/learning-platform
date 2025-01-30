@@ -1,7 +1,10 @@
 import { Form, Link, MetaFunction, useActionData, useLoaderData } from "@remix-run/react";
+import { IconCircleCheckFilled } from "@tabler/icons-react";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@vercel/remix";
 import { useEffect, useRef } from "react";
+import { useCountdown } from "react-timing-hooks";
 import invariant from "tiny-invariant";
+import { useLocalStorage } from "usehooks-ts";
 
 import { PageTitle } from "~/components/common/page-title";
 import { QuizFailed } from "~/components/quiz/quiz-failed";
@@ -13,7 +16,7 @@ import { cms } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
 import { notFound } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
-import { cn } from "~/lib/utils";
+import { cn, formatSeconds } from "~/lib/utils";
 import { loader as courseLoader } from "~/routes/_course";
 import { SessionService } from "~/services/session.server";
 import { APIResponseData } from "~/types/utils";
@@ -30,7 +33,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
         fields: "*",
         populate: {
           answers: {
-            fields: ["answer", "id"],
+            fields: ["answer", "id", "required_duration_in_seconds"],
           },
         },
       },
@@ -164,7 +167,24 @@ export default function Quiz() {
   const actionData = useActionData<typeof action>();
   const resultsRef = useRef<HTMLDivElement>(null);
 
-  // Scroll to results quiz is submitted
+  const [reachedRequiredTime, setReachedRequiredTime] = useLocalStorage(
+    `required-quiz-time-${quiz.attributes.uuid}`,
+    false,
+  );
+  const [countdownValue] = useCountdown(
+    reachedRequiredTime ? 0 : quiz.attributes.required_duration_in_seconds ?? 0,
+    0,
+    { startOnMount: true },
+  );
+
+  // If quiz has required duration, mark as completed when required time is reached
+  useEffect(() => {
+    if (quiz.attributes.required_duration_in_seconds && countdownValue === 0) {
+      setReachedRequiredTime(true);
+    }
+  }, [countdownValue, quiz.attributes.required_duration_in_seconds, setReachedRequiredTime]);
+
+  // Scroll to results if quiz is submitted
   useEffect(() => {
     if (typeof actionData?.score !== "undefined" && typeof window !== "undefined") {
       resultsRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -196,6 +216,8 @@ export default function Quiz() {
     return <QuizLocked title={quiz.attributes.title ?? `Quiz ${quiz.id}`} />;
   }
 
+  const isQuizTimed = Boolean(quiz.attributes.required_duration_in_seconds);
+
   return (
     <>
       {/* Results */}
@@ -210,6 +232,12 @@ export default function Quiz() {
       <p className="mt-1 text-sm text-secondary-foreground">
         Score <strong>{quiz.attributes.passing_score}% or higher</strong> on this quiz to proceed.
       </p>
+      {isQuizTimed ? (
+        <p className="mt-1 text-sm text-secondary-foreground">
+          You must spend <strong>{formatSeconds(quiz.attributes.required_duration_in_seconds ?? 0)}</strong> on this
+          quiz to submit.
+        </p>
+      ) : null}
       {/* TODO: Complete to unlock/up next */}
       {/* <CourseUpNext lesson={} /> */}
       {isFailed ? (
@@ -265,9 +293,22 @@ export default function Quiz() {
             })}
           </fieldset>
           {isPassed ? null : (
-            <Button type="submit" className="mt-8 sm:max-w-64">
-              Submit
-            </Button>
+            <div className="mt-8 flex flex-col gap-y-2">
+              {isQuizTimed ? (
+                <div className="flex items-center gap-x-2">
+                  <span
+                    aria-label="Time remaining on this quiz"
+                    className={cn(countdownValue === 0 && "text-success", "font-medium tabular-nums")}
+                  >
+                    {formatSeconds(countdownValue)} remaining
+                  </span>
+                  {reachedRequiredTime ? <IconCircleCheckFilled className="size-5 text-success" /> : null}
+                </div>
+              ) : null}
+              <Button type="submit" className="sm:max-w-64" disabled={Boolean(isQuizTimed && !reachedRequiredTime)}>
+                Submit
+              </Button>
+            </div>
           )}
         </Form>
       )}
