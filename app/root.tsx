@@ -6,7 +6,6 @@ import { useEffect } from "react";
 import { PreventFlashOnWrongTheme, ThemeProvider, useTheme } from "remix-themes";
 
 import "@fontsource-variable/inter/wght.css";
-import { AnalyticsPageViews } from "~/components/analytics-page-views";
 import { ErrorComponent } from "~/components/error-component";
 import { GlobalLoader } from "~/components/global-loader";
 import { Header } from "~/components/header";
@@ -127,7 +126,6 @@ function App() {
           }}
         />
         <Scripts />
-        <AnalyticsPageViews />
       </body>
     </html>
   );
