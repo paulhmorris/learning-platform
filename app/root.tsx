@@ -2,7 +2,6 @@ import { Links, Meta, Outlet, Scripts, ScrollRestoration, useLoaderData, useRout
 import { captureRemixErrorBoundaryError, withSentry } from "@sentry/remix";
 import type { LinksFunction, LoaderFunctionArgs } from "@vercel/remix";
 import { json } from "@vercel/remix";
-import { usePostHog } from "posthog-js/react";
 import { useEffect } from "react";
 import { PreventFlashOnWrongTheme, ThemeProvider, useTheme } from "remix-themes";
 
@@ -74,7 +73,6 @@ function AppWithProviders() {
 function App() {
   const data = useLoaderData<typeof loader>();
   const [theme] = useTheme();
-  const analytics = usePostHog();
 
   useEffect(() => {
     if (data.user) {
@@ -82,12 +80,6 @@ function App() {
         id: data.user.id,
         email: data.user.email,
         username: data.user.email,
-      });
-      analytics.identify(data.user.id, {
-        email: data.user.email,
-        firstName: data.user.firstName,
-        lastName: data.user.lastName,
-        createdAt: data.user.createdAt,
       });
     } else {
       Sentry.setUser(null);

@@ -68,7 +68,6 @@
     "morgan": "^1.10.0",
     "nanoid": "^5.0.7",
     "nprogress": "^0.2.0",
-    "posthog-js": "^1.195.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-timing-hooks": "^4.0.2",

@@ -1,6 +1,5 @@
 import { UserRole } from "@prisma/client";
 import { Link, useMatches } from "@remix-run/react";
-import { usePostHog } from "posthog-js/react";
 
 import { IconAvatar } from "~/components/icons";
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
@@ -17,7 +16,6 @@ import { useRootData } from "~/hooks/useRootData";
 import { useOptionalUser } from "~/lib/utils";
 
 export function UserMenu() {
-  const analytics = usePostHog();
   const user = useOptionalUser();
   const rootData = useRootData();
   const matches = useMatches();
@@ -87,9 +85,7 @@ export function UserMenu() {
           <DropdownMenuSeparator />
           <DropdownMenuItem className="px-0 py-0">
             <form className="w-full" method="post" action="/logout">
-              <button className="w-full px-2 py-1.5 text-left" onClick={() => analytics.reset()}>
-                Log out
-              </button>
+              <button className="w-full px-2 py-1.5 text-left">Log out</button>
             </form>
           </DropdownMenuItem>
         </DropdownMenuContent>
