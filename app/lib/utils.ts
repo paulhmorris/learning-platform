@@ -248,7 +248,8 @@ export function getPreviewValues(data: GetPreviewValueArgs): GetPreviewValuesRet
   const completedQuizCount = quizProgress.filter((p) => p.isCompleted).length;
 
   const totalQuizDurationInSeconds = course.attributes.sections.reduce((acc, curr) => {
-    const quizDuration = curr.quiz?.data.attributes.required_duration_in_seconds
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    const quizDuration = curr.quiz?.data?.attributes.required_duration_in_seconds
       ? curr.quiz.data.attributes.required_duration_in_seconds
       : 0;
     return acc + quizDuration;
@@ -334,7 +335,8 @@ export function getCourseLayoutValues(data: GetCourseLayoutValueArgs): GetCourse
   const courseIsTimed = lessons.some((l) => l.isTimed);
 
   const totalQuizDurationInSeconds = course.attributes.sections.reduce((acc, curr) => {
-    const quizDuration = curr.quiz?.data.attributes.required_duration_in_seconds
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    const quizDuration = curr.quiz?.data?.attributes.required_duration_in_seconds
       ? curr.quiz.data.attributes.required_duration_in_seconds
       : 0;
     return acc + quizDuration;
