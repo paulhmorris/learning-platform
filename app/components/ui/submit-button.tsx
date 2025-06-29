@@ -1,5 +1,5 @@
+import { useIsSubmitting } from "@rvf/react-router";
 import { IconLoader } from "@tabler/icons-react";
-import { useIsSubmitting } from "remix-validated-form";
 
 import type { ButtonProps } from "~/components/ui/button";
 import { Button } from "~/components/ui/button";

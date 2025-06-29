@@ -1,4 +1,4 @@
-import { LoaderFunctionArgs, redirect } from "@remix-run/node";
+import { LoaderFunctionArgs, redirect } from "react-router";
 
 import { db } from "~/integrations/db.server";
 import { stripe } from "~/integrations/stripe.server";

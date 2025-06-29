@@ -1,4 +1,4 @@
-import { Link } from "@remix-run/react";
+import { Link } from "react-router";
 
 import { IconCameraFilled, IconClipboard, IconDocument } from "~/components/icons";
 import { Button } from "~/components/ui/button";

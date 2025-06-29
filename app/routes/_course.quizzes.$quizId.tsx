@@ -1,7 +1,14 @@
-import { Form, Link, MetaFunction, useActionData, useLoaderData } from "@remix-run/react";
 import { IconCircleCheckFilled } from "@tabler/icons-react";
-import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@vercel/remix";
 import { useEffect, useRef } from "react";
+import {
+  ActionFunctionArgs,
+  Form,
+  Link,
+  LoaderFunctionArgs,
+  MetaFunction,
+  useActionData,
+  useLoaderData,
+} from "react-router";
 import { useCountdown } from "react-timing-hooks";
 import invariant from "tiny-invariant";
 import { useLocalStorage } from "usehooks-ts";
@@ -54,7 +61,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     },
   });
 
-  return json({ quiz: quiz.data, progress });
+  return { quiz: quiz.data, progress };
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -98,10 +105,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     .filter((a) => typeof a !== "undefined");
 
   if (!correctQuizAnswers || !correctQuizAnswers.length) {
-    return Toasts.jsonWithError(
+    return Toasts.dataWithError(
       { score: 0, passed: false, userAnswers: [], passingScore: quiz.data.attributes.passing_score },
       {
-        title: "Error",
+        message: "Error",
         description: "There was an error processing your quiz. Please try again later.",
       },
     );
@@ -147,12 +154,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
   }
 
-  return json({
+  return {
     score,
     passed,
     userAnswers,
     passingScore: quiz.data.attributes.passing_score,
-  });
+  };
 }
 
 export const meta: MetaFunction<typeof loader, { "routes/_course": typeof courseLoader }> = ({ data, matches }) => {

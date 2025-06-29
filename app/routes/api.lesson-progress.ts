@@ -1,6 +1,6 @@
 import { withZod } from "@remix-validated-form/with-zod";
-import { ActionFunctionArgs, json } from "@vercel/remix";
-import { validationError } from "remix-validated-form";
+import { validationError } from "@rvf/react-router";
+import { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
 
 import { badRequest } from "~/lib/responses.server";
@@ -9,7 +9,7 @@ import { LessonService } from "~/services/lesson.server";
 import { ProgressService } from "~/services/progress.server";
 import { SessionService } from "~/services/session.server";
 
-const validator = withZod(
+const schema = withZod(
   z.object({
     lessonId: z.coerce.number(),
     intent: z.enum(["mark-complete", "increment-duration"]),
@@ -19,7 +19,7 @@ export const SUBMIT_INTERVAL_MS = 15_000;
 
 export async function action({ request }: ActionFunctionArgs) {
   const userId = await SessionService.requireUserId(request);
-  const result = await validator.validate(await request.formData());
+  const result = await parseFormData(request, schema);
   if (result.error) {
     throw validationError(result.error);
   }
@@ -31,15 +31,15 @@ export async function action({ request }: ActionFunctionArgs) {
   // Lessons without required durations
   if (intent === "mark-complete" && !duration) {
     const progress = await ProgressService.markComplete({ userId, lessonId });
-    return Toasts.jsonWithSuccess(
+    return Toasts.dataWithSuccess(
       { progress },
-      { title: "Lesson completed!", description: "You may now move on to the next item." },
+      { message: "Lesson completed!", description: "You may now move on to the next item." },
     );
   }
 
   const progress = await ProgressService.getByLessonId(userId, lessonId);
   if (!duration) {
-    return json({ progress });
+    return { progress };
   }
 
   // Completion flow
@@ -57,9 +57,9 @@ export async function action({ request }: ActionFunctionArgs) {
         lessonId,
         requiredDurationInSeconds: duration,
       });
-      return Toasts.jsonWithSuccess(
+      return Toasts.dataWithSuccess(
         { progress: completedProgress },
-        { title: "Lesson completed!", description: "You may now move on to the next item." },
+        { message: "Lesson completed!", description: "You may now move on to the next item." },
       );
     }
   }
@@ -67,7 +67,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // Upsert progress
   const currentProgress = await ProgressService.incrementProgress(userId, lessonId);
 
-  return json({ progress: currentProgress });
+  return { progress: currentProgress };
 }
 
 export const shouldRevalidate = () => false;

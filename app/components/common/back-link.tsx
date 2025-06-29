@@ -1,5 +1,5 @@
-import { Link } from "@remix-run/react";
-import { RemixLinkProps } from "@remix-run/react/dist/components";
+import { Link } from "react-router";
+import { RemixLinkProps } from "@react-router/react/dist/components";
 import { IconArrowLeft } from "@tabler/icons-react";
 
 import { cn } from "~/lib/utils";

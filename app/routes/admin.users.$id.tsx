@@ -1,4 +1,3 @@
-import { NavLink, Outlet, useLoaderData } from "@remix-run/react";
 import {
   IconCertificate,
   IconCircleCheckFilled,
@@ -9,7 +8,7 @@ import {
   IconUserCircle,
   IconUserScan,
 } from "@tabler/icons-react";
-import { LoaderFunctionArgs, json } from "@vercel/remix";
+import { LoaderFunctionArgs, NavLink, Outlet, useLoaderData } from "react-router";
 
 import { BackLink } from "~/components/common/back-link";
 import { ErrorComponent } from "~/components/error-component";
@@ -44,7 +43,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     const session = await stripe.identity.verificationSessions.retrieve(user.stripeVerificationSessionId);
     identityVerificationStatus = session.status;
   }
-  return json({ user, identityVerificationStatus });
+  return { user, identityVerificationStatus };
 }
 
 export default function UsersIndex() {

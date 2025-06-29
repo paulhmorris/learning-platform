@@ -1,9 +1,8 @@
 import { User, UserLessonProgress, UserQuizProgress } from "@prisma/client";
-import { SerializeFrom } from "@remix-run/node";
-import { Params, useMatches, useRouteLoaderData } from "@remix-run/react";
 import type { Attribute } from "@strapi/strapi";
 import clsx, { ClassValue } from "clsx";
 import { useMemo } from "react";
+import { Params, useMatches, useRouteLoaderData } from "react-router";
 import { StrapiResponse } from "strapi-sdk-js";
 import { twMerge } from "tailwind-merge";
 
@@ -60,7 +59,7 @@ export function useOptionalUser() {
   return data.user;
 }
 
-export function useUser(): NonNullable<SerializeFrom<typeof loader>["user"]> {
+export function useUser(): NonNullable<Awaited<ReturnType<typeof loader>>["data"]["user"]> {
   const maybeUser = useOptionalUser();
   if (!maybeUser) {
     throw new Error(
@@ -198,8 +197,8 @@ export function getLessonAttributes(lesson: APIResponseData<"api::lesson.lesson"
 interface GetPreviewValueArgs {
   lessons: Array<LessonInOrder>;
   course: APIResponseData<"api::course.course">;
-  quizProgress: SerializeFrom<Array<UserQuizProgress>>;
-  lessonProgress: SerializeFrom<Array<UserLessonProgress>>;
+  quizProgress: Array<UserQuizProgress>;
+  lessonProgress: Array<UserLessonProgress>;
 }
 type GetPreviewValuesReturn = {
   nextQuiz: APIResponseData<"api::quiz.quiz"> | null;
@@ -288,8 +287,8 @@ type GetCourseLayoutReturn = {
   activeSection?: APIResponseData<"api::course.course">["attributes"]["sections"][number];
   courseIsTimed: boolean;
   isCourseCompleted: boolean;
-  activeQuizProgress: SerializeFrom<UserQuizProgress> | undefined;
-  activeLessonProgress: SerializeFrom<UserLessonProgress> | undefined;
+  activeQuizProgress: UserQuizProgress | undefined;
+  activeLessonProgress: UserLessonProgress | undefined;
   totalProgressInSeconds: number;
   totalDurationInSeconds: number;
   lastCompletedLessonIndex: number;

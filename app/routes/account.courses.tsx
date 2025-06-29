@@ -1,6 +1,5 @@
-import { MetaFunction, useLoaderData } from "@remix-run/react";
-import { LoaderFunctionArgs, json } from "@vercel/remix";
 import dayjs from "dayjs";
+import { LoaderFunctionArgs, MetaFunction, useLoaderData } from "react-router";
 
 import { ErrorComponent } from "~/components/error-component";
 import { IconCertificate } from "~/components/icons";
@@ -40,7 +39,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     };
   });
 
-  return json({ courses, userCourses });
+  return { courses, userCourses };
 }
 
 export default function AccountCourses() {

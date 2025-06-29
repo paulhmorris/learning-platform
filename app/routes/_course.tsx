@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
-import { Outlet, useLoaderData, useParams } from "@remix-run/react";
-import { json, LoaderFunctionArgs } from "@vercel/remix";
 import { useState } from "react";
+import { LoaderFunctionArgs, Outlet, useLoaderData, useParams } from "react-router";
 import { useIsClient, useMediaQuery } from "usehooks-ts";
 
 import { BackLink } from "~/components/common/back-link";
@@ -17,7 +16,6 @@ import { cn, getCourseLayoutValues, getLessonsInOrder } from "~/lib/utils";
 import { CourseService } from "~/services/course.server";
 import { ProgressService } from "~/services/progress.server";
 import { SessionService } from "~/services/session.server";
-import { APIResponseData } from "~/types/utils";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await SessionService.requireUser(request);
@@ -28,7 +26,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
     if (!linkedCourse) {
       return Toasts.redirectWithError("/preview", {
-        title: "Course not found",
+        message: "Course not found",
         description: "Please try again later",
       });
     }
@@ -37,7 +35,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const userHasAccess = user.courses && user.courses.some((c) => c.courseId === linkedCourse.id);
     if (!userHasAccess) {
       return Toasts.redirectWithError("/preview", {
-        title: "No access to course",
+        message: "No access to course",
         description: "Please purchase the course to access it.",
       });
     }
@@ -46,7 +44,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
     if (!course) {
       return Toasts.redirectWithError("/preview", {
-        title: "Failed to load course",
+        message: "Failed to load course",
         description: "Please try again later",
       });
     }
@@ -58,12 +56,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
     const lessons = getLessonsInOrder({ course, progress: lessonProgress });
 
-    return json({ course: course.data, lessonProgress, lessons, quizProgress, userHasAccess });
+    return { course: course.data, lessonProgress, lessons, quizProgress, userHasAccess };
   } catch (error) {
     console.error(error);
     Sentry.captureException(error);
     return Toasts.redirectWithError("/preview", {
-      title: "Failed to load course",
+      message: "Failed to load course",
       description: "Please try again later",
     });
   }
@@ -182,7 +180,7 @@ export default function CourseLayout() {
                             return (
                               <SectionLesson
                                 key={l.attributes.uuid}
-                                lesson={l as APIResponseData<"api::lesson.lesson">}
+                                lesson={l}
                                 userProgress={lessonProgress.find((lp) => lp.lessonId === l.id) ?? null}
                                 locked={isLessonLocked}
                               />
@@ -190,7 +188,7 @@ export default function CourseLayout() {
                           })}
                         {section.quiz?.data && shouldShowQuizInSection ? (
                           <SectionQuiz
-                            quiz={section.quiz.data as APIResponseData<"api::quiz.quiz">}
+                            quiz={section.quiz.data}
                             userProgress={quizProgress.find((qp) => qp.quizId === section.quiz?.data.id) ?? null}
                             locked={isQuizLocked}
                           />

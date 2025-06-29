@@ -1,6 +1,12 @@
-import { MetaFunction, useFetcher, useLoaderData, useRouteLoaderData } from "@remix-run/react";
-import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@vercel/remix";
 import { useState } from "react";
+import {
+  ActionFunctionArgs,
+  LoaderFunctionArgs,
+  MetaFunction,
+  useFetcher,
+  useLoaderData,
+  useRouteLoaderData,
+} from "react-router";
 import invariant from "tiny-invariant";
 import { z } from "zod";
 
@@ -14,10 +20,10 @@ import { SessionService } from "~/services/session.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await SessionService.requireAdmin(request);
-  return json({ users: await db.user.findMany({ orderBy: { lastName: "asc" } }) });
+  return { users: await db.user.findMany({ orderBy: { lastName: "asc" } }) };
 }
 
-const validator = z.object({ userId: z.string({ message: "Host is required" }) });
+const schema = z.object({ userId: z.string({ message: "Host is required" }) });
 
 export async function action({ request, params }: ActionFunctionArgs) {
   await SessionService.requireAdmin(request);
@@ -27,7 +33,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const result = validator.safeParse(Object.fromEntries(await request.formData()));
   if (!result.success) {
-    return json(result.error, { status: 400 });
+    return result.error;
   }
 
   await db.userCourses.create({
@@ -37,7 +43,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     },
   });
 
-  return json({});
+  return {};
 }
 
 export const meta: MetaFunction = () => [{ title: "Edit Course | Plumb Media & Education" }];

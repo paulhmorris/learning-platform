@@ -1,5 +1,4 @@
-import { Outlet, useLoaderData } from "@remix-run/react";
-import { LoaderFunctionArgs, json } from "@vercel/remix";
+import { LoaderFunctionArgs, Outlet, useLoaderData } from "react-router";
 
 import { BackLink } from "~/components/common/back-link";
 import { ErrorComponent } from "~/components/error-component";
@@ -25,7 +24,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     title: cmsCourse.data.attributes.title,
     description: cmsCourse.data.attributes.description ?? "",
   };
-  return json({ course });
+  return { course };
 }
 
 export default function AdminEditCourse() {

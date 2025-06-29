@@ -1,8 +1,14 @@
-import { MetaFunction, useFetcher, useLoaderData, useRouteLoaderData } from "@remix-run/react";
 import { withZod } from "@remix-validated-form/with-zod";
-import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@vercel/remix";
+import { validationError } from "@rvf/react-router";
 import dayjs from "dayjs";
-import { validationError } from "remix-validated-form";
+import {
+  ActionFunctionArgs,
+  LoaderFunctionArgs,
+  MetaFunction,
+  useFetcher,
+  useLoaderData,
+  useRouteLoaderData,
+} from "react-router";
 import { z } from "zod";
 
 import { ActivateUserDialog } from "~/components/admin/security/activate-user-dialog";
@@ -45,7 +51,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!user) {
     throw notFound({ message: "User not found." });
   }
-  return json({ user });
+  return { user };
 }
 
 const schema = withZod(
@@ -72,16 +78,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
           where: { id: resetId },
           data: { expiresAt: new Date(0) },
         });
-        return Toasts.jsonWithSuccess(
+        return Toasts.dataWithSuccess(
           { reset },
-          { title: "Reset expired", description: `Reset ${resetId} has been expired.` },
+          { message: "Reset expired", description: `Reset ${resetId} has been expired.` },
         );
       } catch (error) {
         console.error(error);
         Sentry.captureException(error);
-        return Toasts.jsonWithError(
+        return Toasts.dataWithError(
           { error },
-          { title: "Error expiring reset", description: `An error occurred while expiring reset ${resetId}.` },
+          { message: "Error expiring reset", description: `An error occurred while expiring reset ${resetId}.` },
         );
       }
     }
@@ -93,17 +99,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
           where: { id: userId },
           data: { isActive: _action === "activate-user" ? true : false },
         });
-        return Toasts.jsonWithSuccess(
+        return Toasts.dataWithSuccess(
           { user },
-          { title: "Success", description: `User has been ${_action === "deactivate-user" ? "de" : ""}activated.` },
+          { message: "Success", description: `User has been ${_action === "deactivate-user" ? "de" : ""}activated.` },
         );
       } catch (error) {
         console.error(error);
         Sentry.captureException(error);
-        return Toasts.jsonWithError(
+        return Toasts.dataWithError(
           { error },
           {
-            title: "Error",
+            message: "Error",
             description: `An error occurred while deactivating the user. ${error instanceof Error && error.message}`,
           },
         );

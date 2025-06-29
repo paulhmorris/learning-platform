@@ -1,5 +1,4 @@
-import { Link, useLoaderData } from "@remix-run/react";
-import { LoaderFunctionArgs, MetaFunction, json } from "@vercel/remix";
+import { Link, LoaderFunctionArgs, MetaFunction, useLoaderData } from "react-router";
 
 import { ErrorComponent } from "~/components/error-component";
 import { AdminButton } from "~/components/ui/admin-button";
@@ -17,7 +16,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const dbCourses = await db.course.findMany({ include: { userCourses: true } });
   if (!dbCourses.length) {
-    return json({ courses: [] });
+    return { courses: [] };
   }
 
   const cmsCourses = await CourseService.getAll();
@@ -32,7 +31,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       description: cmsCourse?.attributes.description ?? "",
     };
   });
-  return json({ courses });
+  return { courses };
 }
 
 export default function CoursesIndex() {

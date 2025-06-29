@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
-import { Outlet } from "@remix-run/react";
+import { Outlet } from "react-router";
 import { Theme, useTheme } from "remix-themes";
 
 import { ErrorComponent } from "~/components/error-component";

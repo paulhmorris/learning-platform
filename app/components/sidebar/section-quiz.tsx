@@ -1,5 +1,5 @@
 import { UserQuizProgress } from "@prisma/client";
-import { NavLink } from "@remix-run/react";
+import { NavLink } from "react-router";
 import React from "react";
 
 import { IconDocument } from "~/components/icons";

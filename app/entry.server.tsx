@@ -1,8 +1,8 @@
 import { PassThrough } from "node:stream";
 
-import type { EntryContext } from "@remix-run/node";
-import { createReadableStreamFromReadable } from "@remix-run/node";
-import { RemixServer } from "@remix-run/react";
+import type { EntryContext } from "react-router";
+import { createReadableStreamFromReadable } from "@react-router/node";
+import { ServerRouter } from "react-router";
 import { isbot } from "isbot";
 import { renderToPipeableStream } from "react-dom/server";
 
@@ -23,23 +23,23 @@ export default function handleRequest(
   request: Request,
   responseStatusCode: number,
   responseHeaders: Headers,
-  remixContext: EntryContext,
+  reactRouterContext: EntryContext,
 ) {
   return isbot(request.headers.get("user-agent") || "")
-    ? handleBotRequest(request, responseStatusCode, responseHeaders, remixContext)
-    : handleBrowserRequest(request, responseStatusCode, responseHeaders, remixContext);
+    ? handleBotRequest(request, responseStatusCode, responseHeaders, reactRouterContext)
+    : handleBrowserRequest(request, responseStatusCode, responseHeaders, reactRouterContext);
 }
 
 function handleBotRequest(
   request: Request,
   responseStatusCode: number,
   responseHeaders: Headers,
-  remixContext: EntryContext,
+  reactRouterContext: EntryContext,
 ) {
   return new Promise((resolve, reject) => {
     let shellRendered = false;
     const { pipe, abort } = renderToPipeableStream(
-      <RemixServer context={remixContext} url={request.url} abortDelay={ABORT_DELAY} />,
+      <ServerRouter context={reactRouterContext} url={request.url} abortDelay={ABORT_DELAY} />,
       {
         onAllReady() {
           shellRendered = true;
@@ -80,12 +80,12 @@ function handleBrowserRequest(
   request: Request,
   responseStatusCode: number,
   responseHeaders: Headers,
-  remixContext: EntryContext,
+  reactRouterContext: EntryContext,
 ) {
   return new Promise((resolve, reject) => {
     let shellRendered = false;
     const { pipe, abort } = renderToPipeableStream(
-      <RemixServer context={remixContext} url={request.url} abortDelay={ABORT_DELAY} />,
+      <ServerRouter context={reactRouterContext} url={request.url} abortDelay={ABORT_DELAY} />,
       {
         onShellReady() {
           shellRendered = true;

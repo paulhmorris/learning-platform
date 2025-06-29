@@ -1,6 +1,13 @@
-import { Link, MetaFunction, useLoaderData, useSearchParams } from "@remix-run/react";
-import { ActionFunctionArgs, json, LoaderFunctionArgs, redirect, SerializeFrom } from "@vercel/remix";
 import { useEffect, useState } from "react";
+import {
+  ActionFunctionArgs,
+  Link,
+  LoaderFunctionArgs,
+  MetaFunction,
+  redirect,
+  useLoaderData,
+  useSearchParams,
+} from "react-router";
 
 import { StrapiImage } from "~/components/common/strapi-image";
 import { CourseHeader } from "~/components/course/course-header";
@@ -19,12 +26,12 @@ import { Button } from "~/components/ui/button";
 import { Separator } from "~/components/ui/separator";
 import { getCourse } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
+import { notFound } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
 import { getLessonsInOrder, getPreviewValues } from "~/lib/utils";
 import { PaymentService } from "~/services/payment.server";
 import { ProgressService } from "~/services/progress.server";
 import { SessionService } from "~/services/session.server";
-import { APIResponseData } from "~/types/utils";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await SessionService.requireUser(request);
@@ -32,10 +39,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const linkedCourse = await db.course.findUnique({ where: { host: url.host } });
   if (!linkedCourse) {
-    return Toasts.redirectWithError("/", {
-      title: "Course not found.",
-      description: "Please try again later",
-    });
+    throw notFound("Course not found.");
   }
 
   const [course, lessonProgress, quizProgress] = await Promise.all([
@@ -48,9 +52,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const userHasAccess = user.courses && user.courses.some((c) => c.courseId === linkedCourse.id);
   const lessons = getLessonsInOrder({ course, progress: lessonProgress });
 
-  return json({ course: course.data, lessonProgress, lessons, quizProgress, userHasAccess });
+  return { course: course.data, lessonProgress, lessons, quizProgress, userHasAccess };
 }
-export type LessonInOrder = SerializeFrom<typeof loader>["lessons"][number];
+export type LessonInOrder = Awaited<ReturnType<typeof loader>>["lessons"][number];
 
 export async function action({ request }: ActionFunctionArgs) {
   const user = await SessionService.requireUser(request);
@@ -59,7 +63,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (!course) {
     return Toasts.redirectWithError("/", {
-      title: "Course not found.",
+      message: "Course not found.",
       description: "Please try again later",
     });
   }
@@ -203,7 +207,7 @@ export default function CoursePreview() {
                           <div key={l.attributes.uuid} className="flex flex-wrap items-center justify-between gap-2">
                             <div className="shrink-0 grow">
                               <PreviewSectionLesson
-                                lesson={l as APIResponseData<"api::lesson.lesson">}
+                                lesson={l}
                                 userProgress={userLessonProgress}
                                 locked={isLessonLocked}
                               />
@@ -229,7 +233,7 @@ export default function CoursePreview() {
                           className="flex flex-wrap items-center justify-between gap-2"
                         >
                           <PreviewSectionQuiz
-                            quiz={section.quiz.data as APIResponseData<"api::quiz.quiz">}
+                            quiz={section.quiz.data}
                             userProgress={userQuizProgress}
                             locked={isQuizLocked}
                           />

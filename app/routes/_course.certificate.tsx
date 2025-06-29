@@ -1,7 +1,6 @@
-import { Link, MetaFunction, useActionData, useLoaderData } from "@remix-run/react";
 import { withZod } from "@remix-validated-form/with-zod";
-import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@vercel/remix";
-import { ValidatedForm } from "remix-validated-form";
+import { ValidatedForm } from "@rvf/react-router";
+import { ActionFunctionArgs, Link, LoaderFunctionArgs, MetaFunction, useActionData, useLoaderData } from "react-router";
 import { z } from "zod";
 
 import { claimCertificateJob } from "jobs/claim-certificate";
@@ -24,7 +23,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   if (!linkedCourse) {
     return Toasts.redirectWithError("/preview", {
-      title: "Error claiming certificate",
+      message: "Error claiming certificate",
       description: "Please try again later.",
     });
   }
@@ -41,12 +40,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   if (!userCourse) {
     return Toasts.redirectWithError("/preview", {
-      title: "No access to course",
+      message: "No access to course",
       description: "Please purchase the course to access it.",
     });
   }
 
-  return json({ userCourse, course: linkedCourse });
+  return { userCourse, course: linkedCourse };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -59,7 +58,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
     if (!linkedCourse) {
       return Toasts.redirectWithError("/preview", {
-        title: "Error claiming certificate",
+        message: "Error claiming certificate",
         description: "Please try again later.",
       });
     }
@@ -67,7 +66,7 @@ export async function action({ request }: ActionFunctionArgs) {
     const userHasAccess = user.courses.some((c) => c.courseId === linkedCourse.id);
     if (!userHasAccess) {
       return Toasts.redirectWithError("/preview", {
-        title: "No access to course",
+        message: "No access to course",
         description: "Please purchase the course to access it.",
       });
     }
@@ -115,7 +114,7 @@ export async function action({ request }: ActionFunctionArgs) {
         level: "warning",
       });
       return Toasts.redirectWithError("/preview", {
-        title: "Incomplete course",
+        message: "Incomplete course",
         description: "Please complete all lessons and quizzes to claim your certificate.",
       });
     }
@@ -130,10 +129,10 @@ export async function action({ request }: ActionFunctionArgs) {
       throw new Error("Failed to initiate certificate generation job.");
     }
 
-    return Toasts.jsonWithSuccess(
+    return Toasts.dataWithSuccess(
       { success: true },
       {
-        title: "Certificate claimed!",
+        message: "Certificate claimed!",
         description: "Your certificate will be emailed to you shortly.",
         duration: 20_000,
       },
@@ -142,7 +141,7 @@ export async function action({ request }: ActionFunctionArgs) {
     console.error(error);
     Sentry.captureException(error);
     return Toasts.redirectWithError("/preview", {
-      title: "Error claiming certificate",
+      message: "Error claiming certificate",
       description: "Please try again later",
     });
   }

@@ -1,7 +1,6 @@
-import { Outlet, useLoaderData } from "@remix-run/react";
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
-import { LoaderFunctionArgs, MetaFunction, json } from "@vercel/remix";
+import { LoaderFunctionArgs, MetaFunction, Outlet, useLoaderData } from "react-router";
 import { Theme, useTheme } from "remix-themes";
 
 import { ErrorComponent } from "~/components/error-component";
@@ -28,7 +27,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       customer: customer.stripeId,
     });
 
-    return json({ clientSecret: setupIntent.client_secret ?? undefined });
+    return { clientSecret: setupIntent.client_secret ?? undefined };
   }
 
   const setupIntent = await stripe.setupIntents.create({
@@ -36,7 +35,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     customer: user.stripeId,
   });
 
-  return json({ clientSecret: setupIntent.client_secret ?? undefined });
+  return { clientSecret: setupIntent.client_secret ?? undefined };
 }
 
 const stripePromise = typeof window !== "undefined" ? loadStripe(window.ENV.STRIPE_PUBLIC_KEY) : null;

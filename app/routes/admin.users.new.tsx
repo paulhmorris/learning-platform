@@ -1,7 +1,7 @@
 import { UserRole } from "@prisma/client";
 import { withZod } from "@remix-validated-form/with-zod";
-import { ActionFunctionArgs, MetaFunction } from "@vercel/remix";
-import { ValidatedForm, validationError } from "remix-validated-form";
+import { parseFormData, ValidatedForm, validationError } from "@rvf/react-router";
+import { ActionFunctionArgs, MetaFunction } from "react-router";
 import { z } from "zod";
 
 import { ErrorComponent } from "~/components/error-component";
@@ -13,7 +13,7 @@ import { Toasts } from "~/lib/toast.server";
 import { useUser } from "~/lib/utils";
 import { SessionService } from "~/services/session.server";
 
-const validator = withZod(
+const schema = withZod(
   z.object({
     firstName: z.string().max(255),
     lastName: z.string().max(255),
@@ -31,21 +31,21 @@ export const meta: MetaFunction = () => {
 export async function action({ request }: ActionFunctionArgs) {
   await SessionService.requireAdmin(request);
 
-  const result = await validator.validate(await request.formData());
+  const result = await parseFormData(request, schema);
   if (result.error) {
     return validationError(result.error);
   }
 
   try {
     const newUser = await db.user.create({ data: result.data });
-    return Toasts.redirectWithSuccess(`/admin/users/${newUser.id}`, { title: "User Created" });
+    return Toasts.redirectWithSuccess(`/admin/users/${newUser.id}`, { message: "User Created" });
   } catch (error) {
     console.error(error);
     Sentry.captureException(error);
-    return Toasts.jsonWithError(
-      { message: "An error occurred while creating this user." },
-      { title: "Unknown Error", description: "An error occurred while creating this user." },
-    );
+    return Toasts.dataWithError(null, {
+      message: "Unknown Error",
+      description: "An error occurred while creating this user.",
+    });
   }
 }
 
@@ -64,7 +64,7 @@ export default function AdminUserNew() {
   return (
     <div className="max-w-md">
       <h1 className="text-3xl">New User</h1>
-      <ValidatedForm method="post" validator={validator} className="mt-4">
+      <ValidatedForm method="post" schema={schema} className="mt-4">
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-2">
             <FormField required name="firstName" label="First Name" autoComplete="given-name" maxLength={255} />

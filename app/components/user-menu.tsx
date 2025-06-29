@@ -1,5 +1,5 @@
 import { UserRole } from "@prisma/client";
-import { Link, useMatches } from "@remix-run/react";
+import { Link, useMatches } from "react-router";
 
 import { IconAvatar } from "~/components/icons";
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";

@@ -1,4 +1,4 @@
-import { ActionFunctionArgs } from "@vercel/remix";
+import { ActionFunctionArgs } from "react-router";
 
 import { EMAIL_FROM_DOMAIN } from "~/config";
 import { EmailService } from "~/integrations/email.server";

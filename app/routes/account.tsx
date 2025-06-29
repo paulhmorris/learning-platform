@@ -1,4 +1,4 @@
-import { NavLink, Outlet } from "@remix-run/react";
+import { NavLink, Outlet } from "react-router";
 import { IconCreditCard, IconKey, IconUserCircle } from "@tabler/icons-react";
 
 import { UserDebugTools } from "~/components/debug/user-debug-tools";

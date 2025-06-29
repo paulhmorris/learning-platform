@@ -1,4 +1,5 @@
-import { RemixBrowser, useLocation, useMatches } from "@remix-run/react";
+import { HydratedRouter } from "react-router/dom";
+import { useLocation, useMatches } from "react-router";
 import { StrictMode, startTransition, useEffect } from "react";
 import { hydrateRoot } from "react-dom/client";
 
@@ -28,7 +29,7 @@ startTransition(() => {
   hydrateRoot(
     document,
     <StrictMode>
-      <RemixBrowser />
+      <HydratedRouter />
     </StrictMode>,
   );
 });

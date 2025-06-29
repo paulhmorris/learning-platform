@@ -1,4 +1,4 @@
-import { useLoaderData, useRevalidator } from "@remix-run/react";
+import { useLoaderData, useRevalidator } from "react-router";
 import { loadStripe, Stripe } from "@stripe/stripe-js";
 import { IconCircleCheckFilled, IconExclamationCircle, IconFileSearch } from "@tabler/icons-react";
 import { useEffect, useState } from "react";

@@ -1,5 +1,5 @@
 import { User, UserRole } from "@prisma/client";
-import { Session as RemixSession, SessionData, redirect } from "@vercel/remix";
+import { Session as RemixSession, SessionData, redirect } from "react-router";
 
 import { forbidden, unauthorized } from "~/lib/responses.server";
 import { sessionStorage } from "~/lib/session.server";

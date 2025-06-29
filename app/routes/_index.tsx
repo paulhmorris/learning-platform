@@ -1,4 +1,4 @@
-import { redirect, type LoaderFunctionArgs } from "@vercel/remix";
+import { redirect, type LoaderFunctionArgs } from "react-router";
 
 import { SessionService } from "~/services/session.server";
 

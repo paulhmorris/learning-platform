@@ -1,7 +1,7 @@
 import { withZod } from "@remix-validated-form/with-zod";
-import { json, type ActionFunctionArgs } from "@vercel/remix";
+import { validationError } from "@rvf/react-router";
 import dayjs from "dayjs";
-import { validationError } from "remix-validated-form";
+import { type ActionFunctionArgs } from "react-router";
 import { z } from "zod";
 
 import { EmailService } from "~/integrations/email.server";
@@ -10,32 +10,32 @@ import { Toasts } from "~/lib/toast.server";
 import { AuthService } from "~/services/auth.server";
 import { UserService } from "~/services/user.server";
 
-const validator = withZod(z.object({ email: z.string().email() }));
+const schema = withZod(z.object({ email: z.string().email() }));
 
 export async function action({ request }: ActionFunctionArgs) {
   if (request.method !== "POST") {
-    return json({ status: 405 });
+    return { status: 405 };
   }
 
-  const result = await validator.validate(await request.formData());
+  const result = await parseFormData(request, schema);
   if (result.error) {
     return validationError(result.error);
   }
 
   const user = await UserService.getByEmail(result.data.email);
   if (!user) {
-    return Toasts.jsonWithError(
+    return Toasts.dataWithError(
       { message: "User not found" },
-      { title: "User not found", description: `There is no user with email ${result.data.email}.` },
+      { message: "User not found", description: `There is no user with email ${result.data.email}.` },
     );
   }
 
   const existingReset = await AuthService.getResetByUserId(user.id);
   if (existingReset) {
-    return Toasts.jsonWithWarning(
+    return Toasts.dataWithWarning(
       { message: "User not found" },
       {
-        title: "Existing request found",
+        message: "Existing request found",
         description: `A password reset request has already been sent. It expires in ${dayjs(
           existingReset.expiresAt,
         ).diff(dayjs(), "minutes")} minutes.`,
@@ -50,9 +50,9 @@ export async function action({ request }: ActionFunctionArgs) {
   if (error || !data) {
     Sentry.captureException(error);
     await AuthService.deleteReset(reset.id);
-    return Toasts.jsonWithError(
+    return Toasts.dataWithError(
       { error },
-      { title: "Something went wrong", description: "There was an error sending the password reset email." },
+      { message: "Something went wrong", description: "There was an error sending the password reset email." },
     );
   }
 
@@ -60,15 +60,15 @@ export async function action({ request }: ActionFunctionArgs) {
   if ("statusCode" in data && data.statusCode !== 200) {
     // Delete the reset if there was an error emailing the user
     await AuthService.deleteReset(reset.id);
-    return Toasts.jsonWithError(
+    return Toasts.dataWithError(
       { data },
-      { title: "Something went wrong", description: "There was an error sending the password reset email." },
+      { message: "Something went wrong", description: "There was an error sending the password reset email." },
     );
   }
 
   // Success
-  return Toasts.jsonWithSuccess(
+  return Toasts.dataWithSuccess(
     { data },
-    { title: "Email sent", description: "Check the email for a link to reset the password." },
+    { message: "Email sent", description: "Check the email for a link to reset the password." },
   );
 }

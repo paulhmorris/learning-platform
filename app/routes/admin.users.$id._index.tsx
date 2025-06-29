@@ -1,8 +1,7 @@
 import { UserRole } from "@prisma/client";
-import { useRouteLoaderData } from "@remix-run/react";
 import { withZod } from "@remix-validated-form/with-zod";
-import { ActionFunctionArgs, MetaFunction } from "@vercel/remix";
-import { ValidatedForm, validationError } from "remix-validated-form";
+import { parseFormData, ValidatedForm, validationError } from "@rvf/react-router";
+import { ActionFunctionArgs, MetaFunction, useRouteLoaderData } from "react-router";
 import { z } from "zod";
 
 import { ErrorComponent } from "~/components/error-component";
@@ -13,7 +12,7 @@ import { Toasts } from "~/lib/toast.server";
 import { loader } from "~/routes/admin.users.$id";
 import { SessionService } from "~/services/session.server";
 
-const validator = withZod(
+const schema = withZod(
   z.object({
     id: z.string().cuid(),
     firstName: z.string().max(255),
@@ -32,7 +31,7 @@ export const meta: MetaFunction = () => {
 export async function action({ request }: ActionFunctionArgs) {
   await SessionService.requireAdmin(request);
 
-  const result = await validator.validate(await request.formData());
+  const result = await parseFormData(request, schema);
   if (result.error) {
     return validationError(result.error);
   }
@@ -43,7 +42,7 @@ export async function action({ request }: ActionFunctionArgs) {
     where: { id },
     data: { ...rest },
   });
-  return Toasts.jsonWithSuccess({ updatedUser }, { title: "Success", description: "User updated successfully." });
+  return Toasts.dataWithSuccess({ updatedUser }, { message: "Success", description: "User updated successfully." });
 }
 
 export default function AdminUserIndex() {
@@ -69,7 +68,7 @@ export default function AdminUserIndex() {
       <ValidatedForm
         method="put"
         action="?index"
-        validator={validator}
+        schema={schema}
         defaultValues={{
           email: user.email,
           stripeId: user.stripeId ?? "",

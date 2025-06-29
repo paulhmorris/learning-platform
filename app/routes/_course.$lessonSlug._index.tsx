@@ -1,10 +1,9 @@
-import { MetaFunction, useLoaderData } from "@remix-run/react";
-import { json, LoaderFunctionArgs } from "@vercel/remix";
+import { LoaderFunctionArgs, MetaFunction, useLoaderData } from "react-router";
 import invariant from "tiny-invariant";
 
 import { PageTitle } from "~/components/common/page-title";
 import { ErrorComponent } from "~/components/error-component";
-import { LessonContentRenderer, StrapiContent } from "~/components/lesson/lesson-content-renderer";
+import { LessonContentRenderer } from "~/components/lesson/lesson-content-renderer";
 import { LessonProgressBar } from "~/components/lesson/lesson-progress-bar";
 import { MarkCompleteButton } from "~/components/lesson/mark-complete-button";
 import { loader as courseLoader } from "~/routes/_course";
@@ -21,7 +20,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   const lesson = await LessonService.getBySlugWithContent(lessonSlug);
   const progress = await ProgressService.getByLessonId(userId, lesson.id);
   const isTimed = lesson.attributes.required_duration_in_seconds && lesson.attributes.required_duration_in_seconds > 0;
-  return json({ lesson, progress, isTimed });
+  return { lesson, progress, isTimed };
 }
 
 export const meta: MetaFunction<typeof loader, { "routes/_course": typeof courseLoader }> = ({ data, matches }) => {
@@ -43,7 +42,7 @@ export default function Course() {
         />
       </div>
       <div className="mt-8">
-        <LessonContentRenderer content={lesson.attributes.content as StrapiContent} />
+        <LessonContentRenderer content={lesson.attributes.content} />
       </div>
       {!isTimed ? (
         <div className="mt-12 flex w-full justify-center">

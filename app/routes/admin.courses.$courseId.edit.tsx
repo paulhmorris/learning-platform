@@ -1,7 +1,5 @@
-import { MetaFunction, useRouteLoaderData } from "@remix-run/react";
-import { withZod } from "@remix-validated-form/with-zod";
-import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@vercel/remix";
-import { ValidatedForm, validationError } from "remix-validated-form";
+import { parseFormData, ValidatedForm, validationError } from "@rvf/react-router";
+import { ActionFunctionArgs, LoaderFunctionArgs, MetaFunction, useRouteLoaderData } from "react-router";
 import { z } from "zod";
 
 import { ErrorComponent } from "~/components/error-component";
@@ -16,29 +14,27 @@ import { SessionService } from "~/services/session.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await SessionService.requireAdmin(request);
-  return json({});
+  return {};
 }
 
-const validator = withZod(
-  z.object({
-    host: z
-      .string({ message: "Host is required" })
-      .regex(/^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z]{2,})+$/, {
-        message: "Must match the expected pattern",
-      })
-      .or(z.string().regex(/localhost/, { message: "Must match the expected pattern" })),
-    strapiId: z.coerce.number({ message: "Strapi ID is required" }),
-    stripePriceId: z.string({ message: "Stripe price ID is required" }),
-    stripeProductId: z.string({ message: "Stripe product ID is required" }),
-    requiresIdentityVerification: CheckboxSchema,
-  }),
-);
+const schema = z.object({
+  host: z
+    .string({ message: "Host is required" })
+    .regex(/^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z]{2,})+$/, {
+      message: "Must match the expected pattern",
+    })
+    .or(z.string().regex(/localhost/, { message: "Must match the expected pattern" })),
+  strapiId: z.coerce.number({ message: "Strapi ID is required" }),
+  stripePriceId: z.string({ message: "Stripe price ID is required" }),
+  stripeProductId: z.string({ message: "Stripe product ID is required" }),
+  requiresIdentityVerification: CheckboxSchema,
+});
 
 export async function action({ request, params }: ActionFunctionArgs) {
   await SessionService.requireAdmin(request);
   const id = params.courseId;
 
-  const result = await validator.validate(await request.formData());
+  const result = await parseFormData(request, schema);
   if (result.error) {
     return validationError(result.error);
   }
@@ -47,7 +43,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     where: { id },
     data: result.data,
   });
-  return Toasts.jsonWithSuccess({ course }, { title: "Course updated successfully." });
+  return Toasts.dataWithSuccess({ course }, { message: "Course updated successfully." });
 }
 
 export const meta: MetaFunction = () => [{ title: "Edit Course | Plumb Media & Education" }];
@@ -63,39 +59,57 @@ export default function AdminEditCourse() {
     <ValidatedForm
       id="course-form"
       method="PUT"
-      validator={validator}
+      schema={schema}
       defaultValues={{ ...data.course }}
       className="max-w-md space-y-4"
     >
-      <FormField
-        required
-        label="Host"
-        name="host"
-        description="e.g. course.hiphopdriving.com"
-        pattern="^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}a-zA-Z0-9+$"
-      />
-      <FormField required label="CMS ID" name="strapiId" description="ID of the course in the CMS" />
-      <FormField required label="Stripe Price ID" name="stripePriceId" description="Refer to the Stripe dashboard" />
-      <FormField
-        required
-        label="Stripe Product ID"
-        name="stripeProductId"
-        description="Refer to the Stripe dashboard"
-      />
-      <div className="flex items-center gap-x-2">
-        <Checkbox
-          id="requiresIdentityVerification"
-          name="requiresIdentityVerification"
-          aria-labelledby="identity-label"
-          defaultChecked={data.course.requiresIdentityVerification}
-        />
-        <Label id="identity-label" htmlFor="requiresIdentityVerification" className="cursor-pointer">
-          Require identity verification to receive certificate
-        </Label>
-      </div>
-      <SubmitButton variant="admin" className="mt-4">
-        Save
-      </SubmitButton>
+      {(form) => (
+        <>
+          <FormField
+            scope={form.scope("host")}
+            required
+            label="Host"
+            name="host"
+            description="e.g. course.hiphopdriving.com"
+            pattern="^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}a-zA-Z0-9+$"
+          />
+          <FormField
+            scope={form.scope("strapiId")}
+            required
+            label="CMS ID"
+            name="strapiId"
+            description="ID of the course in the CMS"
+          />
+          <FormField
+            scope={form.scope("stripePriceId")}
+            required
+            label="Stripe Price ID"
+            name="stripePriceId"
+            description="Refer to the Stripe dashboard"
+          />
+          <FormField
+            required
+            scope={form.scope("stripeProductId")}
+            label="Stripe Product ID"
+            name="stripeProductId"
+            description="Refer to the Stripe dashboard"
+          />
+          <div className="flex items-center gap-x-2">
+            <Checkbox
+              id="requiresIdentityVerification"
+              name="requiresIdentityVerification"
+              aria-labelledby="identity-label"
+              defaultChecked={data.course.requiresIdentityVerification}
+            />
+            <Label id="identity-label" htmlFor="requiresIdentityVerification" className="cursor-pointer">
+              Require identity verification to receive certificate
+            </Label>
+          </div>
+          <SubmitButton variant="admin" className="mt-4">
+            Save
+          </SubmitButton>
+        </>
+      )}
     </ValidatedForm>
   );
 }

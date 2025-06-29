@@ -1,4 +1,4 @@
-import { useFetcher, useFetchers } from "@remix-run/react";
+import { useFetcher, useFetchers } from "react-router";
 import { IconLoader } from "@tabler/icons-react";
 
 import { AdminButton } from "~/components/ui/admin-button";

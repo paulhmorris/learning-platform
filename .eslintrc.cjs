@@ -40,6 +40,7 @@ module.exports = {
         ],
       },
       rules: {
+        "react/display-name": "off",
         "react/prop-types": "off",
         "react/jsx-no-leaked-render": ["warn", { validStrategies: ["ternary"] }],
         "react/no-unknown-property": ["error", { ignore: ["fetchpriority"] }],

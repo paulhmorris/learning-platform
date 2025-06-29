@@ -1,4 +1,4 @@
-import { Form } from "@remix-run/react";
+import { Form } from "react-router";
 import { PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import { IconLoader } from "@tabler/icons-react";
 import { useState } from "react";

@@ -1,6 +1,5 @@
-import { withZod } from "@remix-validated-form/with-zod";
-import { ActionFunctionArgs, LoaderFunctionArgs, MetaFunction, json } from "@vercel/remix";
-import { ValidatedForm, validationError } from "remix-validated-form";
+import { parseFormData, ValidatedForm, validationError } from "@rvf/react-router";
+import { ActionFunctionArgs, LoaderFunctionArgs, MetaFunction } from "react-router";
 import { z } from "zod";
 
 import { IdentityVerification } from "~/components/account/identity-verification";
@@ -22,15 +21,13 @@ export const meta: MetaFunction<typeof loader, { root: typeof rootLoader }> = ({
   return [{ title: `Profile | ${match?.data?.attributes.title ?? "Plumb Media & Education"}` }];
 };
 
-const validator = withZod(
-  z.object({
-    id: z.string().cuid(),
-    firstName: z.string().max(255),
-    lastName: z.string().max(255),
-    email: z.string().email(),
-    phone: z.string().max(20),
-  }),
-);
+const schema = z.object({
+  id: z.string().cuid(),
+  firstName: z.string().max(255),
+  lastName: z.string().max(255),
+  email: z.string().email(),
+  phone: z.string().max(20),
+});
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await SessionService.requireUser(request);
@@ -39,13 +36,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
     session = await stripe.identity.verificationSessions.retrieve(user.stripeVerificationSessionId);
   }
 
-  return json({ identitySession: session });
+  return { identitySession: session };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
   const user = await SessionService.requireUser(request);
 
-  const result = await validator.validate(await request.formData());
+  const result = await parseFormData(request, schema);
   if (result.error) {
     return validationError(result.error);
   }
@@ -54,10 +51,10 @@ export async function action({ request }: ActionFunctionArgs) {
 
   // Ensure the user is updating their own account
   if (id !== user.id) {
-    return Toasts.jsonWithError(
+    return Toasts.dataWithError(
       { message: "You are not authorized to perform this action." },
       {
-        title: "Unauthorized",
+        message: "Unauthorized",
         description: "You are not authorized to perform this action.",
       },
       { status: 403 },
@@ -66,19 +63,19 @@ export async function action({ request }: ActionFunctionArgs) {
 
   try {
     const updatedUser = await UserService.update(user.id, rest);
-    return Toasts.jsonWithSuccess(
+    return Toasts.dataWithSuccess(
       { updatedUser },
       {
-        title: "Account Updated",
+        message: "Account Updated",
         description: "Your account has been updated successfully.",
       },
     );
   } catch (error) {
     console.error(error);
     Sentry.captureException(error);
-    return Toasts.jsonWithError(
+    return Toasts.dataWithError(
       { message: "An error occurred while updating your account." },
-      { title: "Unknown Error", description: "An error occurred while updating your account." },
+      { message: "Unknown Error", description: "An error occurred while updating your account." },
     );
   }
 }
@@ -92,25 +89,60 @@ export default function AccountProfile() {
       <ValidatedForm
         method="post"
         action="/account/profile"
-        validator={validator}
+        schema={schema}
         defaultValues={{
+          id: user.id,
           firstName: user.firstName ?? "",
           lastName: user.lastName ?? "",
           email: user.email,
+          phone: user.phone ?? "",
         }}
       >
-        <input type="hidden" name="id" value={user.id} />
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-2">
-            <FormField required name="firstName" label="First Name" autoComplete="given-name" maxLength={255} />
-            <FormField required name="lastName" label="Last Name" autoComplete="family-name" maxLength={255} />
-          </div>
-          <FormField required name="email" label="Email" type="email" autoComplete="email" maxLength={255} />
-          <FormField name="phone" label="Phone" type="tel" autoComplete="tel" maxLength={20} />
-          <SubmitButton variant="admin" className="sm:w-auto">
-            Save
-          </SubmitButton>
-        </div>
+        {(form) => (
+          <>
+            <input type="hidden" name="id" value={user.id} />
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-2">
+                <FormField
+                  scope={form.scope("firstName")}
+                  required
+                  name="firstName"
+                  label="First Name"
+                  autoComplete="given-name"
+                  maxLength={255}
+                />
+                <FormField
+                  scope={form.scope("lastName")}
+                  required
+                  name="lastName"
+                  label="Last Name"
+                  autoComplete="family-name"
+                  maxLength={255}
+                />
+              </div>
+              <FormField
+                scope={form.scope("email")}
+                required
+                name="email"
+                label="Email"
+                type="email"
+                autoComplete="email"
+                maxLength={255}
+              />
+              <FormField
+                scope={form.scope("phone")}
+                name="phone"
+                label="Phone"
+                type="tel"
+                autoComplete="tel"
+                maxLength={20}
+              />
+              <SubmitButton variant="admin" className="sm:w-auto">
+                Save
+              </SubmitButton>
+            </div>
+          </>
+        )}
       </ValidatedForm>
     </div>
   );

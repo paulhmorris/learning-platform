@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
-import { Link, useLocation, useMatches, useRouteLoaderData } from "@remix-run/react";
+import { Link, useLocation, useMatches, useRouteLoaderData } from "react-router";
 import { Theme, useTheme } from "remix-themes";
 
 import { ThemeModeToggle } from "~/components/theme-mode-toggle";

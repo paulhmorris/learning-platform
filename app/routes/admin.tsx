@@ -1,7 +1,6 @@
-import { NavLink, Outlet } from "@remix-run/react";
 import { IconCertificate, IconUsersGroup } from "@tabler/icons-react";
-import { LoaderFunctionArgs, json } from "@vercel/remix";
 import { CSSProperties } from "react";
+import { LoaderFunctionArgs, NavLink, Outlet } from "react-router";
 
 import { UserDebugTools } from "~/components/debug/user-debug-tools";
 import { ErrorComponent } from "~/components/error-component";
@@ -15,7 +14,7 @@ const links = [
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await SessionService.requireAdmin(request);
-  return json({});
+  return {};
 }
 
 export default function AdminLayout() {

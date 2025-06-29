@@ -1,9 +1,8 @@
-import { Prisma, User } from "@prisma/client";
-import { ActionFunctionArgs, json } from "@vercel/remix";
+import { User } from "@prisma/client";
+import { ActionFunctionArgs, data } from "react-router";
 
 import { Sentry } from "~/integrations/sentry";
 import { stripe } from "~/integrations/stripe.server";
-import { getPrismaErrorText } from "~/lib/responses.server";
 import { SessionService } from "~/services/session.server";
 import { UserService } from "~/services/user.server";
 
@@ -17,20 +16,16 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (user.stripeVerificationSessionId) {
     const session = await stripe.identity.verificationSessions.retrieve(user.stripeVerificationSessionId);
-    return json({ client_secret: session.client_secret });
+    return { client_secret: session.client_secret };
   }
 
   try {
     const { client_secret } = await createVerificationSession(user.id, user.email);
-    return json({ client_secret });
+    return { client_secret };
   } catch (error) {
     console.error(error);
     Sentry.captureException(error);
-    let message = error instanceof Error ? error.message : "An error occurred while creating a verification session.";
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      message = getPrismaErrorText(error);
-    }
-    return json({ message }, { status: 500 });
+    return data({ message: "Error creating verification session" }, { status: 500 });
   }
 }
 

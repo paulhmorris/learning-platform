@@ -1,5 +1,5 @@
-import type { ActionFunctionArgs } from "@vercel/remix";
-import { redirect } from "@vercel/remix";
+import type { ActionFunctionArgs } from "react-router";
+import { redirect } from "react-router";
 
 import { redis } from "~/integrations/redis.server";
 import { SessionService } from "~/services/session.server";

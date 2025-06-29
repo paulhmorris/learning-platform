@@ -1,5 +1,4 @@
-import { Link, MetaFunction, useLoaderData } from "@remix-run/react";
-import { LoaderFunctionArgs, json } from "@vercel/remix";
+import { Link, LoaderFunctionArgs, MetaFunction, useLoaderData } from "react-router";
 
 import { ErrorComponent } from "~/components/error-component";
 import { IconCertificate } from "~/components/icons";
@@ -53,7 +52,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     };
   });
 
-  return json({ user, courses });
+  return { user, courses };
 }
 
 export default function AdminUserCourses() {

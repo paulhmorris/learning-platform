@@ -1,8 +1,15 @@
-import { Link, MetaFunction, useFetcher, useLoaderData, useSearchParams } from "@remix-run/react";
 import { useStripe } from "@stripe/react-stripe-js";
 import { IconLoader, IconPlus } from "@tabler/icons-react";
-import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@vercel/remix";
 import { useEffect } from "react";
+import {
+  ActionFunctionArgs,
+  Link,
+  LoaderFunctionArgs,
+  MetaFunction,
+  useFetcher,
+  useLoaderData,
+  useSearchParams,
+} from "react-router";
 import { toast as clientToast } from "sonner";
 
 import { ErrorComponent } from "~/components/error-component";
@@ -32,7 +39,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       where: { id: user.id },
       data: { stripeId: stripeCustomer.id },
     });
-    return json({ methods: null, stripeCustomer });
+    return { methods: null, stripeCustomer };
   }
 
   const methods = await stripe.customers.listPaymentMethods(user.stripeId);
@@ -43,16 +50,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
     throw serverError("Error retrieving payment methods. Please contact support.");
   }
 
-  return json({ methods, stripeCustomer });
+  return { methods, stripeCustomer };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
   const user = await SessionService.requireUser(request);
 
   if (!user.stripeId) {
-    return Toasts.jsonWithError(
+    return Toasts.dataWithError(
       { success: false },
-      { title: "Error", description: "Error retrieving your payment profile. Please contact support." },
+      { message: "Error", description: "Error retrieving your payment profile. Please contact support." },
     );
   }
 
@@ -63,9 +70,9 @@ export async function action({ request }: ActionFunctionArgs) {
   try {
     if (_action === "delete") {
       await stripe.paymentMethods.detach(id);
-      return Toasts.jsonWithSuccess(
+      return Toasts.dataWithSuccess(
         { success: true },
-        { title: "Success", description: "Payment method has been deleted successfully." },
+        { message: "Success", description: "Payment method has been deleted successfully." },
       );
     }
 
@@ -74,17 +81,17 @@ export async function action({ request }: ActionFunctionArgs) {
       await stripe.customers.update(user.stripeId, {
         invoice_settings: { default_payment_method: id },
       });
-      return Toasts.jsonWithSuccess(
+      return Toasts.dataWithSuccess(
         { success: true },
-        { title: "Success", description: "Payment method has been set as default." },
+        { message: "Success", description: "Payment method has been set as default." },
       );
     }
   } catch (error) {
     console.error(error);
     Sentry.captureException(error);
-    return Toasts.jsonWithError(
+    return Toasts.dataWithError(
       { success: false },
-      { title: "Unknown Error", description: "There was an error updating your payment method." },
+      { message: "Unknown Error", description: "There was an error updating your payment method." },
     );
   }
 }

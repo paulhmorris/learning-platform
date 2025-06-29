@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import type { LoaderFunctionArgs } from "@vercel/remix";
+import type { LoaderFunctionArgs } from "react-router";
 
 import { db } from "~/integrations/db.server";
 

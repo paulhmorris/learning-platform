@@ -1,17 +1,25 @@
-import { vitePlugin as remix } from "@remix-run/dev";
-import { installGlobals } from "@remix-run/node";
-import { sentryVitePlugin } from "@sentry/vite-plugin";
-import { vercelPreset } from "@vercel/remix/vite";
+// eslint-disable-next-line @typescript-eslint/triple-slash-reference
+/// <reference types="vitest/config" />
+import { reactRouter } from "@react-router/dev/vite";
+import { sentryReactRouter, type SentryReactRouterBuildOptions } from "@sentry/react-router";
 import morgan from "morgan";
 import { ViteDevServer, defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
+import { coverageConfigDefaults, defaultExclude } from "vitest/config";
 
-const isVercel = process.env.VERCEL === "1";
+const sentryConfig: SentryReactRouterBuildOptions = {
+  telemetry: false,
+  org: "cosmic-labs",
+  project: "learning-platform",
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  sourceMapsUploadOptions: {
+    filesToDeleteAfterUpload: ["**/*.map"],
+  },
+};
+
 const isCI = !!process.env.CI;
 
-installGlobals();
-
-export default defineConfig({
+export default defineConfig((config) => ({
   build: {
     sourcemap: !!process.env.CI,
   },
@@ -21,21 +29,8 @@ export default defineConfig({
   plugins: [
     morganPlugin(),
     tsconfigPaths(),
-    remix({
-      ...(isVercel && { presets: [vercelPreset()] }),
-      ignoredRouteFiles: ["**/.*", "**/*.test.{ts,tsx}"],
-      serverModuleFormat: "esm",
-    }),
-    isCI &&
-      sentryVitePlugin({
-        telemetry: false,
-        org: process.env.SENTRY_ORG,
-        project: process.env.SENTRY_PROJECT,
-        authToken: process.env.SENTRY_AUTH_TOKEN,
-        sourcemaps: {
-          filesToDeleteAfterUpload: ["**/*.js.map"],
-        },
-      }),
+    !process.env.VITEST && reactRouter(),
+    ...(isCI ? [sentryReactRouter(sentryConfig, config)] : []),
   ],
   optimizeDeps: {
     exclude: ["@napi-rs/canvas"],
@@ -45,7 +40,19 @@ export default defineConfig({
       ".prisma/client/index-browser": "./node_modules/.prisma/client/index-browser.js",
     },
   },
-});
+  test: {
+    exclude: [...defaultExclude, "**/*.config.*", "**/playwright/**", "test/e2e/**"],
+    environment: "jsdom",
+    globals: true,
+    setupFiles: "./test/setup.ts",
+    coverage: {
+      provider: "v8",
+      reporter: ["text"],
+      include: ["app/"],
+      exclude: [...coverageConfigDefaults.exclude, "app/components/ui/**"],
+    },
+  },
+}));
 
 function morganPlugin() {
   return {

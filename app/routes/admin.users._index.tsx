@@ -1,8 +1,7 @@
 import { Prisma } from "@prisma/client";
-import { Link, useLoaderData } from "@remix-run/react";
 import { IconPlus } from "@tabler/icons-react";
 import { ColumnDef } from "@tanstack/react-table";
-import { LoaderFunctionArgs, MetaFunction, json } from "@vercel/remix";
+import { Link, LoaderFunctionArgs, MetaFunction, useLoaderData } from "react-router";
 
 import { ErrorComponent } from "~/components/error-component";
 import { AdminButton } from "~/components/ui/admin-button";
@@ -31,7 +30,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       },
     },
   });
-  return json({ users });
+  return { users };
 }
 
 export default function UsersIndex() {

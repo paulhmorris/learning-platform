@@ -1,18 +1,17 @@
-import { Links, Meta, Outlet, Scripts, ScrollRestoration, useLoaderData, useRouteError } from "@remix-run/react";
-import { captureRemixErrorBoundaryError, withSentry } from "@sentry/remix";
-import type { LinksFunction, LoaderFunctionArgs } from "@vercel/remix";
-import { json } from "@vercel/remix";
-import { useEffect } from "react";
-import { PreventFlashOnWrongTheme, ThemeProvider, useTheme } from "remix-themes";
-
 import "@fontsource-variable/inter/wght.css";
+import { useEffect } from "react";
+import type { LinksFunction, LoaderFunctionArgs } from "react-router";
+import { data, Links, Meta, Outlet, Scripts, ScrollRestoration, useLoaderData } from "react-router";
+import { PreventFlashOnWrongTheme, ThemeProvider, useTheme } from "remix-themes";
+import { getToast } from "remix-toast";
+
 import { ErrorComponent } from "~/components/error-component";
 import { GlobalLoader } from "~/components/global-loader";
 import { Header } from "~/components/header";
 import { Notifications } from "~/components/notifications";
 import { Sentry } from "~/integrations/sentry";
+import { notFound } from "~/lib/responses.server";
 import { themeSessionResolver } from "~/lib/session.server";
-import { getToast, Toasts } from "~/lib/toast.server";
 import { hexToPartialHSL } from "~/lib/utils";
 import { CourseService } from "~/services/course.server";
 import { SessionService } from "~/services/session.server";
@@ -43,24 +42,20 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     const linkedCourse = await CourseService.getByHost(host);
 
     if (!linkedCourse) {
-      return json({ ...defaultResponse, hasLinkedCourse: false }, { headers });
+      return data({ ...defaultResponse, hasLinkedCourse: false }, { headers });
     }
 
     const course = await CourseService.getFromCMSForRoot(linkedCourse.strapiId);
 
-    return json({ ...defaultResponse, course, hasLinkedCourse: true }, { headers });
+    return data({ ...defaultResponse, course, hasLinkedCourse: true }, { headers });
   } catch (error) {
     console.error(error);
     Sentry.captureException(error);
-    return Toasts.jsonWithError(
-      { ...defaultResponse, hasLinkedCourse: false },
-      { title: "Course not found", description: `Please try again later.` },
-      { headers },
-    );
+    throw notFound("Course not found");
   }
 };
 
-function AppWithProviders() {
+export default function AppWithProviders() {
   const { theme } = useLoaderData<typeof loader>();
   return (
     <ThemeProvider specifiedTheme={theme} themeAction="/set-theme">
@@ -131,11 +126,7 @@ function App() {
   );
 }
 
-export default withSentry(AppWithProviders);
-
 export function ErrorBoundary() {
-  const error = useRouteError();
-  captureRemixErrorBoundaryError(error);
   return (
     <html lang="en">
       <head>
