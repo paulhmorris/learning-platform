@@ -1,7 +1,7 @@
 import "@fontsource-variable/inter/wght.css";
 import { useEffect } from "react";
 import type { LinksFunction, LoaderFunctionArgs } from "react-router";
-import { data, Links, Meta, Outlet, Scripts, ScrollRestoration, useLoaderData } from "react-router";
+import { data, Links, Meta, Outlet, Scripts, ScrollRestoration, useRouteLoaderData } from "react-router";
 import { PreventFlashOnWrongTheme, ThemeProvider, useTheme } from "remix-themes";
 import { getToast } from "remix-toast";
 
@@ -16,6 +16,9 @@ import { hexToPartialHSL } from "~/lib/utils";
 import { CourseService } from "~/services/course.server";
 import { SessionService } from "~/services/session.server";
 import globalStyles from "~/tailwind.css?url";
+
+// eslint-disable-next-line import/no-unresolved
+import { Route } from "./+types/root";
 
 export const links: LinksFunction = () => [{ rel: "stylesheet", href: globalStyles, as: "style" }];
 
@@ -55,21 +58,25 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   }
 };
 
-export default function AppWithProviders() {
-  const { theme } = useLoaderData<typeof loader>();
+export default function App() {
+  return <Outlet />;
+}
+
+export function Layout({ children }: { children: React.ReactNode }) {
+  const data = useRouteLoaderData<typeof loader>("root");
   return (
-    <ThemeProvider specifiedTheme={theme} themeAction="/set-theme">
-      <App />
+    <ThemeProvider specifiedTheme={data?.theme ?? null} themeAction="/api/set-theme">
+      <InnerLayout ssrTheme={Boolean(data?.theme)}>{children}</InnerLayout>
     </ThemeProvider>
   );
 }
 
-function App() {
-  const data = useLoaderData<typeof loader>();
+function InnerLayout({ ssrTheme, children }: { ssrTheme: boolean; children: React.ReactNode }) {
+  const data = useRouteLoaderData<typeof loader>("root");
   const [theme] = useTheme();
 
   useEffect(() => {
-    if (data.user) {
+    if (data?.user) {
       Sentry.setUser({
         id: data.user.id,
         email: data.user.email,
@@ -79,7 +86,7 @@ function App() {
       Sentry.setUser(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data.user]);
+  }, [data?.user]);
 
   return (
     <html lang="en" data-theme={theme || "light"} className="h-full">
@@ -89,7 +96,7 @@ function App() {
         <meta name="theme-color" media="(prefers-color-scheme: light)" content="#fff" />
         <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#030712" />
         {/* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition */}
-        <meta name="git-sha" content={data.ENV.VERCEL_GIT_COMMIT_SHA} />
+        {data?.ENV ? <meta name="git-sha" content={data.ENV.VERCEL_GIT_COMMIT_SHA} /> : null}
 
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
@@ -100,24 +107,24 @@ function App() {
         <style>
           {`
             :root {
-              --primary: ${hexToPartialHSL(data.course?.data.attributes.primary_color) ?? "210 100% 40%"};
-              --primary-foreground: ${hexToPartialHSL(data.course?.data.attributes.secondary_color) ?? "0 0% 100%"};
+              --primary: ${hexToPartialHSL(data?.course?.data.attributes.primary_color) ?? "210 100% 40%"};
+              --primary-foreground: ${hexToPartialHSL(data?.course?.data.attributes.secondary_color) ?? "0 0% 100%"};
             }
           `}
         </style>
-        <PreventFlashOnWrongTheme ssrTheme={Boolean(data.theme)} />
+        <PreventFlashOnWrongTheme ssrTheme={Boolean(ssrTheme)} />
         <Meta />
         <Links />
       </head>
       <body className="flex h-full min-h-full flex-col bg-background font-sans text-foreground">
         <Header />
-        <Outlet />
+        {children}
         <Notifications />
         <GlobalLoader />
         <ScrollRestoration />
         <script
           dangerouslySetInnerHTML={{
-            __html: `window.ENV = ${JSON.stringify(data.ENV)}`,
+            __html: `window.ENV = ${JSON.stringify(data?.ENV)}`,
           }}
         />
         <Scripts />
@@ -126,31 +133,12 @@ function App() {
   );
 }
 
-export function ErrorBoundary() {
+export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   return (
-    <html lang="en">
-      <head>
-        <title>Oh no!</title>
-        <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width,initial-scale=1" />
-        <meta name="theme-color" media="(prefers-color-scheme: light)" content="#fff" />
-        <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#030712" />
-        {/* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition */}
-        <link
-          rel="icon"
-          href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎓</text></svg>"
-        />
-        <Meta />
-        <Links />
-      </head>
-      <body>
-        <div className="grid min-h-full place-items-center px-6 py-24 sm:py-32 lg:px-8">
-          <div className="-mb-10">
-            <ErrorComponent />
-          </div>
-        </div>
-        <Scripts />
-      </body>
-    </html>
+    <main className="grid min-h-full place-items-center px-6 py-24 sm:py-32 lg:px-8">
+      <div className="-mb-10">
+        <ErrorComponent error={error} />
+      </div>
+    </main>
   );
 }

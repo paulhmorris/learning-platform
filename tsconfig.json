@@ -1,9 +1,10 @@
 {
-  "include": ["env.d.ts", "custom.d.ts", "**/*.ts", "**/*.tsx"],
+  "include": ["env.d.ts", "custom.d.ts", "**/*.ts", "**/*.tsx", ".react-router/types/**/*"],
   "compilerOptions": {
     "noErrorTruncation": true,
     "lib": ["DOM", "DOM.Iterable", "ES2022"],
-    "types": ["vitest/globals"],
+    "types": ["vitest/globals", "@react-router/node", "vite/client"],
+    "rootDirs": [".", "./.react-router/types"],
     "isolatedModules": true,
     "esModuleInterop": true,
     "jsx": "react-jsx",

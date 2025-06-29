@@ -6,7 +6,7 @@ node_modules
 
 /postgres-data
 
-# Sentry Config File
+.react-router
 .sentryclirc
 /test-results/
 /playwright-report/

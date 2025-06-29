@@ -1,4 +1,3 @@
-import bcrypt from "bcryptjs";
 import { customAlphabet } from "nanoid";
 
 import { db } from "~/integrations/db.server";

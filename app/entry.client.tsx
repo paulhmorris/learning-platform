@@ -1,27 +1,25 @@
-import { HydratedRouter } from "react-router/dom";
-import { useLocation, useMatches } from "react-router";
-import { StrictMode, startTransition, useEffect } from "react";
+import { startTransition, StrictMode } from "react";
 import { hydrateRoot } from "react-dom/client";
+import { HydratedRouter } from "react-router/dom";
 
 import { Sentry } from "~/integrations/sentry";
 
 Sentry.init({
   dsn: "https://3093e529a633d80d697b26390e53886d@o4505496663359488.ingest.us.sentry.io/4506584484151296",
-  tracesSampleRate: window.ENV.VERCEL_ENV === "preview" ? 0.5 : 0.1,
-  replaysSessionSampleRate: window.ENV.VERCEL_ENV === "production" ? 0.01 : 0,
+  enabled: window.location.hostname !== "localhost",
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  environment: window.ENV?.VERCEL_ENV,
+
+  tracesSampleRate: 0.25,
+  profilesSampleRate: 0.25,
+  replaysSessionSampleRate: 0.05,
   replaysOnErrorSampleRate: 1,
-  enabled: process.env.NODE_ENV === "production",
+  sendDefaultPii: true,
+
   integrations: [
-    Sentry.browserTracingIntegration({
-      useEffect,
-      useLocation,
-      useMatches,
-      enableInp: true,
-    }),
-    Sentry.replayIntegration({
-      maskAllText: false,
-      blockAllMedia: true,
-    }),
+    Sentry.reactRouterTracingIntegration(),
+    Sentry.captureConsoleIntegration({ levels: ["error"] }),
+    Sentry.replayIntegration({ maskAllText: false, maskAllInputs: false }),
   ],
 });
 
