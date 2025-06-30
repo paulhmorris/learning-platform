@@ -2,7 +2,7 @@ import { createCanvas, loadImage } from "@napi-rs/canvas";
 import { logger, task } from "@trigger.dev/sdk/v3";
 import { nanoid } from "nanoid";
 
-import { EMAIL_FROM_DOMAIN } from "~/config";
+import { EMAIL_FROM_DOMAIN } from "~/config.server";
 import { Bucket } from "~/integrations/bucket.server";
 import { db } from "~/integrations/db.server";
 import { EmailService } from "~/integrations/email.server";

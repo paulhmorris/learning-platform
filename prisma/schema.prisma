@@ -11,36 +11,18 @@ generator client {
 }
 
 model User {
-  id              String   @id @default(cuid())
-  email           String   @unique
-  firstName       String?
-  lastName        String?
-  phone           String?
-  role            UserRole @default(USER)
-  isActive        Boolean  @default(true)
-  isEmailVerified Boolean  @default(false)
-  stripeId        String?
+  id       String   @id @default(cuid())
+  clerkId  String?  @unique
+  email    String   @unique
+  role     UserRole @default(USER)
+  stripeId String?
 
   stripeVerificationSessionId String?
   isIdentityVerified          Boolean @default(false)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  password         Password?
-  passwordResets   PasswordReset[]
-  verification     UserVerification?
   courses          UserCourses[]
-  lessonProgresses UserLessonProgress[]
   quizProgresses   UserQuizProgress[]
-}
-
-model UserVerification {
-  id        String   @id @default(cuid())
-  token     String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  userId    String   @unique
-  expiresAt DateTime
+  lessonProgresses UserLessonProgress[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -65,28 +47,7 @@ model Course {
   emailFromDomain              String  @default("plumblearning.com")
   requiresIdentityVerification Boolean @default(false)
 
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
   userCourses UserCourses[]
-}
-
-model Password {
-  hash String
-
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  userId String @unique
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model PasswordReset {
-  id        String    @id @default(cuid())
-  token     String    @unique @default(uuid())
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  userId    String
-  expiresAt DateTime
-  usedAt    DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -100,12 +61,11 @@ model UserCourses {
   certificateClaimed Boolean   @default(false)
   certificateS3Key   String?
   certificateNumber  String?
+  userId             String    @unique
+  courseId           String
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  userId String @unique
-
-  course   Course @relation(fields: [courseId], references: [id])
-  courseId String
+  course Course @relation(fields: [courseId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

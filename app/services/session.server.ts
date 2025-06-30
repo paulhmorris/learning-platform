@@ -1,50 +1,41 @@
-import { User, UserRole } from "@prisma/client";
-import { Session as RemixSession, SessionData, redirect } from "react-router";
+import { getAuth } from "@clerk/react-router/ssr.server";
+import { UserRole } from "@prisma/client";
+import { ActionFunctionArgs, LoaderFunctionArgs, redirect } from "react-router";
 
 import { forbidden, unauthorized } from "~/lib/responses.server";
-import { sessionStorage } from "~/lib/session.server";
+import { AuthService } from "~/services/auth.server";
 import { UserService } from "~/services/user.server";
 
 class Session {
   private static USER_SESSION_KEY = "userId";
 
-  async logout(request: Request) {
-    const session = await this.getSession(request);
-    return redirect("/login", {
-      headers: {
-        "Set-Cookie": await sessionStorage.destroySession(session),
-      },
-    });
+  async logout(sessionId: string | null) {
+    if (sessionId) {
+      await AuthService.revokeSession(sessionId);
+    }
   }
 
-  async getSession(request: Request) {
-    const cookie = request.headers.get("Cookie");
-    return sessionStorage.getSession(cookie);
+  async getSession(args: LoaderFunctionArgs | ActionFunctionArgs) {
+    return getAuth(args);
   }
 
-  async commitSession(session: RemixSession<SessionData, SessionData>) {
-    return sessionStorage.commitSession(session);
-  }
-
-  async getUserId(request: Request): Promise<User["id"] | undefined> {
-    const session = await this.getSession(request);
-    const userId = session.get(Session.USER_SESSION_KEY) as User["id"] | undefined;
+  async getUserId(args: LoaderFunctionArgs | ActionFunctionArgs): Promise<string | null> {
+    const { userId } = await getAuth(args);
     return userId;
   }
 
-  async getUser(request: Request) {
-    const userId = await this.getUserId(request);
-    if (userId === undefined) return null;
+  async getUser(args: LoaderFunctionArgs | ActionFunctionArgs) {
+    const userId = await this.getUserId(args);
+    if (!userId) {
+      return null;
+    }
 
     const user = await UserService.getById(userId);
     if (user) {
-      if (!user.isActive) {
-        throw await this.logout(request);
-      }
       return user;
     }
 
-    throw await this.logout(request);
+    throw await this.logout(args);
   }
 
   async getSessionUser(request: Request) {
@@ -99,30 +90,6 @@ class Session {
 
   async requireSuperAdmin(request: Request) {
     return this.requireUserByRole(request, ["SUPERADMIN"]);
-  }
-
-  async createUserSession({
-    request,
-    userId,
-    remember,
-    redirectTo,
-  }: {
-    request: Request;
-    userId: string;
-    remember: boolean;
-    redirectTo: string;
-  }) {
-    const session = await this.getSession(request);
-    session.set(Session.USER_SESSION_KEY, userId);
-    return redirect(redirectTo, {
-      headers: {
-        "Set-Cookie": await sessionStorage.commitSession(session, {
-          maxAge: remember
-            ? 60 * 60 * 24 * 30 // 30 days
-            : undefined,
-        }),
-      },
-    });
   }
 }
 

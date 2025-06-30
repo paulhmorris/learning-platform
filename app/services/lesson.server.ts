@@ -27,11 +27,11 @@ export const LessonService = {
     });
 
     if (lesson.data.length > 1) {
-      throw serverError("Multiple courses with the same slug found.");
+      throw serverError("Multiple lessons with the same slug found.");
     }
 
     if (lesson.data.length === 0) {
-      throw notFound("Course not found.");
+      throw notFound("Lesson not found.");
     }
 
     await redis.set<Lesson>(`lesson:${slug}`, lesson.data[0], { ex: 60 });

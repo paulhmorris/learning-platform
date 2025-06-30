@@ -1,4 +1,4 @@
-import { ClerkProvider } from "@clerk/react-router";
+import { ClerkProvider, RedirectToSignIn, SignedIn, SignedOut } from "@clerk/react-router";
 import { rootAuthLoader } from "@clerk/react-router/ssr.server";
 import { dark } from "@clerk/themes";
 import "@fontsource-variable/inter/wght.css";
@@ -15,7 +15,7 @@ import { Notifications } from "~/components/notifications";
 import { Sentry } from "~/integrations/sentry";
 import { notFound } from "~/lib/responses.server";
 import { themeSessionResolver } from "~/lib/session.server";
-import { hexToPartialHSL } from "~/lib/utils";
+import { cn, hexToPartialHSL } from "~/lib/utils";
 import { CourseService } from "~/services/course.server";
 import { SessionService } from "~/services/session.server";
 import globalStyles from "~/tailwind.css?url";
@@ -44,16 +44,16 @@ export const loader = async (args: LoaderFunctionArgs) => {
   };
 
   try {
-    const { host } = new URL(args.request.url);
-    const linkedCourse = await CourseService.getByHost(host);
+    return rootAuthLoader(args, async () => {
+      const { host } = new URL(args.request.url);
+      const linkedCourse = await CourseService.getByHost(host);
 
-    if (!linkedCourse) {
-      return data({ ...defaultResponse, hasLinkedCourse: false }, { headers });
-    }
+      if (!linkedCourse) {
+        return data({ ...defaultResponse, hasLinkedCourse: false }, { headers });
+      }
 
-    const course = await CourseService.getFromCMSForRoot(linkedCourse.strapiId);
+      const course = await CourseService.getFromCMSForRoot(linkedCourse.strapiId);
 
-    return rootAuthLoader(args, () => {
       return data({ ...defaultResponse, course, hasLinkedCourse: true }, { headers });
     });
   } catch (error) {
@@ -72,7 +72,12 @@ export default function App({ loaderData }: Route.ComponentProps) {
       publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY}
       telemetry={{ disabled: true }}
     >
-      <Outlet />
+      <SignedIn>
+        <Outlet />
+      </SignedIn>
+      <SignedOut>
+        <RedirectToSignIn />
+      </SignedOut>
     </ClerkProvider>
   );
 }
@@ -103,7 +108,7 @@ function InnerLayout({ ssrTheme, children }: { ssrTheme: boolean; children: Reac
   }, [data?.user]);
 
   return (
-    <html lang="en" data-theme={theme ?? "light"} className="h-full">
+    <html lang="en" className={cn("h-full", theme)}>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />

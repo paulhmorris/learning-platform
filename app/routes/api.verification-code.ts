@@ -2,7 +2,7 @@ import { parseFormData, validationError } from "@rvf/react-router";
 import { ActionFunctionArgs } from "react-router";
 import { z } from "zod/v4";
 
-import { EMAIL_FROM_DOMAIN } from "~/config";
+import { EMAIL_FROM_DOMAIN } from "~/config.server";
 import { EmailService } from "~/integrations/email.server";
 import { Sentry } from "~/integrations/sentry";
 import { Toasts } from "~/lib/toast.server";

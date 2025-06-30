@@ -1,6 +1,6 @@
 import { ActionFunctionArgs } from "react-router";
 
-import { EMAIL_FROM_DOMAIN } from "~/config";
+import { EMAIL_FROM_DOMAIN } from "~/config.server";
 import { EmailService } from "~/integrations/email.server";
 import { Sentry } from "~/integrations/sentry";
 import { stripe } from "~/integrations/stripe.server";
