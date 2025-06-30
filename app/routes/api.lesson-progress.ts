@@ -1,20 +1,18 @@
-import { withZod } from "@remix-validated-form/with-zod";
 import { parseFormData, validationError } from "@rvf/react-router";
 import { ActionFunctionArgs } from "react-router";
-import { z } from "zod";
+import { z } from "zod/v4";
 
 import { badRequest } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
+import { number } from "~/schemas/fields";
 import { LessonService } from "~/services/lesson.server";
 import { ProgressService } from "~/services/progress.server";
 import { SessionService } from "~/services/session.server";
 
-const schema = withZod(
-  z.object({
-    lessonId: z.coerce.number(),
-    intent: z.enum(["mark-complete", "increment-duration"]),
-  }),
-);
+const schema = z.object({
+  lessonId: number,
+  intent: z.enum(["mark-complete", "increment-duration"]),
+});
 export const SUBMIT_INTERVAL_MS = 15_000;
 
 export async function action({ request }: ActionFunctionArgs) {

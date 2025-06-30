@@ -23,6 +23,8 @@
     "@aws-sdk/client-s3": "^3.839.0",
     "@aws-sdk/client-sesv2": "^3.839.0",
     "@aws-sdk/s3-request-presigner": "^3.839.0",
+    "@clerk/react-router": "^1.6.2",
+    "@clerk/themes": "^2.2.52",
     "@fontsource-variable/inter": "^5.2.6",
     "@mux/mux-player-react": "^3.5.0",
     "@napi-rs/canvas": "^0.1.53",
@@ -123,8 +125,6 @@
     "eslint-config-prettier": "^10.1.5",
     "eslint-import-resolver-typescript": "^4.4.4",
     "eslint-plugin-import": "^2.32.0",
-    "eslint-plugin-jest": "^29.0.1",
-    "eslint-plugin-jest-dom": "^5.5.0",
     "eslint-plugin-jsx-a11y": "^6.10.2",
     "eslint-plugin-playwright": "^2.2.0",
     "eslint-plugin-react": "^7.37.5",
@@ -149,7 +149,7 @@
     "*": "prettier --write --ignore-unknown"
   },
   "engines": {
-    "node": "20.18.0"
+    "node": "20.x"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

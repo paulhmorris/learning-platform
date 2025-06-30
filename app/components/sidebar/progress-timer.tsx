@@ -1,8 +1,8 @@
 import { UserLessonProgress } from "@prisma/client";
-import { useFetcher } from "react-router";
 import { IconPlayerPauseFilled, IconPlayerPlayFilled } from "@tabler/icons-react";
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
+import { useFetcher } from "react-router";
 import { useCountdown } from "react-timing-hooks";
 
 import { cn, formatSeconds } from "~/lib/utils";
@@ -37,13 +37,11 @@ export function ProgressTimer({ lesson, progress, setClientProgressPercentage }:
     }
 
     if (shouldSubmit) {
-      fetcher.submit(
+      void fetcher.submit(
         { lessonId: lesson.id, intent: "increment-duration" },
         { method: "POST", action: "/api/lesson-progress" },
       );
     }
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shouldSubmit]);
 
   // Pause the timer when the tab is not visible

@@ -49,7 +49,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   ]);
 
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  const userHasAccess = user.courses && user.courses.some((c) => c.courseId === linkedCourse.id);
+  const userHasAccess = user?.courses.some((c) => c.courseId === linkedCourse.id);
   const lessons = getLessonsInOrder({ course, progress: lessonProgress });
 
   return { course: course.data, lessonProgress, lessons, quizProgress, userHasAccess };
@@ -166,7 +166,7 @@ export default function CoursePreview() {
               }
 
               const durationInSeconds = section.lessons?.data.reduce(
-                (acc, curr) => Math.ceil((curr.attributes.required_duration_in_seconds || 0) + acc),
+                (acc, curr) => Math.ceil((curr.attributes.required_duration_in_seconds ?? 0) + acc),
                 0,
               );
 
@@ -179,7 +179,7 @@ export default function CoursePreview() {
               return (
                 <li key={`section-${section.id}`}>
                   <Section>
-                    <SectionHeader sectionTitle={section.title} durationInMinutes={(durationInSeconds || 0) / 60} />
+                    <SectionHeader sectionTitle={section.title} durationInMinutes={(durationInSeconds ?? 0) / 60} />
                     <Separator className="my-4" />
                     <ul className="flex flex-col gap-6">
                       {section.lessons?.data.map((l) => {
@@ -199,6 +199,7 @@ export default function CoursePreview() {
                         const isLessonLocked =
                           !userHasAccess || // User does not have access
                           (lessonIndex > 0 && !previousLessonIsCompleted) || // Previous lesson is not completed
+                          // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
                           (previousSectionQuiz?.data && !previousSectionQuizIsCompleted) || // Previous section quiz is not completed
                           (!isCourseCompleted && lessonIndex > lastCompletedLessonIndex + 1); // Course is not completed and lesson index is greater than last completed lesson index + 1
 

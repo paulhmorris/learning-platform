@@ -1,3 +1,4 @@
+import { parseFormData } from "@rvf/react-router";
 import { useState } from "react";
 import {
   ActionFunctionArgs,
@@ -8,7 +9,7 @@ import {
   useRouteLoaderData,
 } from "react-router";
 import invariant from "tiny-invariant";
-import { z } from "zod";
+import { z } from "zod/v4";
 
 import { ErrorComponent } from "~/components/error-component";
 import { AdminButton } from "~/components/ui/admin-button";
@@ -16,6 +17,7 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { db } from "~/integrations/db.server";
 import { loader as adminCourseLoader } from "~/routes/admin.courses.$courseId";
+import { text } from "~/schemas/fields";
 import { SessionService } from "~/services/session.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -23,7 +25,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return { users: await db.user.findMany({ orderBy: { lastName: "asc" } }) };
 }
 
-const schema = z.object({ userId: z.string({ message: "Host is required" }) });
+const schema = z.object({ userId: text });
 
 export async function action({ request, params }: ActionFunctionArgs) {
   await SessionService.requireAdmin(request);
@@ -31,8 +33,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   invariant(courseId, "Course ID is required.");
 
-  const result = validator.safeParse(Object.fromEntries(await request.formData()));
-  if (!result.success) {
+  const result = await parseFormData(request, schema);
+  if (result.error) {
     return result.error;
   }
 
@@ -56,8 +58,8 @@ export default function AdminEditCourse() {
 
   const filteredUsers = users.filter((u) => {
     return (
-      u.firstName?.toLowerCase().includes(filter.toLowerCase()) ||
-      u.lastName?.toLowerCase().includes(filter.toLowerCase()) ||
+      u.firstName?.toLowerCase().includes(filter.toLowerCase()) ??
+      u.lastName?.toLowerCase().includes(filter.toLowerCase()) ??
       u.email.toLowerCase().includes(filter.toLowerCase())
     );
   });

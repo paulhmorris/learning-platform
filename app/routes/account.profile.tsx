@@ -1,6 +1,6 @@
 import { parseFormData, ValidatedForm, validationError } from "@rvf/react-router";
 import { ActionFunctionArgs, LoaderFunctionArgs, MetaFunction } from "react-router";
-import { z } from "zod";
+import { z } from "zod/v4";
 
 import { IdentityVerification } from "~/components/account/identity-verification";
 import { ErrorComponent } from "~/components/error-component";
@@ -11,6 +11,7 @@ import { stripe } from "~/integrations/stripe.server";
 import { Toasts } from "~/lib/toast.server";
 import { useUser } from "~/lib/utils";
 import { loader as rootLoader } from "~/root";
+import { cuid, email, optionalPhoneNumber, text } from "~/schemas/fields";
 import { SessionService } from "~/services/session.server";
 import { UserService } from "~/services/user.server";
 
@@ -22,11 +23,11 @@ export const meta: MetaFunction<typeof loader, { root: typeof rootLoader }> = ({
 };
 
 const schema = z.object({
-  id: z.string().cuid(),
-  firstName: z.string().max(255),
-  lastName: z.string().max(255),
-  email: z.string().email(),
-  phone: z.string().max(20),
+  id: cuid,
+  firstName: text,
+  lastName: text,
+  email: email,
+  phone: optionalPhoneNumber,
 });
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -109,15 +110,13 @@ export default function AccountProfile() {
                   name="firstName"
                   label="First Name"
                   autoComplete="given-name"
-                  maxLength={255}
                 />
                 <FormField
-                  scope={form.scope("lastName")}
                   required
+                  scope={form.scope("lastName")}
                   name="lastName"
                   label="Last Name"
                   autoComplete="family-name"
-                  maxLength={255}
                 />
               </div>
               <FormField
@@ -127,7 +126,7 @@ export default function AccountProfile() {
                 label="Email"
                 type="email"
                 autoComplete="email"
-                maxLength={255}
+                inputMode="email"
               />
               <FormField
                 scope={form.scope("phone")}
@@ -135,7 +134,7 @@ export default function AccountProfile() {
                 label="Phone"
                 type="tel"
                 autoComplete="tel"
-                maxLength={20}
+                inputMode="tel"
               />
               <SubmitButton variant="admin" className="sm:w-auto">
                 Save

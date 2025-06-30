@@ -31,8 +31,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       });
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    const userHasAccess = user.courses && user.courses.some((c) => c.courseId === linkedCourse.id);
+    const userHasAccess = user?.courses.some((c) => c.courseId === linkedCourse.id);
     if (!userHasAccess) {
       return Toasts.redirectWithError("/preview", {
         message: "No access to course",
@@ -131,7 +130,7 @@ export default function CourseLayout() {
               })
               .map((section, section_index) => {
                 const durationInSeconds = section.lessons?.data.reduce(
-                  (acc, curr) => Math.ceil((curr.attributes.required_duration_in_seconds || 0) + acc),
+                  (acc, curr) => Math.ceil((curr.attributes.required_duration_in_seconds ?? 0) + acc),
                   0,
                 );
 
@@ -141,7 +140,7 @@ export default function CourseLayout() {
                 return (
                   <li key={`section-${section.id}`} data-sectionid={section.id}>
                     <Section className={cn(isCollapsed && "pb-16")}>
-                      <SectionHeader sectionTitle={section.title} durationInMinutes={(durationInSeconds || 0) / 60} />
+                      <SectionHeader sectionTitle={section.title} durationInMinutes={(durationInSeconds ?? 0) / 60} />
                       <Separator className={cn(isCollapsed ? "my-2 bg-transparent" : "my-4")} />
                       <ul className="flex flex-col gap-6">
                         {section.lessons?.data
@@ -167,14 +166,13 @@ export default function CourseLayout() {
                               section_index > 0 ? course.attributes.sections[section_index - 1] : null;
                             const previousSectionQuiz = previousSection?.quiz;
                             const previousSectionQuizIsCompleted = quizProgress.find(
-                              // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
                               (p) => p.isCompleted && p.quizId === previousSectionQuiz?.data?.id,
                             );
 
                             const previousLessonIsCompleted = lessons[lastCompletedLessonIndex]?.isCompleted;
                             const isLessonLocked =
-                              (lessonIndex > 0 && !previousLessonIsCompleted) || // Previous lesson is not completed
-                              (previousSectionQuiz?.data && !previousSectionQuizIsCompleted) || // Previous section quiz is not completed
+                              (lessonIndex > 0 && !previousLessonIsCompleted) ?? // Previous lesson is not completed
+                              (previousSectionQuiz?.data && !previousSectionQuizIsCompleted) ?? // Previous section quiz is not completed
                               (!isCourseCompleted && lessonIndex > lastCompletedLessonIndex + 1); // Course is not completed and lesson index is greater than last completed lesson index + 1
 
                             return (

@@ -3,25 +3,8 @@ import { Prisma, User } from "@prisma/client";
 import { db } from "~/integrations/db.server";
 import { redis } from "~/integrations/redis.server";
 import { stripe } from "~/integrations/stripe.server";
-import { AuthService } from "~/services/auth.server";
 
 class Service {
-  async resetOrSetupPassword({ userId, password }: { userId: User["id"]; password: string }) {
-    const hashedPassword = await AuthService.hashPassword(password);
-
-    const user = await db.user.update({
-      where: { id: userId },
-      data: {
-        password: {
-          upsert: {
-            create: { hash: hashedPassword },
-            update: { hash: hashedPassword },
-          },
-        },
-      },
-    });
-    return user;
-  }
   public async getById(id: User["id"]) {
     const cachedUser = await redis.get<
       Prisma.UserGetPayload<{
@@ -63,16 +46,11 @@ class Service {
   }
 
   public async create(email: User["email"], password: string, data: Omit<Prisma.UserCreateArgs["data"], "email">) {
-    const hashedPassword = await AuthService.hashPassword(password);
+    // TODO: integrate with Clerk
     const user = await db.user.create({
       data: {
         ...data,
         email,
-        password: {
-          create: {
-            hash: hashedPassword,
-          },
-        },
       },
     });
 

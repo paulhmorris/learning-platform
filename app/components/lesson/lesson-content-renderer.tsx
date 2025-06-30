@@ -126,7 +126,6 @@ export function LessonContentRenderer({ content }: Props) {
             const url = new URL(audio.url, baseUrl).toString();
 
             return (
-              // eslint-disable-next-line jsx-a11y/media-has-caption
               <audio controls key={`${component.__component}-${component.id}`} className="w-full">
                 <source src={url} type={audio.mime} />
               </audio>

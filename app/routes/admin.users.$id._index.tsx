@@ -1,8 +1,7 @@
 import { UserRole } from "@prisma/client";
-import { withZod } from "@remix-validated-form/with-zod";
 import { parseFormData, ValidatedForm, validationError } from "@rvf/react-router";
 import { ActionFunctionArgs, MetaFunction, useRouteLoaderData } from "react-router";
-import { z } from "zod";
+import { z } from "zod/v4";
 
 import { ErrorComponent } from "~/components/error-component";
 import { FormField, FormSelect } from "~/components/ui/form";
@@ -10,19 +9,18 @@ import { SubmitButton } from "~/components/ui/submit-button";
 import { db } from "~/integrations/db.server";
 import { Toasts } from "~/lib/toast.server";
 import { loader } from "~/routes/admin.users.$id";
+import { cuid, email, optionalText, phoneNumber, selectEnum, text } from "~/schemas/fields";
 import { SessionService } from "~/services/session.server";
 
-const schema = withZod(
-  z.object({
-    id: z.string().cuid(),
-    firstName: z.string().max(255),
-    lastName: z.string().max(255),
-    email: z.string().email(),
-    phone: z.string().max(20),
-    role: z.nativeEnum(UserRole),
-    stripeId: z.string().optional(),
-  }),
-);
+const schema = z.object({
+  id: cuid,
+  firstName: text,
+  lastName: optionalText,
+  email: email,
+  phone: phoneNumber,
+  role: selectEnum(UserRole),
+  stripeId: optionalText,
+});
 
 export const meta: MetaFunction = () => {
   return [{ title: `User Profile | Plumb Media & Education` }];
@@ -64,35 +62,58 @@ export default function AdminUserIndex() {
   }
 
   return (
-    <div className="max-w-md">
-      <ValidatedForm
-        method="put"
-        action="?index"
-        schema={schema}
-        defaultValues={{
-          email: user.email,
-          stripeId: user.stripeId ?? "",
-          lastName: user.lastName ?? "",
-          firstName: user.firstName ?? "",
-          role: user.role,
-        }}
-      >
-        <input type="hidden" name="id" value={user.id} />
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-2">
-            <FormField required name="firstName" label="First Name" autoComplete="given-name" maxLength={255} />
-            <FormField required name="lastName" label="Last Name" autoComplete="family-name" maxLength={255} />
-          </div>
-          <FormField required name="email" label="Email" type="email" autoComplete="email" maxLength={255} />
-          <FormSelect name="role" label="Role" placeholder="Choose a role" options={roleOptions} required />
-          <FormField name="phone" label="Phone" type="tel" autoComplete="tel" maxLength={20} />
-          <FormField name="stripeId" label="Stripe ID" />
-          <SubmitButton variant="admin" className="sm:w-auto">
-            Save
-          </SubmitButton>
-        </div>
-      </ValidatedForm>
-    </div>
+    <>
+      <title>User Profile | Plumb Media & Education</title>
+      <div className="max-w-md">
+        <ValidatedForm
+          method="put"
+          action="?index"
+          schema={schema}
+          defaultValues={{
+            id: user.id,
+            email: user.email,
+            phone: user.phone ?? "",
+            stripeId: user.stripeId ?? "",
+            lastName: user.lastName ?? "",
+            firstName: user.firstName ?? "",
+            role: user.role,
+          }}
+        >
+          {(form) => (
+            <>
+              <input type="hidden" name="id" value={user.id} />
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-2">
+                  <FormField required label="First Name" name="firstName" scope={form.scope("firstName")} />
+                  <FormField label="Last Name" name="lastName" scope={form.scope("lastName")} />
+                </div>
+                <FormField
+                  required
+                  label="Email"
+                  name="email"
+                  type="email"
+                  inputMode="email"
+                  scope={form.scope("email")}
+                />
+                <FormSelect
+                  required
+                  label="Role"
+                  name="role"
+                  placeholder="Choose a role"
+                  options={roleOptions}
+                  scope={form.scope("role")}
+                />
+                <FormField label="Phone" name="phone" type="tel" inputMode="tel" scope={form.scope("phone")} />
+                <FormField scope={form.scope("stripeId")} name="stripeId" label="Stripe ID" />
+                <SubmitButton variant="admin" className="sm:w-auto">
+                  Save
+                </SubmitButton>
+              </div>
+            </>
+          )}
+        </ValidatedForm>
+      </div>
+    </>
   );
 }
 

@@ -1,6 +1,6 @@
 import { UserQuizProgress } from "@prisma/client";
-import { NavLink } from "react-router";
 import React from "react";
+import { NavLink } from "react-router";
 
 import { IconDocument } from "~/components/icons";
 import {
@@ -56,7 +56,7 @@ export function SectionQuiz(props: SectionQuizProps) {
   }
 
   // Unlocked state
-  if (!userProgress || !userProgress.isCompleted) {
+  if (!userProgress?.isCompleted) {
     return (
       <NavLink
         to={`/quizzes/${quiz.id}`}

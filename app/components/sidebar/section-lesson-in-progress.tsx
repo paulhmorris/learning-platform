@@ -41,7 +41,7 @@ export function SectionLessonInProgress({
           <ProgressCircle
             className={cn(isActive && "border-success")}
             aria-label="Lesson progress"
-            percentage={clientProgressPercentage || percentage}
+            percentage={clientProgressPercentage ?? percentage}
           />
           <SectionItemIconContainer>
             <Icon className={cn(isActive ? "text-success" : "text-foreground", hasVideo ? "h-8 w-7" : "h-7 w-6")} />

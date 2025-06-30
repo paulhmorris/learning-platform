@@ -1,6 +1,5 @@
 /* eslint-disable no-console */
 import { PrismaClient, UserRole } from "@prisma/client";
-import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
@@ -12,8 +11,6 @@ async function seed() {
     // no worries if it doesn't exist yet
   });
 
-  const hashedPassword = await bcrypt.hash("password", 10);
-
   const user = await prisma.user.create({
     data: {
       firstName: "Paul",
@@ -22,11 +19,6 @@ async function seed() {
       email,
       isEmailVerified: true,
       isIdentityVerified: true,
-      password: {
-        create: {
-          hash: hashedPassword,
-        },
-      },
     },
   });
 

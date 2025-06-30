@@ -34,7 +34,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const linkedCourse = await db.course.findUnique({ where: { host: url.host } });
   if (!linkedCourse) {
     return Toasts.redirectWithError("/", {
-      title: "Course not found.",
+      message: "Course not found.",
       description: "Please try again later",
     });
   }

@@ -55,7 +55,7 @@ export function PreviewSectionQuiz(props: SectionQuizProps) {
   }
 
   // Unlocked state
-  if (!userProgress || !userProgress.isCompleted) {
+  if (!userProgress?.isCompleted) {
     return (
       <div className={cn("-my-1 block rounded-lg py-1")}>
         <SectionItemContainer>

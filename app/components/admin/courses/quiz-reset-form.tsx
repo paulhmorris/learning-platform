@@ -1,5 +1,5 @@
-import { useFetcher, useFetchers } from "react-router";
 import { IconLoader } from "@tabler/icons-react";
+import { useFetcher, useFetchers } from "react-router";
 
 import { AdminButton } from "~/components/ui/admin-button";
 import { loader } from "~/routes/admin.users.$id.courses.$courseId";

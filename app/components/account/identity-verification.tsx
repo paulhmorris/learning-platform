@@ -1,7 +1,7 @@
-import { useLoaderData, useRevalidator } from "react-router";
 import { loadStripe, Stripe } from "@stripe/stripe-js";
 import { IconCircleCheckFilled, IconExclamationCircle, IconFileSearch } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
+import { useLoaderData, useRevalidator } from "react-router";
 import { toast } from "sonner";
 
 import { AdminButton } from "~/components/ui/admin-button";
@@ -49,7 +49,7 @@ export function IdentityVerification() {
       Sentry.captureException(error);
       toast.error("An error occurred while trying to verify your identity.");
     } finally {
-      revalidator.revalidate();
+      void revalidator.revalidate();
     }
   }
 

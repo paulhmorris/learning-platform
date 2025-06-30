@@ -1,5 +1,4 @@
-import { withZod } from "@remix-validated-form/with-zod";
-import { validationError } from "@rvf/react-router";
+import { parseFormData, validationError } from "@rvf/react-router";
 import dayjs from "dayjs";
 import {
   ActionFunctionArgs,
@@ -9,7 +8,7 @@ import {
   useLoaderData,
   useRouteLoaderData,
 } from "react-router";
-import { z } from "zod";
+import { z } from "zod/v4";
 
 import { ActivateUserDialog } from "~/components/admin/security/activate-user-dialog";
 import { DeactivateUserDialog } from "~/components/admin/security/deactivate-user-dialog";
@@ -21,6 +20,7 @@ import { Sentry } from "~/integrations/sentry";
 import { notFound } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
 import { loader as userLayoutLoader } from "~/routes/admin.users.$id";
+import { optionalText } from "~/schemas/fields";
 import { SessionService } from "~/services/session.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -54,16 +54,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return { user };
 }
 
-const schema = withZod(
-  z.object({
-    resetId: z.string().optional(),
-    _action: z.enum(["expire-password-reset", "deactivate-user", "activate-user"]),
-  }),
-);
+const schema = z.object({
+  resetId: optionalText,
+  _action: z.enum(["expire-password-reset", "deactivate-user", "activate-user"]),
+});
 
 export async function action({ request, params }: ActionFunctionArgs) {
   await SessionService.requireAdmin(request);
-  const result = await schema.validate(await request.formData());
+  const result = await parseFormData(request, schema);
   if (result.error) {
     return validationError(result.error);
   }

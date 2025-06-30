@@ -1,5 +1,5 @@
-import { NavLink, Outlet } from "react-router";
 import { IconCreditCard, IconKey, IconUserCircle } from "@tabler/icons-react";
+import { NavLink, Outlet } from "react-router";
 
 import { UserDebugTools } from "~/components/debug/user-debug-tools";
 import { ErrorComponent } from "~/components/error-component";

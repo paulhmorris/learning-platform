@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { IconPlus } from "@tabler/icons-react";
 import { ColumnDef } from "@tanstack/react-table";
-import { Link, LoaderFunctionArgs, MetaFunction, useLoaderData } from "react-router";
+import { Link, LoaderFunctionArgs, useLoaderData } from "react-router";
 
 import { ErrorComponent } from "~/components/error-component";
 import { AdminButton } from "~/components/ui/admin-button";
@@ -10,10 +10,6 @@ import { DataTableColumnHeader } from "~/components/ui/data-table/data-table-col
 import { Facet } from "~/components/ui/data-table/data-table-toolbar";
 import { db } from "~/integrations/db.server";
 import { SessionService } from "~/services/session.server";
-
-export const meta: MetaFunction = () => {
-  return [{ title: `Users | Plumb Media & Education}` }];
-};
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await SessionService.requireAdmin(request);
@@ -38,6 +34,7 @@ export default function UsersIndex() {
 
   return (
     <>
+      <title>Users | Plumb Media & Education</title>
       <AdminButton asChild variant="secondary">
         <Link to="/admin/users/new" className="mb-4 flex items-center space-x-2">
           <IconPlus className="size-5" />

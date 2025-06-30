@@ -1,10 +1,9 @@
-import { Link } from "react-router";
-import { RemixLinkProps } from "@react-router/react/dist/components";
 import { IconArrowLeft } from "@tabler/icons-react";
+import { Link, LinkProps } from "react-router";
 
 import { cn } from "~/lib/utils";
 
-export function BackLink({ className, children, ...rest }: RemixLinkProps) {
+export function BackLink({ className, children, ...rest }: LinkProps) {
   return (
     <Link
       {...rest}

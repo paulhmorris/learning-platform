@@ -1,4 +1,4 @@
-import { Link, LoaderFunctionArgs, MetaFunction, useLoaderData } from "react-router";
+import { Link, LoaderFunctionArgs, useLoaderData } from "react-router";
 
 import { ErrorComponent } from "~/components/error-component";
 import { IconCertificate } from "~/components/icons";
@@ -9,10 +9,6 @@ import { db } from "~/integrations/db.server";
 import { notFound, serverError } from "~/lib/responses.server";
 import { CourseService } from "~/services/course.server";
 import { SessionService } from "~/services/session.server";
-
-export const meta: MetaFunction = () => {
-  return [{ title: `User Courses | Plumb Media & Education` }];
-};
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   await SessionService.requireAdmin(request);
@@ -59,6 +55,7 @@ export default function AdminUserCourses() {
   const { user, courses } = useLoaderData<typeof loader>();
   return (
     <>
+      <title>User Courses | Plumb Media & Education</title>
       <h1 className="sr-only">Courses</h1>
       <p className="text-base">
         {courses.length > 0

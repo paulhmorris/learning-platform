@@ -1,7 +1,7 @@
 import { EnumLike } from "zod";
 import { z } from "zod/v4";
 
-const _text = z.string().max(255, "Must be 255 characters or less").trim();
+const _text = z.string().max(255, "Must be 255 characters or less");
 export const text = _text.min(1, "Required");
 export const optionalText = _text.optional().transform((v) => (v === "" ? undefined : v));
 

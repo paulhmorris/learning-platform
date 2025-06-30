@@ -1,5 +1,5 @@
-import { useFetcher } from "react-router";
 import { IconLoader } from "@tabler/icons-react";
+import { useFetcher } from "react-router";
 
 import { Button } from "~/components/ui/button";
 

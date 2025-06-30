@@ -1,8 +1,7 @@
-import { UserRole } from "@prisma/client";
 import { parseFormData, ValidatedForm, validationError } from "@rvf/react-router";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { Link, MetaFunction, redirect, useSearchParams } from "react-router";
-import { z } from "zod";
+import { z } from "zod/v4";
 
 import { AuthCard } from "~/components/common/auth-card";
 import { PageTitle } from "~/components/common/page-title";
@@ -11,13 +10,8 @@ import { Checkbox } from "~/components/ui/checkbox";
 import { FormField } from "~/components/ui/form";
 import { Label } from "~/components/ui/label";
 import { SubmitButton } from "~/components/ui/submit-button";
-import { EMAIL_FROM_DOMAIN } from "~/config";
-import { EmailService } from "~/integrations/email.server";
 import { CheckboxSchema } from "~/lib/schemas";
-import { Toasts } from "~/lib/toast.server";
-import { safeRedirect } from "~/lib/utils";
 import { loader as rootLoader } from "~/root";
-import { AuthService } from "~/services/auth.server";
 import { SessionService } from "~/services/session.server";
 
 const schema = z.object({
@@ -43,49 +37,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     return validationError(result.error);
   }
 
-  const { email, password, remember, redirectTo } = result.data;
-  const user = await AuthService.verifyLogin(email, password);
-
-  if (!user) {
-    return validationError({
-      fieldErrors: {
-        email: "Email or password is incorrect",
-      },
-    });
-  }
-
-  if (!user.isActive) {
-    return Toasts.dataWithError(null, {
-      message: "Account Deactivated",
-      description: "Your account has been deactivated. Please contact support.",
-    });
-  }
-
-  // If the user is not verified, redirect them to the join page with a message
-  if (!user.isEmailVerified) {
-    const url = new URL("/join", request.url);
-    url.searchParams.set("redirectTo", redirectTo || user.role === UserRole.USER ? "/" : "/admin");
-    url.searchParams.set("step", "verify-email");
-    url.searchParams.set("email", email);
-    url.searchParams.set("status", "unverified");
-
-    const { token } = await AuthService.generateVerificationByEmail(email);
-    await EmailService.send({
-      from: `Plumb Media & Education <no-reply@${EMAIL_FROM_DOMAIN}>`,
-      to: user.email,
-      subject: "Verify Your Email",
-      html: `<p>Here's your six digit verification code: <strong>${token}</strong></p>`,
-    });
-
-    return redirect(url.toString());
-  }
-
-  return SessionService.createUserSession({
-    request,
-    userId: user.id,
-    redirectTo: safeRedirect(redirectTo, user.role === UserRole.USER ? "/" : "/admin"),
-    remember: !!remember,
-  });
+  return { ok: true };
 };
 
 export const meta: MetaFunction<typeof loader, { root: typeof rootLoader }> = ({ matches }) => {
@@ -104,7 +56,7 @@ export const meta: MetaFunction<typeof loader, { root: typeof rootLoader }> = ({
 
 export default function LoginPage() {
   const [searchParams] = useSearchParams();
-  const redirectTo = searchParams.get("redirectTo") || "/preview";
+  const redirectTo = searchParams.get("redirectTo") ?? "/preview";
 
   return (
     <>
@@ -113,6 +65,8 @@ export default function LoginPage() {
         <ValidatedForm
           schema={schema}
           defaultValues={{
+            remember: "on",
+            redirectTo,
             email: import.meta.env.DEV ? "paulh.morris@gmail.com" : "",
             password: import.meta.env.DEV ? "password" : "",
           }}

@@ -1,7 +1,12 @@
-import { withZod } from "@remix-validated-form/with-zod";
-import { ValidatedForm } from "@rvf/react-router";
-import { ActionFunctionArgs, Link, LoaderFunctionArgs, MetaFunction, useActionData, useLoaderData } from "react-router";
-import { z } from "zod";
+import {
+  ActionFunctionArgs,
+  Form,
+  Link,
+  LoaderFunctionArgs,
+  MetaFunction,
+  useActionData,
+  useLoaderData,
+} from "react-router";
 
 import { claimCertificateJob } from "jobs/claim-certificate";
 import { PageTitle } from "~/components/common/page-title";
@@ -232,9 +237,9 @@ export default function CourseCertificate() {
         Click the button below to claim your certificate. It will be emailed to{" "}
         <span className="font-bold">{user.email}</span>.
       </p>
-      <ValidatedForm validator={withZod(z.object({}))} className="mt-8" method="post">
+      <Form className="mt-8" method="post">
         <SubmitButton className="sm:w-auto">Claim Certificate</SubmitButton>
-      </ValidatedForm>
+      </Form>
     </>
   );
 }

@@ -1,5 +1,5 @@
-import { useFetcher, useFetchers } from "react-router";
 import { IconLoader } from "@tabler/icons-react";
+import { useFetcher, useFetchers } from "react-router";
 
 import { AdminButton } from "~/components/ui/admin-button";
 import { Input } from "~/components/ui/input";
@@ -24,7 +24,7 @@ export function LessonUpdateForm(props: {
       <input
         type="hidden"
         name="requiredDurationInSeconds"
-        value={lesson.attributes.required_duration_in_seconds || 0}
+        value={lesson.attributes.required_duration_in_seconds ?? 0}
       />
       <Input name="durationInSeconds" placeholder="Seconds" pattern="[0-9]*" disabled={isBeingUpdated} required />
       <AdminButton variant="secondary" type="submit" name="_action" value="update-lesson" disabled={isBeingUpdated}>

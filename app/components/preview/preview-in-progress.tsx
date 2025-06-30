@@ -36,7 +36,7 @@ export function PreviewInProgress({
   return (
     <div className={cn("-my-1 block rounded-lg py-1")}>
       <SectionItemContainer>
-        <ProgressCircle aria-label="Lesson progress" percentage={clientProgressPercentage || percentage} />
+        <ProgressCircle aria-label="Lesson progress" percentage={clientProgressPercentage ?? percentage} />
         <SectionItemIconContainer>
           <Icon className={cn("text-foreground", hasVideo ? "h-8 w-7" : "h-7 w-6")} />
         </SectionItemIconContainer>

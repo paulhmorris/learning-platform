@@ -1,8 +1,8 @@
+import { parseFormData } from "@rvf/react-router";
 import { IconCircleCheckFilled, IconCircleDashed, IconCircleDashedCheck, IconCircleXFilled } from "@tabler/icons-react";
 import { ActionFunctionArgs, LoaderFunctionArgs, useLoaderData } from "react-router";
 import invariant from "tiny-invariant";
-import { z } from "zod";
-import { fromZodError } from "zod-validation-error";
+import { z } from "zod/v4";
 
 import { LessonCompleteForm } from "~/components/admin/courses/lesson-complete-form";
 import { LessonProgressHeader } from "~/components/admin/courses/lesson-progress-header";
@@ -15,6 +15,7 @@ import { ResetAllProgressDialog } from "~/components/admin/courses/reset-all-pro
 import { ErrorComponent } from "~/components/error-component";
 import { Toasts } from "~/lib/toast.server";
 import { formatSeconds } from "~/lib/utils";
+import { optionalNumber } from "~/schemas/fields";
 import { LessonService } from "~/services/lesson.server";
 import { ProgressService } from "~/services/progress.server";
 import { QuizService } from "~/services/quiz.server";
@@ -29,12 +30,12 @@ const schema = z.object({
     "reset-quiz",
     "update-quiz",
   ]),
-  quizId: z.coerce.number().optional(),
-  score: z.coerce.number().optional(),
-  passingScore: z.coerce.number().optional(),
-  lessonId: z.coerce.number().optional(),
-  durationInSeconds: z.coerce.number().optional(),
-  requiredDurationInSeconds: z.coerce.number().optional(),
+  quizId: optionalNumber,
+  score: optionalNumber,
+  passingScore: optionalNumber,
+  lessonId: optionalNumber,
+  durationInSeconds: optionalNumber,
+  requiredDurationInSeconds: optionalNumber,
 });
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -64,13 +65,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   await SessionService.requireAdmin(request);
   const userId = params.id;
   invariant(userId, "User ID not found.");
-  const result = schema.safeParse(Object.fromEntries(await request.formData()));
+  const result = await parseFormData(request, schema);
 
-  if (!result.success) {
-    return Toasts.dataWithError(
-      { ok: false, message: "Invalid form data.", errors: result.error.issues },
-      { message: "Error", description: `Invalid form data: ${fromZodError(result.error).toString()}` },
-    );
+  if (result.error) {
+    return Toasts.dataWithError({ ok: false }, { message: "Error", description: "Error completing course." });
   }
 
   const { _action, durationInSeconds, lessonId, requiredDurationInSeconds, quizId, score, passingScore } = result.data;

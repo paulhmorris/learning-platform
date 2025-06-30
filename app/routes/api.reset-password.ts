@@ -1,8 +1,7 @@
-import { withZod } from "@remix-validated-form/with-zod";
-import { validationError } from "@rvf/react-router";
+import { parseFormData, validationError } from "@rvf/react-router";
 import dayjs from "dayjs";
 import { type ActionFunctionArgs } from "react-router";
-import { z } from "zod";
+import { z } from "zod/v4";
 
 import { EmailService } from "~/integrations/email.server";
 import { Sentry } from "~/integrations/sentry";
@@ -10,7 +9,7 @@ import { Toasts } from "~/lib/toast.server";
 import { AuthService } from "~/services/auth.server";
 import { UserService } from "~/services/user.server";
 
-const schema = withZod(z.object({ email: z.string().email() }));
+const schema = z.object({ email: z.string().email() });
 
 export async function action({ request }: ActionFunctionArgs) {
   if (request.method !== "POST") {

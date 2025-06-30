@@ -1,6 +1,6 @@
 import { User, UserLessonProgress, UserQuizProgress } from "@prisma/client";
 import type { Attribute } from "@strapi/strapi";
-import clsx, { ClassValue } from "clsx";
+import { ClassValue, clsx } from "clsx";
 import { useMemo } from "react";
 import { Params, useMatches, useRouteLoaderData } from "react-router";
 import { StrapiResponse } from "strapi-sdk-js";
@@ -188,7 +188,7 @@ export function getLessonAttributes(lesson: APIResponseData<"api::lesson.lesson"
   const isTimed =
     typeof lesson.attributes.required_duration_in_seconds !== "undefined" &&
     lesson.attributes.required_duration_in_seconds > 0;
-  const durationInMinutes = isTimed ? Math.ceil((lesson.attributes.required_duration_in_seconds || 0) / 60) : 0;
+  const durationInMinutes = isTimed ? Math.ceil((lesson.attributes.required_duration_in_seconds ?? 0) / 60) : 0;
   const Icon = hasVideo ? IconCameraFilled : IconClipboard;
 
   return { hasVideo, isTimed, durationInMinutes, Icon, title: lesson.attributes.title, slug: lesson.attributes.slug };
@@ -214,7 +214,7 @@ export function getPreviewValues(data: GetPreviewValueArgs): GetPreviewValuesRet
   const cacheKey = JSON.stringify(data);
 
   if (getPreviewValuesCache.has(cacheKey)) {
-    return getPreviewValuesCache.get(cacheKey) as GetPreviewValuesReturn;
+    return getPreviewValuesCache.get(cacheKey)!;
   }
 
   const { lessons, course, quizProgress, lessonProgress } = data;
@@ -248,9 +248,7 @@ export function getPreviewValues(data: GetPreviewValueArgs): GetPreviewValuesRet
 
   const totalQuizDurationInSeconds = course.attributes.sections.reduce((acc, curr) => {
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    const quizDuration = curr.quiz?.data?.attributes.required_duration_in_seconds
-      ? curr.quiz.data.attributes.required_duration_in_seconds
-      : 0;
+    const quizDuration = curr.quiz?.data?.attributes.required_duration_in_seconds ?? 0;
     return acc + quizDuration;
   }, 0);
 
@@ -259,8 +257,7 @@ export function getPreviewValues(data: GetPreviewValueArgs): GetPreviewValuesRet
     ? lessonProgress.reduce((acc, curr) => acc + (curr.durationInSeconds ?? 0), 0)
     : completedLessonCount + completedQuizCount;
   const totalLessonDurationInSeconds = courseIsTimed
-    ? // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-      lessons.reduce((acc, curr) => acc + (curr.requiredDurationInSeconds ?? 0), 0)
+    ? lessons.reduce((acc, curr) => acc + (curr.requiredDurationInSeconds ?? 0), 0)
     : numberOfLessons + numberOfQuizzes;
 
   const result = {
@@ -299,7 +296,7 @@ export function getCourseLayoutValues(data: GetCourseLayoutValueArgs): GetCourse
   const cacheKey = JSON.stringify(data);
 
   if (courseLayoutCache.has(cacheKey)) {
-    return courseLayoutCache.get(cacheKey) as GetCourseLayoutReturn;
+    return courseLayoutCache.get(cacheKey)!;
   }
 
   const { lessons, course, quizProgress, lessonProgress, params } = data;
@@ -324,7 +321,7 @@ export function getCourseLayoutValues(data: GetCourseLayoutValueArgs): GetCourse
   const activeSection = activeQuiz
     ? // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       sections.find((s) => s.quiz?.data?.attributes.uuid === activeQuiz.data?.attributes.uuid)
-    : sections.find((s) => s.id === activeLesson?.sectionId) ?? sections[0];
+    : (sections.find((s) => s.id === activeLesson?.sectionId) ?? sections[0]);
 
   const numberOfLessons = lessons.length;
   const numberOfQuizzes = course.attributes.sections.filter((s) => s.quiz?.data).length;
@@ -335,9 +332,7 @@ export function getCourseLayoutValues(data: GetCourseLayoutValueArgs): GetCourse
 
   const totalQuizDurationInSeconds = course.attributes.sections.reduce((acc, curr) => {
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    const quizDuration = curr.quiz?.data?.attributes.required_duration_in_seconds
-      ? curr.quiz.data.attributes.required_duration_in_seconds
-      : 0;
+    const quizDuration = curr.quiz?.data?.attributes.required_duration_in_seconds ?? 0;
     return acc + quizDuration;
   }, 0);
 

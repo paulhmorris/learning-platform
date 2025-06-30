@@ -1,8 +1,11 @@
+import { ClerkProvider } from "@clerk/react-router";
+import { rootAuthLoader } from "@clerk/react-router/ssr.server";
+import { dark } from "@clerk/themes";
 import "@fontsource-variable/inter/wght.css";
 import { useEffect } from "react";
 import type { LinksFunction, LoaderFunctionArgs } from "react-router";
 import { data, Links, Meta, Outlet, Scripts, ScrollRestoration, useRouteLoaderData } from "react-router";
-import { PreventFlashOnWrongTheme, ThemeProvider, useTheme } from "remix-themes";
+import { PreventFlashOnWrongTheme, Theme, ThemeProvider, useTheme } from "remix-themes";
 import { getToast } from "remix-toast";
 
 import { ErrorComponent } from "~/components/error-component";
@@ -22,10 +25,10 @@ import { Route } from "./+types/root";
 
 export const links: LinksFunction = () => [{ rel: "stylesheet", href: globalStyles, as: "style" }];
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const user = await SessionService.getUser(request);
-  const theme = (await themeSessionResolver(request)).getTheme();
-  const { toast, headers } = await getToast(request);
+export const loader = async (args: LoaderFunctionArgs) => {
+  const user = await SessionService.getUser(args.request);
+  const theme = (await themeSessionResolver(args.request)).getTheme();
+  const { toast, headers } = await getToast(args.request);
 
   const defaultResponse = {
     user,
@@ -41,7 +44,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   };
 
   try {
-    const { host } = new URL(request.url);
+    const { host } = new URL(args.request.url);
     const linkedCourse = await CourseService.getByHost(host);
 
     if (!linkedCourse) {
@@ -50,7 +53,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
     const course = await CourseService.getFromCMSForRoot(linkedCourse.strapiId);
 
-    return data({ ...defaultResponse, course, hasLinkedCourse: true }, { headers });
+    return rootAuthLoader(args, () => {
+      return data({ ...defaultResponse, course, hasLinkedCourse: true }, { headers });
+    });
   } catch (error) {
     console.error(error);
     Sentry.captureException(error);
@@ -58,8 +63,18 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   }
 };
 
-export default function App() {
-  return <Outlet />;
+export default function App({ loaderData }: Route.ComponentProps) {
+  const [theme] = useTheme();
+  return (
+    <ClerkProvider
+      loaderData={loaderData}
+      appearance={{ baseTheme: theme === Theme.DARK ? dark : undefined }}
+      publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY}
+      telemetry={{ disabled: true }}
+    >
+      <Outlet />
+    </ClerkProvider>
+  );
 }
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -85,17 +100,16 @@ function InnerLayout({ ssrTheme, children }: { ssrTheme: boolean; children: Reac
     } else {
       Sentry.setUser(null);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data?.user]);
 
   return (
-    <html lang="en" data-theme={theme || "light"} className="h-full">
+    <html lang="en" data-theme={theme ?? "light"} className="h-full">
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
         <meta name="theme-color" media="(prefers-color-scheme: light)" content="#fff" />
         <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#030712" />
-        {/* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition */}
+        {}
         {data?.ENV ? <meta name="git-sha" content={data.ENV.VERCEL_GIT_COMMIT_SHA} /> : null}
 
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />

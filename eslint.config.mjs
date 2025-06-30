@@ -94,6 +94,7 @@ export default tseslint.config(
     files: ["**/*.{js,ts,jsx,tsx}"],
     plugins: {
       react,
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       "jsx-a11y": jsxA11y,
       "react-hooks": reactHooks,
     },

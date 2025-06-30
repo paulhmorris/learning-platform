@@ -104,7 +104,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     })
     .filter((a) => typeof a !== "undefined");
 
-  if (!correctQuizAnswers || !correctQuizAnswers.length) {
+  if (!correctQuizAnswers?.length) {
     return Toasts.dataWithError(
       { score: 0, passed: false, userAnswers: [], passingScore: quiz.data.attributes.passing_score },
       {
@@ -179,7 +179,7 @@ export default function Quiz() {
     false,
   );
   const [countdownValue] = useCountdown(
-    reachedRequiredTime ? 0 : quiz.attributes.required_duration_in_seconds ?? 0,
+    reachedRequiredTime ? 0 : (quiz.attributes.required_duration_in_seconds ?? 0),
     0,
     { startOnMount: true },
   );
@@ -216,7 +216,7 @@ export default function Quiz() {
   // Quiz is locked if any lesson in the quiz section is not completed
   const isQuizLocked = lessons.filter((l) => l.sectionId === quizSection?.id).some((l) => !l.isCompleted);
 
-  const isPassed = Boolean(progress?.isCompleted || (actionData?.passed && actionData.score));
+  const isPassed = Boolean(progress?.isCompleted ?? (actionData?.passed && actionData.score));
   const isFailed = Boolean(!progress?.isCompleted && actionData && !actionData.passed);
 
   if (isQuizLocked) {

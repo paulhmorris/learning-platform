@@ -19,7 +19,7 @@ export function CourseUpNext({ lesson, quiz }: Props) {
   }
 
   const isTimed = typeof lesson?.requiredDurationInSeconds !== "undefined" && lesson.requiredDurationInSeconds > 0;
-  const durationInMinutes = isTimed ? Math.ceil((lesson.requiredDurationInSeconds || 0) / 60) : 0;
+  const durationInMinutes = isTimed ? Math.ceil((lesson.requiredDurationInSeconds ?? 0) / 60) : 0;
 
   return (
     <div className="space-y-4">

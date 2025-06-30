@@ -1,16 +1,12 @@
 import { parseFormData, ValidatedForm, validationError } from "@rvf/react-router";
 import { ActionFunctionArgs, LoaderFunctionArgs, MetaFunction } from "react-router";
-import { z } from "zod";
+import { z } from "zod/v4";
 
 import { ErrorComponent } from "~/components/error-component";
 import { FormField } from "~/components/ui/form";
 import { SubmitButton } from "~/components/ui/submit-button";
-import { db } from "~/integrations/db.server";
-import { Sentry } from "~/integrations/sentry";
-import { Toasts } from "~/lib/toast.server";
 import { useUser } from "~/lib/utils";
 import { loader as rootLoader } from "~/root";
-import { AuthService } from "~/services/auth.server";
 import { SessionService } from "~/services/session.server";
 
 const schema = z
@@ -50,51 +46,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export async function action({ request }: ActionFunctionArgs) {
-  const user = await SessionService.requireUser(request);
+  await SessionService.requireUser(request);
 
   const result = await parseFormData(request, schema);
   if (result.error) {
     return validationError(result.error);
   }
 
-  const { oldPassword, newPassword } = result.data;
-
-  try {
-    // Verify the old password
-    const verifiedUser = await AuthService.verifyLogin(user.email, oldPassword);
-    if (!verifiedUser) {
-      return validationError({
-        fieldErrors: {
-          oldPassword: "Incorrect password",
-        },
-      });
-    }
-
-    // Update the password
-    const hashedPassword = await AuthService.hashPassword(newPassword);
-    await db.user.update({
-      where: { id: user.id },
-      data: {
-        password: {
-          update: {
-            hash: hashedPassword,
-          },
-        },
-      },
-    });
-
-    return Toasts.dataWithSuccess(
-      { success: true },
-      { message: "Success", description: "Your password has been updated" },
-    );
-  } catch (error) {
-    console.error(error);
-    Sentry.captureException(error);
-    return Toasts.dataWithError(
-      { message: "Error updating password" },
-      { message: "Error", description: "There was an error updating your password" },
-    );
-  }
+  return { ok: true };
 }
 
 export default function Password() {
