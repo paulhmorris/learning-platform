@@ -190,7 +190,7 @@ export default function CourseCertificate() {
         <PageTitle>Certificate</PageTitle>
         <div className="mt-8 rounded-md border border-destructive bg-destructive/5 p-4 text-destructive">
           <p>You must verify your identity before you can claim your certificate for this course. </p>
-          <Link to="/account/profile" className="mt-2 block text-lg font-bold underline decoration-2">
+          <Link to="/account/identity" className="mt-2 block text-lg font-bold underline decoration-2">
             Verify Now
           </Link>
         </div>

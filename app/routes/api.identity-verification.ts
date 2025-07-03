@@ -1,39 +1,29 @@
-import { ActionFunctionArgs, data } from "react-router";
+import { ActionFunctionArgs } from "react-router";
 
 import { Sentry } from "~/integrations/sentry";
-import { stripe } from "~/integrations/stripe.server";
+import { Responses } from "~/lib/responses.server";
+import { IdentityService } from "~/services/identity.server";
 import { SessionService } from "~/services/session.server";
-import { UserService } from "~/services/user.server";
 
 // POST or PUT /api/identity-verification
 export async function action(args: ActionFunctionArgs) {
   const user = await SessionService.requireUser(args);
 
   if (user.isIdentityVerified) {
-    return new Response("User is already verified or has an active session", { status: 400 });
+    return Responses.conflict();
   }
 
   if (user.stripeVerificationSessionId) {
-    const session = await stripe.identity.verificationSessions.retrieve(user.stripeVerificationSessionId);
-    return { client_secret: session.client_secret };
+    const { client_secret } = await IdentityService.retrieveVerificationSession(user.stripeVerificationSessionId);
+    return { client_secret };
   }
 
   try {
-    const { client_secret } = await createVerificationSession(user.id, user.email);
+    const { client_secret } = await IdentityService.createVerificationSession(user.id, user.email);
     return { client_secret };
   } catch (error) {
     console.error(error);
     Sentry.captureException(error);
-    return data({ message: "Error creating verification session" }, { status: 500 });
+    return Responses.serverError();
   }
-}
-
-async function createVerificationSession(user_id: string, email: string) {
-  const verificationSession = await stripe.identity.verificationSessions.create({
-    type: "document",
-    provided_details: { email },
-    metadata: { user_id },
-  });
-  await UserService.update(user_id, { stripeVerificationSessionId: verificationSession.id });
-  return verificationSession;
 }
