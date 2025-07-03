@@ -14,6 +14,7 @@ import invariant from "tiny-invariant";
 import { useLocalStorage } from "usehooks-ts";
 
 import { PageTitle } from "~/components/common/page-title";
+import { ErrorComponent } from "~/components/error-component";
 import { QuizFailed } from "~/components/quiz/quiz-failed";
 import { QuizLocked } from "~/components/quiz/quiz-locked";
 import { QuizPassed } from "~/components/quiz/quiz-passed";
@@ -321,4 +322,8 @@ export default function Quiz() {
       )}
     </>
   );
+}
+
+export function ErrorBoundary() {
+  return <ErrorComponent />;
 }

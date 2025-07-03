@@ -4,6 +4,7 @@ import { LoaderFunctionArgs, Outlet, useLoaderData, useParams } from "react-rout
 import { useIsClient, useMediaQuery } from "usehooks-ts";
 
 import { BackLink } from "~/components/common/back-link";
+import { ErrorComponent } from "~/components/error-component";
 import { Section, SectionHeader } from "~/components/section";
 import { SectionCertificate } from "~/components/section/section-certificate";
 import { CourseProgressBar } from "~/components/sidebar/course-progress-bar";
@@ -218,4 +219,8 @@ export default function CourseLayout() {
       </div>
     </>
   );
+}
+
+export function ErrorBoundary() {
+  return <ErrorComponent />;
 }

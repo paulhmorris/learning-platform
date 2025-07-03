@@ -13,6 +13,7 @@ import { QuizResetForm } from "~/components/admin/courses/quiz-reset-form";
 import { QuizUpdateForm } from "~/components/admin/courses/quiz-update-form";
 import { ResetAllProgressDialog } from "~/components/admin/courses/reset-all-progress-dialog";
 import { ErrorComponent } from "~/components/error-component";
+import { Responses } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
 import { formatSeconds } from "~/lib/utils";
 import { optionalNumber } from "~/schemas/fields";
@@ -55,7 +56,7 @@ export async function loader(args: LoaderFunctionArgs) {
 
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (!lessons || !quizzes) {
-    throw new Error("Failed to load cms data.");
+    throw Responses.notFound();
   }
 
   return { lessons, quizzes, lessonProgress, quizProgress };
@@ -68,7 +69,7 @@ export async function action(args: ActionFunctionArgs) {
   const result = await parseFormData(args.request, schema);
 
   if (result.error) {
-    return Toasts.dataWithError({ ok: false }, { message: "Error", description: "Error completing course." });
+    return Toasts.dataWithError(null, { message: "Error", description: "Error completing course." });
   }
 
   const { _action, durationInSeconds, lessonId, requiredDurationInSeconds, quizId, score, passingScore } = result.data;
@@ -78,89 +79,68 @@ export async function action(args: ActionFunctionArgs) {
       // Reset all progress for this user in this course
       await ProgressService.resetAll(userId);
       await QuizService.resetAllQuizProgress(userId);
-      return Toasts.dataWithSuccess(
-        { ok: true, message: "All progress reset." },
-        { message: "Success", description: "All progress has been reset." },
-      );
+      return Toasts.dataWithSuccess(null, { message: "Success", description: "All progress has been reset." });
     }
 
     case "reset-lesson": {
       if (!lessonId) {
-        return Toasts.dataWithError(
-          { ok: false, message: "Lesson ID is required." },
-          { message: "Error", description: "A lesson ID was not found with this request." },
-        );
+        return Toasts.dataWithError(null, {
+          message: "Error",
+          description: "A lesson ID was not found with this request.",
+        });
       }
       // Reset progress for this lesson
       await ProgressService.resetLesson(lessonId, userId);
-      return Toasts.dataWithSuccess(
-        { ok: true, message: "Lesson progress reset." },
-        { message: "Success", description: "Lesson progress has been reset." },
-      );
+      return Toasts.dataWithSuccess(null, { message: "Success", description: "Lesson progress has been reset." });
     }
 
     case "complete-lesson": {
       if (!lessonId || !requiredDurationInSeconds) {
-        return Toasts.dataWithError(
-          { ok: false, message: "Lesson ID is required." },
-          { message: "Error", description: "A lesson ID or required duration was not found with this request." },
-        );
+        return Toasts.dataWithError(null, {
+          message: "Error",
+          description: "A lesson ID or required duration was not found with this request.",
+        });
       }
       await ProgressService.markComplete({ userId, lessonId, requiredDurationInSeconds });
-      return Toasts.dataWithSuccess(
-        { ok: true, message: "Lesson completed." },
-        { message: "Success", description: "Lesson has been marked complete." },
-      );
+      return Toasts.dataWithSuccess(null, { message: "Success", description: "Lesson has been marked complete." });
     }
 
     case "update-lesson": {
       if (!lessonId || !durationInSeconds || !requiredDurationInSeconds) {
-        return Toasts.dataWithError(
-          { ok: false, message: "Lesson ID is required." },
-          { message: "Error", description: "A lesson ID or duration was not found with this request." },
-        );
+        return Toasts.dataWithError(null, {
+          message: "Error",
+          description: "A lesson ID or duration was not found with this request.",
+        });
       }
       // Update progress for this lesson
       await ProgressService.updateProgress({ lessonId, userId, durationInSeconds, requiredDurationInSeconds });
-      return Toasts.dataWithSuccess(
-        { ok: true, message: "Lesson progress updated." },
-        { message: "Success", description: "Lesson progress has been updated." },
-      );
+      return Toasts.dataWithSuccess(null, { message: "Success", description: "Lesson progress has been updated." });
     }
 
     case "reset-quiz": {
       if (!quizId) {
-        return Toasts.dataWithError(
-          { ok: false, message: "Quiz ID is required." },
-          { message: "Error", description: "A quiz ID was not found with this request." },
-        );
+        return Toasts.dataWithError(null, {
+          message: "Error",
+          description: "A quiz ID was not found with this request.",
+        });
       }
       await QuizService.resetQuizProgress(quizId, userId);
-      return Toasts.dataWithSuccess(
-        { ok: true, message: "Quiz progress reset." },
-        { message: "Success", description: "Quiz progress has been reset." },
-      );
+      return Toasts.dataWithSuccess(null, { message: "Success", description: "Quiz progress has been reset." });
     }
 
     case "update-quiz": {
       if (!quizId || typeof score === "undefined" || typeof passingScore === "undefined") {
-        return Toasts.dataWithError(
-          { ok: false, message: "Quiz ID and Score are required." },
-          { message: "Error", description: "A quiz ID or score was not found with this request." },
-        );
+        return Toasts.dataWithError(null, {
+          message: "Error",
+          description: "A quiz ID or score was not found with this request.",
+        });
       }
       await QuizService.updateQuizProgress({ quizId, userId, score: score, passingScore: passingScore });
-      return Toasts.dataWithSuccess(
-        { ok: true, message: "Quiz completed." },
-        { message: "Success", description: "Quiz has been marked complete." },
-      );
+      return Toasts.dataWithSuccess(null, { message: "Success", description: "Quiz has been marked complete." });
     }
 
     default:
-      return Toasts.dataWithError(
-        { ok: false, message: "Invalid action." },
-        { message: "Error", description: "Invalid action requested." },
-      );
+      return Toasts.dataWithError(null, { message: "Error", description: "Invalid action requested." });
   }
 }
 
@@ -176,7 +156,7 @@ export default function AdminUserCourse() {
         {/* <CompleteCourseDialog /> */}
       </div>
 
-      <p className="mb-4 max-w-screen-lg text-sm text-muted-foreground">
+      <p className="mb-4 max-w-screen-lg text-sm font-normal">
         Because of the complexity of locking and unlocking lessons as the course progresses, it is highly recommended to
         adjust entire sections. If that doesn&apos;t satisfy your use case, avoid having out of order lessons completed.
       </p>

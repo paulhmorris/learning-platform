@@ -9,7 +9,6 @@ import { PreventFlashOnWrongTheme, Theme, ThemeProvider, useTheme } from "remix-
 import { getToast } from "remix-toast";
 
 import { ErrorComponent } from "~/components/error-component";
-import { GlobalLoader } from "~/components/global-loader";
 import { Header } from "~/components/header";
 import { Notifications } from "~/components/notifications";
 import { Sentry } from "~/integrations/sentry";
@@ -139,7 +138,6 @@ function InnerLayout({ ssrTheme, children }: { ssrTheme: boolean; children: Reac
       <body className="flex h-full min-h-full flex-col bg-background font-sans text-foreground">
         {children}
         <Notifications />
-        <GlobalLoader />
         <ScrollRestoration />
         <script
           dangerouslySetInnerHTML={{
