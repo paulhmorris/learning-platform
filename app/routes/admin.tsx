@@ -4,6 +4,7 @@ import { LoaderFunctionArgs, NavLink, Outlet } from "react-router";
 
 import { UserDebugTools } from "~/components/debug/user-debug-tools";
 import { ErrorComponent } from "~/components/error-component";
+import { Responses } from "~/lib/responses.server";
 import { cn } from "~/lib/utils";
 import { SessionService } from "~/services/session.server";
 
@@ -14,7 +15,7 @@ const links = [
 
 export async function loader(args: LoaderFunctionArgs) {
   await SessionService.requireAdmin(args);
-  return {};
+  return Responses.ok();
 }
 
 export default function AdminLayout() {

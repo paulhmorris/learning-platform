@@ -60,7 +60,19 @@ function morganPlugin() {
     name: "morgan-plugin",
     configureServer(server: ViteDevServer) {
       return () => {
-        server.middlewares.use(morgan("tiny"));
+        server.middlewares.use(
+          morgan("dev", {
+            skip: (req) => {
+              if (req.url?.startsWith("/.well-known")) {
+                return true;
+              }
+              if (req.url?.startsWith("/__manifest")) {
+                return true;
+              }
+              return false;
+            },
+          }),
+        );
       };
     },
   };
