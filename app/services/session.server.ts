@@ -3,11 +3,14 @@ import { UserRole } from "@prisma/client";
 import { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 
 import { db } from "~/integrations/db.server";
+import { createLogger } from "~/integrations/logger.server";
 import { Responses } from "~/lib/responses.server";
 import { AuthService } from "~/services/auth.server";
 import { UserService } from "~/services/user.server";
 
 class _SessionService {
+  logger = createLogger("SessionService");
+
   async logout(sessionId: string | null) {
     if (sessionId) {
       await AuthService.revokeSession(sessionId);
@@ -34,7 +37,7 @@ class _SessionService {
       return user;
     }
 
-    console.warn(`User not not found in the database, logging out`, { clerkId: userId, sessionId });
+    this.logger.warn(`User not not found in the database, logging out`, { clerkId: userId, sessionId });
     await this.logout(sessionId);
     throw Responses.redirectToSignIn(args.request.url);
   }
@@ -44,20 +47,20 @@ class _SessionService {
 
     // There might be a case where a db user didn't get linked to their clerk external_id
     if (!userId) {
-      console.error("external_id not found in claims. Attempting to link...", { requestUrl: args.request.url });
+      this.logger.error("external_id not found in claims. Attempting to link...", { requestUrl: args.request.url });
 
       const { userId: clerkId, sessionId } = await this.getSession(args);
       if (!clerkId) {
-        console.error("No userId found in session, redirecting to sign in", { requestUrl: args.request.url });
+        this.logger.error("No userId found in session, redirecting to sign in", { requestUrl: args.request.url });
         await this.logout(sessionId);
         throw Responses.redirectToSignIn(args.request.url);
       }
 
       const user = await db.user.findUniqueOrThrow({ where: { clerkId } });
-      console.info("Found user with clerkId", { clerkId, userId: user.id });
+      this.logger.info("Found user with clerkId", { clerkId, userId: user.id });
 
       const clerkUser = await AuthService.saveExternalId(clerkId, user.id);
-      console.info("Successfully linked user to Clerk", { clerkId, userId: clerkUser.externalId });
+      this.logger.info("Successfully linked user to Clerk", { clerkId, userId: clerkUser.externalId });
 
       // We still need to log them out to refresh the session
       await this.logout(sessionId);
