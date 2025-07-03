@@ -2,7 +2,7 @@ import { getAuth } from "@clerk/react-router/ssr.server";
 import { UserRole } from "@prisma/client";
 import { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 
-import { forbidden, redirectToSignIn, unauthorized } from "~/lib/responses.server";
+import { Responses } from "~/lib/responses.server";
 import { AuthService } from "~/services/auth.server";
 import { UserService } from "~/services/user.server";
 
@@ -35,14 +35,14 @@ class _SessionService {
 
     console.warn(`User not not found in the database, logging out`, { clerkId: userId, sessionId });
     await this.logout(sessionId);
-    throw redirectToSignIn(args.request.url);
+    throw Responses.redirectToSignIn(args.request.url);
   }
 
   async requireUserId(args: LoaderFunctionArgs | ActionFunctionArgs) {
     const userId = await this.getUserId(args);
     if (!userId) {
       console.error("User ID is required but not found in the session.", { requestUrl: args.request.url });
-      throw redirectToSignIn(args.request.url);
+      throw Responses.redirectToSignIn(args.request.url);
     }
     return userId;
   }
@@ -52,7 +52,7 @@ class _SessionService {
     const user = await this.getUser(args);
 
     if (!user) {
-      throw unauthorized("Unauthorized");
+      throw Responses.unauthorized();
     }
 
     if (user.role === UserRole.SUPERADMIN) {
@@ -63,14 +63,14 @@ class _SessionService {
       if (allowedRoles.includes(user.role)) {
         return user;
       }
-      throw unauthorized("Unauthorized");
+      throw Responses.unauthorized();
     }
 
     if (defaultAllowedRoles.includes(user.role)) {
       return user;
     }
 
-    throw forbidden("Forbidden");
+    throw Responses.forbidden();
   }
 
   async requireUser(args: LoaderFunctionArgs | ActionFunctionArgs) {

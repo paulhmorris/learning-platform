@@ -21,7 +21,7 @@ import { Button } from "~/components/ui/button";
 import { useCourseData } from "~/hooks/useCourseData";
 import { cms } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
-import { notFound } from "~/lib/responses.server";
+import { Responses } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
 import { cn, formatSeconds } from "~/lib/utils";
 import { loader as courseLoader } from "~/routes/_course";
@@ -49,7 +49,7 @@ export async function loader(args: LoaderFunctionArgs) {
 
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (!quiz) {
-    throw notFound("Quiz not found.");
+    throw Responses.notFound();
   }
 
   const progress = await db.userQuizProgress.findUnique({
@@ -91,7 +91,7 @@ export async function action(args: ActionFunctionArgs) {
 
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (!quiz) {
-    throw notFound("Quiz not found.");
+    throw Responses.notFound();
   }
 
   // [2, 1]

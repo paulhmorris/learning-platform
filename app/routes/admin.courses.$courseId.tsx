@@ -3,7 +3,7 @@ import { LoaderFunctionArgs, Outlet, useLoaderData } from "react-router";
 import { BackLink } from "~/components/common/back-link";
 import { ErrorComponent } from "~/components/error-component";
 import { db } from "~/integrations/db.server";
-import { notFound } from "~/lib/responses.server";
+import { Responses } from "~/lib/responses.server";
 import { CourseService } from "~/services/course.server";
 import { SessionService } from "~/services/session.server";
 
@@ -13,7 +13,7 @@ export async function loader(args: LoaderFunctionArgs) {
 
   const dbCourse = await db.course.findUnique({ where: { id }, include: { userCourses: true } });
   if (!dbCourse) {
-    throw notFound(null);
+    throw Responses.notFound(null);
   }
   const cmsCourse = await CourseService.getFromCMSForRoot(dbCourse.strapiId);
   if (!cmsCourse) {

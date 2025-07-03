@@ -26,7 +26,7 @@ import { Button } from "~/components/ui/button";
 import { Separator } from "~/components/ui/separator";
 import { getCourse } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
-import { notFound } from "~/lib/responses.server";
+import { Responses } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
 import { getLessonsInOrder, getPreviewValues } from "~/lib/utils";
 import { PaymentService } from "~/services/payment.server";
@@ -39,7 +39,7 @@ export async function loader(args: LoaderFunctionArgs) {
   const url = new URL(args.request.url);
   const linkedCourse = await db.course.findUnique({ where: { host: url.host } });
   if (!linkedCourse) {
-    throw notFound("Course not found.");
+    throw Responses.notFound();
   }
 
   const [course, lessonProgress, quizProgress] = await Promise.all([
@@ -124,12 +124,12 @@ export default function CoursePreview() {
             className="w-full overflow-hidden rounded-xl object-cover shadow-[0px_8px_32px_0px_#00000029]"
           />
           <div className="mt-7">
-            <CoursePreviewLink to={`.`}>
+            <CoursePreviewLink to=".">
               <IconClipboard className="text-current" />
               <span>Course Chapters</span>
             </CoursePreviewLink>
 
-            <CoursePreviewLink to={`/certificate`}>
+            <CoursePreviewLink to="/certificate">
               <IconDocument className="text-current" />
               <span>Certificate</span>
             </CoursePreviewLink>

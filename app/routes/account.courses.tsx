@@ -6,7 +6,7 @@ import { IconCertificate } from "~/components/icons";
 import { AdminButton } from "~/components/ui/admin-button";
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "~/components/ui/card";
 import { db } from "~/integrations/db.server";
-import { serverError } from "~/lib/responses.server";
+import { Responses } from "~/lib/responses.server";
 import { loader as rootLoader } from "~/root";
 import { CourseService } from "~/services/course.server";
 import { SessionService } from "~/services/session.server";
@@ -27,7 +27,7 @@ export async function loader(args: LoaderFunctionArgs) {
   ]);
 
   if (!cmsCourses.length) {
-    throw serverError("Failed to fetch courses");
+    throw Responses.serverError();
   }
 
   const courses = userCourses.map((dbCourse) => {

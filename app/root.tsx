@@ -13,9 +13,9 @@ import { GlobalLoader } from "~/components/global-loader";
 import { Header } from "~/components/header";
 import { Notifications } from "~/components/notifications";
 import { Sentry } from "~/integrations/sentry";
-import { notFound } from "~/lib/responses.server";
-import { themeSessionResolver } from "~/lib/session.server";
+import { Responses } from "~/lib/responses.server";
 import { cn, hexToPartialHSL } from "~/lib/utils";
+import { themeSessionResolver } from "~/routes/api.set-theme";
 import { CourseService } from "~/services/course.server";
 import { SessionService } from "~/services/session.server";
 import globalStyles from "~/tailwind.css?url";
@@ -59,7 +59,7 @@ export const loader = async (args: LoaderFunctionArgs) => {
   } catch (error) {
     console.error(error);
     Sentry.captureException(error);
-    throw notFound("Course not found");
+    throw Responses.notFound();
   }
 };
 

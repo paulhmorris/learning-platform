@@ -7,7 +7,7 @@ import { Button } from "~/components/ui/button";
 import { Card, CardFooter, CardHeader, CardTitle } from "~/components/ui/card";
 import { clerkClient } from "~/integrations/clerk.server";
 import { db } from "~/integrations/db.server";
-import { notFound, serverError } from "~/lib/responses.server";
+import { Responses } from "~/lib/responses.server";
 import { CourseService } from "~/services/course.server";
 import { SessionService } from "~/services/session.server";
 
@@ -16,7 +16,7 @@ export async function loader(args: LoaderFunctionArgs) {
 
   const userId = args.params.id;
   if (!userId) {
-    throw notFound("User not found.");
+    throw Responses.notFound("User not found.");
   }
 
   const user = await db.user.findUnique({
@@ -31,7 +31,7 @@ export async function loader(args: LoaderFunctionArgs) {
   });
 
   if (!user?.clerkId) {
-    throw notFound({ message: "User not found." });
+    throw Responses.notFound({ message: "User not found." });
   }
 
   const backendUser = await clerkClient.users.getUser(user.clerkId);
@@ -39,7 +39,7 @@ export async function loader(args: LoaderFunctionArgs) {
   const cmsCourses = await CourseService.getAll();
 
   if (!cmsCourses.length) {
-    throw serverError("Failed to fetch courses");
+    throw Responses.serverError();
   }
 
   const courses = user.courses.map((dbCourse) => {

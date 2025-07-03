@@ -2,7 +2,7 @@ import { parseFormData, validationError } from "@rvf/react-router";
 import { ActionFunctionArgs } from "react-router";
 import { z } from "zod/v4";
 
-import { badRequest } from "~/lib/responses.server";
+import { Responses } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
 import { number } from "~/schemas/fields";
 import { LessonService } from "~/services/lesson.server";
@@ -43,7 +43,7 @@ export async function action(args: ActionFunctionArgs) {
   // Completion flow
   if (progress && progress.durationInSeconds !== null) {
     if (progress.isCompleted) {
-      throw badRequest({ message: "Can't update progress on a lesson that's already completed." });
+      throw Responses.conflict();
     }
 
     // TODO: prevent spamming the endpoint

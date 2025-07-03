@@ -12,7 +12,7 @@ import { BackLink } from "~/components/common/back-link";
 import { ErrorComponent } from "~/components/error-component";
 import { Badge } from "~/components/ui/badge";
 import { stripe } from "~/integrations/stripe.server";
-import { notFound } from "~/lib/responses.server";
+import { Responses } from "~/lib/responses.server";
 import { cn } from "~/lib/utils";
 import { SessionService } from "~/services/session.server";
 import { UserService } from "~/services/user.server";
@@ -26,13 +26,13 @@ export async function loader(args: LoaderFunctionArgs) {
   await SessionService.requireAdmin(args);
   const id = args.params.id;
   if (!id) {
-    throw notFound("User ID is required.");
+    throw Responses.notFound("User ID is required.");
   }
 
   const user = await UserService.getById(id);
   // TODO: Handle once clerkId is required
   if (!user?.clerkId) {
-    throw notFound({ message: "User not found." });
+    throw Responses.notFound({ message: "User not found." });
   }
 
   let identityVerificationStatus;

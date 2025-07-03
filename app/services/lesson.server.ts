@@ -1,6 +1,6 @@
 import { cms } from "~/integrations/cms.server";
 import { redis } from "~/integrations/redis.server";
-import { notFound, serverError } from "~/lib/responses.server";
+import { Responses } from "~/lib/responses.server";
 import { APIResponseCollection, APIResponseData } from "~/types/utils";
 type Lesson = APIResponseCollection<"api::lesson.lesson">["data"][0];
 
@@ -27,11 +27,11 @@ export const LessonService = {
     });
 
     if (lesson.data.length > 1) {
-      throw serverError("Multiple lessons with the same slug found.");
+      throw Responses.serverError();
     }
 
     if (lesson.data.length === 0) {
-      throw notFound("Lesson not found.");
+      throw Responses.notFound("Lesson not found.");
     }
 
     await redis.set(`lesson:${slug}`, lesson.data[0], { ex: 60 });

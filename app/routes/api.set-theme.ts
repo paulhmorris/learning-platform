@@ -13,5 +13,5 @@ const themeSessionStorage = createCookieSessionStorage({
   },
 });
 
-const themeSessionResolver = createThemeSessionResolver(themeSessionStorage);
+export const themeSessionResolver = createThemeSessionResolver(themeSessionStorage);
 export const action = createThemeAction(themeSessionResolver);

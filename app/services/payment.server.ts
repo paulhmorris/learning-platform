@@ -27,7 +27,7 @@ export const PaymentService = {
       "/purchase?success=true&session_id={CHECKOUT_SESSION_ID}",
       process.env.SITE_URL,
     ).toString();
-    const cancel_url = new URL("/purchase?success=false", process.env.SITE_URL).toString();
+    const cancel_url = new URL("/api/purchase?success=false", process.env.SITE_URL).toString();
 
     const user = await UserService.getById(userId);
     let stripeCustomerId = user?.stripeId ?? undefined;
