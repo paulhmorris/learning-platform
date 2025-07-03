@@ -1,5 +1,6 @@
 import { SetCommandOptions } from "@upstash/redis";
 
+import { CONFIG } from "~/config.server";
 import { redis } from "~/integrations/redis.server";
 
 type CacheKey =
@@ -25,7 +26,7 @@ const DEFAULT_TTL = 60 * 60; // 1 hour
 
 export const CacheService = {
   async get<T>(key: CacheKey) {
-    if (import.meta.env.DEV) {
+    if (CONFIG.isDev || CONFIG.isTest) {
       return null;
     }
 
@@ -34,7 +35,7 @@ export const CacheService = {
   },
 
   async set<T>(key: CacheKey, value: T, opts: SetCommandOptions = {}) {
-    if (import.meta.env.DEV) {
+    if (CONFIG.isDev || CONFIG.isTest) {
       return;
     }
 
@@ -44,7 +45,7 @@ export const CacheService = {
   },
 
   async delete(key: CacheKey) {
-    if (import.meta.env.DEV) {
+    if (CONFIG.isDev || CONFIG.isTest) {
       return;
     }
 
