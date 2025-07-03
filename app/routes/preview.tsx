@@ -112,7 +112,7 @@ export default function CoursePreview() {
   return (
     <>
       <div className="flex flex-col gap-x-12 px-4 py-4 lg:flex-row lg:py-4">
-        <nav className="left-0 top-[88px] h-full shrink-0 basis-[448px] py-4 sm:py-10 lg:sticky lg:py-14">
+        <nav className="left-0 top-[88px] h-full shrink-0 basis-[320px] py-4 sm:py-10 lg:sticky lg:py-14">
           <StrapiImage
             asset={course.attributes.cover_image}
             height={240}

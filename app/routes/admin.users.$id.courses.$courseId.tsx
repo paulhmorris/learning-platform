@@ -69,7 +69,7 @@ export async function action(args: ActionFunctionArgs) {
   const result = await parseFormData(args.request, schema);
 
   if (result.error) {
-    return Toasts.dataWithError(null, { message: "Error", description: "Error completing course." });
+    return Toasts.dataWithError({ ok: false }, { message: "Error", description: "Error completing course." });
   }
 
   const { _action, durationInSeconds, lessonId, requiredDurationInSeconds, quizId, score, passingScore } = result.data;
@@ -79,68 +79,95 @@ export async function action(args: ActionFunctionArgs) {
       // Reset all progress for this user in this course
       await ProgressService.resetAll(userId);
       await QuizService.resetAllQuizProgress(userId);
-      return Toasts.dataWithSuccess(null, { message: "Success", description: "All progress has been reset." });
+      return Toasts.dataWithSuccess({ ok: true }, { message: "Success", description: "All progress has been reset." });
     }
 
     case "reset-lesson": {
       if (!lessonId) {
-        return Toasts.dataWithError(null, {
-          message: "Error",
-          description: "A lesson ID was not found with this request.",
-        });
+        return Toasts.dataWithError(
+          { ok: false },
+          {
+            message: "Error",
+            description: "A lesson ID was not found with this request.",
+          },
+        );
       }
       // Reset progress for this lesson
       await ProgressService.resetLesson(lessonId, userId);
-      return Toasts.dataWithSuccess(null, { message: "Success", description: "Lesson progress has been reset." });
+      return Toasts.dataWithSuccess(
+        { ok: true },
+        { message: "Success", description: "Lesson progress has been reset." },
+      );
     }
 
     case "complete-lesson": {
       if (!lessonId || !requiredDurationInSeconds) {
-        return Toasts.dataWithError(null, {
-          message: "Error",
-          description: "A lesson ID or required duration was not found with this request.",
-        });
+        return Toasts.dataWithError(
+          { ok: false },
+          {
+            message: "Error",
+            description: "A lesson ID or required duration was not found with this request.",
+          },
+        );
       }
       await ProgressService.markComplete({ userId, lessonId, requiredDurationInSeconds });
-      return Toasts.dataWithSuccess(null, { message: "Success", description: "Lesson has been marked complete." });
+      return Toasts.dataWithSuccess(
+        { ok: true },
+        { message: "Success", description: "Lesson has been marked complete." },
+      );
     }
 
     case "update-lesson": {
       if (!lessonId || !durationInSeconds || !requiredDurationInSeconds) {
-        return Toasts.dataWithError(null, {
-          message: "Error",
-          description: "A lesson ID or duration was not found with this request.",
-        });
+        return Toasts.dataWithError(
+          { ok: false },
+          {
+            message: "Error",
+            description: "A lesson ID or duration was not found with this request.",
+          },
+        );
       }
       // Update progress for this lesson
       await ProgressService.updateProgress({ lessonId, userId, durationInSeconds, requiredDurationInSeconds });
-      return Toasts.dataWithSuccess(null, { message: "Success", description: "Lesson progress has been updated." });
+      return Toasts.dataWithSuccess(
+        { ok: true },
+        { message: "Success", description: "Lesson progress has been updated." },
+      );
     }
 
     case "reset-quiz": {
       if (!quizId) {
-        return Toasts.dataWithError(null, {
-          message: "Error",
-          description: "A quiz ID was not found with this request.",
-        });
+        return Toasts.dataWithError(
+          { ok: false },
+          {
+            message: "Error",
+            description: "A quiz ID was not found with this request.",
+          },
+        );
       }
       await QuizService.resetQuizProgress(quizId, userId);
-      return Toasts.dataWithSuccess(null, { message: "Success", description: "Quiz progress has been reset." });
+      return Toasts.dataWithSuccess({ ok: true }, { message: "Success", description: "Quiz progress has been reset." });
     }
 
     case "update-quiz": {
       if (!quizId || typeof score === "undefined" || typeof passingScore === "undefined") {
-        return Toasts.dataWithError(null, {
-          message: "Error",
-          description: "A quiz ID or score was not found with this request.",
-        });
+        return Toasts.dataWithError(
+          { ok: false },
+          {
+            message: "Error",
+            description: "A quiz ID or score was not found with this request.",
+          },
+        );
       }
       await QuizService.updateQuizProgress({ quizId, userId, score: score, passingScore: passingScore });
-      return Toasts.dataWithSuccess(null, { message: "Success", description: "Quiz has been marked complete." });
+      return Toasts.dataWithSuccess(
+        { ok: true },
+        { message: "Success", description: "Quiz has been marked complete." },
+      );
     }
 
     default:
-      return Toasts.dataWithError(null, { message: "Error", description: "Invalid action requested." });
+      return Toasts.dataWithError({ ok: false }, { message: "Error", description: "Invalid action requested." });
   }
 }
 

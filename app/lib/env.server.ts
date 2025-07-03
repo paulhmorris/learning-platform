@@ -78,6 +78,8 @@ declare global {
     /** user.last_name */
     ln: string;
     /** user.phone_number */
-    phn?: string;
+    phn: string | null;
+    /** user.external_id */
+    eid: string | null;
   }
 }

@@ -19,7 +19,8 @@ export function Header() {
     theme === Theme.LIGHT ? course?.logo?.data?.attributes?.url : course?.dark_mode_logo?.data?.attributes?.url;
   const courseTitle = course?.title;
   const shouldShowGoToCourse =
-    matches.findIndex((m) => m.id.includes("$lessonSlug") || m.id.includes("preview")) === -1;
+    matches.findIndex((m) => m.id.includes("$lessonSlug") || m.id.includes("$quizId") || m.id.includes("preview")) ===
+    -1;
 
   return (
     <>

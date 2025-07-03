@@ -2,6 +2,7 @@ import { Prisma, UserRole } from "@prisma/client";
 
 import { clerkClient } from "~/integrations/clerk.server";
 import { db } from "~/integrations/db.server";
+import { AuthService } from "~/services/auth.server";
 import { PaymentService } from "~/services/payment.server";
 
 type ClerkData = {
@@ -76,13 +77,16 @@ export const UserService = {
       update: {},
       create: { clerkId, role: UserRole.USER },
     });
-    console.info("User created or updated:", user);
+    console.info("User upserted:", user);
 
     const stripeCustomer = await PaymentService.createCustomer(user.id, { metadata: { clerk_id: clerkId } });
     console.info("Stripe customer created:", stripeCustomer.id);
 
     await this.update(user.id, { stripeId: stripeCustomer.id });
     console.info("User updated with Stripe ID:", user.id);
+
+    await AuthService.saveExternalId(clerkId, user.id);
+    console.info("External ID saved for user:", user.id);
     return user;
   },
 
