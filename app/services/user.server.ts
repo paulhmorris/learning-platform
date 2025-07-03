@@ -1,4 +1,4 @@
-import { Prisma, User, UserRole } from "@prisma/client";
+import { Prisma, UserRole } from "@prisma/client";
 
 import { clerkClient } from "~/integrations/clerk.server";
 import { db } from "~/integrations/db.server";
@@ -76,15 +76,22 @@ export const UserService = {
       update: {},
       create: { clerkId, role: UserRole.USER },
     });
+    console.info("User created or updated:", user);
 
-    const { id } = await PaymentService.createCustomer(user.id, { metadata: { clerk_id: clerkId } });
+    const stripeCustomer = await PaymentService.createCustomer(user.id, { metadata: { clerk_id: clerkId } });
+    console.info("Stripe customer created:", stripeCustomer.id);
 
-    await db.user.update({ where: { id: user.id }, data: { stripeId: id }, select: {} });
+    await this.update(user.id, { stripeId: stripeCustomer.id });
+    console.info("User updated with Stripe ID:", user.id);
     return user;
   },
 
-  async update(id: User["id"], data: Prisma.UserUpdateArgs["data"]) {
+  async update(id: string, data: Prisma.UserUpdateArgs["data"]) {
     const user = await db.user.update({ where: { id }, data, select: { id: true } });
     return user;
+  },
+
+  async delete(id: string) {
+    await db.user.delete({ where: { id } });
   },
 };

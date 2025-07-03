@@ -1,4 +1,3 @@
-import { User } from "@prisma/client";
 import { ActionFunctionArgs, data } from "react-router";
 
 import { Sentry } from "~/integrations/sentry";
@@ -29,7 +28,7 @@ export async function action(args: ActionFunctionArgs) {
   }
 }
 
-async function createVerificationSession(user_id: User["id"], email: string) {
+async function createVerificationSession(user_id: string, email: string) {
   const verificationSession = await stripe.identity.verificationSessions.create({
     type: "document",
     provided_details: { email },
