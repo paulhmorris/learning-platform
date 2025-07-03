@@ -17,11 +17,11 @@ import { CourseService } from "~/services/course.server";
 import { ProgressService } from "~/services/progress.server";
 import { SessionService } from "~/services/session.server";
 
-export async function loader({ request }: LoaderFunctionArgs) {
-  const user = await SessionService.requireUser(request);
+export async function loader(args: LoaderFunctionArgs) {
+  const user = await SessionService.requireUser(args);
 
   try {
-    const { host } = new URL(request.url);
+    const { host } = new URL(args.request.url);
     const linkedCourse = await CourseService.getByHost(host);
 
     if (!linkedCourse) {

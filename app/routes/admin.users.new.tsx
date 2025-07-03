@@ -26,10 +26,10 @@ export const meta: MetaFunction = () => {
   return [{ title: `New User | Plumb Media & Education` }];
 };
 
-export async function action({ request }: ActionFunctionArgs) {
-  await SessionService.requireAdmin(request);
+export async function action(args: ActionFunctionArgs) {
+  await SessionService.requireAdmin(args);
 
-  const result = await parseFormData(request, schema);
+  const result = await parseFormData(args.request, schema);
   if (result.error) {
     return validationError(result.error);
   }

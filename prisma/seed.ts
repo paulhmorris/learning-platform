@@ -1,23 +1,22 @@
 /* eslint-disable no-console */
 import { PrismaClient, UserRole } from "@prisma/client";
 
+import { AuthService } from "~/services/auth.server";
+
 const prisma = new PrismaClient();
 
 async function seed() {
   const email = "paul@remix.run";
+  const clerkUser = await AuthService.getUserList({ emailAddress: [email] });
 
-  // cleanup the existing database
-  await prisma.user.delete({ where: { email } }).catch(() => {
-    // no worries if it doesn't exist yet
-  });
+  if (clerkUser.data.length > 1) {
+    throw new Error(`Multiple users found with email ${email}. Please ensure only one user exists with this email.`);
+  }
 
   const user = await prisma.user.create({
     data: {
-      firstName: "Paul",
-      lastName: "Henschel",
+      clerkId: clerkUser.data[0].id,
       role: UserRole.SUPERADMIN,
-      email,
-      isEmailVerified: true,
       isIdentityVerified: true,
     },
   });

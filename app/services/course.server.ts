@@ -53,7 +53,7 @@ export const CourseService = {
       return null;
     }
 
-    await redis.set<CourseCMS>(`course-root-cms-${strapiId}`, course, { ex: TTL });
+    await redis.set(`course-root-cms-${strapiId}`, course, { ex: TTL });
     return course;
   },
 
@@ -93,7 +93,7 @@ export const CourseService = {
       return null;
     }
 
-    await redis.set<CourseCMS>(`course-course-layout-cms-${strapiId}`, course, { ex: TTL });
+    await redis.set(`course-course-layout-cms-${strapiId}`, course, { ex: TTL });
     return course;
   },
 
@@ -111,7 +111,7 @@ export const CourseService = {
       return [];
     }
 
-    await redis.set<AllCoursesCMS>(`courses-all`, courses.data, { ex: TTL });
+    await redis.set(`courses-all`, courses.data, { ex: TTL });
     return courses.data;
   },
 };

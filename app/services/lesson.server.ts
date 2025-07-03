@@ -34,7 +34,7 @@ export const LessonService = {
       throw notFound("Lesson not found.");
     }
 
-    await redis.set<Lesson>(`lesson:${slug}`, lesson.data[0], { ex: 60 });
+    await redis.set(`lesson:${slug}`, lesson.data[0], { ex: 60 });
     return lesson.data[0];
   },
 
@@ -47,7 +47,7 @@ export const LessonService = {
       fields: ["required_duration_in_seconds"],
     });
     if (lesson.data.attributes.required_duration_in_seconds) {
-      await redis.set<number>(`lesson-duration:${lessonId}`, lesson.data.attributes.required_duration_in_seconds, {
+      await redis.set(`lesson-duration:${lessonId}`, lesson.data.attributes.required_duration_in_seconds, {
         ex: 60,
       });
     }

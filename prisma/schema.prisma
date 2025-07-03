@@ -13,7 +13,6 @@ generator client {
 model User {
   id       String   @id @default(cuid())
   clerkId  String?  @unique
-  email    String   @unique
   role     UserRole @default(USER)
   stripeId String?
 

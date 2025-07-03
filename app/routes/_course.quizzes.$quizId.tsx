@@ -28,10 +28,10 @@ import { loader as courseLoader } from "~/routes/_course";
 import { SessionService } from "~/services/session.server";
 import { APIResponseData } from "~/types/utils";
 
-export async function loader({ params, request }: LoaderFunctionArgs) {
-  const userId = await SessionService.requireUserId(request);
+export async function loader(args: LoaderFunctionArgs) {
+  const userId = await SessionService.requireUserId(args);
 
-  const quizId = params.quizId;
+  const quizId = args.params.quizId;
   invariant(quizId, "Quiz ID is required");
 
   const quiz = await cms.findOne<APIResponseData<"api::quiz.quiz">>("quizzes", quizId, {
@@ -64,17 +64,17 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   return { quiz: quiz.data, progress };
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  const userId = await SessionService.requireUserId(request);
+export async function action(args: ActionFunctionArgs) {
+  const userId = await SessionService.requireUserId(args);
 
-  const quizId = params.quizId;
+  const quizId = args.params.quizId;
   invariant(quizId, "Quiz ID is required");
 
   // {
   //   "question-0": "4",
   //   "question-1": "5"
   // }
-  const formData = Object.fromEntries(await request.formData());
+  const formData = Object.fromEntries(await args.request.formData());
 
   const quiz = await cms.findOne<APIResponseData<"api::quiz.quiz">>("quizzes", quizId, {
     populate: {

@@ -33,10 +33,10 @@ import { PaymentService } from "~/services/payment.server";
 import { ProgressService } from "~/services/progress.server";
 import { SessionService } from "~/services/session.server";
 
-export async function loader({ request }: LoaderFunctionArgs) {
-  const user = await SessionService.requireUser(request);
+export async function loader(args: LoaderFunctionArgs) {
+  const user = await SessionService.requireUser(args);
 
-  const url = new URL(request.url);
+  const url = new URL(args.request.url);
   const linkedCourse = await db.course.findUnique({ where: { host: url.host } });
   if (!linkedCourse) {
     throw notFound("Course not found.");
@@ -56,9 +56,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 export type LessonInOrder = Awaited<ReturnType<typeof loader>>["lessons"][number];
 
-export async function action({ request }: ActionFunctionArgs) {
-  const user = await SessionService.requireUser(request);
-  const url = new URL(request.url);
+export async function action(args: ActionFunctionArgs) {
+  const user = await SessionService.requireUser(args);
+  const url = new URL(args.request.url);
   const course = await db.course.findUnique({ where: { host: url.host } });
 
   if (!course) {

@@ -7,9 +7,9 @@ import { notFound } from "~/lib/responses.server";
 import { CourseService } from "~/services/course.server";
 import { SessionService } from "~/services/session.server";
 
-export async function loader({ request, params }: LoaderFunctionArgs) {
-  await SessionService.requireAdmin(request);
-  const id = params.courseId;
+export async function loader(args: LoaderFunctionArgs) {
+  await SessionService.requireAdmin(args);
+  const id = args.params.courseId;
 
   const dbCourse = await db.course.findUnique({ where: { id }, include: { userCourses: true } });
   if (!dbCourse) {

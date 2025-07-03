@@ -26,7 +26,7 @@ import { Route } from "./+types/root";
 export const links: LinksFunction = () => [{ rel: "stylesheet", href: globalStyles, as: "style" }];
 
 export const loader = async (args: LoaderFunctionArgs) => {
-  const user = await SessionService.getUser(args.request);
+  const user = await SessionService.getUser(args);
   const theme = (await themeSessionResolver(args.request)).getTheme();
   const { toast, headers } = await getToast(args.request);
 
@@ -73,6 +73,7 @@ export default function App({ loaderData }: Route.ComponentProps) {
       telemetry={{ disabled: true }}
     >
       <SignedIn>
+        <Header />
         <Outlet />
       </SignedIn>
       <SignedOut>
@@ -108,7 +109,7 @@ function InnerLayout({ ssrTheme, children }: { ssrTheme: boolean; children: Reac
   }, [data?.user]);
 
   return (
-    <html lang="en" className={cn("h-full", theme)}>
+    <html lang="en" data-theme={theme ?? ssrTheme} className={cn("h-full")}>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -136,7 +137,6 @@ function InnerLayout({ ssrTheme, children }: { ssrTheme: boolean; children: Reac
         <Links />
       </head>
       <body className="flex h-full min-h-full flex-col bg-background font-sans text-foreground">
-        <Header />
         {children}
         <Notifications />
         <GlobalLoader />

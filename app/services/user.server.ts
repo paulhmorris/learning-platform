@@ -1,98 +1,99 @@
-import { Prisma, User } from "@prisma/client";
+import { Prisma, User, UserRole } from "@prisma/client";
 
+import { clerkClient } from "~/integrations/clerk.server";
 import { db } from "~/integrations/db.server";
 import { redis } from "~/integrations/redis.server";
-import { stripe } from "~/integrations/stripe.server";
+import { PaymentService } from "~/services/payment.server";
 
-class Service {
-  public async getById(id: User["id"]) {
-    const cachedUser = await redis.get<
-      Prisma.UserGetPayload<{
-        include: { courses: { include: { course: { select: { requiresIdentityVerification: true } } } } };
-      }>
-    >(`user-${id}`);
+type ClerkData = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+};
+type UserWithPIIAndCourses = Prisma.UserGetPayload<{
+  include: {
+    courses: {
+      include: {
+        course: { select: { requiresIdentityVerification: true } };
+      };
+    };
+  };
+}> &
+  ClerkData & {
+    isActive: boolean;
+  };
+
+export const UserService = {
+  async getById(id: string) {
+    const cachedUser = await redis.get<UserWithPIIAndCourses>(`user-${id}`);
     if (cachedUser) {
       return cachedUser;
     }
+
     const user = await db.user.findUnique({
       where: { id },
       include: { courses: { include: { course: { select: { requiresIdentityVerification: true } } } } },
     });
-    if (user) {
-      await redis.set<User>(`user-${id}`, user, { ex: 30 });
+
+    if (!user) {
+      return null;
     }
-    return user;
-  }
 
-  public async getByEmail(email: User["email"]) {
+    // TODO: Remove when clerkId is required
+    const backendUser = await clerkClient.users.getUser(user.clerkId!);
+    const userWithPII: UserWithPIIAndCourses = {
+      ...user,
+      firstName: backendUser.firstName!,
+      lastName: backendUser.lastName!,
+      email: backendUser.primaryEmailAddress!.emailAddress,
+      phone: backendUser.primaryPhoneNumber?.phoneNumber,
+      isActive: !backendUser.locked,
+    };
+    await redis.set(`user-${id}`, userWithPII, { ex: 30 });
+    return userWithPII;
+  },
+
+  async getByClerkId(clerkId: string) {
     const user = await db.user.findUnique({
-      where: { email },
-      include: {
-        password: true,
-      },
+      where: { clerkId },
+      include: { courses: { include: { course: { select: { requiresIdentityVerification: true } } } } },
     });
-    if (user) {
-      await redis.set<User>(`user-${user.id}`, user, { ex: 30 });
+
+    if (!user) {
+      return null;
     }
+
+    // TODO: Remove when clerkId is required
+    const backendUser = await clerkClient.users.getUser(user.clerkId!);
+    const userWithPII: UserWithPIIAndCourses = {
+      ...user,
+      firstName: backendUser.firstName!,
+      lastName: backendUser.lastName!,
+      email: backendUser.primaryEmailAddress!.emailAddress,
+      phone: backendUser.primaryPhoneNumber?.phoneNumber,
+      isActive: !backendUser.locked,
+    };
+    return userWithPII;
+  },
+
+  async create(clerkId: string) {
+    const user = await db.user.upsert({
+      where: { clerkId },
+      update: {},
+      create: { clerkId, role: UserRole.USER },
+    });
+
+    const { id } = await PaymentService.createCustomer(user.id, { metadata: { clerk_id: clerkId } });
+
+    await db.user.update({ where: { id: user.id }, data: { stripeId: id }, select: {} });
+    await redis.set(`user-${user.id}`, user, { ex: 30 });
     return user;
-  }
+  },
 
-  public async getByEmailWithPassword(email: User["email"]) {
-    const user = await db.user.findUnique({
-      where: { email },
-      include: { password: true },
-    });
-    return user;
-  }
-
-  public async create(email: User["email"], password: string, data: Omit<Prisma.UserCreateArgs["data"], "email">) {
-    // TODO: integrate with Clerk
-    const user = await db.user.create({
-      data: {
-        ...data,
-        email,
-      },
-    });
-
-    const stripeCus = await stripe.customers.create({
-      email: user.email,
-      name: `${user.firstName}${user.lastName ? " " + user.lastName : ""}`,
-      phone: user.phone ?? undefined,
-      metadata: {
-        user_id: user.id,
-      },
-    });
-
-    await db.user.update({
-      where: { id: user.id },
-      data: { stripeId: stripeCus.id },
-    });
-    await redis.set<User>(`user-${user.id}`, user, { ex: 30 });
-    return user;
-  }
-
-  public async exists(email: User["email"]) {
-    const count = await db.user.count({ where: { email } });
-    return count > 0;
-  }
-
-  public async update(id: User["id"], data: Prisma.UserUpdateArgs["data"]) {
-    const user = await db.user.update({ where: { id }, data });
+  async update(id: User["id"], data: Prisma.UserUpdateArgs["data"]) {
+    const user = await db.user.update({ where: { id }, data, select: { id: true } });
     await redis.del(`user-${user.id}`);
     return user;
-  }
-
-  public async delete(id: User["id"]) {
-    const user = await db.user.delete({ where: { id } });
-    await redis.del(`user-${user.id}`);
-    return user;
-  }
-
-  public async deleteByEmail(email: User["email"]) {
-    const user = await db.user.delete({ where: { email } });
-    await redis.del(`user-${user.id}`);
-    return user;
-  }
-}
-
-export const UserService = new Service();
+  },
+};

@@ -67,3 +67,7 @@ export async function sendEmail(props: SendEmailInput) {
   );
   return { messageId: "test", $metadata: {} };
 }
+
+export const EmailService = {
+  send: sendEmail,
+};

@@ -2,20 +2,20 @@ import { cms } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
 import { APIResponseCollection } from "~/types/utils";
 
-class Service {
+export const QuizService = {
   async getAll() {
     return cms.find<APIResponseCollection<"api::quiz.quiz">["data"]>("quizzes", {
       fields: ["title", "passing_score", "uuid"],
     });
-  }
+  },
 
   async getAllQuizProgress(userId: string) {
     return db.userQuizProgress.findMany({ where: { userId } });
-  }
+  },
 
   async resetAllQuizProgress(userId: string) {
     return db.userQuizProgress.deleteMany({ where: { userId } });
-  }
+  },
 
   async resetQuizProgress(quizId: number, userId: string) {
     return db.userQuizProgress.delete({
@@ -26,10 +26,10 @@ class Service {
         },
       },
     });
-  }
+  },
 
   async updateQuizProgress(data: { quizId: number; userId: string; score: number; passingScore: number }) {
-    const lesson = await db.userQuizProgress.upsert({
+    const quizProgress = await db.userQuizProgress.upsert({
       where: {
         userId_quizId: {
           quizId: data.quizId,
@@ -47,8 +47,6 @@ class Service {
         isCompleted: data.score >= data.passingScore,
       },
     });
-    return lesson;
-  }
-}
-
-export const QuizService = new Service();
+    return quizProgress;
+  },
+};

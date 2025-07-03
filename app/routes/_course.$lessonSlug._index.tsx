@@ -11,10 +11,10 @@ import { LessonService } from "~/services/lesson.server";
 import { ProgressService } from "~/services/progress.server";
 import { SessionService } from "~/services/session.server";
 
-export async function loader({ params, request }: LoaderFunctionArgs) {
-  const userId = await SessionService.requireUserId(request);
+export async function loader(args: LoaderFunctionArgs) {
+  const userId = await SessionService.requireUserId(args);
 
-  const lessonSlug = params.lessonSlug;
+  const lessonSlug = args.params.lessonSlug;
   invariant(lessonSlug, "Lesson slug is required");
 
   const lesson = await LessonService.getBySlugWithContent(lessonSlug);
@@ -25,7 +25,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 
 export const meta: MetaFunction<typeof loader, { "routes/_course": typeof courseLoader }> = ({ data, matches }) => {
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  const match = matches.find((m) => m.id === "routes/_course")?.data.course;
+  const match = matches.find((m) => m.id === "routes/_course")?.data?.course;
   return [{ title: `${data?.lesson.attributes.title} | ${match?.attributes.title}` }];
 };
 

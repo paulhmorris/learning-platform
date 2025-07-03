@@ -1,8 +1,18 @@
 import { clerkClient as client } from "~/integrations/clerk.server";
-import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
 
 export const AuthService = {
+  async getUserList(args: Parameters<typeof client.users.getUserList>[0] = {}) {
+    try {
+      const list = await client.users.getUserList(args);
+      return list;
+    } catch (error) {
+      Sentry.captureException(error);
+      console.error("Error fetching user list:", error);
+      throw error;
+    }
+  },
+
   async getInvitationsByEmail(email: string) {
     try {
       const invitations = await client.invitations.getInvitationList({ query: email });
@@ -24,13 +34,5 @@ export const AuthService = {
       console.error(`Error revoking session ${sessionId}:`, error);
       throw error;
     }
-  },
-
-  linkOAuthUserToExistingUser(email: string, clerkId: string) {
-    return db.user.update({
-      select: { id: true },
-      where: { email },
-      data: { clerkId },
-    });
   },
 };

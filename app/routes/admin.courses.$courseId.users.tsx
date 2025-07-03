@@ -18,22 +18,39 @@ import { Label } from "~/components/ui/label";
 import { db } from "~/integrations/db.server";
 import { loader as adminCourseLoader } from "~/routes/admin.courses.$courseId";
 import { text } from "~/schemas/fields";
+import { AuthService } from "~/services/auth.server";
 import { SessionService } from "~/services/session.server";
 
-export async function loader({ request }: LoaderFunctionArgs) {
-  await SessionService.requireAdmin(request);
-  return { users: await db.user.findMany({ orderBy: { lastName: "asc" } }) };
+export async function loader(args: LoaderFunctionArgs) {
+  await SessionService.requireAdmin(args);
+  const [backendList, localList] = await Promise.all([
+    AuthService.getUserList(),
+    db.user.findMany({ orderBy: { createdAt: "asc" } }),
+  ]);
+
+  const users = backendList.data.map((user) => {
+    const localUser = localList.find((u) => u.clerkId === user.id);
+    return {
+      id: user.id,
+      firstName: user.firstName ?? "",
+      lastName: user.lastName ?? "",
+      email: user.emailAddresses.at(0)?.emailAddress ?? "",
+      phone: user.phoneNumbers.at(0)?.phoneNumber ?? undefined,
+      createdAt: localUser?.createdAt ?? new Date(),
+    };
+  });
+  return { users };
 }
 
 const schema = z.object({ userId: text });
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  await SessionService.requireAdmin(request);
-  const courseId = params.courseId;
+export async function action(args: ActionFunctionArgs) {
+  await SessionService.requireAdmin(args);
+  const courseId = args.params.courseId;
 
   invariant(courseId, "Course ID is required.");
 
-  const result = await parseFormData(request, schema);
+  const result = await parseFormData(args.request, schema);
   if (result.error) {
     return result.error;
   }
@@ -58,8 +75,8 @@ export default function AdminEditCourse() {
 
   const filteredUsers = users.filter((u) => {
     return (
-      u.firstName?.toLowerCase().includes(filter.toLowerCase()) ??
-      u.lastName?.toLowerCase().includes(filter.toLowerCase()) ??
+      u.firstName.toLowerCase().includes(filter.toLowerCase()) ||
+      u.lastName.toLowerCase().includes(filter.toLowerCase()) ||
       u.email.toLowerCase().includes(filter.toLowerCase())
     );
   });

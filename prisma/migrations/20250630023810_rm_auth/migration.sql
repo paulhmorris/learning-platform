@@ -22,6 +22,7 @@ ALTER TABLE "UserVerification" DROP CONSTRAINT "UserVerification_userId_fkey";
 
 -- AlterTable
 ALTER TABLE "User" DROP COLUMN "firstName",
+DROP COLUMN "email",
 DROP COLUMN "isActive",
 DROP COLUMN "isEmailVerified",
 DROP COLUMN "lastName",

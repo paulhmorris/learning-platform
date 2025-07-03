@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
-import { Link, useLocation, useMatches, useRouteLoaderData } from "react-router";
+import { Link, useMatches, useRouteLoaderData } from "react-router";
 import { Theme, useTheme } from "remix-themes";
 
 import { ThemeModeToggle } from "~/components/theme-mode-toggle";
@@ -12,12 +12,7 @@ export function Header() {
   const [theme] = useTheme();
   const user = useOptionalUser();
   const rootData = useRouteLoaderData<typeof loader>("root");
-  const location = useLocation();
   const matches = useMatches();
-
-  if (["join", "login", "passwords"].includes(location.pathname.split("/")[1])) {
-    return null;
-  }
 
   const course = rootData?.course?.data?.attributes;
   const courseLogoUrl =

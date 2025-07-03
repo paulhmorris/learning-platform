@@ -3,10 +3,12 @@ import { z } from "zod/v4";
 
 const _serverEnvValidation = z.object({
   // General
+  SESSION_SECRET: z.string().min(32),
   SITE_URL: z.url(),
 
-  // Remix
-  SESSION_SECRET: z.string().min(16),
+  // Clerk
+  AUTH_DOMAIN: z.url(),
+  CLERK_SECRET_KEY: z.string().min(1),
 
   // Strapi
   STRAPI_TOKEN: z.string().min(1),
@@ -60,15 +62,21 @@ declare global {
   // Vite
   interface ImportMetaEnv {
     readonly VITE_CLERK_PUBLISHABLE_KEY: string;
-    readonly VITE_CLERK_SIGN_IN_URL: string;
-    readonly VITE_CLERK_SIGN_UP_URL: string;
-    readonly VITE_CLERK_SIGN_IN_FORCE_REDIRECT_URL: string;
-    readonly VITE_CLERK_SIGN_UP_FORCE_REDIRECT_URL: string;
-    readonly VITE_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL: string;
-    readonly VITE_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL: string;
   }
 
   interface ImportMeta {
     readonly env: ImportMetaEnv;
+  }
+
+  // Clerk Session Claims
+  interface CustomJwtSessionClaims {
+    /** user.primary_email_address */
+    pem: string;
+    /** user.first_name */
+    fn: string;
+    /** user.last_name */
+    ln: string;
+    /** user.phone_number */
+    phn?: string;
   }
 }

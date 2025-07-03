@@ -18,8 +18,8 @@ export const meta: MetaFunction<typeof loader, { root: typeof rootLoader }> = ({
   return [{ title: `Profile | ${match?.data?.attributes.title ?? "Plumb Media & Education"}` }];
 };
 
-export async function loader({ request }: LoaderFunctionArgs) {
-  const userId = await SessionService.requireUserId(request);
+export async function loader(args: LoaderFunctionArgs) {
+  const userId = await SessionService.requireUserId(args);
 
   const [userCourses, cmsCourses] = await Promise.all([
     db.userCourses.findMany({ where: { userId }, include: { course: true } }),

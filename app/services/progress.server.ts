@@ -26,7 +26,7 @@ export const ProgressService = {
       },
     });
     if (progress) {
-      await redis.set<UserLessonProgress>(`user-lesson-progress:${userId}:${lessonId}`, progress, { ex: 12 });
+      await redis.set(`user-lesson-progress:${userId}:${lessonId}`, progress, { ex: 12 });
     }
     return progress;
   },
@@ -90,7 +90,7 @@ export const ProgressService = {
         isCompleted: true,
       },
     });
-    await redis.set<UserLessonProgress>(`user-lesson-progress:${data.userId}:${data.lessonId}`, progress, { ex: 12 });
+    await redis.set(`user-lesson-progress:${data.userId}:${data.lessonId}`, progress, { ex: 12 });
     return progress;
   },
 };

@@ -1,6 +1,8 @@
 /* eslint-disable prefer-const */
 import { data, redirect } from "react-router";
 
+import { CONFIG } from "~/config.server";
+
 /**
  * Create a response receiving a JSON object with the status code 201.
  * @example
@@ -314,4 +316,20 @@ export function image(
     ...init,
     headers,
   });
+}
+
+export function redirectToSignIn(redirect_url?: string): never {
+  const url = CONFIG.signInUrl;
+  if (redirect_url) {
+    url.searchParams.set("redirect_url", redirect_url);
+  }
+  throw redirect(url.toString());
+}
+
+export function redirectToSignUp(redirect_url?: string): never {
+  const url = CONFIG.signUpUrl;
+  if (redirect_url) {
+    url.searchParams.set("redirect_url", redirect_url);
+  }
+  throw redirect(url.toString());
 }

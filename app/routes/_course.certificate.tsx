@@ -21,9 +21,9 @@ import { loader as courseLoader } from "~/routes/_course";
 import { SessionService } from "~/services/session.server";
 import { APIResponseData } from "~/types/utils";
 
-export async function loader({ request }: LoaderFunctionArgs) {
-  const user = await SessionService.requireUser(request);
-  const { host } = new URL(request.url);
+export async function loader(args: LoaderFunctionArgs) {
+  const user = await SessionService.requireUser(args);
+  const { host } = new URL(args.request.url);
   const linkedCourse = await db.course.findUnique({ where: { host } });
 
   if (!linkedCourse) {
@@ -53,12 +53,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return { userCourse, course: linkedCourse };
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  const user = await SessionService.requireUser(request);
+export async function action(args: ActionFunctionArgs) {
+  const user = await SessionService.requireUser(args);
 
   try {
     // Verify user has access to the course
-    const { host } = new URL(request.url);
+    const { host } = new URL(args.request.url);
     const linkedCourse = await db.course.findUnique({ where: { host } });
 
     if (!linkedCourse) {

@@ -38,10 +38,10 @@ const schema = z.object({
   requiredDurationInSeconds: optionalNumber,
 });
 
-export async function loader({ request, params }: LoaderFunctionArgs) {
-  await SessionService.requireAdmin(request);
-  const userId = params.id;
-  const courseId = params.courseId;
+export async function loader(args: LoaderFunctionArgs) {
+  await SessionService.requireAdmin(args);
+  const userId = args.params.id;
+  const courseId = args.params.courseId;
   invariant(userId, "User not found.");
   invariant(courseId, "Course not found.");
 
@@ -61,11 +61,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return { lessons, quizzes, lessonProgress, quizProgress };
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  await SessionService.requireAdmin(request);
-  const userId = params.id;
+export async function action(args: ActionFunctionArgs) {
+  await SessionService.requireAdmin(args);
+  const userId = args.params.id;
   invariant(userId, "User ID not found.");
-  const result = await parseFormData(request, schema);
+  const result = await parseFormData(args.request, schema);
 
   if (result.error) {
     return Toasts.dataWithError({ ok: false }, { message: "Error", description: "Error completing course." });

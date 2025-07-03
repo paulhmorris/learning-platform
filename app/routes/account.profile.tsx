@@ -30,8 +30,8 @@ const schema = z.object({
   phone: optionalPhoneNumber,
 });
 
-export async function loader({ request }: LoaderFunctionArgs) {
-  const user = await SessionService.requireUser(request);
+export async function loader(args: LoaderFunctionArgs) {
+  const user = await SessionService.requireUser(args);
   let session = null;
   if (user.stripeVerificationSessionId) {
     session = await stripe.identity.verificationSessions.retrieve(user.stripeVerificationSessionId);
@@ -40,10 +40,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return { identitySession: session };
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  const user = await SessionService.requireUser(request);
+export async function action(args: ActionFunctionArgs) {
+  const user = await SessionService.requireUser(args);
 
-  const result = await parseFormData(request, schema);
+  const result = await parseFormData(args.request, schema);
   if (result.error) {
     return validationError(result.error);
   }
@@ -87,18 +87,7 @@ export default function AccountProfile() {
   return (
     <div className="space-y-8">
       <IdentityVerification />
-      <ValidatedForm
-        method="post"
-        action="/account/profile"
-        schema={schema}
-        defaultValues={{
-          id: user.id,
-          firstName: user.firstName ?? "",
-          lastName: user.lastName ?? "",
-          email: user.email,
-          phone: user.phone ?? "",
-        }}
-      >
+      <ValidatedForm method="post" action="/account/profile" schema={schema} defaultValues={user}>
         {(form) => (
           <>
             <input type="hidden" name="id" value={user.id} />

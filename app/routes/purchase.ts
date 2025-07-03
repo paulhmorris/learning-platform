@@ -6,9 +6,9 @@ import { Toasts } from "~/lib/toast.server";
 import { SessionService } from "~/services/session.server";
 import { UserService } from "~/services/user.server";
 
-export async function loader({ request }: LoaderFunctionArgs) {
-  const user = await SessionService.requireUser(request);
-  const url = new URL(request.url);
+export async function loader(args: LoaderFunctionArgs) {
+  const user = await SessionService.requireUser(args);
+  const url = new URL(args.request.url);
 
   const isSuccessful = url.searchParams.get("success") === "true";
   const stripeSessionId = url.searchParams.get("session_id");

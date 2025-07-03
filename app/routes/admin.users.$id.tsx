@@ -3,8 +3,6 @@ import {
   IconCircleCheckFilled,
   IconCircleXFilled,
   IconExternalLink,
-  IconFingerprint,
-  IconMail,
   IconUserCircle,
   IconUserScan,
 } from "@tabler/icons-react";
@@ -13,28 +11,27 @@ import { LoaderFunctionArgs, NavLink, Outlet, useLoaderData } from "react-router
 import { BackLink } from "~/components/common/back-link";
 import { ErrorComponent } from "~/components/error-component";
 import { Badge } from "~/components/ui/badge";
-import { db } from "~/integrations/db.server";
 import { stripe } from "~/integrations/stripe.server";
 import { notFound } from "~/lib/responses.server";
 import { cn } from "~/lib/utils";
 import { SessionService } from "~/services/session.server";
+import { UserService } from "~/services/user.server";
 
 const links = [
   { href: "", text: "Profile", end: true, icon: <IconUserCircle className="size-[1.125rem]" /> },
-  { href: "security", text: "Security", end: true, icon: <IconFingerprint className="size-[1.125rem]" /> },
-  // { href: "payment", text: "Payment", end: true, icon: <IconCreditCard className="size-[1.125rem]" /> },
   { href: "courses", text: "Courses", end: false, icon: <IconCertificate className="size-[1.125rem]" /> },
 ];
 
-export async function loader({ request, params }: LoaderFunctionArgs) {
-  await SessionService.requireAdmin(request);
-  const id = params.id;
+export async function loader(args: LoaderFunctionArgs) {
+  await SessionService.requireAdmin(args);
+  const id = args.params.id;
   if (!id) {
-    throw notFound("User not found.");
+    throw notFound("User ID is required.");
   }
 
-  const user = await db.user.findUnique({ where: { id }, include: { verification: true } });
-  if (!user) {
+  const user = await UserService.getById(id);
+  // TODO: Handle once clerkId is required
+  if (!user?.clerkId) {
     throw notFound({ message: "User not found." });
   }
 
@@ -43,6 +40,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     const session = await stripe.identity.verificationSessions.retrieve(user.stripeVerificationSessionId);
     identityVerificationStatus = session.status;
   }
+
   return { user, identityVerificationStatus };
 }
 
@@ -58,10 +56,6 @@ export default function UsersIndex() {
         <Badge variant={user.isActive ? "secondary" : "destructive"}>
           {user.isActive ? <IconCircleCheckFilled className="size-3.5" /> : <IconCircleXFilled className="size-3.5" />}
           <span>{user.isActive ? "Active" : "Inactive"}</span>
-        </Badge>
-        <Badge variant={user.isEmailVerified ? "success" : "destructive"}>
-          <IconMail strokeWidth={2.5} className="size-3.5" />
-          <span>Email: {user.isEmailVerified ? "Verified" : "Unverified"}</span>
         </Badge>
         <Badge variant={identityVerificationStatus === "verified" ? "success" : "destructive"}>
           <IconUserScan strokeWidth={2.5} className="size-3.5" />

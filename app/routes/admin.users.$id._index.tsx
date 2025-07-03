@@ -9,15 +9,11 @@ import { SubmitButton } from "~/components/ui/submit-button";
 import { db } from "~/integrations/db.server";
 import { Toasts } from "~/lib/toast.server";
 import { loader } from "~/routes/admin.users.$id";
-import { cuid, email, optionalText, phoneNumber, selectEnum, text } from "~/schemas/fields";
+import { cuid, optionalText, selectEnum } from "~/schemas/fields";
 import { SessionService } from "~/services/session.server";
 
 const schema = z.object({
   id: cuid,
-  firstName: text,
-  lastName: optionalText,
-  email: email,
-  phone: phoneNumber,
   role: selectEnum(UserRole),
   stripeId: optionalText,
 });
@@ -26,10 +22,10 @@ export const meta: MetaFunction = () => {
   return [{ title: `User Profile | Plumb Media & Education` }];
 };
 
-export async function action({ request }: ActionFunctionArgs) {
-  await SessionService.requireAdmin(request);
+export async function action(args: ActionFunctionArgs) {
+  await SessionService.requireAdmin(args);
 
-  const result = await parseFormData(request, schema);
+  const result = await parseFormData(args.request, schema);
   if (result.error) {
     return validationError(result.error);
   }
@@ -71,30 +67,14 @@ export default function AdminUserIndex() {
           schema={schema}
           defaultValues={{
             id: user.id,
-            email: user.email,
-            phone: user.phone ?? "",
-            stripeId: user.stripeId ?? "",
-            lastName: user.lastName ?? "",
-            firstName: user.firstName ?? "",
             role: user.role,
+            stripeId: user.stripeId ?? "",
           }}
         >
           {(form) => (
             <>
               <input type="hidden" name="id" value={user.id} />
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-2">
-                  <FormField required label="First Name" name="firstName" scope={form.scope("firstName")} />
-                  <FormField label="Last Name" name="lastName" scope={form.scope("lastName")} />
-                </div>
-                <FormField
-                  required
-                  label="Email"
-                  name="email"
-                  type="email"
-                  inputMode="email"
-                  scope={form.scope("email")}
-                />
                 <FormSelect
                   required
                   label="Role"
@@ -103,7 +83,6 @@ export default function AdminUserIndex() {
                   options={roleOptions}
                   scope={form.scope("role")}
                 />
-                <FormField label="Phone" name="phone" type="tel" inputMode="tel" scope={form.scope("phone")} />
                 <FormField scope={form.scope("stripeId")} name="stripeId" label="Stripe ID" />
                 <SubmitButton variant="admin" className="sm:w-auto">
                   Save

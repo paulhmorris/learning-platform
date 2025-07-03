@@ -1,4 +1,3 @@
-import { Prisma } from "@prisma/client";
 import { IconPlus } from "@tabler/icons-react";
 import { ColumnDef } from "@tanstack/react-table";
 import { Link, LoaderFunctionArgs, useLoaderData } from "react-router";
@@ -9,23 +8,45 @@ import { DataTable } from "~/components/ui/data-table/data-table";
 import { DataTableColumnHeader } from "~/components/ui/data-table/data-table-column-header";
 import { Facet } from "~/components/ui/data-table/data-table-toolbar";
 import { db } from "~/integrations/db.server";
+import { AuthService } from "~/services/auth.server";
 import { SessionService } from "~/services/session.server";
 
-export async function loader({ request }: LoaderFunctionArgs) {
-  await SessionService.requireAdmin(request);
-  const users = await db.user.findMany({
-    select: {
-      id: true,
-      firstName: true,
-      lastName: true,
-      email: true,
-      phone: true,
-      role: true,
-      courses: {
-        select: { id: true },
+export async function loader(args: LoaderFunctionArgs) {
+  await SessionService.requireAdmin(args);
+  const [backendList, localList] = await Promise.all([
+    AuthService.getUserList(),
+    db.user.findMany({
+      select: {
+        id: true,
+        role: true,
+        clerkId: true,
+        createdAt: true,
+        courses: {
+          select: { id: true },
+        },
       },
-    },
-  });
+    }),
+  ]);
+  const users = backendList.data
+    .map((user) => {
+      const localUser = localList.find((u) => u.clerkId === user.id);
+      if (!localUser) {
+        return null;
+      }
+
+      return {
+        id: user.id,
+        clerkId: localUser.clerkId,
+        firstName: user.firstName ?? "",
+        lastName: user.lastName ?? "",
+        email: user.emailAddresses.at(0)?.emailAddress ?? "",
+        phone: user.phoneNumbers.at(0)?.phoneNumber ?? undefined,
+        createdAt: localUser.createdAt,
+        role: localUser.role,
+        courses: localUser.courses,
+      };
+    })
+    .filter((user) => user !== null);
   return { users };
 }
 
@@ -51,19 +72,8 @@ export function ErrorBoundary() {
   return <ErrorComponent />;
 }
 
-type User = Prisma.UserGetPayload<{
-  select: {
-    id: true;
-    firstName: true;
-    lastName: true;
-    email: true;
-    phone: true;
-    role: true;
-    courses: {
-      select: { id: true };
-    };
-  };
-}>;
+type User = Awaited<ReturnType<typeof loader>>["users"][number];
+
 const columns: Array<ColumnDef<User>> = [
   {
     accessorKey: "name",

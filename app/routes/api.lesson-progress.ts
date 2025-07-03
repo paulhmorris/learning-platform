@@ -15,9 +15,9 @@ const schema = z.object({
 });
 export const SUBMIT_INTERVAL_MS = 15_000;
 
-export async function action({ request }: ActionFunctionArgs) {
-  const userId = await SessionService.requireUserId(request);
-  const result = await parseFormData(request, schema);
+export async function action(args: ActionFunctionArgs) {
+  const userId = await SessionService.requireUserId(args);
+  const result = await parseFormData(args.request, schema);
   if (result.error) {
     throw validationError(result.error);
   }

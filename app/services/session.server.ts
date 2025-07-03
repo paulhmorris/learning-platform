@@ -1,14 +1,12 @@
 import { getAuth } from "@clerk/react-router/ssr.server";
 import { UserRole } from "@prisma/client";
-import { ActionFunctionArgs, LoaderFunctionArgs, redirect } from "react-router";
+import { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 
-import { forbidden, unauthorized } from "~/lib/responses.server";
+import { forbidden, redirectToSignIn, unauthorized } from "~/lib/responses.server";
 import { AuthService } from "~/services/auth.server";
 import { UserService } from "~/services/user.server";
 
-class Session {
-  private static USER_SESSION_KEY = "userId";
-
+class _SessionService {
   async logout(sessionId: string | null) {
     if (sessionId) {
       await AuthService.revokeSession(sessionId);
@@ -25,72 +23,67 @@ class Session {
   }
 
   async getUser(args: LoaderFunctionArgs | ActionFunctionArgs) {
-    const userId = await this.getUserId(args);
+    const { userId, sessionId } = await this.getSession(args);
     if (!userId) {
       return null;
     }
 
-    const user = await UserService.getById(userId);
+    const user = await UserService.getByClerkId(userId);
     if (user) {
       return user;
     }
 
-    throw await this.logout(args);
+    console.warn(`User not not found in the database, logging out`, { clerkId: userId, sessionId });
+    await this.logout(sessionId);
+    throw redirectToSignIn(args.request.url);
   }
 
-  async getSessionUser(request: Request) {
-    const userId = await this.getUserId(request);
-    if (userId === undefined) return null;
-
-    const user = await UserService.getById(userId);
-    if (user) return user;
-
-    throw await this.logout(request);
-  }
-
-  async requireUserId(request: Request, redirectTo: string = new URL(request.url).pathname) {
-    const userId = await this.getUserId(request);
+  async requireUserId(args: LoaderFunctionArgs | ActionFunctionArgs) {
+    const userId = await this.getUserId(args);
     if (!userId) {
-      const searchParams = new URLSearchParams([["redirectTo", redirectTo]]);
-      throw redirect(`/login?${searchParams.toString()}`);
+      console.error("User ID is required but not found in the session.", { requestUrl: args.request.url });
+      throw redirectToSignIn(args.request.url);
     }
     return userId;
   }
 
-  private async requireUserByRole(request: Request, allowedRoles?: Array<UserRole>) {
+  private async requireUserByRole(args: LoaderFunctionArgs | ActionFunctionArgs, allowedRoles?: Array<UserRole>) {
     const defaultAllowedRoles: Array<UserRole> = ["USER", "ADMIN"];
-    const userId = await this.requireUserId(request);
+    const user = await this.getUser(args);
 
-    const user = await UserService.getById(userId);
+    if (!user) {
+      throw unauthorized("Unauthorized");
+    }
 
-    if (user && user.role === UserRole.SUPERADMIN) {
+    if (user.role === UserRole.SUPERADMIN) {
       return user;
     }
 
-    if (user && allowedRoles && allowedRoles.length > 0) {
+    if (allowedRoles && allowedRoles.length > 0) {
       if (allowedRoles.includes(user.role)) {
         return user;
       }
-      throw unauthorized({ user });
+      throw unauthorized("Unauthorized");
     }
 
-    if (user && defaultAllowedRoles.includes(user.role)) {
+    if (defaultAllowedRoles.includes(user.role)) {
       return user;
     }
-    throw forbidden({ user });
+
+    throw forbidden("Forbidden");
   }
 
-  async requireUser(request: Request) {
-    return this.requireUserByRole(request);
+  async requireUser(args: LoaderFunctionArgs | ActionFunctionArgs) {
+    return this.requireUserByRole(args);
   }
 
-  async requireAdmin(request: Request) {
-    return this.requireUserByRole(request, ["ADMIN"]);
+  async requireAdmin(args: LoaderFunctionArgs | ActionFunctionArgs) {
+    return this.requireUserByRole(args, ["ADMIN"]);
   }
 
-  async requireSuperAdmin(request: Request) {
-    return this.requireUserByRole(request, ["SUPERADMIN"]);
+  async requireSuperAdmin(args: LoaderFunctionArgs | ActionFunctionArgs) {
+    return this.requireUserByRole(args, ["SUPERADMIN"]);
   }
 }
 
-export const SessionService = new Session();
+export const SessionService = new _SessionService();

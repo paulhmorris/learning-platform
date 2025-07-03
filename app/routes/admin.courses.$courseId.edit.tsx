@@ -13,8 +13,8 @@ import { loader as adminCourseLoader } from "~/routes/admin.courses.$courseId";
 import { checkbox, number, text } from "~/schemas/fields";
 import { SessionService } from "~/services/session.server";
 
-export async function loader({ request }: LoaderFunctionArgs) {
-  await SessionService.requireAdmin(request);
+export async function loader(args: LoaderFunctionArgs) {
+  await SessionService.requireAdmin(args);
   return {};
 }
 
@@ -30,11 +30,11 @@ const schema = z.object({
   requiresIdentityVerification: checkbox,
 });
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  await SessionService.requireAdmin(request);
-  const id = params.courseId;
+export async function action(args: ActionFunctionArgs) {
+  await SessionService.requireAdmin(args);
+  const id = args.params.courseId;
 
-  const result = await parseFormData(request, schema);
+  const result = await parseFormData(args.request, schema);
   if (result.error) {
     return validationError(result.error);
   }

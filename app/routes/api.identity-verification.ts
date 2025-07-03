@@ -7,8 +7,8 @@ import { SessionService } from "~/services/session.server";
 import { UserService } from "~/services/user.server";
 
 // POST or PUT /api/identity-verification
-export async function action({ request }: ActionFunctionArgs) {
-  const user = await SessionService.requireUser(request);
+export async function action(args: ActionFunctionArgs) {
+  const user = await SessionService.requireUser(args);
 
   if (user.isIdentityVerified) {
     return new Response("User is already verified or has an active session", { status: 400 });
@@ -29,7 +29,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 }
 
-async function createVerificationSession(user_id: User["id"], email: User["email"]) {
+async function createVerificationSession(user_id: User["id"], email: string) {
   const verificationSession = await stripe.identity.verificationSessions.create({
     type: "document",
     provided_details: { email },

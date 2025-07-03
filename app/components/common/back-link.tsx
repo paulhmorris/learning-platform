@@ -7,6 +7,7 @@ export function BackLink({ className, children, ...rest }: LinkProps) {
   return (
     <Link
       {...rest}
+      prefetch="intent"
       className={cn(
         "group inline-flex items-center gap-2 rounded text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
         className,

@@ -12,8 +12,8 @@ const links = [
   { href: "/admin/courses", text: "Courses", icon: <IconCertificate className="size-[1.125rem]" /> },
 ];
 
-export async function loader({ request }: LoaderFunctionArgs) {
-  await SessionService.requireAdmin(request);
+export async function loader(args: LoaderFunctionArgs) {
+  await SessionService.requireAdmin(args);
   return {};
 }
 

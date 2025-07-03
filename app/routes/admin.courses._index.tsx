@@ -7,8 +7,8 @@ import { db } from "~/integrations/db.server";
 import { CourseService } from "~/services/course.server";
 import { SessionService } from "~/services/session.server";
 
-export async function loader({ request }: LoaderFunctionArgs) {
-  await SessionService.requireAdmin(request);
+export async function loader(args: LoaderFunctionArgs) {
+  await SessionService.requireAdmin(args);
 
   const dbCourses = await db.course.findMany({ include: { userCourses: true } });
   if (!dbCourses.length) {
