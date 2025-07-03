@@ -3,7 +3,7 @@ import { StrapiResponse } from "strapi-sdk-js";
 
 import { cms } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
-import { redis } from "~/integrations/redis.server";
+import { CacheKeys, CacheService } from "~/services/cache.server";
 import { APIResponseCollection, APIResponseData } from "~/types/utils";
 
 const TTL = 120;
@@ -12,7 +12,7 @@ type CourseCMS = StrapiResponse<APIResponseData<"api::course.course">>;
 
 export const CourseService = {
   async getByHost(host: string) {
-    const cachedCourse = await redis.get<Course>(`course-root-db-${host}`);
+    const cachedCourse = await CacheService.get<Course>(CacheKeys.courseRoot(host));
     if (cachedCourse) {
       return cachedCourse;
     }
@@ -22,7 +22,7 @@ export const CourseService = {
       return null;
     }
 
-    await redis.set<Course>(`course-root-db-${host}`, course, { ex: TTL });
+    await CacheService.set(CacheKeys.courseRoot(host), course, { ex: TTL });
     return course;
   },
 
@@ -31,7 +31,7 @@ export const CourseService = {
   },
 
   async getFromCMSForRoot(strapiId: string | number) {
-    const cachedCourse = await redis.get<CourseCMS>(`course-root-cms-${strapiId}`);
+    const cachedCourse = await CacheService.get<CourseCMS>(CacheKeys.courseRootCMS(strapiId));
     if (cachedCourse) {
       return cachedCourse;
     }
@@ -53,12 +53,12 @@ export const CourseService = {
       return null;
     }
 
-    await redis.set(`course-root-cms-${strapiId}`, course, { ex: TTL });
+    await CacheService.set(CacheKeys.courseRootCMS(strapiId), course, { ex: TTL });
     return course;
   },
 
   async getFromCMSForCourseLayout(strapiId: string | number) {
-    const cachedCourse = await redis.get<CourseCMS>(`course-course-layout-cms-${strapiId}`);
+    const cachedCourse = await CacheService.get<CourseCMS>(CacheKeys.courseLayoutCMS(strapiId));
     if (cachedCourse) {
       return cachedCourse;
     }
@@ -93,12 +93,12 @@ export const CourseService = {
       return null;
     }
 
-    await redis.set(`course-course-layout-cms-${strapiId}`, course, { ex: TTL });
+    await CacheService.set(CacheKeys.courseLayoutCMS(strapiId), course, { ex: TTL });
     return course;
   },
 
   async getAll() {
-    const cachedCourses = await redis.get<AllCoursesCMS>(`courses-all`);
+    const cachedCourses = await CacheService.get<AllCoursesCMS>(CacheKeys.coursesAll());
     if (cachedCourses && cachedCourses.length > 0) {
       return cachedCourses;
     }
@@ -111,7 +111,7 @@ export const CourseService = {
       return [];
     }
 
-    await redis.set(`courses-all`, courses.data, { ex: TTL });
+    await CacheService.set(CacheKeys.coursesAll(), courses.data, { ex: TTL });
     return courses.data;
   },
 };

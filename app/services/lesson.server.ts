@@ -1,6 +1,6 @@
 import { cms } from "~/integrations/cms.server";
-import { redis } from "~/integrations/redis.server";
 import { Responses } from "~/lib/responses.server";
+import { CacheKeys, CacheService } from "~/services/cache.server";
 import { APIResponseCollection, APIResponseData } from "~/types/utils";
 type Lesson = APIResponseCollection<"api::lesson.lesson">["data"][0];
 
@@ -12,7 +12,7 @@ export const LessonService = {
   },
 
   async getBySlugWithContent(slug: string) {
-    const cachedLesson = await redis.get<Lesson>(`lesson:${slug}`);
+    const cachedLesson = await CacheService.get<Lesson>(CacheKeys.lesson(slug));
     if (cachedLesson) {
       return cachedLesson;
     }
@@ -34,12 +34,12 @@ export const LessonService = {
       throw Responses.notFound("Lesson not found.");
     }
 
-    await redis.set(`lesson:${slug}`, lesson.data[0], { ex: 60 });
+    await CacheService.set(CacheKeys.lesson(slug), lesson.data[0], { ex: 60 });
     return lesson.data[0];
   },
 
   async getDuration(lessonId: number) {
-    const cachedLesson = await redis.get<number>(`lesson-duration:${lessonId}`);
+    const cachedLesson = await CacheService.get<number>(CacheKeys.lessonDuration(lessonId));
     if (cachedLesson) {
       return cachedLesson;
     }
@@ -47,7 +47,7 @@ export const LessonService = {
       fields: ["required_duration_in_seconds"],
     });
     if (lesson.data.attributes.required_duration_in_seconds) {
-      await redis.set(`lesson-duration:${lessonId}`, lesson.data.attributes.required_duration_in_seconds, {
+      await CacheService.set(CacheKeys.lessonDuration(lessonId), lesson.data.attributes.required_duration_in_seconds, {
         ex: 60,
       });
     }

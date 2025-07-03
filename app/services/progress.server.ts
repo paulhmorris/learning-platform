@@ -1,8 +1,8 @@
 import { UserLessonProgress } from "@prisma/client";
 
 import { db } from "~/integrations/db.server";
-import { redis } from "~/integrations/redis.server";
 import { SUBMIT_INTERVAL_MS } from "~/routes/api.lesson-progress";
+import { CacheKeys, CacheService } from "~/services/cache.server";
 
 export const ProgressService = {
   async incrementProgress(userId: string, lessonId: number) {
@@ -11,12 +11,12 @@ export const ProgressService = {
       create: { userId, lessonId, durationInSeconds: SUBMIT_INTERVAL_MS / 1_000 },
       update: { durationInSeconds: { increment: SUBMIT_INTERVAL_MS / 1_000 } },
     });
-    await redis.set(`user-lesson-progress:${userId}:${lessonId}`, progress, { ex: 12 });
+    await CacheService.set(CacheKeys.progressLesson(userId, lessonId), progress, { ex: 12 });
     return progress;
   },
 
   async getByLessonId(userId: string, lessonId: number) {
-    const cachedProgress = await redis.get<UserLessonProgress>(`user-lesson-progress:${userId}:${lessonId}`);
+    const cachedProgress = await CacheService.get<UserLessonProgress>(CacheKeys.progressLesson(userId, lessonId));
     if (cachedProgress) {
       return cachedProgress;
     }
@@ -26,7 +26,7 @@ export const ProgressService = {
       },
     });
     if (progress) {
-      await redis.set(`user-lesson-progress:${userId}:${lessonId}`, progress, { ex: 12 });
+      await CacheService.set(CacheKeys.progressLesson(userId, lessonId), progress, { ex: 12 });
     }
     return progress;
   },
@@ -90,7 +90,7 @@ export const ProgressService = {
         isCompleted: true,
       },
     });
-    await redis.set(`user-lesson-progress:${data.userId}:${data.lessonId}`, progress, { ex: 12 });
+    await CacheService.set(CacheKeys.progressLesson(data.userId, data.lessonId), progress, { ex: 12 });
     return progress;
   },
 };
