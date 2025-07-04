@@ -13,7 +13,7 @@ export async function loader(args: LoaderFunctionArgs) {
 
   const dbCourse = await db.course.findUnique({ where: { id }, include: { userCourses: true } });
   if (!dbCourse) {
-    throw Responses.notFound(null);
+    throw Responses.notFound();
   }
   const cmsCourse = await CourseService.getFromCMSForRoot(dbCourse.strapiId);
   if (!cmsCourse) {

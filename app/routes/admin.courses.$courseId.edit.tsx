@@ -8,6 +8,7 @@ import { FormField } from "~/components/ui/form";
 import { Label } from "~/components/ui/label";
 import { SubmitButton } from "~/components/ui/submit-button";
 import { db } from "~/integrations/db.server";
+import { Responses } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
 import { loader as adminCourseLoader } from "~/routes/admin.courses.$courseId";
 import { checkbox, number, text } from "~/schemas/fields";
@@ -15,7 +16,7 @@ import { SessionService } from "~/services/session.server";
 
 export async function loader(args: LoaderFunctionArgs) {
   await SessionService.requireAdmin(args);
-  return {};
+  return Responses.ok();
 }
 
 const schema = z.object({

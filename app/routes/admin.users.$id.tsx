@@ -26,13 +26,13 @@ export async function loader(args: LoaderFunctionArgs) {
   await SessionService.requireAdmin(args);
   const id = args.params.id;
   if (!id) {
-    throw Responses.notFound("User ID is required.");
+    throw Responses.notFound();
   }
 
   const user = await UserService.getByClerkId(id);
   // TODO: Handle once clerkId is required
   if (!user?.clerkId) {
-    throw Responses.notFound({ message: "User not found." });
+    throw Responses.notFound();
   }
 
   let identityVerificationStatus;

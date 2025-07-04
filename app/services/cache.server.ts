@@ -31,7 +31,7 @@ const DEFAULT_TTL = 60 * 60; // 1 hour
 export const CacheService = {
   async get<T>(key: CacheKey) {
     if (CONFIG.isDev || CONFIG.isTest) {
-      logger.debug({ key }, `Skipping cache GET in dev`);
+      logger.trace({ key }, `Skipping cache GET in dev`);
       return null;
     }
 
@@ -47,7 +47,7 @@ export const CacheService = {
 
   async set<T>(key: CacheKey, value: T, opts: SetCommandOptions = {}) {
     if (CONFIG.isDev || CONFIG.isTest) {
-      logger.debug({ key }, `Skipping cache SET in dev`);
+      logger.trace({ key }, `Skipping cache SET in dev`);
       return;
     }
 
@@ -65,7 +65,7 @@ export const CacheService = {
 
   async delete(key: CacheKey) {
     if (CONFIG.isDev || CONFIG.isTest) {
-      logger.debug({ key }, `Skipping cache DELETE in dev`);
+      logger.trace({ key }, `Skipping cache DELETE in dev`);
       return;
     }
 

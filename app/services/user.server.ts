@@ -2,8 +2,12 @@ import { Prisma, UserRole } from "@prisma/client";
 
 import { clerkClient } from "~/integrations/clerk.server";
 import { db } from "~/integrations/db.server";
+import { createLogger } from "~/integrations/logger.server";
+import { Sentry } from "~/integrations/sentry";
 import { AuthService } from "~/services/auth.server";
 import { PaymentService } from "~/services/payment.server";
+
+const logger = createLogger("UserService");
 
 type ClerkData = {
   firstName: string;
@@ -26,76 +30,124 @@ type UserWithPIIAndCourses = Prisma.UserGetPayload<{
 
 export const UserService = {
   async getById(id: string) {
-    const user = await db.user.findUnique({
-      where: { id },
-      include: { courses: { include: { course: { select: { requiresIdentityVerification: true } } } } },
-    });
+    try {
+      const user = await db.user.findUnique({
+        where: { id },
+        include: { courses: { include: { course: { select: { requiresIdentityVerification: true } } } } },
+      });
 
-    if (!user) {
-      return null;
+      if (!user) {
+        return null;
+      }
+
+      // TODO: Remove when clerkId is required
+      const backendUser = await clerkClient.users.getUser(user.clerkId!);
+      const userWithPII: UserWithPIIAndCourses = {
+        ...user,
+        firstName: backendUser.firstName!,
+        lastName: backendUser.lastName!,
+        email: backendUser.primaryEmailAddress!.emailAddress,
+        phone: backendUser.primaryPhoneNumber?.phoneNumber,
+        isActive: !backendUser.locked,
+      };
+      return userWithPII;
+    } catch (error) {
+      Sentry.captureException(error);
+      logger.error({ error, userId: id }, "Failed to get user by ID");
+      throw error;
     }
-
-    // TODO: Remove when clerkId is required
-    const backendUser = await clerkClient.users.getUser(user.clerkId!);
-    const userWithPII: UserWithPIIAndCourses = {
-      ...user,
-      firstName: backendUser.firstName!,
-      lastName: backendUser.lastName!,
-      email: backendUser.primaryEmailAddress!.emailAddress,
-      phone: backendUser.primaryPhoneNumber?.phoneNumber,
-      isActive: !backendUser.locked,
-    };
-    return userWithPII;
   },
 
   async getByClerkId(clerkId: string) {
-    const user = await db.user.findUnique({
-      where: { clerkId },
-      include: { courses: { include: { course: { select: { requiresIdentityVerification: true } } } } },
-    });
+    try {
+      const user = await db.user.findUnique({
+        where: { clerkId },
+        include: { courses: { include: { course: { select: { requiresIdentityVerification: true } } } } },
+      });
 
-    if (!user) {
-      return null;
+      if (!user) {
+        return null;
+      }
+
+      // TODO: Remove when clerkId is required
+      const backendUser = await clerkClient.users.getUser(user.clerkId!);
+      const userWithPII: UserWithPIIAndCourses = {
+        ...user,
+        firstName: backendUser.firstName!,
+        lastName: backendUser.lastName!,
+        email: backendUser.primaryEmailAddress!.emailAddress,
+        phone: backendUser.primaryPhoneNumber?.phoneNumber,
+        isActive: !backendUser.locked,
+      };
+      return userWithPII;
+    } catch (error) {
+      Sentry.captureException(error);
+      logger.error({ error, clerkId }, "Failed to get user by Clerk ID");
+      throw error;
     }
-
-    // TODO: Remove when clerkId is required
-    const backendUser = await clerkClient.users.getUser(user.clerkId!);
-    const userWithPII: UserWithPIIAndCourses = {
-      ...user,
-      firstName: backendUser.firstName!,
-      lastName: backendUser.lastName!,
-      email: backendUser.primaryEmailAddress!.emailAddress,
-      phone: backendUser.primaryPhoneNumber?.phoneNumber,
-      isActive: !backendUser.locked,
-    };
-    return userWithPII;
   },
 
   async create(clerkId: string) {
-    const user = await db.user.upsert({
-      where: { clerkId },
-      update: {},
-      create: { clerkId, role: UserRole.USER },
-    });
-    console.info("User upserted:", user);
+    try {
+      const user = await db.user.upsert({
+        where: { clerkId },
+        update: {},
+        create: { clerkId, role: UserRole.USER },
+      });
+      logger.info({ user }, "User upserted:");
 
-    const stripeCustomer = await PaymentService.createCustomer(user.id, { metadata: { clerk_id: clerkId } });
-    console.info("Stripe customer created:", stripeCustomer.id);
+      const stripeCustomer = await PaymentService.createCustomer(user.id, { metadata: { clerk_id: clerkId } });
+      logger.info({ stripeCustomer }, "Stripe customer created:");
 
-    await this.update(user.id, { stripeId: stripeCustomer.id });
-    console.info("User updated with Stripe ID:", user.id);
+      await this.update(user.id, { stripeId: stripeCustomer.id });
+      logger.info({ userId: user.id, stripeId: stripeCustomer.id }, "User updated with Stripe ID:");
 
-    await AuthService.saveExternalId(clerkId, user.id);
-    console.info("External ID saved for user:", user.id);
-    return user;
+      await AuthService.saveExternalId(clerkId, user.id);
+      logger.info({ userId: user.id }, "External ID saved for user:");
+      return user;
+    } catch (error) {
+      Sentry.captureException(error);
+      logger.error({ error, clerkId }, "Failed to create user");
+      throw error;
+    }
   },
 
   async update(id: string, data: Prisma.UserUpdateArgs["data"]) {
-    const user = await db.user.update({ where: { id }, data, select: { id: true } });
-    return user;
+    try {
+      return db.user.update({ where: { id }, data, select: { id: true } });
+    } catch (error) {
+      Sentry.captureException(error);
+      logger.error({ error, userId: id }, "Failed to update user");
+      throw error;
+    }
   },
 
-  async delete(id: string) {
-    await db.user.delete({ where: { id } });
+  async delete(userId: string) {
+    try {
+      return db.$transaction([
+        db.userQuizProgress.deleteMany({ where: { userId } }),
+        db.userLessonProgress.deleteMany({ where: { userId } }),
+        db.userCourses.deleteMany({ where: { userId } }),
+        db.user.delete({ where: { id: userId } }),
+      ]);
+    } catch (error) {
+      Sentry.captureException(error);
+      logger.error({ error, userId }, "Failed to delete user");
+      throw error;
+    }
+  },
+
+  async deleteByClerkId(clerkId: string) {
+    try {
+      const user = await this.getByClerkId(clerkId);
+      if (!user) {
+        throw new Error(`User with Clerk ID ${clerkId} not found`);
+      }
+      return this.delete(user.id);
+    } catch (error) {
+      Sentry.captureException(error);
+      logger.error({ error, clerkId }, "Failed to delete user by Clerk ID");
+      throw error;
+    }
   },
 };
