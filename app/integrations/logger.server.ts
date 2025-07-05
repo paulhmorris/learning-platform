@@ -1,5 +1,6 @@
 // import "@axiomhq/pino";
 import pino from "pino";
+import "pino-pretty";
 
 import { CONFIG } from "~/config.server";
 
