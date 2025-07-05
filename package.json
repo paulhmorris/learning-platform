@@ -147,16 +147,19 @@
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^3.2.4"
   },
+  "optionalDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "*"
+  },
   "lint-staged": {
     "*": "prettier --write --ignore-unknown"
   },
   "engines": {
-    "node": "20.x"
+    "node": "22.x"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
   },
   "volta": {
-    "node": "20.19.3"
+    "node": "22.17.0"
   }
 }
