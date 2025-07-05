@@ -28,10 +28,11 @@ const liveLogger = pino({
 });
 
 export function createLogger(name?: string) {
-  if (CONFIG.isPreview || CONFIG.isProd) {
-    return name ? liveLogger.child({ name }) : liveLogger;
+  if (CONFIG.isDev) {
+    return name ? devLogger.child({ name }) : devLogger;
   }
-  return name ? devLogger.child({ name }) : devLogger;
+
+  return name ? liveLogger.child({ name }) : liveLogger;
 }
 
 export const logger = createLogger();
