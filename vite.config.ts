@@ -26,6 +26,9 @@ export default defineConfig((config) => ({
       ".prisma/client/index-browser": "./node_modules/.prisma/client/index-browser.js",
     },
   },
+  resolutions: {
+    rollup: "npm:@rollup/wasm-node",
+  },
   build: {
     sourcemap: !!process.env.CI,
   },

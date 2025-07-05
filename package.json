@@ -147,9 +147,6 @@
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^3.2.4"
   },
-  "overrides": {
-    "rollup": "npm:@rollup/wasm-node"
-  },
   "lint-staged": {
     "*": "prettier --write --ignore-unknown"
   },
