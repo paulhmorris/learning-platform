@@ -6,11 +6,15 @@ import { AuthService } from "~/services/auth.server";
 const prisma = new PrismaClient();
 
 async function seed() {
-  const email = "paul@remix.run";
+  const email = "paulh.morris@gmail.com";
   const clerkUser = await AuthService.getUserList({ emailAddress: [email] });
 
   if (clerkUser.data.length > 1) {
     throw new Error(`Multiple users found with email ${email}. Please ensure only one user exists with this email.`);
+  }
+
+  if (clerkUser.data.length === 0) {
+    throw new Error(`No user found with email ${email}. Please create a user with this email in Clerk.`);
   }
 
   const user = await prisma.user.create({
