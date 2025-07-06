@@ -11,6 +11,11 @@ const _serverEnvValidation = z.object({
   CLERK_SECRET_KEY: z.string().min(1),
   CLERK_WEBHOOK_SIGNING_SECRET: z.string().min(1),
 
+  // Axiom
+  AXIOM_DATASET_HTTP: z.string().min(1),
+  AXIOM_DATASET_SERVER: z.string().min(1),
+  AXIOM_TOKEN: z.string().min(1),
+
   // Strapi
   STRAPI_TOKEN: z.string().min(1),
   STRAPI_URL: z.url(),

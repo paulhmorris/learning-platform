@@ -11,6 +11,7 @@ import { getToast } from "remix-toast";
 import { ErrorComponent } from "~/components/error-component";
 import { Header } from "~/components/header";
 import { Notifications } from "~/components/notifications";
+import { httpLogger } from "~/integrations/logger.server";
 import { Sentry } from "~/integrations/sentry";
 import { Responses } from "~/lib/responses.server";
 import { cn, hexToPartialHSL } from "~/lib/utils";
@@ -21,6 +22,8 @@ import globalStyles from "~/tailwind.css?url";
 
 // eslint-disable-next-line import/no-unresolved
 import { Route } from "./+types/root";
+
+export const unstable_middleware = [httpLogger];
 
 export const links: LinksFunction = () => [{ rel: "stylesheet", href: globalStyles, as: "style" }];
 
