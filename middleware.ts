@@ -6,11 +6,6 @@ import pino from "pino";
 
 export const config = { runtime: "nodejs" };
 
-console.log({
-  axiomToken: process.env.AXIOM_TOKEN,
-  axiomDataset: process.env.AXIOM_DATASET_HTTP,
-});
-
 const logger = pino(
   { level: "info" },
   pino.transport({
@@ -45,5 +40,6 @@ export default function middleware(request: Request) {
   };
 
   logger.info(logData, "HTTP Request");
+  logger.flush();
   return next();
 }
