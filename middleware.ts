@@ -6,17 +6,19 @@ import pino from "pino";
 
 export const config = { runtime: "nodejs" };
 
+console.log(process.env);
+const logger = pino(
+  { level: "info", name: "HTTP" },
+  pino.transport({
+    target: "@axiomhq/pino",
+    options: {
+      dataset: "http",
+      token: process.env.AXIOM_TOKEN,
+    },
+  }),
+);
+
 export default function middleware(request: Request) {
-  const logger = pino(
-    { level: "info", name: "HTTP" },
-    pino.transport({
-      target: "@axiomhq/pino",
-      options: {
-        dataset: process.env.AXIOM_DATASET_HTTP,
-        token: process.env.AXIOM_TOKEN,
-      },
-    }),
-  );
   const now = Date.now();
   const reqIsFromBot = request.headers.get("cf-isbot") === "true" || isbot(request.headers.get("user-agent") ?? "");
   const geo = geolocation(request);
