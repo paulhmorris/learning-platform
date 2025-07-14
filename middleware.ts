@@ -1,7 +1,19 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+import "@axiomhq/pino";
 import { Geo, ipAddress } from "@vercel/functions";
 import { isbot } from "isbot";
+import pino from "pino";
 
-import { httpLogger } from "./app/integrations/logger.server.js";
+const logger = pino(
+  { level: "info", name: "HTTP" },
+  pino.transport({
+    target: "@axiomhq/pino",
+    options: {
+      dataset: process.env.AXIOM_DATASET,
+      token: process.env.AXIOM_TOKEN,
+    },
+  }),
+);
 
 export const config = { runtime: "nodejs" };
 
@@ -22,7 +34,7 @@ export default function middleware(request: Request & { geo: Geo }) {
     user_agent: request.headers.get("user-agent"),
   };
 
-  httpLogger.info(logData, "HTTP Request");
+  logger.info(logData, "HTTP Request");
 
   return new Response("OK", { status: 200 });
 }
