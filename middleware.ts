@@ -6,7 +6,6 @@ import pino from "pino";
 
 export const config = { runtime: "nodejs" };
 
-console.log(process.env);
 const logger = pino(
   { level: "info", name: "HTTP" },
   pino.transport({
@@ -19,6 +18,10 @@ const logger = pino(
 );
 
 export default function middleware(request: Request) {
+  if (request.url.includes("/assets/")) {
+    return next();
+  }
+
   const now = Date.now();
   const reqIsFromBot = request.headers.get("cf-isbot") === "true" || isbot(request.headers.get("user-agent") ?? "");
   const geo = geolocation(request);
