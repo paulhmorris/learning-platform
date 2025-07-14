@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 import "@axiomhq/pino";
-import { Geo, ipAddress } from "@vercel/functions";
+import { geolocation, ipAddress } from "@vercel/functions";
 import { isbot } from "isbot";
 import pino from "pino";
 
@@ -17,14 +17,15 @@ const logger = pino(
 
 export const config = { runtime: "nodejs" };
 
-export default function middleware(request: Request & { geo: Geo }) {
+export default function middleware(request: Request) {
   const reqIsFromBot = request.headers.get("cf-isbot") === "true" || isbot(request.headers.get("user-agent") ?? "");
+  const geo = geolocation(request);
 
   const logData = {
     content_type: request.headers.get("content-type"),
     geo: {
-      city: request.geo.city ?? request.headers.get("cf-ipcity"),
-      country: request.geo.country ?? request.headers.get("cf-ipcountry"),
+      city: geo.city ?? request.headers.get("cf-ipcity"),
+      country: geo.country ?? request.headers.get("cf-ipcountry"),
     },
     id: request.headers.get("x-request-id"),
     ip: ipAddress(request),
