@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 import "@axiomhq/pino";
+
 import pino from "pino";
 
 import "pino-pretty";
@@ -35,3 +36,5 @@ export function createLogger(name?: string) {
 }
 
 export const logger = createLogger();
+
+export const httpLogger = createLogger("Http");

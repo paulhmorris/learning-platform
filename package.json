@@ -66,6 +66,7 @@
     "@tanstack/react-table": "^8.21.3",
     "@trigger.dev/sdk": "3.3.17",
     "@upstash/redis": "^1.35.0",
+    "@vercel/functions": "^2.2.3",
     "@vercel/react-router": "^1.1.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
