@@ -1,7 +1,7 @@
 import { Geo, ipAddress } from "@vercel/functions";
 import { isbot } from "isbot";
 
-import { httpLogger } from "~/integrations/logger.server";
+import { httpLogger } from "./app/integrations/logger.server";
 
 export const config = { runtime: "nodejs" };
 
