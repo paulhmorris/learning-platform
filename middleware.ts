@@ -9,7 +9,7 @@ const logger = pino(
   pino.transport({
     target: "@axiomhq/pino",
     options: {
-      dataset: process.env.AXIOM_DATASET,
+      dataset: process.env.AXIOM_DATASET_HTTP,
       token: process.env.AXIOM_TOKEN,
     },
   }),
