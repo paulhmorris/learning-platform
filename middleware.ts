@@ -4,20 +4,19 @@ import { geolocation, ipAddress, next } from "@vercel/functions";
 import { isbot } from "isbot";
 import pino from "pino";
 
-const logger = pino(
-  { level: "info", name: "HTTP" },
-  pino.transport({
-    target: "@axiomhq/pino",
-    options: {
-      dataset: process.env.AXIOM_DATASET_HTTP,
-      token: process.env.AXIOM_TOKEN,
-    },
-  }),
-);
-
 export const config = { runtime: "nodejs" };
 
 export default function middleware(request: Request) {
+  const logger = pino(
+    { level: "info", name: "HTTP" },
+    pino.transport({
+      target: "@axiomhq/pino",
+      options: {
+        dataset: process.env.AXIOM_DATASET_HTTP,
+        token: process.env.AXIOM_TOKEN,
+      },
+    }),
+  );
   const now = Date.now();
   const reqIsFromBot = request.headers.get("cf-isbot") === "true" || isbot(request.headers.get("user-agent") ?? "");
   const geo = geolocation(request);
