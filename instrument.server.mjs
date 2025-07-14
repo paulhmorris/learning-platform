@@ -7,7 +7,8 @@ Sentry.init({
   enabled: process.env.NODE_ENV === "production",
   environment: process.env.VERCEL_ENV,
 
-  sampleRate: 0.25,
+  sampleRate: 1.0,
+
   tracesSampleRate: 0.5,
   profileSessionSampleRate: 0.5,
   profileLifecycle: "trace",

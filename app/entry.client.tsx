@@ -10,6 +10,7 @@ Sentry.init({
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   environment: window.ENV?.VERCEL_ENV,
 
+  sampleRate: 1.0,
   tracesSampleRate: 0.25,
   profilesSampleRate: 0.25,
   replaysSessionSampleRate: 0.05,
@@ -18,7 +19,6 @@ Sentry.init({
 
   integrations: [
     Sentry.reactRouterTracingIntegration(),
-    Sentry.captureConsoleIntegration({ levels: ["error"] }),
     Sentry.replayIntegration({ maskAllText: false, maskAllInputs: false }),
   ],
 });
