@@ -1,27 +1,20 @@
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-import "@axiomhq/pino";
-import { geolocation, ipAddress, next } from "@vercel/functions";
+import { Axiom } from "@axiomhq/js";
+import { AxiomJSTransport, ConsoleTransport, Logger } from "@axiomhq/logging";
+import { geolocation, ipAddress, next, waitUntil } from "@vercel/functions";
 import { isbot } from "isbot";
-import pino from "pino";
 
-export const config = { runtime: "nodejs" };
+export const config = {
+  runtime: "nodejs",
+  matcher: ["/((?!assets|favicon.ico|site.webmanifest|.well-known).*)"],
+};
 
-const logger = pino(
-  { level: "info" },
-  pino.transport({
-    target: "@axiomhq/pino",
-    options: {
-      dataset: process.env.AXIOM_DATASET_HTTP,
-      token: process.env.AXIOM_TOKEN,
-    },
-  }),
-);
+const axiom = new Axiom({ token: process.env.AXIOM_TOKEN });
+
+const logger = new Logger({
+  transports: [new AxiomJSTransport({ axiom, dataset: "http" }), new ConsoleTransport()],
+});
 
 export default function middleware(request: Request) {
-  if (request.url.includes("/assets/")) {
-    return next();
-  }
-
   const reqIsFromBot = request.headers.get("cf-isbot") === "true" || isbot(request.headers.get("user-agent") ?? "");
   const geo = geolocation(request);
 
@@ -39,7 +32,7 @@ export default function middleware(request: Request) {
     user_agent: request.headers.get("user-agent"),
   };
 
-  logger.info(logData, "HTTP Request");
-  logger.flush();
+  logger.info("http", logData);
+  waitUntil(logger.flush());
   return next();
 }
