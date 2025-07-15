@@ -11,7 +11,7 @@ export const config = {
 const axiom = new Axiom({ token: process.env.AXIOM_TOKEN });
 
 const logger = new Logger({
-  transports: [new AxiomJSTransport({ axiom, dataset: "http" }), new ConsoleTransport()],
+  transports: [new AxiomJSTransport({ axiom, dataset: "requests" }), new ConsoleTransport()],
 });
 
 export default function middleware(request: Request) {
