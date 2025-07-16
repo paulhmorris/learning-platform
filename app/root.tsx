@@ -3,7 +3,7 @@ import { rootAuthLoader } from "@clerk/react-router/ssr.server";
 import { dark } from "@clerk/themes";
 import "@fontsource-variable/inter/wght.css";
 import { useEffect } from "react";
-import type { LinksFunction, LoaderFunctionArgs } from "react-router";
+import type { LinksFunction, LoaderFunctionArgs, unstable_MiddlewareFunction } from "react-router";
 import { data, Links, Meta, Outlet, Scripts, ScrollRestoration, useRouteLoaderData } from "react-router";
 import { PreventFlashOnWrongTheme, Theme, ThemeProvider, useTheme } from "remix-themes";
 import { getToast } from "remix-toast";
@@ -19,10 +19,17 @@ import { CourseService } from "~/services/course.server";
 import { SessionService } from "~/services/session.server";
 import globalStyles from "~/tailwind.css?url";
 
+const testMiddleware: unstable_MiddlewareFunction = (args, next) => {
+  console.info("Hello from the middleware!");
+  return next();
+};
+
 // eslint-disable-next-line import/no-unresolved
 import { Route } from "./+types/root";
 
 export const links: LinksFunction = () => [{ rel: "stylesheet", href: globalStyles, as: "style" }];
+
+export const unstable_middleware = [testMiddleware];
 
 export const loader = async (args: LoaderFunctionArgs) => {
   const user = await SessionService.getUser(args);

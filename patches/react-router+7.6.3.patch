@@ -1,0 +1,13 @@
+diff --git a/node_modules/react-router/dist/production/index.js b/node_modules/react-router/dist/production/index.js
+index 9adf06e..e4ce7ac 100644
+--- a/node_modules/react-router/dist/production/index.js
++++ b/node_modules/react-router/dist/production/index.js
+@@ -10958,7 +10958,7 @@ var createRequestHandler = (build, mode) => {
+       });
+     };
+     if (_build.future.unstable_middleware) {
+-      if (initialContext == null) {
++      if (!(initialContext instanceof Map)) {
+         loadContext = new unstable_RouterContextProvider();
+       } else {
+         try {
