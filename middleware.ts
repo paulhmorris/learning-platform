@@ -8,13 +8,14 @@ export const config = {
   matcher: ["/((?!assets|favicon.ico|site.webmanifest|.well-known).*)"],
 };
 
-const axiom = new Axiom({ token: process.env.AXIOM_TOKEN });
+export default async function middleware(request: Request) {
+  const axiom = new Axiom({ token: process.env.AXIOM_TOKEN });
+  const datasets = await axiom.datasets.list();
+  console.log("Available datasets:", datasets);
+  const logger = new Logger({
+    transports: [new AxiomJSTransport({ axiom, dataset: "requests" }), new ConsoleTransport()],
+  });
 
-const logger = new Logger({
-  transports: [new AxiomJSTransport({ axiom, dataset: "requests" }), new ConsoleTransport()],
-});
-
-export default function middleware(request: Request) {
   const reqIsFromBot = request.headers.get("cf-isbot") === "true" || isbot(request.headers.get("user-agent") ?? "");
   const geo = geolocation(request);
 
