@@ -16,6 +16,11 @@ const devTransport: pino.TransportSingleOptions = {
 
 const baseLogger = pino(
   {
+    base: CONFIG.isDev
+      ? undefined
+      : {
+          environment: process.env.VERCEL_ENV,
+        },
     transport: CONFIG.isDev ? devTransport : undefined,
     level: CONFIG.isDev ? "debug" : (process.env.LOG_LEVEL ?? "info"),
     name: "Global",
@@ -36,5 +41,3 @@ export function createLogger(name?: string) {
 }
 
 export const logger = createLogger();
-
-export const httpLogger = createLogger("Http");

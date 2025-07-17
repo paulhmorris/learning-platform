@@ -2,8 +2,8 @@
 /// <reference types="vitest/config" />
 import { reactRouter } from "@react-router/dev/vite";
 import { sentryReactRouter, type SentryReactRouterBuildOptions } from "@sentry/react-router";
-import morgan from "morgan";
-import { ViteDevServer, defineConfig } from "vite";
+import { reactRouterHonoServer } from "react-router-hono-server/dev";
+import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 import { coverageConfigDefaults, defaultExclude } from "vitest/config";
 
@@ -33,7 +33,7 @@ export default defineConfig((config) => ({
     port: 3000,
   },
   plugins: [
-    morganPlugin(),
+    reactRouterHonoServer(),
     tsconfigPaths(),
     !process.env.VITEST && reactRouter(),
     ...(isCI ? [sentryReactRouter(sentryConfig, config)] : []),
@@ -54,26 +54,3 @@ export default defineConfig((config) => ({
     },
   },
 }));
-
-function morganPlugin() {
-  return {
-    name: "morgan-plugin",
-    configureServer(server: ViteDevServer) {
-      return () => {
-        server.middlewares.use(
-          morgan("dev", {
-            skip: (req) => {
-              if (req.url?.startsWith("/.well-known")) {
-                return true;
-              }
-              if (req.url?.startsWith("/__manifest")) {
-                return true;
-              }
-              return false;
-            },
-          }),
-        );
-      };
-    },
-  };
-}
