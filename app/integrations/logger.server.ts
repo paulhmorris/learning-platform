@@ -25,7 +25,7 @@ const baseLogger = pino(
     : pino.transport({
         target: "@axiomhq/pino",
         options: {
-          dataset: process.env.AXIOM_DATASET,
+          dataset: "server",
           token: process.env.AXIOM_TOKEN,
         },
       }),
