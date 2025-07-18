@@ -22,52 +22,60 @@ const logger = pino(
       : undefined,
   },
   // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-  pino.transport({
-    target: "@axiomhq/pino",
-    options: {
-      dataset: "http",
-      token: process.env.AXIOM_TOKEN,
-    },
-  }),
+  CONFIG.isDev
+    ? undefined
+    : pino.transport({
+        target: "@axiomhq/pino",
+        options: {
+          dataset: "http",
+          token: process.env.AXIOM_TOKEN,
+        },
+      }),
 );
 
 export function loggerMiddleware() {
   return createMiddleware(async (c, next) => {
-    const requestId = crypto.randomUUID();
+    if (c.req.url.startsWith("/assets")) {
+      return next();
+    }
+
     const reqIsFromBot = c.req.header("cf-isbot") === "true" || isbot(c.req.header("user-agent") ?? "");
+    const url = new URL(c.req.url);
     logger.info(
       {
-        id: requestId,
+        id: c.get("requestId") as string,
         content_type: c.req.header("content-type"),
         method: c.req.method,
         user_agent: c.req.header("user-agent"),
-        isbot: reqIsFromBot,
+        is_bot: reqIsFromBot,
         uri: c.req.url,
+        pathname: url.pathname,
+        params: url.search,
       },
-      "Request received",
+      "Request",
     );
 
     await next();
 
     const status = c.res.status;
     const responseLogData: Record<string, unknown> = {
-      id: requestId,
+      request_id: c.get("requestId") as string,
       status,
       content_type: c.res.headers.get("content-type"),
       method: c.req.method,
-      uri: c.req.url,
+      request_uri: c.req.url,
     };
 
     if (status >= 300 && status < 400) {
       responseLogData.redirect_url = c.res.headers.get("location");
-      logger.warn(responseLogData, "Redirect response");
+      logger.warn(responseLogData, "Response");
     }
 
     if (status >= 400) {
-      logger.error(responseLogData, "Error response");
+      logger.error(responseLogData, "Response");
     }
 
-    logger.info(responseLogData, "Response sent");
+    logger.info(responseLogData, "Response");
     logger.flush();
   });
 }
