@@ -1,46 +1,20 @@
 import { createMiddleware } from "hono/factory";
 import { isbot } from "isbot";
-import pino from "pino";
 
 import "pino-pretty";
-import { CONFIG } from "~/config.server";
+import { createLogger } from "~/integrations/logger.server";
 
-const logger = pino(
-  {
-    level: "info",
-    base: {
-      environment: process.env.VERCEL_ENV,
-    },
-    transport: CONFIG.isDev
-      ? {
-          target: "pino-pretty",
-          options: {
-            colorize: true,
-            ignore: "pid,hostname",
-          },
-        }
-      : undefined,
-  },
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-  CONFIG.isDev
-    ? undefined
-    : pino.transport({
-        target: "@axiomhq/pino",
-        options: {
-          dataset: "http",
-          token: process.env.AXIOM_TOKEN,
-        },
-      }),
-);
+const logger = createLogger("HTTP");
+
+const matchers = ["/assets", "favicon", ".well-known", "site.webmanifest", "sitemap.xml", "robots.txt"];
 
 export function loggerMiddleware() {
   return createMiddleware(async (c, next) => {
-    if (c.req.url.startsWith("/assets")) {
+    if (matchers.some((m) => c.req.url.includes(m))) {
       return next();
     }
 
     const reqIsFromBot = c.req.header("cf-isbot") === "true" || isbot(c.req.header("user-agent") ?? "");
-    const url = new URL(c.req.url);
     logger.info(
       {
         id: c.get("requestId") as string,
@@ -49,8 +23,8 @@ export function loggerMiddleware() {
         user_agent: c.req.header("user-agent"),
         is_bot: reqIsFromBot,
         uri: c.req.url,
-        pathname: url.pathname,
-        params: url.search,
+        path: c.req.path,
+        query: c.req.query(),
       },
       "Request",
     );

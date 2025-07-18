@@ -46,13 +46,7 @@ export function ProgressTimer({ lesson, progress, setClientProgressPercentage }:
 
   // Pause the timer when the tab is not visible
   useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        pause();
-      } else {
-        resume();
-      }
-    };
+    const handleVisibilityChange = () => (document.hidden ? pause() : resume());
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
 

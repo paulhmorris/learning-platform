@@ -5,7 +5,7 @@ import { CacheKeys, CacheService } from "~/services/cache.server";
 import { APIResponseCollection, APIResponseData } from "~/types/utils";
 type Lesson = APIResponseCollection<"api::lesson.lesson">["data"][0];
 
-const logger = createLogger();
+const logger = createLogger("LessonService");
 
 export const LessonService = {
   async getAllFromCMS() {

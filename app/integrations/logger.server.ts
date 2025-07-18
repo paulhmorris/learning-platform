@@ -14,30 +14,28 @@ const devTransport: pino.TransportSingleOptions = {
   },
 };
 
-const baseLogger = pino(
-  {
-    base: CONFIG.isDev
+export function createLogger(name: string, dataset = "server") {
+  const logger = pino(
+    {
+      base: CONFIG.isDev
+        ? undefined
+        : {
+            environment: process.env.VERCEL_ENV,
+          },
+      transport: CONFIG.isDev ? devTransport : undefined,
+      level: CONFIG.isDev ? "debug" : (process.env.LOG_LEVEL ?? "info"),
+    },
+    CONFIG.isDev
       ? undefined
-      : {
-          environment: process.env.VERCEL_ENV,
-        },
-    transport: CONFIG.isDev ? devTransport : undefined,
-    level: CONFIG.isDev ? "debug" : (process.env.LOG_LEVEL ?? "info"),
-    name: "Global",
-  },
-  CONFIG.isDev
-    ? undefined
-    : pino.transport({
-        target: "@axiomhq/pino",
-        options: {
-          dataset: "server",
-          token: process.env.AXIOM_TOKEN,
-        },
-      }),
-);
-
-export function createLogger(name?: string) {
-  return name ? baseLogger.child({ name }) : baseLogger;
+      : pino.transport({
+          target: "@axiomhq/pino",
+          options: {
+            dataset,
+            token: process.env.AXIOM_TOKEN,
+          },
+        }),
+  );
+  return name ? logger.child({ name }) : logger;
 }
 
-export const logger = createLogger();
+export const logger = createLogger("Global");
