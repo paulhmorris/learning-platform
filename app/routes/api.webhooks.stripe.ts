@@ -2,9 +2,13 @@ import { ActionFunctionArgs } from "react-router";
 
 import { CONFIG } from "~/config.server";
 import { EmailService } from "~/integrations/email.server";
+import { createLogger } from "~/integrations/logger.server";
 import { Sentry } from "~/integrations/sentry";
 import { stripe } from "~/integrations/stripe.server";
+import { Responses } from "~/lib/responses.server";
 import { UserService } from "~/services/user.server";
+
+const logger = createLogger("Api.Webhooks.Stripe");
 
 const secret = process.env.STRIPE_WEBHOOK_SECRET;
 
@@ -20,26 +24,27 @@ export async function action({ request }: ActionFunctionArgs) {
         try {
           event = stripe.webhooks.constructEvent(await request.text(), sig, secret);
         } catch (error) {
-          console.error(error);
+          logger.error({ error }, "Error constructing Stripe webhook event");
           Sentry.captureException(error);
-          return new Response("Webook Error", { status: 400 });
+          return Responses.badRequest("Error constructing event");
         }
 
+        logger.info({ event }, "Received Stripe webhook event");
         try {
           switch (event.type) {
             // The user must provide additional information to verify their identity
             case "identity.verification_session.requires_input": {
               const userId = event.data.object.metadata.user_id;
               const errorReason = event.data.object.last_error?.reason;
-              console.info("Verification check failed: " + errorReason);
+              logger.info({ userId }, "Verification check failed: " + errorReason);
 
               if (!userId) {
                 Sentry.captureMessage(
                   "Received Stripe identity.verification_session.requires_input event without user ID",
                   { level: "error" },
                 );
-                console.error("User ID not found in metadata");
-                return new Response("Webhook Error", { status: 400 });
+                logger.error("User ID not found in metadata");
+                return Responses.badRequest("User ID is required for verification input");
               }
 
               const user = await UserService.getById(userId);
@@ -49,8 +54,8 @@ export async function action({ request }: ActionFunctionArgs) {
                   "Received Stripe identity.verification_session.requires_input event for unknown user: " + userId,
                   { level: "error" },
                 );
-                console.error("User not found");
-                return new Response("Webhook Error", { status: 400 });
+                logger.error({ userId }, "User not found");
+                return Responses.badRequest("User not found");
               }
 
               await Promise.allSettled([
@@ -68,7 +73,7 @@ export async function action({ request }: ActionFunctionArgs) {
                 }),
               ]);
 
-              return new Response(null, { status: 200 });
+              return Responses.ok();
             }
 
             case "identity.verification_session.verified": {
@@ -77,8 +82,8 @@ export async function action({ request }: ActionFunctionArgs) {
                 Sentry.captureMessage("Received Stripe identity.verification_session.verified event without user ID", {
                   level: "error",
                 });
-                console.error("User ID not found in metadata");
-                return new Response("Webhook Error", { status: 400 });
+                logger.error({ userId, metadata: event.data.object.metadata }, "User ID not found in metadata");
+                return Responses.badRequest("User ID is required for verification input");
               }
 
               const user = await UserService.getById(userId);
@@ -87,11 +92,11 @@ export async function action({ request }: ActionFunctionArgs) {
                   "Received Stripe identity.verification_session.verified event for unknown user: " + userId,
                   { level: "error" },
                 );
-                console.error("User not found");
-                return new Response("Webhook Error", { status: 400 });
+                logger.error({ userId }, "User not found");
+                return Responses.badRequest("User not found");
               }
 
-              console.info("Verification successful for user " + userId);
+              logger.info({ userId }, "Verification successful for user");
               await EmailService.send({
                 to: user.email,
                 from: `Plumb Media & Education <no-reply@${CONFIG.emailFromDomain}>`,
@@ -100,16 +105,16 @@ export async function action({ request }: ActionFunctionArgs) {
               });
 
               await UserService.update(userId, { isIdentityVerified: true });
-              return new Response("Webhook Success", { status: 200 });
+              return Responses.ok("Webhook Success");
             }
 
             default: {
-              console.info(`Unhandled event type: ${event.type}`);
-              return new Response(null, { status: 200 });
+              logger.info({ event }, "Unhandled event type");
+              return Responses.ok("Unhandled event type");
             }
           }
         } catch (error) {
-          console.error(error);
+          logger.error(error);
           Sentry.captureException(error);
           return new Response("Webook Error", { status: 500 });
         }
@@ -118,7 +123,7 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     default: {
-      return new Response(null, { status: 405 });
+      return Responses.methodNotAllowed();
     }
   }
 }

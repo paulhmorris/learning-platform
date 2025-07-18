@@ -16,6 +16,7 @@ export const Responses = {
   unauthorized: responseFactory(401),
   forbidden: responseFactory(403),
   notFound: responseFactory(404),
+  methodNotAllowed: responseFactory(405),
   conflict: responseFactory(409),
   unprocessableEntity: responseFactory(422),
   serverError: responseFactory(500),
