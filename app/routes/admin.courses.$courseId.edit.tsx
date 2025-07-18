@@ -20,11 +20,7 @@ export async function loader(args: LoaderFunctionArgs) {
 }
 
 const schema = z.object({
-  host: text
-    .regex(/^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z]{2,})+$/, {
-      message: "Must match the expected pattern",
-    })
-    .or(text.regex(/localhost/, { message: "Must match the expected pattern" })),
+  host: text,
   strapiId: number,
   stripePriceId: text,
   stripeProductId: text,
@@ -77,8 +73,7 @@ export default function AdminEditCourse() {
               required
               label="Host"
               name="host"
-              description="e.g. course.hiphopdriving.com"
-              pattern="^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}a-zA-Z0-9+$"
+              description="e.g. hiphopdriving.plumbmedia.org"
             />
             <FormField
               scope={form.scope("strapiId")}
@@ -108,11 +103,15 @@ export default function AdminEditCourse() {
                 aria-labelledby="identity-label"
                 defaultChecked={data.course.requiresIdentityVerification}
               />
-              <Label id="identity-label" htmlFor="requiresIdentityVerification" className="cursor-pointer">
-                Require identity verification to receive certificate
+              <Label
+                id="identity-label"
+                htmlFor="requiresIdentityVerification"
+                className="cursor-pointer leading-normal"
+              >
+                Require identity verification
               </Label>
             </div>
-            <SubmitButton variant="admin" className="mt-4">
+            <SubmitButton isSubmitting={form.formState.isSubmitting} variant="admin" className="mt-4">
               Save
             </SubmitButton>
           </>
