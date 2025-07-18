@@ -38,3 +38,24 @@ const _logger = pino(
 export function createLogger(name: string) {
   return name ? _logger.child({ name }) : _logger;
 }
+
+export const httpLogger = pino(
+  {
+    base: CONFIG.isDev
+      ? undefined
+      : {
+          environment: process.env.VERCEL_ENV,
+        },
+    transport: CONFIG.isDev ? devTransport : undefined,
+    level: CONFIG.isDev ? "debug" : (process.env.LOG_LEVEL ?? "info"),
+  },
+  CONFIG.isDev
+    ? undefined
+    : pino.transport({
+        target: "@axiomhq/pino",
+        options: {
+          dataset: "http",
+          token: process.env.AXIOM_TOKEN,
+        },
+      }),
+);
