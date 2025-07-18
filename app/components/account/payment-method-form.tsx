@@ -1,7 +1,7 @@
-import { Form } from "@remix-run/react";
 import { PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import { IconLoader } from "@tabler/icons-react";
 import { useState } from "react";
+import { Form } from "react-router";
 
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";

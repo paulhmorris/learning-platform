@@ -1,123 +1,29 @@
-import { PassThrough } from "node:stream";
+import "../instrument.server.mjs";
 
-import type { EntryContext } from "@remix-run/node";
-import { createReadableStreamFromReadable } from "@remix-run/node";
-import { RemixServer } from "@remix-run/react";
-import { isbot } from "isbot";
+import { createReadableStreamFromReadable } from "@react-router/node";
+import * as Sentry from "@sentry/react-router";
 import { renderToPipeableStream } from "react-dom/server";
+import type { HandleErrorFunction } from "react-router";
+import { ServerRouter } from "react-router";
 
-import { Sentry } from "~/integrations/sentry";
+import { createLogger } from "~/integrations/logger.server";
 
-const ABORT_DELAY = 5_000;
+const logger = createLogger("ServerEntry");
 
-Sentry.init({
-  dsn: "https://3093e529a633d80d697b26390e53886d@o4505496663359488.ingest.us.sentry.io/4506584484151296",
-  tracesSampleRate: process.env.VERCEL_ENV === "preview" ? 1 : 0.2,
-  autoInstrumentRemix: true,
-  enabled: process.env.NODE_ENV === "production",
-  environment: process.env.VERCEL_ENV,
-  integrations: [Sentry.prismaIntegration()],
+export const handleError: HandleErrorFunction = (error, { request }) => {
+  if (request.url.includes(".well-known")) {
+    return;
+  }
+  if (!request.signal.aborted) {
+    Sentry.captureException(error);
+    logger.error(error);
+  }
+};
+
+const handleRequest = Sentry.createSentryHandleRequest({
+  ServerRouter,
+  renderToPipeableStream,
+  createReadableStreamFromReadable,
 });
 
-export default function handleRequest(
-  request: Request,
-  responseStatusCode: number,
-  responseHeaders: Headers,
-  remixContext: EntryContext,
-) {
-  return isbot(request.headers.get("user-agent") || "")
-    ? handleBotRequest(request, responseStatusCode, responseHeaders, remixContext)
-    : handleBrowserRequest(request, responseStatusCode, responseHeaders, remixContext);
-}
-
-function handleBotRequest(
-  request: Request,
-  responseStatusCode: number,
-  responseHeaders: Headers,
-  remixContext: EntryContext,
-) {
-  return new Promise((resolve, reject) => {
-    let shellRendered = false;
-    const { pipe, abort } = renderToPipeableStream(
-      <RemixServer context={remixContext} url={request.url} abortDelay={ABORT_DELAY} />,
-      {
-        onAllReady() {
-          shellRendered = true;
-          const body = new PassThrough();
-          const stream = createReadableStreamFromReadable(body);
-
-          responseHeaders.set("Content-Type", "text/html");
-
-          resolve(
-            new Response(stream, {
-              headers: responseHeaders,
-              status: responseStatusCode,
-            }),
-          );
-
-          pipe(body);
-        },
-        onShellError(error: unknown) {
-          reject(error);
-        },
-        onError(error: unknown) {
-          responseStatusCode = 500;
-          // Log streaming rendering errors from inside the shell.  Don't log
-          // errors encountered during initial shell rendering since they'll
-          // reject and get logged in handleDocumentRequest.
-          if (shellRendered) {
-            console.error(error);
-          }
-        },
-      },
-    );
-
-    setTimeout(abort, ABORT_DELAY);
-  });
-}
-
-function handleBrowserRequest(
-  request: Request,
-  responseStatusCode: number,
-  responseHeaders: Headers,
-  remixContext: EntryContext,
-) {
-  return new Promise((resolve, reject) => {
-    let shellRendered = false;
-    const { pipe, abort } = renderToPipeableStream(
-      <RemixServer context={remixContext} url={request.url} abortDelay={ABORT_DELAY} />,
-      {
-        onShellReady() {
-          shellRendered = true;
-          const body = new PassThrough();
-          const stream = createReadableStreamFromReadable(body);
-
-          responseHeaders.set("Content-Type", "text/html");
-
-          resolve(
-            new Response(stream, {
-              headers: responseHeaders,
-              status: responseStatusCode,
-            }),
-          );
-
-          pipe(body);
-        },
-        onShellError(error: unknown) {
-          reject(error);
-        },
-        onError(error: unknown) {
-          responseStatusCode = 500;
-          // Log streaming rendering errors from inside the shell.  Don't log
-          // errors encountered during initial shell rendering since they'll
-          // reject and get logged in handleDocumentRequest.
-          if (shellRendered) {
-            console.error(error);
-          }
-        },
-      },
-    );
-
-    setTimeout(abort, ABORT_DELAY);
-  });
-}
+export default handleRequest;

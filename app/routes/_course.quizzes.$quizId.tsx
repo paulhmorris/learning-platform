@@ -1,12 +1,20 @@
-import { Form, Link, MetaFunction, useActionData, useLoaderData } from "@remix-run/react";
 import { IconCircleCheckFilled } from "@tabler/icons-react";
-import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@vercel/remix";
 import { useEffect, useRef } from "react";
+import {
+  ActionFunctionArgs,
+  Form,
+  Link,
+  LoaderFunctionArgs,
+  MetaFunction,
+  useActionData,
+  useLoaderData,
+} from "react-router";
 import { useCountdown } from "react-timing-hooks";
 import invariant from "tiny-invariant";
 import { useLocalStorage } from "usehooks-ts";
 
 import { PageTitle } from "~/components/common/page-title";
+import { ErrorComponent } from "~/components/error-component";
 import { QuizFailed } from "~/components/quiz/quiz-failed";
 import { QuizLocked } from "~/components/quiz/quiz-locked";
 import { QuizPassed } from "~/components/quiz/quiz-passed";
@@ -14,17 +22,17 @@ import { Button } from "~/components/ui/button";
 import { useCourseData } from "~/hooks/useCourseData";
 import { cms } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
-import { notFound } from "~/lib/responses.server";
+import { Responses } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
 import { cn, formatSeconds } from "~/lib/utils";
 import { loader as courseLoader } from "~/routes/_course";
 import { SessionService } from "~/services/session.server";
 import { APIResponseData } from "~/types/utils";
 
-export async function loader({ params, request }: LoaderFunctionArgs) {
-  const userId = await SessionService.requireUserId(request);
+export async function loader(args: LoaderFunctionArgs) {
+  const userId = await SessionService.requireUserId(args);
 
-  const quizId = params.quizId;
+  const quizId = args.params.quizId;
   invariant(quizId, "Quiz ID is required");
 
   const quiz = await cms.findOne<APIResponseData<"api::quiz.quiz">>("quizzes", quizId, {
@@ -42,7 +50,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (!quiz) {
-    throw notFound("Quiz not found.");
+    throw Responses.notFound();
   }
 
   const progress = await db.userQuizProgress.findUnique({
@@ -54,20 +62,20 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     },
   });
 
-  return json({ quiz: quiz.data, progress });
+  return { quiz: quiz.data, progress };
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  const userId = await SessionService.requireUserId(request);
+export async function action(args: ActionFunctionArgs) {
+  const userId = await SessionService.requireUserId(args);
 
-  const quizId = params.quizId;
+  const quizId = args.params.quizId;
   invariant(quizId, "Quiz ID is required");
 
   // {
   //   "question-0": "4",
   //   "question-1": "5"
   // }
-  const formData = Object.fromEntries(await request.formData());
+  const formData = Object.fromEntries(await args.request.formData());
 
   const quiz = await cms.findOne<APIResponseData<"api::quiz.quiz">>("quizzes", quizId, {
     populate: {
@@ -84,7 +92,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (!quiz) {
-    throw notFound("Quiz not found.");
+    throw Responses.notFound();
   }
 
   // [2, 1]
@@ -97,11 +105,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     })
     .filter((a) => typeof a !== "undefined");
 
-  if (!correctQuizAnswers || !correctQuizAnswers.length) {
-    return Toasts.jsonWithError(
+  if (!correctQuizAnswers?.length) {
+    return Toasts.dataWithError(
       { score: 0, passed: false, userAnswers: [], passingScore: quiz.data.attributes.passing_score },
       {
-        title: "Error",
+        message: "Error",
         description: "There was an error processing your quiz. Please try again later.",
       },
     );
@@ -147,12 +155,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
   }
 
-  return json({
+  return {
     score,
     passed,
     userAnswers,
     passingScore: quiz.data.attributes.passing_score,
-  });
+  };
 }
 
 export const meta: MetaFunction<typeof loader, { "routes/_course": typeof courseLoader }> = ({ data, matches }) => {
@@ -172,7 +180,7 @@ export default function Quiz() {
     false,
   );
   const [countdownValue] = useCountdown(
-    reachedRequiredTime ? 0 : quiz.attributes.required_duration_in_seconds ?? 0,
+    reachedRequiredTime ? 0 : (quiz.attributes.required_duration_in_seconds ?? 0),
     0,
     { startOnMount: true },
   );
@@ -209,7 +217,7 @@ export default function Quiz() {
   // Quiz is locked if any lesson in the quiz section is not completed
   const isQuizLocked = lessons.filter((l) => l.sectionId === quizSection?.id).some((l) => !l.isCompleted);
 
-  const isPassed = Boolean(progress?.isCompleted || (actionData?.passed && actionData.score));
+  const isPassed = Boolean(progress?.isCompleted ?? (actionData?.passed && actionData.score));
   const isFailed = Boolean(!progress?.isCompleted && actionData && !actionData.passed);
 
   if (isQuizLocked) {
@@ -314,4 +322,8 @@ export default function Quiz() {
       )}
     </>
   );
+}
+
+export function ErrorBoundary() {
+  return <ErrorComponent />;
 }

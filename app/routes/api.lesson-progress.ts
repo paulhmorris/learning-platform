@@ -1,73 +1,91 @@
-import { withZod } from "@remix-validated-form/with-zod";
-import { ActionFunctionArgs, json } from "@vercel/remix";
-import { validationError } from "remix-validated-form";
-import { z } from "zod";
+import { parseFormData, validationError } from "@rvf/react-router";
+import { ActionFunctionArgs } from "react-router";
+import { z } from "zod/v4";
 
-import { badRequest } from "~/lib/responses.server";
+import { createLogger } from "~/integrations/logger.server";
+import { Sentry } from "~/integrations/sentry";
 import { Toasts } from "~/lib/toast.server";
+import { number } from "~/schemas/fields";
 import { LessonService } from "~/services/lesson.server";
 import { ProgressService } from "~/services/progress.server";
 import { SessionService } from "~/services/session.server";
 
-const validator = withZod(
-  z.object({
-    lessonId: z.coerce.number(),
-    intent: z.enum(["mark-complete", "increment-duration"]),
-  }),
-);
+const logger = createLogger("Api.LessonProgress");
+
+const schema = z.object({
+  lessonId: number,
+  intent: z.enum(["mark-complete", "increment-duration"]),
+});
 export const SUBMIT_INTERVAL_MS = 15_000;
 
-export async function action({ request }: ActionFunctionArgs) {
-  const userId = await SessionService.requireUserId(request);
-  const result = await validator.validate(await request.formData());
+export async function action(args: ActionFunctionArgs) {
+  const userId = await SessionService.requireUserId(args);
+  const result = await parseFormData(args.request, schema);
   if (result.error) {
-    throw validationError(result.error);
+    return validationError(result.error);
   }
 
   const { lessonId, intent } = result.data;
 
-  const duration = await LessonService.getDuration(lessonId);
+  try {
+    const duration = await LessonService.getDuration(lessonId);
 
-  // Lessons without required durations
-  if (intent === "mark-complete" && !duration) {
-    const progress = await ProgressService.markComplete({ userId, lessonId });
-    return Toasts.jsonWithSuccess(
-      { progress },
-      { title: "Lesson completed!", description: "You may now move on to the next item." },
-    );
-  }
-
-  const progress = await ProgressService.getByLessonId(userId, lessonId);
-  if (!duration) {
-    return json({ progress });
-  }
-
-  // Completion flow
-  if (progress && progress.durationInSeconds !== null) {
-    if (progress.isCompleted) {
-      throw badRequest({ message: "Can't update progress on a lesson that's already completed." });
-    }
-
-    // TODO: prevent spamming the endpoint
-
-    // Mark lesson complete if we're about to hit the required duration;
-    if (progress.durationInSeconds + SUBMIT_INTERVAL_MS / 1_000 >= duration) {
-      const completedProgress = await ProgressService.markComplete({
-        userId,
-        lessonId,
-        requiredDurationInSeconds: duration,
-      });
-      return Toasts.jsonWithSuccess(
-        { progress: completedProgress },
-        { title: "Lesson completed!", description: "You may now move on to the next item." },
+    // Lessons without required durations
+    if (intent === "mark-complete" && !duration) {
+      const progress = await ProgressService.markComplete({ userId, lessonId });
+      return Toasts.dataWithSuccess(
+        { progress },
+        { message: "Lesson completed!", description: "You may now move on to the next item." },
       );
     }
+
+    const progress = await ProgressService.getByLessonId(userId, lessonId);
+    if (!duration) {
+      return { progress };
+    }
+
+    // Completion flow
+    if (progress && progress.durationInSeconds !== null) {
+      if (progress.isCompleted) {
+        return Toasts.dataWithInfo(null, {
+          message: "Lesson already completed",
+          description: "You can continue to the next item.",
+        });
+      }
+
+      // TODO: prevent spamming the endpoint
+
+      // Mark lesson complete if we're about to hit the required duration;
+      if (progress.durationInSeconds + SUBMIT_INTERVAL_MS / 1_000 >= duration) {
+        const completedProgress = await ProgressService.markComplete({
+          userId,
+          lessonId,
+          requiredDurationInSeconds: duration,
+        });
+        return Toasts.dataWithSuccess(
+          { progress: completedProgress },
+          { message: "Lesson completed!", description: "You may now move on to the next item." },
+        );
+      }
+    }
+
+    // Upsert progress
+    const currentProgress = await ProgressService.incrementProgress(userId, lessonId);
+
+    return { progress: currentProgress };
+  } catch (error) {
+    Sentry.captureException(error, { extra: { userId, lessonId, intent } });
+    logger.error({ error, userId, lessonId, intent }, "Error processing lesson progress action");
+
+    if (error instanceof Response) {
+      throw error;
+    }
+
+    return Toasts.dataWithError(null, {
+      message: "An error occurred trying to save your progress.",
+      description: "If the problem persists, please contact support.",
+    });
   }
-
-  // Upsert progress
-  const currentProgress = await ProgressService.incrementProgress(userId, lessonId);
-
-  return json({ progress: currentProgress });
 }
 
 export const shouldRevalidate = () => false;

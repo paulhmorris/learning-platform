@@ -1,13 +1,13 @@
-import { Link } from "@remix-run/react";
-import { RemixLinkProps } from "@remix-run/react/dist/components";
 import { IconArrowLeft } from "@tabler/icons-react";
+import { Link, LinkProps } from "react-router";
 
 import { cn } from "~/lib/utils";
 
-export function BackLink({ className, children, ...rest }: RemixLinkProps) {
+export function BackLink({ className, children, ...rest }: LinkProps) {
   return (
     <Link
       {...rest}
+      prefetch="intent"
       className={cn(
         "group inline-flex items-center gap-2 rounded text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
         className,

@@ -1,12 +1,9 @@
-import { redirect, type LoaderFunctionArgs } from "@vercel/remix";
+import { redirect } from "react-router";
 
-import { SessionService } from "~/services/session.server";
+import { ErrorComponent } from "~/components/error-component";
 
-export async function loader({ request }: LoaderFunctionArgs) {
-  const user = await SessionService.getUser(request);
-  if (user) {
-    return redirect("/account");
-  }
+export const loader = () => redirect("/preview");
 
-  return redirect("/login");
+export function ErrorBoundary() {
+  return <ErrorComponent />;
 }

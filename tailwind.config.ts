@@ -1,9 +1,10 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 import type { Config } from "tailwindcss";
 import colors from "tailwindcss/colors";
 import { fontFamily } from "tailwindcss/defaultTheme";
 
 export default {
-  darkMode: ["selector", '[data-theme="dark"]'],
+  darkMode: "selector",
   content: ["./pages/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
   theme: {
     container: {

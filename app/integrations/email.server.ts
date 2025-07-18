@@ -1,58 +1,21 @@
-import type { SendEmailCommandInput, SendEmailCommandOutput } from "@aws-sdk/client-sesv2";
+import type { SendEmailCommandInput } from "@aws-sdk/client-sesv2";
 import { SESv2Client, SendEmailCommand } from "@aws-sdk/client-sesv2";
-import { PasswordReset, User } from "@prisma/client";
 import { nanoid } from "nanoid";
 
-import { EMAIL_FROM_DOMAIN } from "~/config";
+import { CONFIG } from "~/config.server";
+import { Sentry } from "~/integrations/sentry";
 
 const client = new SESv2Client({ region: "us-east-1" });
 
 export type SendEmailInput = {
-  from: string;
   to: string | Array<string>;
   subject: string;
   html: string;
+  from?: string;
 };
-
-type PasswordEmailProps = {
-  email: NonNullable<User["email"]>;
-  token: PasswordReset["token"];
-};
-export class EmailService {
-  static async send(props: SendEmailInput) {
-    if (process.env.NODE_ENV === "development") {
-      console.info("DEVELOPMENT: Email sent", props);
-      return;
-    }
-
-    return send(props);
-  }
-
-  static async sendPasswordReset({ email, token }: PasswordEmailProps) {
-    const url = new URL("/passwords/new", process.env.SITE_URL);
-    url.searchParams.set("token", token);
-
-    try {
-      const data = await this.send({
-        from: `Plumb Media & Education <no-reply@${EMAIL_FROM_DOMAIN}>`,
-        to: email,
-        subject: "Reset Your Password",
-        html: `
-          <p>To reset your Plumb Media & Education password, please click this link. The link will expire in 15 minutes.</p>
-          <p><a style="text-decoration-line:underline;" href="${url.toString()}" target="_blank">${url.toString()}</a></p>
-          <p>If you did not request a password reset, you can safely ignore this email.</p>
-        `,
-      });
-      return { data };
-    } catch (error) {
-      return { error };
-    }
-  }
-}
-
-async function send(props: SendEmailInput) {
+export async function sendEmail(props: SendEmailInput) {
   const input: SendEmailCommandInput = {
-    FromEmailAddress: props.from,
+    FromEmailAddress: props.from ?? `Team Causeway <no-reply@${process.env.EMAIL_FROM_DOMAIN}`,
     Destination: {
       ToAddresses: Array.isArray(props.to) ? props.to : [props.to],
     },
@@ -77,13 +40,34 @@ async function send(props: SendEmailInput) {
       },
     },
   };
-  const command = new SendEmailCommand(input);
-  const response = await client.send(command);
-  if (!response.MessageId) {
-    throw new Error("Email not sent");
+
+  if (CONFIG.isProd || CONFIG.isPreview) {
+    try {
+      const command = new SendEmailCommand(input);
+      const response = await client.send(command);
+      if (!response.MessageId) {
+        throw new Error("Email not sent");
+      }
+
+      return { messageId: response.MessageId, $metadata: response.$metadata };
+    } catch (e) {
+      console.error(e);
+      Sentry.captureException(e);
+      throw e;
+    }
   }
 
-  return { messageId: response.MessageId, $metadata: response.$metadata } as { messageId: string } & {
-    $metadata: SendEmailCommandOutput["$metadata"];
-  };
+  console.debug(
+    {
+      From: props.from,
+      To: props.to,
+      Subject: props.subject,
+    },
+    "Email sent",
+  );
+  return { messageId: "test", $metadata: {} };
 }
+
+export const EmailService = {
+  send: sendEmail,
+};

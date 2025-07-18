@@ -1,5 +1,5 @@
-import { useNavigate, useRouteLoaderData } from "@remix-run/react";
 import { useEffect } from "react";
+import { useNavigate, useRouteLoaderData } from "react-router";
 import { toast } from "sonner";
 
 import { loader } from "~/routes/preview";
@@ -10,8 +10,8 @@ export function useCoursePreviewData() {
 
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (!data || !data.course || !data.lessons || !data.lessonProgress || !data.quizProgress) {
-      navigate("/");
+    if (!data?.course || !data.lessons || !data.lessonProgress || !data.quizProgress) {
+      void navigate("/");
       toast.error("Error loading course.", {
         description: "There was an error loading the course data. Please try again.",
       });

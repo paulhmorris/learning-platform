@@ -1,11 +1,16 @@
-import { Link, MetaFunction, useActionData, useLoaderData } from "@remix-run/react";
-import { withZod } from "@remix-validated-form/with-zod";
-import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@vercel/remix";
-import { ValidatedForm } from "remix-validated-form";
-import { z } from "zod";
+import {
+  ActionFunctionArgs,
+  Form,
+  Link,
+  LoaderFunctionArgs,
+  MetaFunction,
+  useActionData,
+  useLoaderData,
+} from "react-router";
 
 import { claimCertificateJob } from "jobs/claim-certificate";
 import { PageTitle } from "~/components/common/page-title";
+import { ErrorComponent } from "~/components/error-component";
 import { SubmitButton } from "~/components/ui/submit-button";
 import { useCourseData } from "~/hooks/useCourseData";
 import { cms } from "~/integrations/cms.server";
@@ -17,14 +22,14 @@ import { loader as courseLoader } from "~/routes/_course";
 import { SessionService } from "~/services/session.server";
 import { APIResponseData } from "~/types/utils";
 
-export async function loader({ request }: LoaderFunctionArgs) {
-  const user = await SessionService.requireUser(request);
-  const { host } = new URL(request.url);
+export async function loader(args: LoaderFunctionArgs) {
+  const user = await SessionService.requireUser(args);
+  const { host } = new URL(args.request.url);
   const linkedCourse = await db.course.findUnique({ where: { host } });
 
   if (!linkedCourse) {
     return Toasts.redirectWithError("/preview", {
-      title: "Error claiming certificate",
+      message: "Error claiming certificate",
       description: "Please try again later.",
     });
   }
@@ -41,25 +46,25 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   if (!userCourse) {
     return Toasts.redirectWithError("/preview", {
-      title: "No access to course",
+      message: "No access to course",
       description: "Please purchase the course to access it.",
     });
   }
 
-  return json({ userCourse, course: linkedCourse });
+  return { userCourse, course: linkedCourse };
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  const user = await SessionService.requireUser(request);
+export async function action(args: ActionFunctionArgs) {
+  const user = await SessionService.requireUser(args);
 
   try {
     // Verify user has access to the course
-    const { host } = new URL(request.url);
+    const { host } = new URL(args.request.url);
     const linkedCourse = await db.course.findUnique({ where: { host } });
 
     if (!linkedCourse) {
       return Toasts.redirectWithError("/preview", {
-        title: "Error claiming certificate",
+        message: "Error claiming certificate",
         description: "Please try again later.",
       });
     }
@@ -67,7 +72,7 @@ export async function action({ request }: ActionFunctionArgs) {
     const userHasAccess = user.courses.some((c) => c.courseId === linkedCourse.id);
     if (!userHasAccess) {
       return Toasts.redirectWithError("/preview", {
-        title: "No access to course",
+        message: "No access to course",
         description: "Please purchase the course to access it.",
       });
     }
@@ -115,7 +120,7 @@ export async function action({ request }: ActionFunctionArgs) {
         level: "warning",
       });
       return Toasts.redirectWithError("/preview", {
-        title: "Incomplete course",
+        message: "Incomplete course",
         description: "Please complete all lessons and quizzes to claim your certificate.",
       });
     }
@@ -130,10 +135,10 @@ export async function action({ request }: ActionFunctionArgs) {
       throw new Error("Failed to initiate certificate generation job.");
     }
 
-    return Toasts.jsonWithSuccess(
+    return Toasts.dataWithSuccess(
       { success: true },
       {
-        title: "Certificate claimed!",
+        message: "Certificate claimed!",
         description: "Your certificate will be emailed to you shortly.",
         duration: 20_000,
       },
@@ -142,7 +147,7 @@ export async function action({ request }: ActionFunctionArgs) {
     console.error(error);
     Sentry.captureException(error);
     return Toasts.redirectWithError("/preview", {
-      title: "Error claiming certificate",
+      message: "Error claiming certificate",
       description: "Please try again later",
     });
   }
@@ -185,7 +190,7 @@ export default function CourseCertificate() {
         <PageTitle>Certificate</PageTitle>
         <div className="mt-8 rounded-md border border-destructive bg-destructive/5 p-4 text-destructive">
           <p>You must verify your identity before you can claim your certificate for this course. </p>
-          <Link to="/account/profile" className="mt-2 block text-lg font-bold underline decoration-2">
+          <Link to="/account/identity" className="mt-2 block text-lg font-bold underline decoration-2">
             Verify Now
           </Link>
         </div>
@@ -233,9 +238,13 @@ export default function CourseCertificate() {
         Click the button below to claim your certificate. It will be emailed to{" "}
         <span className="font-bold">{user.email}</span>.
       </p>
-      <ValidatedForm validator={withZod(z.object({}))} className="mt-8" method="post">
+      <Form className="mt-8" method="post">
         <SubmitButton className="sm:w-auto">Claim Certificate</SubmitButton>
-      </ValidatedForm>
+      </Form>
     </>
   );
+}
+
+export function ErrorBoundary() {
+  return <ErrorComponent />;
 }

@@ -1,6 +1,6 @@
-import { ActionFunctionArgs } from "@vercel/remix";
+import { ActionFunctionArgs } from "react-router";
 
-import { EMAIL_FROM_DOMAIN } from "~/config";
+import { CONFIG } from "~/config.server";
 import { EmailService } from "~/integrations/email.server";
 import { Sentry } from "~/integrations/sentry";
 import { stripe } from "~/integrations/stripe.server";
@@ -55,14 +55,14 @@ export async function action({ request }: ActionFunctionArgs) {
 
               await Promise.allSettled([
                 EmailService.send({
-                  to: `events@${EMAIL_FROM_DOMAIN}`,
-                  from: `Plumb Media & Education <no-reply@${EMAIL_FROM_DOMAIN}>`,
+                  to: `events@${CONFIG.emailFromDomain}`,
+                  from: `Plumb Media & Education <no-reply@${CONFIG.emailFromDomain}>`,
                   subject: "Identity Verification Requires Input",
                   html: `<p>Identity verification requires input for user ${user.email}.</p>`,
                 }),
                 EmailService.send({
                   to: user.email,
-                  from: `Plumb Media & Education <no-reply@${EMAIL_FROM_DOMAIN}>`,
+                  from: `Plumb Media & Education <no-reply@${CONFIG.emailFromDomain}>`,
                   subject: "Action Required: Verify Your Identity",
                   html: `<p>More information is required to verify your identity. Please log in to your account to view next steps.</p>`,
                 }),
@@ -94,7 +94,7 @@ export async function action({ request }: ActionFunctionArgs) {
               console.info("Verification successful for user " + userId);
               await EmailService.send({
                 to: user.email,
-                from: `Plumb Media & Education <no-reply@${EMAIL_FROM_DOMAIN}>`,
+                from: `Plumb Media & Education <no-reply@${CONFIG.emailFromDomain}>`,
                 subject: "Identity Verification Successful!",
                 html: "<p>Your identity has been successfully verified. You can now claim a certificate from courses that require identity verification.</p>",
               });

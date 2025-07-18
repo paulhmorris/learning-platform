@@ -2,8 +2,9 @@ import { createCanvas, loadImage } from "@napi-rs/canvas";
 import { logger, task } from "@trigger.dev/sdk/v3";
 import { nanoid } from "nanoid";
 
-import { EMAIL_FROM_DOMAIN } from "~/config";
+import { CONFIG } from "~/config.server";
 import { Bucket } from "~/integrations/bucket.server";
+import { clerkClient } from "~/integrations/clerk.server";
 import { db } from "~/integrations/db.server";
 import { EmailService } from "~/integrations/email.server";
 
@@ -12,12 +13,10 @@ import { EmailService } from "~/integrations/email.server";
 export const claimCertificateJob = task({
   id: "claim-certificate",
   run: async (payload: { userId: string; courseId: string; courseName: string }) => {
-    const user = await db.user.findUniqueOrThrow({
+    const _user = await db.user.findUniqueOrThrow({
       where: { id: payload.userId },
       select: {
-        email: true,
-        firstName: true,
-        lastName: true,
+        clerkId: true,
         courses: {
           where: { courseId: payload.courseId },
           select: {
@@ -29,6 +28,23 @@ export const claimCertificateJob = task({
         },
       },
     });
+
+    // TODO: Update when clerkId is required
+    const clerkUser = await clerkClient.users.getUser(_user.clerkId!);
+
+    const email = clerkUser.emailAddresses.at(0)?.emailAddress;
+    if (!email) {
+      logger.error("User does not have an email address", _user);
+      throw new Error("User does not have an email address");
+    }
+
+    const user = {
+      ..._user,
+      email,
+      firstName: clerkUser.firstName,
+      lastName: clerkUser.lastName,
+      phoneNumber: clerkUser.phoneNumbers.at(0)?.phoneNumber,
+    };
 
     logger.info("User found", user);
 
@@ -42,7 +58,7 @@ export const claimCertificateJob = task({
     if (thisCourse.certificateClaimed) {
       logger.info("Certificate already claimed. Sending another email.", user);
       const email = await EmailService.send({
-        from: `Plumb Media & Education <no-reply@${EMAIL_FROM_DOMAIN}>`,
+        from: `Plumb Media & Education <no-reply@${CONFIG.emailFromDomain}>`,
         to: user.email,
         subject: "View Your Certificate!",
         html: `
@@ -82,8 +98,8 @@ export const claimCertificateJob = task({
     logger.info("Certificate uploaded", upload as unknown as Record<string, unknown>);
 
     // send email with link to image
-    const email = await EmailService.send({
-      from: `${payload.courseName} <no-reply@${EMAIL_FROM_DOMAIN}>`,
+    const sentEmail = await EmailService.send({
+      from: `${payload.courseName} <no-reply@${CONFIG.emailFromDomain}>`,
       to: user.email,
       subject: "Your certificate is ready!",
       html: `
@@ -92,7 +108,7 @@ export const claimCertificateJob = task({
         <p><a href="https://assets.hiphopdriving.com/${key}" target="_blank">Download Certificate</a></p>
       `,
     });
-    logger.info("Email sent", email);
+    logger.info("Email sent", sentEmail);
 
     // Update user course
     const updatedCourse = await db.userCourses.update({

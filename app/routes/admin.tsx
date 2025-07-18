@@ -1,10 +1,10 @@
-import { NavLink, Outlet } from "@remix-run/react";
 import { IconCertificate, IconUsersGroup } from "@tabler/icons-react";
-import { LoaderFunctionArgs, json } from "@vercel/remix";
 import { CSSProperties } from "react";
+import { LoaderFunctionArgs, NavLink, Outlet } from "react-router";
 
 import { UserDebugTools } from "~/components/debug/user-debug-tools";
 import { ErrorComponent } from "~/components/error-component";
+import { Responses } from "~/lib/responses.server";
 import { cn } from "~/lib/utils";
 import { SessionService } from "~/services/session.server";
 
@@ -13,9 +13,9 @@ const links = [
   { href: "/admin/courses", text: "Courses", icon: <IconCertificate className="size-[1.125rem]" /> },
 ];
 
-export async function loader({ request }: LoaderFunctionArgs) {
-  await SessionService.requireAdmin(request);
-  return json({});
+export async function loader(args: LoaderFunctionArgs) {
+  await SessionService.requireAdmin(args);
+  return Responses.ok();
 }
 
 export default function AdminLayout() {

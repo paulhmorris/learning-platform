@@ -1,6 +1,13 @@
-import { Link, MetaFunction, useLoaderData, useSearchParams } from "@remix-run/react";
-import { ActionFunctionArgs, json, LoaderFunctionArgs, redirect, SerializeFrom } from "@vercel/remix";
 import { useEffect, useState } from "react";
+import {
+  ActionFunctionArgs,
+  Link,
+  LoaderFunctionArgs,
+  MetaFunction,
+  redirect,
+  useLoaderData,
+  useSearchParams,
+} from "react-router";
 
 import { StrapiImage } from "~/components/common/strapi-image";
 import { CourseHeader } from "~/components/course/course-header";
@@ -19,23 +26,20 @@ import { Button } from "~/components/ui/button";
 import { Separator } from "~/components/ui/separator";
 import { getCourse } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
+import { Responses } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
 import { getLessonsInOrder, getPreviewValues } from "~/lib/utils";
 import { PaymentService } from "~/services/payment.server";
 import { ProgressService } from "~/services/progress.server";
 import { SessionService } from "~/services/session.server";
-import { APIResponseData } from "~/types/utils";
 
-export async function loader({ request }: LoaderFunctionArgs) {
-  const user = await SessionService.requireUser(request);
+export async function loader(args: LoaderFunctionArgs) {
+  const user = await SessionService.requireUser(args);
 
-  const url = new URL(request.url);
+  const url = new URL(args.request.url);
   const linkedCourse = await db.course.findUnique({ where: { host: url.host } });
   if (!linkedCourse) {
-    return Toasts.redirectWithError("/", {
-      title: "Course not found.",
-      description: "Please try again later",
-    });
+    throw Responses.notFound();
   }
 
   const [course, lessonProgress, quizProgress] = await Promise.all([
@@ -45,21 +49,21 @@ export async function loader({ request }: LoaderFunctionArgs) {
   ]);
 
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  const userHasAccess = user.courses && user.courses.some((c) => c.courseId === linkedCourse.id);
+  const userHasAccess = user?.courses.some((c) => c.courseId === linkedCourse.id);
   const lessons = getLessonsInOrder({ course, progress: lessonProgress });
 
-  return json({ course: course.data, lessonProgress, lessons, quizProgress, userHasAccess });
+  return { course: course.data, lessonProgress, lessons, quizProgress, userHasAccess };
 }
-export type LessonInOrder = SerializeFrom<typeof loader>["lessons"][number];
+export type LessonInOrder = Awaited<ReturnType<typeof loader>>["lessons"][number];
 
-export async function action({ request }: ActionFunctionArgs) {
-  const user = await SessionService.requireUser(request);
-  const url = new URL(request.url);
+export async function action(args: ActionFunctionArgs) {
+  const user = await SessionService.requireUser(args);
+  const url = new URL(args.request.url);
   const course = await db.course.findUnique({ where: { host: url.host } });
 
   if (!course) {
     return Toasts.redirectWithError("/", {
-      title: "Course not found.",
+      message: "Course not found.",
       description: "Please try again later",
     });
   }
@@ -108,7 +112,7 @@ export default function CoursePreview() {
   return (
     <>
       <div className="flex flex-col gap-x-12 px-4 py-4 lg:flex-row lg:py-4">
-        <nav className="left-0 top-[88px] h-full shrink-0 basis-[448px] py-4 sm:py-10 lg:sticky lg:py-14">
+        <nav className="left-0 top-[88px] h-full shrink-0 basis-[320px] py-4 sm:py-10 lg:sticky lg:py-14">
           <StrapiImage
             asset={course.attributes.cover_image}
             height={240}
@@ -120,12 +124,12 @@ export default function CoursePreview() {
             className="w-full overflow-hidden rounded-xl object-cover shadow-[0px_8px_32px_0px_#00000029]"
           />
           <div className="mt-7">
-            <CoursePreviewLink to={`.`}>
+            <CoursePreviewLink to=".">
               <IconClipboard className="text-current" />
               <span>Course Chapters</span>
             </CoursePreviewLink>
 
-            <CoursePreviewLink to={`/certificate`}>
+            <CoursePreviewLink to="/certificate">
               <IconDocument className="text-current" />
               <span>Certificate</span>
             </CoursePreviewLink>
@@ -162,7 +166,7 @@ export default function CoursePreview() {
               }
 
               const durationInSeconds = section.lessons?.data.reduce(
-                (acc, curr) => Math.ceil((curr.attributes.required_duration_in_seconds || 0) + acc),
+                (acc, curr) => Math.ceil((curr.attributes.required_duration_in_seconds ?? 0) + acc),
                 0,
               );
 
@@ -175,7 +179,7 @@ export default function CoursePreview() {
               return (
                 <li key={`section-${section.id}`}>
                   <Section>
-                    <SectionHeader sectionTitle={section.title} durationInMinutes={(durationInSeconds || 0) / 60} />
+                    <SectionHeader sectionTitle={section.title} durationInMinutes={(durationInSeconds ?? 0) / 60} />
                     <Separator className="my-4" />
                     <ul className="flex flex-col gap-6">
                       {section.lessons?.data.map((l) => {
@@ -195,6 +199,7 @@ export default function CoursePreview() {
                         const isLessonLocked =
                           !userHasAccess || // User does not have access
                           (lessonIndex > 0 && !previousLessonIsCompleted) || // Previous lesson is not completed
+                          // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
                           (previousSectionQuiz?.data && !previousSectionQuizIsCompleted) || // Previous section quiz is not completed
                           (!isCourseCompleted && lessonIndex > lastCompletedLessonIndex + 1); // Course is not completed and lesson index is greater than last completed lesson index + 1
 
@@ -203,7 +208,7 @@ export default function CoursePreview() {
                           <div key={l.attributes.uuid} className="flex flex-wrap items-center justify-between gap-2">
                             <div className="shrink-0 grow">
                               <PreviewSectionLesson
-                                lesson={l as APIResponseData<"api::lesson.lesson">}
+                                lesson={l}
                                 userProgress={userLessonProgress}
                                 locked={isLessonLocked}
                               />
@@ -229,7 +234,7 @@ export default function CoursePreview() {
                           className="flex flex-wrap items-center justify-between gap-2"
                         >
                           <PreviewSectionQuiz
-                            quiz={section.quiz.data as APIResponseData<"api::quiz.quiz">}
+                            quiz={section.quiz.data}
                             userProgress={userQuizProgress}
                             locked={isQuizLocked}
                           />

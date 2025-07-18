@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import type { LoaderFunctionArgs } from "@vercel/remix";
+import type { LoaderFunctionArgs } from "react-router";
 
 import { db } from "~/integrations/db.server";
 
@@ -13,6 +13,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     await Promise.all([
       db.user.count(),
       fetch(url.toString(), { method: "HEAD" }).then((r) => {
+        // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
         if (!r.ok) return Promise.reject(r);
       }),
     ]);
