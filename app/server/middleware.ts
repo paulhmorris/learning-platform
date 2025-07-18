@@ -1,8 +1,34 @@
 import { createMiddleware } from "hono/factory";
 import { isbot } from "isbot";
+import pino from "pino";
 
-import "pino-pretty";
-import { httpLogger } from "~/integrations/logger.server";
+import { CONFIG } from "~/config.server";
+import { devTransport } from "~/integrations/logger.server";
+
+const devLogger = pino({
+  name: "HTTP",
+  level: "trace",
+  transport: devTransport,
+});
+
+const prodLogger = pino(
+  {
+    base: {
+      environment: process.env.VERCEL_ENV,
+    },
+    level: process.env.LOG_LEVEL ?? "info",
+  },
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+  pino.transport({
+    target: "@axiomhq/pino",
+    options: {
+      dataset: "http",
+      token: process.env.AXIOM_TOKEN,
+    },
+  }),
+);
+
+const logger = CONFIG.isDev ? devLogger : prodLogger;
 
 const matchers = ["/assets", "favicon", ".well-known", "site.webmanifest", "sitemap.xml", "robots.txt"];
 
@@ -12,6 +38,7 @@ export function loggerMiddleware() {
       return next();
     }
 
+    const start = Date.now();
     const reqIsFromBot = c.req.header("cf-isbot") === "true" || isbot(c.req.header("user-agent") ?? "");
     const requestId = c.get("requestId") as string;
 
@@ -38,26 +65,30 @@ export function loggerMiddleware() {
       reqData.body = body;
     }
 
+    logger.info(reqData, "Request");
+
     await next();
 
+    const end = Date.now();
     const resStatus = c.res.status;
     const resData: Record<string, unknown> = {
       status: resStatus,
       request_id: requestId,
       request_uri: c.req.url,
       content_type: c.res.headers.get("content-type"),
+      duration: end - start,
     };
 
     if (resStatus >= 300 && resStatus < 400) {
       resData.redirect_url = c.res.headers.get("location");
-      httpLogger.warn(resData, "Response");
+      logger.warn(resData, "Response");
     }
 
     if (resStatus >= 400) {
-      httpLogger.error(resData, "Response");
+      logger.error(resData, "Response");
     }
 
-    httpLogger.info(reqData, "Request");
-    httpLogger.info(resData, "Response");
+    logger.info(resData, "Response");
+    logger.flush();
   });
 }

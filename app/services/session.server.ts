@@ -13,10 +13,10 @@ const logger = createLogger("SessionService");
 class _SessionService {
   async logout(sessionId: string | null) {
     if (sessionId) {
-      logger.debug({ sessionId }, "Logging out user");
+      logger.info({ sessionId }, "Logging out user");
       await AuthService.revokeSession(sessionId);
     }
-    logger.debug("No sessionId provided, skipping logout");
+    logger.info("No sessionId provided, skipping logout and redirecting to sign in");
     throw Responses.redirectToSignIn("/");
   }
 

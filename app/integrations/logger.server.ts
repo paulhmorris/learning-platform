@@ -49,13 +49,11 @@ export const httpLogger = pino(
     transport: CONFIG.isDev ? devTransport : undefined,
     level: CONFIG.isDev ? "debug" : (process.env.LOG_LEVEL ?? "info"),
   },
-  CONFIG.isDev
-    ? undefined
-    : pino.transport({
-        target: "@axiomhq/pino",
-        options: {
-          dataset: "http",
-          token: process.env.AXIOM_TOKEN,
-        },
-      }),
+  pino.transport({
+    target: "@axiomhq/pino",
+    options: {
+      dataset: "http",
+      token: process.env.AXIOM_TOKEN,
+    },
+  }),
 );

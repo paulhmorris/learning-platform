@@ -36,7 +36,7 @@ export const CacheService = {
     }
 
     try {
-      logger.info({ key }, "Getting cache item");
+      logger.debug({ key }, "Getting cache item");
       return redis.get<T>(key);
     } catch (error) {
       Sentry.captureException(error);
@@ -54,7 +54,7 @@ export const CacheService = {
     opts.ex ??= DEFAULT_TTL;
 
     try {
-      logger.info("Setting cache item", { key, ttl: opts.ex });
+      logger.debug("Setting cache item", { key, ttl: opts.ex });
       await redis.set(key, value, opts);
     } catch (error) {
       Sentry.captureException(error);
@@ -70,7 +70,7 @@ export const CacheService = {
     }
 
     try {
-      logger.info({ key }, "Deleting cache item");
+      logger.debug({ key }, "Deleting cache item");
       await redis.del(key);
     } catch (error) {
       Sentry.captureException(error);
