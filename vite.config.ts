@@ -33,10 +33,7 @@ export default defineConfig((config) => ({
     port: 3000,
   },
   plugins: [
-    reactRouterHonoServer({
-      runtime: "node",
-      serverEntryPoint: "./app/server/index.ts",
-    }),
+    reactRouterHonoServer(),
     tsconfigPaths(),
     !process.env.VITEST && reactRouter(),
     ...(isCI ? [sentryReactRouter(sentryConfig, config)] : []),
