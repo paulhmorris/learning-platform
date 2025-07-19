@@ -28,6 +28,11 @@ export default defineConfig((config) => ({
   },
   build: {
     sourcemap: !!process.env.CI,
+    rollupOptions: config.isSsrBuild
+      ? {
+          input: "./app/server/index.ts",
+        }
+      : undefined,
   },
   server: {
     port: 3000,
