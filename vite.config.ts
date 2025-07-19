@@ -27,6 +27,7 @@ export default defineConfig((config) => ({
     },
   },
   build: {
+    target: "esnext",
     sourcemap: !!process.env.CI,
     rollupOptions: config.isSsrBuild
       ? {
