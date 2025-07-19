@@ -13,7 +13,7 @@ const logger = createLogger("SessionService");
 class _SessionService {
   async logout(sessionId: string | null) {
     if (sessionId) {
-      logger.info({ sessionId }, "Logging out user");
+      logger.info("Logging out user", { sessionId });
       await AuthService.revokeSession(sessionId);
     }
     logger.info("No sessionId provided, skipping logout and redirecting to sign in");
@@ -21,30 +21,30 @@ class _SessionService {
   }
 
   async getSession(args: LoaderFunctionArgs | ActionFunctionArgs) {
-    logger.debug({ requestUrl: args.request.url }, "Getting session from Clerk");
+    logger.debug("Getting session from Clerk", { requestUrl: args.request.url });
     return getAuth(args);
   }
 
   async getUserId(args: LoaderFunctionArgs | ActionFunctionArgs): Promise<string | null> {
     const { sessionClaims } = await getAuth(args);
-    logger.debug({ requestUrl: args.request.url, userId: sessionClaims?.eid }, "Getting userId from session claims");
+    logger.debug("Getting userId from session claims", { requestUrl: args.request.url, userId: sessionClaims?.eid });
     return sessionClaims?.eid ?? null;
   }
 
   async getUser(args: LoaderFunctionArgs | ActionFunctionArgs) {
     const { userId, sessionId } = await this.getSession(args);
     if (!userId) {
-      logger.warn({ sessionId }, "No userId found in session claims");
+      logger.warn("No userId found in session claims", { sessionId });
       return null;
     }
 
     const user = await UserService.getByClerkId(userId);
     if (user) {
-      logger.debug({ userId, sessionId }, "Returning user found in the database");
+      logger.debug("Returning user found in the database", { userId, sessionId });
       return user;
     }
 
-    logger.warn({ clerkId: userId, sessionId }, `User not found in the database, logging out`);
+    logger.warn("User not found in the database, logging out", { clerkId: userId, sessionId });
     await this.logout(sessionId);
     throw Responses.redirectToSignIn(args.request.url);
   }
@@ -54,20 +54,20 @@ class _SessionService {
 
     // There might be a case where a db user didn't get linked to their clerk external_id
     if (!userId) {
-      logger.error({ requestUrl: args.request.url }, "external_id not found in claims. Attempting to link...");
+      logger.error("external_id not found in claims. Attempting to link...", { requestUrl: args.request.url });
 
       const { userId: clerkId, sessionId } = await this.getSession(args);
       if (!clerkId) {
-        logger.error({ requestUrl: args.request.url }, "No userId found in session, redirecting to sign in");
+        logger.error("No userId found in session, redirecting to sign in", { requestUrl: args.request.url });
         await this.logout(sessionId);
         throw Responses.redirectToSignIn(args.request.url);
       }
 
       const user = await db.user.findUniqueOrThrow({ where: { clerkId } });
-      logger.info({ clerkId, userId: user.id }, "Found user with clerkId");
+      logger.info("Found user with clerkId", { clerkId, userId: user.id });
 
       const clerkUser = await AuthService.saveExternalId(clerkId, user.id);
-      logger.info({ clerkId, userId: clerkUser.externalId }, "Successfully linked user to Clerk");
+      logger.info("Successfully linked user to Clerk", { clerkId, userId: clerkUser.externalId });
 
       // We still need to log them out to refresh the session
       await this.logout(sessionId);
@@ -80,33 +80,33 @@ class _SessionService {
   private async requireUserByRole(args: LoaderFunctionArgs | ActionFunctionArgs, allowedRoles?: Array<UserRole>) {
     const defaultAllowedRoles: Array<UserRole> = ["USER", "ADMIN"];
     const user = await this.getUser(args);
-    logger.debug({ requestUrl: args.request.url, userId: user?.id, allowedRoles }, "Checking user role");
+    logger.debug("Checking user role", { requestUrl: args.request.url, userId: user?.id, allowedRoles });
 
     if (!user) {
-      logger.warn({ requestUrl: args.request.url }, "No user found");
+      logger.warn("No user found", { requestUrl: args.request.url });
       throw Responses.unauthorized();
     }
 
     if (user.role === UserRole.SUPERADMIN) {
-      logger.debug({ userId: user.id }, "User is a super admin, allowing access");
+      logger.debug("User is a super admin, allowing access", { userId: user.id });
       return user;
     }
 
     if (allowedRoles && allowedRoles.length > 0) {
       if (allowedRoles.includes(user.role)) {
-        logger.debug({ userId: user.id, role: user.role }, "User has required role, allowing access");
+        logger.debug("User has required role, allowing access", { userId: user.id, role: user.role });
         return user;
       }
-      logger.warn({ userId: user.id, role: user.role }, "User does not have required role");
+      logger.warn("User does not have required role", { userId: user.id, role: user.role });
       throw Responses.unauthorized();
     }
 
     if (defaultAllowedRoles.includes(user.role)) {
-      logger.debug({ userId: user.id, role: user.role }, "User has default allowed role, allowing access");
+      logger.debug("User has default allowed role, allowing access", { userId: user.id, role: user.role });
       return user;
     }
 
-    logger.warn({ userId: user.id, role: user.role }, "User does not have any allowed roles");
+    logger.warn("User does not have any allowed roles", { userId: user.id, role: user.role });
     throw Responses.forbidden();
   }
 

@@ -31,23 +31,23 @@ const DEFAULT_TTL = 60 * 60; // 1 hour
 export const CacheService = {
   async get<T>(key: CacheKey) {
     if (CONFIG.isDev || CONFIG.isTest) {
-      logger.trace({ key }, `Skipping cache GET in dev`);
+      logger.debug("Skipping cache GET in dev", { key });
       return null;
     }
 
     try {
-      logger.debug({ key }, "Getting cache item");
+      logger.debug("Getting cache item", { key });
       return redis.get<T>(key);
     } catch (error) {
       Sentry.captureException(error);
-      logger.error({ error, key }, "Failed to get cache item");
+      logger.error("Failed to get cache item", { error, key });
       throw error;
     }
   },
 
   async set<T>(key: CacheKey, value: T, opts: SetCommandOptions = {}) {
     if (CONFIG.isDev || CONFIG.isTest) {
-      logger.trace({ key }, `Skipping cache SET in dev`);
+      logger.debug("Skipping cache SET in dev", { key });
       return;
     }
 
@@ -58,23 +58,23 @@ export const CacheService = {
       await redis.set(key, value, opts);
     } catch (error) {
       Sentry.captureException(error);
-      logger.error({ error, key }, "Failed to set cache item");
+      logger.error("Failed to set cache item", { error, key });
       throw error;
     }
   },
 
   async delete(key: CacheKey) {
     if (CONFIG.isDev || CONFIG.isTest) {
-      logger.trace({ key }, `Skipping cache DELETE in dev`);
+      logger.debug("Skipping cache DELETE in dev", { key });
       return;
     }
 
     try {
-      logger.debug({ key }, "Deleting cache item");
+      logger.debug("Deleting cache item", { key });
       await redis.del(key);
     } catch (error) {
       Sentry.captureException(error);
-      logger.error({ error, key }, "Failed to delete cache item");
+      logger.error("Failed to delete cache item", { error, key });
       throw error;
     }
   },

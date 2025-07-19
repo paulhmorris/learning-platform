@@ -16,7 +16,7 @@ export const LessonService = {
       });
     } catch (error) {
       Sentry.captureException(error);
-      logger.error({ error }, "Failed to retrieve lessons");
+      logger.error("Failed to retrieve lessons", { error });
       throw error;
     }
   },
@@ -25,7 +25,7 @@ export const LessonService = {
     try {
       const cachedLesson = await CacheService.get<Lesson>(CacheKeys.lesson(slug));
       if (cachedLesson) {
-        logger.debug({ slug }, "Returning cached lesson");
+        logger.debug("Returning cached lesson", { slug });
         return cachedLesson;
       }
       const lesson = await cms.find<APIResponseCollection<"api::lesson.lesson">["data"]>("lessons", {
@@ -39,21 +39,21 @@ export const LessonService = {
       });
 
       if (lesson.data.length > 1) {
-        logger.error({ slug, count: lesson.data.length }, "Multiple lessons found with the same slug");
+        logger.error("Multiple lessons found with the same slug", { slug, count: lesson.data.length });
         throw new Error("Multiple lessons found with the same slug");
       }
 
       if (lesson.data.length === 0) {
-        logger.warn({ slug }, "No lesson found with the given slug");
+        logger.warn("No lesson found with the given slug", { slug });
         throw new Error("Lesson not found");
       }
 
       await CacheService.set(CacheKeys.lesson(slug), lesson.data[0], { ex: 60 });
-      logger.debug({ slug }, "Fetched lesson from CMS");
+      logger.debug("Fetched lesson from CMS", { slug });
       return lesson.data[0];
     } catch (error) {
       Sentry.captureException(error);
-      logger.error({ slug, error }, "Failed to retrieve lesson");
+      logger.error("Failed to retrieve lesson", { slug, error });
       throw error;
     }
   },
@@ -62,7 +62,7 @@ export const LessonService = {
     try {
       const cachedLesson = await CacheService.get<number>(CacheKeys.lessonDuration(lessonId));
       if (cachedLesson) {
-        logger.debug({ lessonId }, "Returning cached lesson duration");
+        logger.debug("Returning cached lesson duration", { lessonId });
         return cachedLesson;
       }
       const lesson = await cms.findOne<APIResponseData<"api::lesson.lesson">>("lessons", lessonId, {
@@ -77,11 +77,11 @@ export const LessonService = {
           },
         );
       }
-      logger.debug({ lessonId }, "Fetched lesson duration from CMS");
+      logger.debug("Fetched lesson duration from CMS", { lessonId });
       return lesson.data.attributes.required_duration_in_seconds;
     } catch (error) {
       Sentry.captureException(error);
-      logger.error({ lessonId, error }, "Failed to retrieve lesson duration");
+      logger.error("Failed to retrieve lesson duration", { lessonId, error });
       throw error;
     }
   },

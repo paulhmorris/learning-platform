@@ -1,34 +1,7 @@
 import { createMiddleware } from "hono/factory";
 import { isbot } from "isbot";
-import pino from "pino";
 
-import { CONFIG } from "~/config.server";
-import { devTransport } from "~/integrations/logger.server";
-
-const devLogger = pino({
-  name: "HTTP",
-  level: "trace",
-  transport: devTransport,
-});
-
-const prodLogger = pino(
-  {
-    base: {
-      environment: process.env.VERCEL_ENV,
-    },
-    level: process.env.LOG_LEVEL ?? "info",
-  },
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-  pino.transport({
-    target: "@axiomhq/pino",
-    options: {
-      dataset: "http",
-      token: process.env.AXIOM_TOKEN,
-    },
-  }),
-);
-
-const logger = CONFIG.isDev ? devLogger : prodLogger;
+import { httpLogger } from "~/integrations/logger.server";
 
 const matchers = ["/assets", "favicon", ".well-known", "site.webmanifest", "sitemap.xml", "robots.txt"];
 
@@ -65,8 +38,6 @@ export function loggerMiddleware() {
       reqData.body = body;
     }
 
-    logger.info(reqData, "Request");
-
     await next();
 
     const end = Date.now();
@@ -80,15 +51,15 @@ export function loggerMiddleware() {
     };
 
     if (resStatus >= 300 && resStatus < 400) {
-      resData.redirect_url = c.res.headers.get("location");
-      logger.warn(resData, "Response");
+      resData.redirect_url = c.res.url;
+      httpLogger.warn("Response", resData);
     }
 
     if (resStatus >= 400) {
-      logger.error(resData, "Response");
+      httpLogger.error("Response", resData);
     }
 
-    logger.info(resData, "Response");
-    logger.flush();
+    httpLogger.info("Request", reqData);
+    httpLogger.info("Response", resData);
   });
 }

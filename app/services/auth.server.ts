@@ -10,7 +10,7 @@ export const AuthService = {
       return client.users.getUserList(args);
     } catch (error) {
       Sentry.captureException(error);
-      logger.error({ error, args }, "Failed to get user list");
+      logger.error("Failed to get user list", { error, args });
       throw error;
     }
   },
@@ -21,7 +21,7 @@ export const AuthService = {
       return data;
     } catch (error) {
       Sentry.captureException(error);
-      logger.error({ error, email }, "Failed to get invitations by email");
+      logger.error("Failed to get invitations by email", { error, email });
       throw error;
     }
   },
@@ -31,7 +31,7 @@ export const AuthService = {
       return client.sessions.revokeSession(sessionId);
     } catch (error) {
       Sentry.captureException(error);
-      logger.error({ error, sessionId }, "Failed to revoke session");
+      logger.error("Failed to revoke session", { error, sessionId });
       throw error;
     }
   },
@@ -41,7 +41,7 @@ export const AuthService = {
       return client.users.updateUser(clerkId, { externalId });
     } catch (error) {
       Sentry.captureException(error);
-      logger.error({ error, clerkId, externalId }, "Failed to save external ID");
+      logger.error("Failed to save external ID", { error, clerkId, externalId });
       throw error;
     }
   },

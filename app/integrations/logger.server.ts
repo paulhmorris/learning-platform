@@ -1,59 +1,31 @@
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-import "@axiomhq/pino";
+import { Axiom } from "@axiomhq/js";
+import { AxiomJSTransport, ConsoleTransport, Logger } from "@axiomhq/logging";
 
-import pino from "pino";
-
-import "pino-pretty";
 import { CONFIG } from "~/config.server";
 
-export const devTransport: pino.TransportSingleOptions = {
-  target: "pino-pretty",
-  options: {
-    colorize: true,
-    ignore: "pid,hostname",
+// Axiom
+const axiom = new Axiom({ token: process.env.AXIOM_TOKEN });
+const logLevel = CONFIG.isDev ? "debug" : "info";
+const logger = new Logger({
+  logLevel,
+  args: {
+    environment: process.env.VERCEL_ENV,
   },
-};
+  transports: [
+    new AxiomJSTransport({ axiom, logLevel, dataset: "server" }),
+    new ConsoleTransport({ logLevel, prettyPrint: true }),
+  ],
+});
 
-const _logger = pino(
-  {
-    base: CONFIG.isDev
-      ? undefined
-      : {
-          environment: process.env.VERCEL_ENV,
-        },
-    transport: CONFIG.isDev ? devTransport : undefined,
-    level: CONFIG.isDev ? "debug" : (process.env.LOG_LEVEL ?? "info"),
-  },
-  CONFIG.isDev
-    ? undefined
-    : pino.transport({
-        target: "@axiomhq/pino",
-        options: {
-          dataset: "server",
-          token: process.env.AXIOM_TOKEN,
-        },
-      }),
-);
-
-export function createLogger(name: string) {
-  return name ? _logger.child({ name }) : _logger;
+export function createLogger(module: string) {
+  return module ? logger.with({ module }) : logger;
 }
 
-export const httpLogger = pino(
-  {
-    base: CONFIG.isDev
-      ? undefined
-      : {
-          environment: process.env.VERCEL_ENV,
-        },
-    transport: CONFIG.isDev ? devTransport : undefined,
-    level: CONFIG.isDev ? "debug" : (process.env.LOG_LEVEL ?? "info"),
-  },
-  pino.transport({
-    target: "@axiomhq/pino",
-    options: {
-      dataset: "http",
-      token: process.env.AXIOM_TOKEN,
-    },
-  }),
-);
+export const httpLogger = new Logger({
+  logLevel,
+  args: { environment: process.env.VERCEL_ENV },
+  transports: [
+    new AxiomJSTransport({ axiom, logLevel, dataset: "http" }),
+    new ConsoleTransport({ logLevel, prettyPrint: true }),
+  ],
+});

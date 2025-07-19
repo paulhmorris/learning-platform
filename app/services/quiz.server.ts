@@ -14,7 +14,7 @@ export const QuizService = {
       });
     } catch (error) {
       Sentry.captureException(error);
-      logger.error({ error }, "Failed to get all quizzes");
+      logger.error("Failed to get all quizzes", { error });
       throw error;
     }
   },
@@ -24,7 +24,7 @@ export const QuizService = {
       return await db.userQuizProgress.findMany({ where: { userId } });
     } catch (error) {
       Sentry.captureException(error);
-      logger.error({ error }, "Failed to get all quiz progress");
+      logger.error("Failed to get all quiz progress", { error });
       throw error;
     }
   },
@@ -34,7 +34,7 @@ export const QuizService = {
       return await db.userQuizProgress.deleteMany({ where: { userId } });
     } catch (error) {
       Sentry.captureException(error);
-      logger.error({ error }, "Failed to reset all quiz progress");
+      logger.error("Failed to reset all quiz progress", { error });
       throw error;
     }
   },
@@ -51,7 +51,7 @@ export const QuizService = {
       });
     } catch (error) {
       Sentry.captureException(error);
-      logger.error({ error }, "Failed to reset quiz progress");
+      logger.error("Failed to reset quiz progress", { error });
       throw error;
     }
   },
@@ -79,7 +79,7 @@ export const QuizService = {
       return quizProgress;
     } catch (error) {
       Sentry.captureException(error);
-      logger.error({ error }, "Failed to update quiz progress");
+      logger.error("Failed to update quiz progress", { error });
       throw error;
     }
   },

@@ -16,22 +16,22 @@ export const IdentityService = {
         metadata: { user_id: userId },
       });
       await UserService.update(userId, { stripeVerificationSessionId: verificationSession.id });
-      logger.info({ userId, email, sessionId: verificationSession.id }, "Created verification session");
+      logger.info("Created verification session", { userId, email, sessionId: verificationSession.id });
       return verificationSession;
     } catch (error) {
       Sentry.captureException(error, { extra: { userId, email } });
-      logger.error({ userId, email, error }, "Failed to create verification session");
+      logger.error("Failed to create verification session", { userId, email, error });
       throw error;
     }
   },
 
   async retrieveVerificationSession(sessionId: string) {
     try {
-      logger.debug({ sessionId }, "Retrieving verification session");
+      logger.debug("Retrieving verification session", { sessionId });
       return stripe.identity.verificationSessions.retrieve(sessionId);
     } catch (error) {
       Sentry.captureException(error, { extra: { sessionId } });
-      logger.error({ sessionId, error }, "Failed to retrieve verification session");
+      logger.error("Failed to retrieve verification session", { sessionId, error });
       throw error;
     }
   },

@@ -53,7 +53,7 @@ export const UserService = {
       return userWithPII;
     } catch (error) {
       Sentry.captureException(error);
-      logger.error({ error, userId: id }, "Failed to get user by ID");
+      logger.error("Failed to get user by ID", { error, userId: id });
       throw error;
     }
   },
@@ -82,7 +82,7 @@ export const UserService = {
       return userWithPII;
     } catch (error) {
       Sentry.captureException(error);
-      logger.error({ error, clerkId }, "Failed to get user by Clerk ID");
+      logger.error("Failed to get user by Clerk ID", { error, clerkId });
       throw error;
     }
   },
@@ -94,20 +94,20 @@ export const UserService = {
         update: {},
         create: { clerkId, role: UserRole.USER },
       });
-      logger.info({ user }, "User upserted:");
+      logger.info("User upserted:", { user });
 
       const stripeCustomer = await PaymentService.createCustomer(user.id, { metadata: { clerk_id: clerkId } });
-      logger.info({ stripeCustomer }, "Stripe customer created:");
+      logger.info("Stripe customer created:", { stripeCustomer });
 
       await this.update(user.id, { stripeId: stripeCustomer.id });
-      logger.info({ userId: user.id, stripeId: stripeCustomer.id }, "User updated with Stripe ID:");
+      logger.info("User updated with Stripe ID:", { userId: user.id, stripeId: stripeCustomer.id });
 
       await AuthService.saveExternalId(clerkId, user.id);
-      logger.info({ userId: user.id }, "External ID saved for user:");
+      logger.info("External ID saved for user:", { userId: user.id });
       return user;
     } catch (error) {
       Sentry.captureException(error);
-      logger.error({ error, clerkId }, "Failed to create user");
+      logger.error("Failed to create user", { error, clerkId });
       throw error;
     }
   },
@@ -117,7 +117,7 @@ export const UserService = {
       return db.user.update({ where: { id }, data, select: { id: true } });
     } catch (error) {
       Sentry.captureException(error);
-      logger.error({ error, userId: id }, "Failed to update user");
+      logger.error("Failed to update user", { error, userId: id });
       throw error;
     }
   },
@@ -132,7 +132,7 @@ export const UserService = {
       ]);
     } catch (error) {
       Sentry.captureException(error);
-      logger.error({ error, userId }, "Failed to delete user");
+      logger.error("Failed to delete user", { error, userId });
       throw error;
     }
   },
@@ -146,7 +146,7 @@ export const UserService = {
       return this.delete(user.id);
     } catch (error) {
       Sentry.captureException(error);
-      logger.error({ error, clerkId }, "Failed to delete user by Clerk ID");
+      logger.error("Failed to delete user by Clerk ID", { error, clerkId });
       throw error;
     }
   },

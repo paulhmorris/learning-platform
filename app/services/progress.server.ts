@@ -14,7 +14,7 @@ export const ProgressService = {
       create: { userId, lessonId, durationInSeconds: SUBMIT_INTERVAL_MS / 1_000 },
       update: { durationInSeconds: { increment: SUBMIT_INTERVAL_MS / 1_000 } },
     });
-    logger.info({ userId, lessonId }, "Incremented progress");
+    logger.info("Incremented progress", { userId, lessonId });
     await CacheService.set(CacheKeys.progressLesson(userId, lessonId), progress, { ex: 12 });
     return progress;
   },
@@ -22,7 +22,7 @@ export const ProgressService = {
   async getByLessonId(userId: string, lessonId: number) {
     const cachedProgress = await CacheService.get<UserLessonProgress>(CacheKeys.progressLesson(userId, lessonId));
     if (cachedProgress) {
-      logger.debug({ userId, lessonId }, "Returning cached progress");
+      logger.debug("Returning cached progress", { userId, lessonId });
       return cachedProgress;
     }
     const progress = await db.userLessonProgress.findUnique({
@@ -33,27 +33,27 @@ export const ProgressService = {
     if (progress) {
       await CacheService.set(CacheKeys.progressLesson(userId, lessonId), progress, { ex: 12 });
     }
-    logger.debug({ userId, lessonId }, "Returning progress");
+    logger.debug("Returning progress", { userId, lessonId });
     return progress;
   },
 
   async getAll(userId: string) {
-    logger.debug({ userId }, "Retrieving all lesson progress for user");
+    logger.debug("Retrieving all lesson progress for user", { userId });
     return db.userLessonProgress.findMany({ where: { userId } });
   },
 
   async getAllQuiz(userId: string) {
-    logger.debug({ userId }, "Retrieving all quiz progress for user");
+    logger.debug("Retrieving all quiz progress for user", { userId });
     return db.userQuizProgress.findMany({ where: { userId } });
   },
 
   async resetAll(userId: string) {
-    logger.info({ userId }, "Resetting all progress for user");
+    logger.info("Resetting all progress for user", { userId });
     return db.userLessonProgress.deleteMany({ where: { userId } });
   },
 
   async resetLesson(lessonId: number, userId: string) {
-    logger.info({ lessonId, userId }, "Resetting lesson progress");
+    logger.info("Resetting lesson progress", { lessonId, userId });
     return db.userLessonProgress.delete({
       where: {
         userId_lessonId: { lessonId, userId },
@@ -67,10 +67,11 @@ export const ProgressService = {
     durationInSeconds: number;
     requiredDurationInSeconds: number;
   }) {
-    logger.debug(
-      { lessonId: data.lessonId, userId: data.userId, durationInSeconds: data.durationInSeconds },
-      "Updating progress",
-    );
+    logger.debug("Updating progress", {
+      lessonId: data.lessonId,
+      userId: data.userId,
+      durationInSeconds: data.durationInSeconds,
+    });
     return db.userLessonProgress.upsert({
       where: {
         userId_lessonId: { userId: data.userId, lessonId: data.lessonId },
@@ -105,7 +106,7 @@ export const ProgressService = {
       },
     });
     await CacheService.set(CacheKeys.progressLesson(data.userId, data.lessonId), progress, { ex: 12 });
-    logger.info({ lessonId: data.lessonId, userId: data.userId }, "Marked lesson as complete");
+    logger.info("Marked lesson as complete", { lessonId: data.lessonId, userId: data.userId });
     return progress;
   },
 };

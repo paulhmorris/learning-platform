@@ -74,8 +74,8 @@ export async function action(args: ActionFunctionArgs) {
 
     return { progress: currentProgress };
   } catch (error) {
+    logger.error("Error processing lesson progress action", { error, userId, lessonId, intent });
     Sentry.captureException(error, { extra: { userId, lessonId, intent } });
-    logger.error({ error, userId, lessonId, intent }, "Error processing lesson progress action");
 
     if (error instanceof Response) {
       throw error;
