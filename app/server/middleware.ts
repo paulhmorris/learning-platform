@@ -1,8 +1,6 @@
 import { createMiddleware } from "hono/factory";
 import { isbot } from "isbot";
 
-import { httpLogger } from "~/integrations/logger.server";
-
 const matchers = ["/assets", "favicon", ".well-known", "site.webmanifest", "sitemap.xml", "robots.txt"];
 
 export function loggerMiddleware() {
@@ -52,15 +50,14 @@ export function loggerMiddleware() {
 
     if (resStatus >= 300 && resStatus < 400) {
       resData.redirect_url = c.res.url;
-      httpLogger.warn("Response", resData);
+      console.warn("Response", resData);
     }
 
     if (resStatus >= 400) {
-      httpLogger.error("Response", resData);
+      console.error("Response", resData);
     }
 
-    httpLogger.info("Request", reqData);
-    httpLogger.info("Response", resData);
-    await httpLogger.flush();
+    console.info("Request", reqData);
+    console.info("Response", resData);
   });
 }
