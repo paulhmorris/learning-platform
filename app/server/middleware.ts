@@ -61,5 +61,6 @@ export function loggerMiddleware() {
 
     httpLogger.info("Request", reqData);
     httpLogger.info("Response", resData);
+    await httpLogger.flush();
   });
 }
