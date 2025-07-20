@@ -31,7 +31,7 @@ export default defineConfig((config) => ({
     sourcemap: !!process.env.CI,
     rollupOptions: config.isSsrBuild
       ? {
-          input: "./app/server.ts",
+          input: "./app/server/index.ts",
         }
       : undefined,
   },
@@ -39,10 +39,7 @@ export default defineConfig((config) => ({
     port: 3000,
   },
   plugins: [
-    reactRouterHonoServer({
-      runtime: "node",
-      serverEntryPoint: "./app/server.ts",
-    }),
+    reactRouterHonoServer(),
     tsconfigPaths(),
     !process.env.VITEST && reactRouter(),
     ...(isCI ? [sentryReactRouter(sentryConfig, config)] : []),
