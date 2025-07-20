@@ -1,3 +1,5 @@
+import { getGeo } from "hono-geo-middleware";
+// eslint-disable-next-line import/order
 import { createMiddleware } from "hono/factory";
 import { isbot } from "isbot";
 
@@ -12,8 +14,13 @@ export function loggerMiddleware() {
     }
 
     const start = Date.now();
-    const reqIsFromBot = c.req.header("cf-isbot") === "true" || isbot(c.req.header("user-agent") ?? "");
+    await next();
+    const end = Date.now();
+
+    const geo = getGeo(c);
+    const resStatus = c.res.status;
     const requestId = c.get("requestId") as string;
+    const reqIsFromBot = c.req.header("cf-isbot") === "true" || isbot(c.req.header("user-agent") ?? "");
 
     const reqData: Record<string, unknown> = {
       id: requestId,
@@ -24,28 +31,21 @@ export function loggerMiddleware() {
       is_bot: reqIsFromBot,
       user_agent: c.req.header("user-agent"),
       content_type: c.req.header("content-type"),
+      duration: end - start,
+      ip: geo.ip,
+      geo: {
+        city: geo.city,
+        region: geo.region,
+        country: geo.country,
+        postalCode: geo.postalCode,
+      },
     };
 
-    const isPostOrPut = c.req.method === "POST" || c.req.method === "PUT";
-    const isFormData =
-      // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
-      c.req.header("content-type")?.startsWith("multipart/form-data") ||
-      c.req.header("content-type")?.startsWith("application/x-www-form-urlencoded");
-    if (isPostOrPut && isFormData) {
-      const clone = c.req.raw.clone();
-      const body = Object.fromEntries(await clone.formData());
-      delete body.rvfFormId;
-      reqData.body = body;
-    }
-
-    await next();
-
-    const end = Date.now();
-    const resStatus = c.res.status;
     const resData: Record<string, unknown> = {
       status: resStatus,
       request_id: requestId,
       request_uri: c.req.url,
+      path: c.req.path,
       content_type: c.res.headers.get("content-type"),
       duration: end - start,
     };
