@@ -31,7 +31,7 @@ export default defineConfig((config) => ({
     sourcemap: !!process.env.CI,
     rollupOptions: config.isSsrBuild
       ? {
-          input: "./app/server/index.ts",
+          input: "./app/server.ts",
         }
       : undefined,
   },
