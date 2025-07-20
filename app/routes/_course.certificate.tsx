@@ -1,12 +1,4 @@
-import {
-  ActionFunctionArgs,
-  Form,
-  Link,
-  LoaderFunctionArgs,
-  MetaFunction,
-  useActionData,
-  useLoaderData,
-} from "react-router";
+import { ActionFunctionArgs, Form, Link, LoaderFunctionArgs, useActionData, useLoaderData } from "react-router";
 
 import { claimCertificateJob } from "jobs/claim-certificate";
 import { PageTitle } from "~/components/common/page-title";
@@ -18,7 +10,6 @@ import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
 import { Toasts } from "~/lib/toast.server";
 import { useUser } from "~/lib/utils";
-import type { loader as courseLoader } from "~/routes/_course";
 import { SessionService } from "~/services/session.server";
 import { APIResponseData } from "~/types/utils";
 
@@ -153,17 +144,20 @@ export async function action(args: ActionFunctionArgs) {
   }
 }
 
-export const meta: MetaFunction<typeof loader, { "routes/_course": typeof courseLoader }> = ({ matches }) => {
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  const match = matches.find((m) => m.id === "routes/_course")?.data.course;
-  return [{ title: `Certificate | ${match?.attributes.title}` }];
-};
-
 export default function CourseCertificate() {
+  const { course: cmsCourse } = useCourseData();
   const { userCourse, course } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const data = useCourseData();
   const user = useUser();
+
+  const Wrapper = ({ children }: { children: React.ReactNode }) => (
+    <>
+      <title>Certificate | {cmsCourse.attributes.title}</title>
+      <PageTitle>Certificate</PageTitle>
+      {children}
+    </>
+  );
 
   const userHasVerifiedIdentity = course.requiresIdentityVerification ? user.isIdentityVerified : true;
 
@@ -175,33 +169,30 @@ export default function CourseCertificate() {
 
   if (!isCourseComplete) {
     return (
-      <>
-        <PageTitle>Certificate</PageTitle>
+      <Wrapper>
         <p className="mt-8 rounded-md border border-destructive bg-destructive/5 p-4 text-destructive">
           You must complete all lessons and quizzes before you can claim your certificate.
         </p>
-      </>
+      </Wrapper>
     );
   }
 
   if (!userHasVerifiedIdentity) {
     return (
-      <>
-        <PageTitle>Certificate</PageTitle>
+      <Wrapper>
         <div className="mt-8 rounded-md border border-destructive bg-destructive/5 p-4 text-destructive">
           <p>You must verify your identity before you can claim your certificate for this course. </p>
           <Link to="/account/identity" className="mt-2 block text-lg font-bold underline decoration-2">
             Verify Now
           </Link>
         </div>
-      </>
+      </Wrapper>
     );
   }
 
   if (userCourse.certificateClaimed && userCourse.certificateS3Key) {
     return (
-      <>
-        <PageTitle>Certificate</PageTitle>
+      <Wrapper>
         <p className="mt-8 rounded-md border border-success bg-success/5 p-4 text-success">
           You have claimed your certificate.{" "}
           <a
@@ -213,24 +204,22 @@ export default function CourseCertificate() {
             Access it here.
           </a>
         </p>
-      </>
+      </Wrapper>
     );
   }
 
   if (actionData?.success) {
     return (
-      <>
-        <PageTitle>Certificate</PageTitle>
+      <Wrapper>
         <p className="mt-8 rounded-md border border-success bg-success/5 p-4 text-success">
           Thank you! Your certificate will be emailed to <span className="font-bold">{user.email}</span> shortly.
         </p>
-      </>
+      </Wrapper>
     );
   }
 
   return (
-    <>
-      <PageTitle>Certificate</PageTitle>
+    <Wrapper>
       <p className="mt-8 rounded-md border border-success bg-success/5 p-4 text-success">
         Congratulations on successfully completing <span className="font-bold">{data.course.attributes.title}</span>!
         <br />
@@ -241,7 +230,7 @@ export default function CourseCertificate() {
       <Form className="mt-8" method="post">
         <SubmitButton className="sm:w-auto">Claim Certificate</SubmitButton>
       </Form>
-    </>
+    </Wrapper>
   );
 }
 

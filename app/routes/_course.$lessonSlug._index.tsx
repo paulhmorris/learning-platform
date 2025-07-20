@@ -1,4 +1,4 @@
-import { LoaderFunctionArgs, MetaFunction, useLoaderData } from "react-router";
+import { LoaderFunctionArgs, useLoaderData } from "react-router";
 import invariant from "tiny-invariant";
 
 import { PageTitle } from "~/components/common/page-title";
@@ -6,7 +6,7 @@ import { ErrorComponent } from "~/components/error-component";
 import { LessonContentRenderer } from "~/components/lesson/lesson-content-renderer";
 import { LessonProgressBar } from "~/components/lesson/lesson-progress-bar";
 import { MarkCompleteButton } from "~/components/lesson/mark-complete-button";
-import type { loader as courseLoader } from "~/routes/_course";
+import { useCourseData } from "~/hooks/useCourseData";
 import { LessonService } from "~/services/lesson.server";
 import { ProgressService } from "~/services/progress.server";
 import { SessionService } from "~/services/session.server";
@@ -23,17 +23,15 @@ export async function loader(args: LoaderFunctionArgs) {
   return { lesson, progress, isTimed };
 }
 
-export const meta: MetaFunction<typeof loader, { "routes/_course": typeof courseLoader }> = ({ data, matches }) => {
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  const match = matches.find((m) => m.id === "routes/_course")?.data?.course;
-  return [{ title: `${data?.lesson.attributes.title} | ${match?.attributes.title}` }];
-};
-
 export default function Course() {
+  const { course } = useCourseData();
   const { lesson, progress, isTimed } = useLoaderData<typeof loader>();
 
   return (
     <>
+      <title>
+        {lesson.attributes.title} | {course.attributes.title}
+      </title>
       <PageTitle>{lesson.attributes.title}</PageTitle>
       <div className="my-4 lg:hidden">
         <LessonProgressBar

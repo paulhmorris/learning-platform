@@ -1,6 +1,6 @@
 import { UserRole } from "@prisma/client";
 import { parseFormData, ValidatedForm, validationError } from "@rvf/react-router";
-import { ActionFunctionArgs, MetaFunction, useRouteLoaderData } from "react-router";
+import { ActionFunctionArgs, useRouteLoaderData } from "react-router";
 import { z } from "zod/v4";
 
 import { ErrorComponent } from "~/components/error-component";
@@ -17,10 +17,6 @@ const schema = z.object({
   role: selectEnum(UserRole),
   stripeId: optionalText,
 });
-
-export const meta: MetaFunction = () => {
-  return [{ title: `User Profile | Plumb Media & Education` }];
-};
 
 export async function action(args: ActionFunctionArgs) {
   await SessionService.requireAdmin(args);

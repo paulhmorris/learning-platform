@@ -1,13 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  ActionFunctionArgs,
-  Link,
-  LoaderFunctionArgs,
-  MetaFunction,
-  redirect,
-  useLoaderData,
-  useSearchParams,
-} from "react-router";
+import { ActionFunctionArgs, Link, LoaderFunctionArgs, redirect, useLoaderData, useSearchParams } from "react-router";
 
 import { StrapiImage } from "~/components/common/strapi-image";
 import { CourseHeader } from "~/components/course/course-header";
@@ -76,10 +68,6 @@ export async function action(args: ActionFunctionArgs) {
   return redirect(session.url ?? "/", { status: 303 });
 }
 
-export const meta: MetaFunction<typeof loader> = ({ data }) => {
-  return [{ title: `Preview | ${data?.course.attributes.title}` }];
-};
-
 export default function CoursePreview() {
   const [searchParams] = useSearchParams();
   const [successModalOpen, setSuccessModalOpen] = useState(false);
@@ -111,6 +99,7 @@ export default function CoursePreview() {
   // Timed Courses
   return (
     <>
+      <title>Preview | {course.attributes.title}</title>
       <div className="flex flex-col gap-x-12 px-4 py-4 lg:flex-row lg:py-4">
         <nav className="left-0 top-[88px] h-full shrink-0 basis-[320px] py-4 sm:py-10 lg:sticky lg:py-14">
           <StrapiImage

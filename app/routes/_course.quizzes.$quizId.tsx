@@ -1,14 +1,6 @@
 import { IconCircleCheckFilled } from "@tabler/icons-react";
 import { useEffect, useRef } from "react";
-import {
-  ActionFunctionArgs,
-  Form,
-  Link,
-  LoaderFunctionArgs,
-  MetaFunction,
-  useActionData,
-  useLoaderData,
-} from "react-router";
+import { ActionFunctionArgs, Form, Link, LoaderFunctionArgs, useActionData, useLoaderData } from "react-router";
 import { useCountdown } from "react-timing-hooks";
 import invariant from "tiny-invariant";
 import { useLocalStorage } from "usehooks-ts";
@@ -25,7 +17,6 @@ import { db } from "~/integrations/db.server";
 import { Responses } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
 import { cn, formatSeconds } from "~/lib/utils";
-import type { loader as courseLoader } from "~/routes/_course";
 import { SessionService } from "~/services/session.server";
 import { APIResponseData } from "~/types/utils";
 
@@ -163,12 +154,6 @@ export async function action(args: ActionFunctionArgs) {
   };
 }
 
-export const meta: MetaFunction<typeof loader, { "routes/_course": typeof courseLoader }> = ({ data, matches }) => {
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  const match = matches.find((m) => m.id === "routes/_course")?.data.course;
-  return [{ title: `${data?.quiz.attributes.title} | ${match?.attributes.title}` }];
-};
-
 export default function Quiz() {
   const { course, lessons } = useCourseData();
   const { quiz, progress } = useLoaderData<typeof loader>();
@@ -202,6 +187,9 @@ export default function Quiz() {
   if (!quiz.attributes.questions?.length) {
     return (
       <>
+        <title>
+          {quiz.attributes.title} | {course.attributes.title}
+        </title>
         <PageTitle>{quiz.attributes.title}</PageTitle>
         <div className="mt-4">
           <p>Oops! This quiz is empty.</p>
@@ -228,6 +216,9 @@ export default function Quiz() {
 
   return (
     <>
+      <title>
+        {quiz.attributes.title} | {course.attributes.title}
+      </title>
       {/* Results */}
       <div role="alert" aria-live="polite" ref={resultsRef}>
         {isPassed ? (

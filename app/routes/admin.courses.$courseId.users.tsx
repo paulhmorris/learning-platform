@@ -1,13 +1,6 @@
 import { parseFormData } from "@rvf/react-router";
 import { useState } from "react";
-import {
-  ActionFunctionArgs,
-  LoaderFunctionArgs,
-  MetaFunction,
-  useFetcher,
-  useLoaderData,
-  useRouteLoaderData,
-} from "react-router";
+import { ActionFunctionArgs, LoaderFunctionArgs, useFetcher, useLoaderData, useRouteLoaderData } from "react-router";
 import invariant from "tiny-invariant";
 import { z } from "zod/v4";
 
@@ -66,8 +59,6 @@ export async function action(args: ActionFunctionArgs) {
   return Responses.created();
 }
 
-export const meta: MetaFunction = () => [{ title: "Edit Course | Plumb Media & Education" }];
-
 export default function AdminEditCourse() {
   const fetcher = useFetcher();
   const [filter, setFilter] = useState("");
@@ -88,6 +79,7 @@ export default function AdminEditCourse() {
 
   return (
     <>
+      <title>Edit Course | Plumb Media & Education</title>
       <p className="text-sm text-muted-foreground">
         You can use this table to enroll users in this course, which will give the user full access without paying. You
         cannot unenroll a user from a course.
