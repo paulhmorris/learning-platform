@@ -10,7 +10,7 @@ import { useTheme } from "remix-themes";
 import { ClientOnly } from "remix-utils/client-only";
 import { Toaster, toast } from "sonner";
 
-import { loader } from "~/root";
+import type { loader } from "~/root";
 
 export function Notifications() {
   const [theme] = useTheme();

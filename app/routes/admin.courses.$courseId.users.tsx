@@ -17,7 +17,7 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { db } from "~/integrations/db.server";
 import { Responses } from "~/lib/responses.server";
-import { loader as adminCourseLoader } from "~/routes/admin.courses.$courseId";
+import type { loader as adminCourseLoader } from "~/routes/admin.courses.$courseId";
 import { text } from "~/schemas/fields";
 import { AuthService } from "~/services/auth.server";
 import { SessionService } from "~/services/session.server";

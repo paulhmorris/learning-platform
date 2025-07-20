@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useNavigate, useRouteLoaderData } from "react-router";
 import { toast } from "sonner";
 
-import { loader } from "~/routes/preview";
+import type { loader } from "~/routes/preview";
 
 export function useCoursePreviewData() {
   const navigate = useNavigate();

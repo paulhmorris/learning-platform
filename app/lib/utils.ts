@@ -6,7 +6,7 @@ import { StrapiResponse } from "strapi-sdk-js";
 import { twMerge } from "tailwind-merge";
 
 import { IconCameraFilled, IconClipboard } from "~/components/icons";
-import { loader } from "~/root";
+import type { loader } from "~/root";
 import { LessonInOrder } from "~/routes/preview";
 import { APIResponseData } from "~/types/utils";
 

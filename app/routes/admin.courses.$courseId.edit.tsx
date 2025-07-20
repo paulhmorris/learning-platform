@@ -10,7 +10,7 @@ import { SubmitButton } from "~/components/ui/submit-button";
 import { db } from "~/integrations/db.server";
 import { Responses } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
-import { loader as adminCourseLoader } from "~/routes/admin.courses.$courseId";
+import type { loader as adminCourseLoader } from "~/routes/admin.courses.$courseId";
 import { checkbox, number, text } from "~/schemas/fields";
 import { SessionService } from "~/services/session.server";
 

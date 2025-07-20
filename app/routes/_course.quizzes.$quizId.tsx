@@ -25,7 +25,7 @@ import { db } from "~/integrations/db.server";
 import { Responses } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
 import { cn, formatSeconds } from "~/lib/utils";
-import { loader as courseLoader } from "~/routes/_course";
+import type { loader as courseLoader } from "~/routes/_course";
 import { SessionService } from "~/services/session.server";
 import { APIResponseData } from "~/types/utils";
 

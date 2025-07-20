@@ -6,7 +6,7 @@ import { ErrorComponent } from "~/components/error-component";
 import { LessonContentRenderer } from "~/components/lesson/lesson-content-renderer";
 import { LessonProgressBar } from "~/components/lesson/lesson-progress-bar";
 import { MarkCompleteButton } from "~/components/lesson/mark-complete-button";
-import { loader as courseLoader } from "~/routes/_course";
+import type { loader as courseLoader } from "~/routes/_course";
 import { LessonService } from "~/services/lesson.server";
 import { ProgressService } from "~/services/progress.server";
 import { SessionService } from "~/services/session.server";

@@ -4,7 +4,7 @@ import dayjs from "dayjs";
 import { AdminButton } from "~/components/ui/admin-button";
 import { Badge } from "~/components/ui/badge";
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "~/components/ui/card";
-import { loader } from "~/routes/account.$";
+import type { loader } from "~/routes/account.$";
 
 type Props = {
   courses: Awaited<ReturnType<typeof loader>>["courses"];

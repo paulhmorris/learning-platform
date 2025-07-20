@@ -6,7 +6,7 @@ import { ThemeModeToggle } from "~/components/theme-mode-toggle";
 import { Button } from "~/components/ui/button";
 import { UserMenu } from "~/components/user-menu";
 import { useOptionalUser } from "~/lib/utils";
-import { loader } from "~/root";
+import type { loader } from "~/root";
 
 export function Header() {
   const [theme] = useTheme();

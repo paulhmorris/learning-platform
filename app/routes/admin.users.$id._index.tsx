@@ -8,7 +8,7 @@ import { FormField, FormSelect } from "~/components/ui/form";
 import { SubmitButton } from "~/components/ui/submit-button";
 import { db } from "~/integrations/db.server";
 import { Toasts } from "~/lib/toast.server";
-import { loader } from "~/routes/admin.users.$id";
+import type { loader } from "~/routes/admin.users.$id";
 import { cuid, optionalText, selectEnum } from "~/schemas/fields";
 import { SessionService } from "~/services/session.server";
 

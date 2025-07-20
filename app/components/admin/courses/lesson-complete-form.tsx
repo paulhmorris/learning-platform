@@ -2,7 +2,7 @@ import { IconLoader } from "@tabler/icons-react";
 import { useFetcher, useFetchers } from "react-router";
 
 import { AdminButton } from "~/components/ui/admin-button";
-import { loader } from "~/routes/admin.users.$id.courses.$courseId";
+import type { loader } from "~/routes/admin.users.$id.courses.$courseId";
 
 export function LessonCompleteForm(props: {
   lesson: { id: number; attributes: { required_duration_in_seconds?: number } };

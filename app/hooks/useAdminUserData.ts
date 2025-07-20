@@ -1,6 +1,6 @@
 import { useRouteLoaderData } from "react-router";
 
-import { loader } from "~/routes/admin.users.$id";
+import type { loader } from "~/routes/admin.users.$id";
 
 export function useAdminUserData() {
   const data = useRouteLoaderData<typeof loader>("routes/admin.users.$id");

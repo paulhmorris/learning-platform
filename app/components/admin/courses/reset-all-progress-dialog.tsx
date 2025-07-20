@@ -12,7 +12,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "~/components/ui/dialog";
-import { action } from "~/routes/admin.users.$id.courses.$courseId";
+import type { action } from "~/routes/admin.users.$id.courses.$courseId";
 
 export function ResetAllProgressDialog() {
   const fetcher = useFetcher<typeof action>();
