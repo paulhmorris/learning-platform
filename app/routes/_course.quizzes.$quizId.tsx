@@ -1,24 +1,22 @@
-import { IconCircleCheckFilled } from "@tabler/icons-react";
 import { useEffect, useRef } from "react";
-import { ActionFunctionArgs, Form, Link, LoaderFunctionArgs, useActionData, useLoaderData } from "react-router";
-import { useCountdown } from "react-timing-hooks";
+import { ActionFunctionArgs, Link, LoaderFunctionArgs, useActionData, useLoaderData } from "react-router";
 import invariant from "tiny-invariant";
-import { useLocalStorage } from "usehooks-ts";
 
 import { PageTitle } from "~/components/common/page-title";
 import { ErrorComponent } from "~/components/error-component";
-import { QuizFailed } from "~/components/quiz/quiz-failed";
 import { QuizLocked } from "~/components/quiz/quiz-locked";
-import { QuizPassed } from "~/components/quiz/quiz-passed";
+import { QuizQuestions } from "~/components/quiz/quiz-questions";
+import { QuizResults } from "~/components/quiz/quiz-results";
 import { Button } from "~/components/ui/button";
 import { useCourseData } from "~/hooks/useCourseData";
-import { cms } from "~/integrations/cms.server";
-import { db } from "~/integrations/db.server";
+import { createLogger } from "~/integrations/logger.server";
 import { Responses } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
-import { cn, formatSeconds } from "~/lib/utils";
+import { formatSeconds } from "~/lib/utils";
+import { QuizService } from "~/services/quiz.server";
 import { SessionService } from "~/services/session.server";
-import { APIResponseData } from "~/types/utils";
+
+const logger = createLogger("Routes.Quiz");
 
 export async function loader(args: LoaderFunctionArgs) {
   const userId = await SessionService.requireUserId(args);
@@ -26,32 +24,15 @@ export async function loader(args: LoaderFunctionArgs) {
   const quizId = args.params.quizId;
   invariant(quizId, "Quiz ID is required");
 
-  const quiz = await cms.findOne<APIResponseData<"api::quiz.quiz">>("quizzes", quizId, {
-    populate: {
-      questions: {
-        fields: "*",
-        populate: {
-          answers: {
-            fields: ["answer", "id", "required_duration_in_seconds"],
-          },
-        },
-      },
-    },
-  });
+  const quiz = await QuizService.getById(quizId);
 
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (!quiz) {
+    logger.error("Quiz not found", { quizId });
     throw Responses.notFound();
   }
 
-  const progress = await db.userQuizProgress.findUnique({
-    where: {
-      userId_quizId: {
-        quizId: quiz.data.id,
-        userId,
-      },
-    },
-  });
+  const progress = await QuizService.getProgress(parseInt(quizId), userId);
 
   return { quiz: quiz.data, progress };
 }
@@ -62,27 +43,19 @@ export async function action(args: ActionFunctionArgs) {
   const quizId = args.params.quizId;
   invariant(quizId, "Quiz ID is required");
 
-  // {
-  //   "question-0": "4",
-  //   "question-1": "5"
-  // }
+  /**
+   * Form data structure:
+   * {
+   *   "question-0": "4",
+   *   "question-1": "5"
+   * }
+   */
   const formData = Object.fromEntries(await args.request.formData());
 
-  const quiz = await cms.findOne<APIResponseData<"api::quiz.quiz">>("quizzes", quizId, {
-    populate: {
-      questions: {
-        fields: ["question_type"],
-        populate: {
-          answers: {
-            fields: ["is_correct"],
-          },
-        },
-      },
-    },
-  });
-
+  const quiz = await QuizService.getCorrectAnswers(quizId);
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (!quiz) {
+    logger.error("Quiz not found", { quizId });
     throw Responses.notFound();
   }
 
@@ -97,6 +70,7 @@ export async function action(args: ActionFunctionArgs) {
     .filter((a) => typeof a !== "undefined");
 
   if (!correctQuizAnswers?.length) {
+    logger.error("Quiz has no correct answers", { quizId });
     return Toasts.dataWithError(
       { score: 0, passed: false, userAnswers: [], passingScore: quiz.data.attributes.passing_score },
       {
@@ -107,7 +81,7 @@ export async function action(args: ActionFunctionArgs) {
   }
 
   // [2, 1]
-  const userAnswers = Object.entries(formData).map(([_question, answer]) => {
+  const userAnswers = Object.entries(formData).map(([_, answer]) => {
     if (typeof answer !== "string") {
       return;
     }
@@ -125,25 +99,10 @@ export async function action(args: ActionFunctionArgs) {
   score = Math.ceil((score / correctQuizAnswers.length) * 100);
   const passed = score >= quiz.data.attributes.passing_score;
 
+  logger.info("Quiz submitted", { userId, quizId, score, passed, userAnswers, correctQuizAnswers });
+
   if (passed) {
-    await db.userQuizProgress.upsert({
-      where: {
-        userId_quizId: {
-          quizId: quiz.data.id,
-          userId,
-        },
-      },
-      create: {
-        userId,
-        quizId: quiz.data.id,
-        isCompleted: true,
-        score,
-      },
-      update: {
-        isCompleted: true,
-        score,
-      },
-    });
+    await QuizService.markAsPassed(parseInt(quizId), userId, score);
   }
 
   return {
@@ -160,22 +119,7 @@ export default function Quiz() {
   const actionData = useActionData<typeof action>();
   const resultsRef = useRef<HTMLDivElement>(null);
 
-  const [reachedRequiredTime, setReachedRequiredTime] = useLocalStorage(
-    `required-quiz-time-${quiz.attributes.uuid}`,
-    false,
-  );
-  const [countdownValue] = useCountdown(
-    reachedRequiredTime ? 0 : (quiz.attributes.required_duration_in_seconds ?? 0),
-    0,
-    { startOnMount: true },
-  );
-
-  // If quiz has required duration, mark as completed when required time is reached
-  useEffect(() => {
-    if (quiz.attributes.required_duration_in_seconds && countdownValue === 0) {
-      setReachedRequiredTime(true);
-    }
-  }, [countdownValue, quiz.attributes.required_duration_in_seconds, setReachedRequiredTime]);
+  const duration = quiz.attributes.required_duration_in_seconds ?? 0;
 
   // Scroll to results if quiz is submitted
   useEffect(() => {
@@ -184,134 +128,72 @@ export default function Quiz() {
     }
   }, [actionData?.score]);
 
+  const Wrapper = ({ children }: { children: React.ReactNode }) => (
+    <>
+      <title>
+        {quiz.attributes.title} | {course.attributes.title}
+      </title>
+      <PageTitle>{quiz.attributes.title}</PageTitle>
+      <div className="mt-4">{children}</div>
+    </>
+  );
+
   if (!quiz.attributes.questions?.length) {
     return (
-      <>
-        <title>
-          {quiz.attributes.title} | {course.attributes.title}
-        </title>
-        <PageTitle>{quiz.attributes.title}</PageTitle>
-        <div className="mt-4">
-          <p>Oops! This quiz is empty.</p>
-        </div>
-      </>
+      <Wrapper>
+        <p>Oops! This quiz is empty.</p>
+      </Wrapper>
     );
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   const quizSection = course.attributes.sections.find((s) => s.quiz?.data?.id === quiz.id);
-  const firstLessonInSectionSlug = quizSection?.lessons?.data[0].attributes.slug;
-
   // Quiz is locked if any lesson in the quiz section is not completed
   const isQuizLocked = lessons.filter((l) => l.sectionId === quizSection?.id).some((l) => !l.isCompleted);
-
-  const isPassed = Boolean(progress?.isCompleted ?? (actionData?.passed && actionData.score));
-  const isFailed = Boolean(!progress?.isCompleted && actionData && !actionData.passed);
-
   if (isQuizLocked) {
-    return <QuizLocked title={quiz.attributes.title ?? `Quiz ${quiz.id}`} />;
+    return (
+      <Wrapper>
+        <QuizLocked />
+      </Wrapper>
+    );
   }
 
-  const isQuizTimed = Boolean(quiz.attributes.required_duration_in_seconds);
+  const isPassed = Boolean(progress?.isCompleted ?? (actionData?.passed && actionData.score));
+
+  const PassingInfo = () => (
+    <p className="mt-1 text-sm text-secondary-foreground">
+      You must score <strong>{quiz.attributes.passing_score}% or higher</strong> to pass this quiz.
+    </p>
+  );
+
+  const TimeInfo = () =>
+    duration ? (
+      <p className="mt-1 text-sm text-secondary-foreground">
+        You must spend <strong>{formatSeconds(duration)}</strong> on this quiz before submitting.
+      </p>
+    ) : null;
+
+  const isFailed = Boolean(!progress?.isCompleted && actionData && !actionData.passed);
+  const firstLessonInSectionSlug = quizSection?.lessons?.data[0].attributes.slug;
+  const FailedView = () => (
+    <div className="mt-8 flex flex-col gap-2 sm:max-w-96">
+      <Button asChild variant="primary-md">
+        <Link to={"."}>Retake Quiz</Link>
+      </Button>
+      <span className="text-center">or</span>
+      <Button variant="link" className="text-foreground underline">
+        <Link to={`/${firstLessonInSectionSlug}`}>Restart Section</Link>
+      </Button>
+    </div>
+  );
 
   return (
-    <>
-      <title>
-        {quiz.attributes.title} | {course.attributes.title}
-      </title>
-      {/* Results */}
-      <div role="alert" aria-live="polite" ref={resultsRef}>
-        {isPassed ? (
-          <QuizPassed score={progress?.score ?? actionData?.score ?? 100} />
-        ) : !actionData?.passed && typeof actionData?.score !== "undefined" ? (
-          <QuizFailed score={actionData.score} />
-        ) : null}
-      </div>
-      <PageTitle>{quiz.attributes.title}</PageTitle>
-      <p className="mt-1 text-sm text-secondary-foreground">
-        Score <strong>{quiz.attributes.passing_score}% or higher</strong> on this quiz to proceed.
-      </p>
-      {isQuizTimed ? (
-        <p className="mt-1 text-sm text-secondary-foreground">
-          You must spend <strong>{formatSeconds(quiz.attributes.required_duration_in_seconds ?? 0)}</strong> on this
-          quiz to submit.
-        </p>
-      ) : null}
-      {/* TODO: Complete to unlock/up next */}
-      {/* <CourseUpNext lesson={} /> */}
-      {isFailed ? (
-        <div className="mt-8 flex flex-col gap-2 sm:max-w-96">
-          <Button asChild>
-            <Link to={`.`}>Retake Quiz</Link>
-          </Button>
-          <span className="text-center">or</span>
-          <Button variant="link" className="text-foreground underline">
-            <Link to={`/${firstLessonInSectionSlug}`}>Restart Section</Link>
-          </Button>
-        </div>
-      ) : (
-        <Form className="mt-8" method="post">
-          {/* Questions */}
-          <fieldset className={cn("flex flex-col gap-8", progress?.isCompleted && "opacity-50")} disabled={isPassed}>
-            {quiz.attributes.questions.map((question, q_index) => {
-              if (!question.question) {
-                return null;
-              }
-
-              return (
-                <div key={`question-${q_index + 1}`}>
-                  <h2 className="mb-4 text-[32px] font-bold leading-tight">{question.question}</h2>
-                  <ul className="flex flex-col gap-2">
-                    {question.answers?.map(({ answer }, a_index) => {
-                      if (!answer) {
-                        return null;
-                      }
-
-                      return (
-                        <li key={`question-${q_index}-answer-${a_index}`} className="flex items-center gap-2">
-                          <input
-                            required
-                            id={`question-${q_index}-answer-${a_index}`}
-                            type="radio"
-                            name={`question-${q_index}`}
-                            value={a_index}
-                            className="size-6 cursor-pointer border-2 !border-foreground text-foreground focus:ring-offset-background disabled:cursor-not-allowed dark:text-black"
-                          />
-                          <label
-                            htmlFor={`question-${q_index}-answer-${a_index}`}
-                            className="cursor-pointer text-lg font-medium"
-                          >
-                            {answer}
-                          </label>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-              );
-            })}
-          </fieldset>
-          {isPassed ? null : (
-            <div className="mt-8 flex flex-col gap-y-2">
-              {isQuizTimed ? (
-                <div className="flex items-center gap-x-2">
-                  <span
-                    aria-label="Time remaining on this quiz"
-                    className={cn(countdownValue === 0 && "text-success", "font-medium tabular-nums")}
-                  >
-                    {formatSeconds(countdownValue)} remaining
-                  </span>
-                  {reachedRequiredTime ? <IconCircleCheckFilled className="size-5 text-success" /> : null}
-                </div>
-              ) : null}
-              <Button type="submit" className="sm:max-w-64" disabled={Boolean(isQuizTimed && !reachedRequiredTime)}>
-                Submit
-              </Button>
-            </div>
-          )}
-        </Form>
-      )}
-    </>
+    <Wrapper>
+      <QuizResults isPassed={isPassed} score={progress?.score ?? actionData?.score ?? 100} />
+      <PassingInfo />
+      <TimeInfo />
+      {isFailed ? <FailedView /> : <QuizQuestions progress={progress} quiz={quiz} />}
+    </Wrapper>
   );
 }
 

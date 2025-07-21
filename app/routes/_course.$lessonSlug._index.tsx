@@ -7,20 +7,32 @@ import { LessonContentRenderer } from "~/components/lesson/lesson-content-render
 import { LessonProgressBar } from "~/components/lesson/lesson-progress-bar";
 import { MarkCompleteButton } from "~/components/lesson/mark-complete-button";
 import { useCourseData } from "~/hooks/useCourseData";
+import { createLogger } from "~/integrations/logger.server";
+import { Sentry } from "~/integrations/sentry";
+import { Responses } from "~/lib/responses.server";
 import { LessonService } from "~/services/lesson.server";
 import { ProgressService } from "~/services/progress.server";
 import { SessionService } from "~/services/session.server";
 
+const logger = createLogger("Routes.LessonIndex");
+
 export async function loader(args: LoaderFunctionArgs) {
   const userId = await SessionService.requireUserId(args);
 
-  const lessonSlug = args.params.lessonSlug;
-  invariant(lessonSlug, "Lesson slug is required");
+  try {
+    const lessonSlug = args.params.lessonSlug;
+    invariant(lessonSlug, "Lesson slug is required");
 
-  const lesson = await LessonService.getBySlugWithContent(lessonSlug);
-  const progress = await ProgressService.getByLessonId(userId, lesson.id);
-  const isTimed = lesson.attributes.required_duration_in_seconds && lesson.attributes.required_duration_in_seconds > 0;
-  return { lesson, progress, isTimed };
+    const lesson = await LessonService.getBySlugWithContent(lessonSlug);
+    const progress = await ProgressService.getByLessonId(userId, lesson.id);
+    const isTimed =
+      lesson.attributes.required_duration_in_seconds && lesson.attributes.required_duration_in_seconds > 0;
+    return { lesson, progress, isTimed };
+  } catch (error) {
+    logger.error("Error loading lesson data", { error, lessonSlug: args.params.lessonSlug });
+    Sentry.captureException(error, { extra: { lessonSlug: args.params.lessonSlug, userId } });
+    throw Responses.serverError();
+  }
 }
 
 export default function Course() {

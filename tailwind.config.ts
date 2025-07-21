@@ -4,7 +4,7 @@ import colors from "tailwindcss/colors";
 import { fontFamily } from "tailwindcss/defaultTheme";
 
 export default {
-  darkMode: "selector",
+  darkMode: ["selector", '[data-theme="dark"]'],
   content: ["./pages/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
   theme: {
     container: {

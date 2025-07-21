@@ -2,11 +2,53 @@ import { cms } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
 import { createLogger } from "~/integrations/logger.server";
 import { Sentry } from "~/integrations/sentry";
-import { APIResponseCollection } from "~/types/utils";
+import { APIResponseCollection, APIResponseData } from "~/types/utils";
 
 const logger = createLogger("QuizService");
 
 export const QuizService = {
+  async getById(quizId: string | number) {
+    try {
+      return cms.findOne<APIResponseData<"api::quiz.quiz">>("quizzes", quizId, {
+        populate: {
+          questions: {
+            fields: "*",
+            populate: {
+              answers: {
+                fields: ["answer", "id", "required_duration_in_seconds"],
+              },
+            },
+          },
+        },
+      });
+    } catch (error) {
+      Sentry.captureException(error);
+      logger.error("Failed to get quiz by ID", { error, quizId });
+      throw error;
+    }
+  },
+
+  async getCorrectAnswers(quizId: string | number) {
+    try {
+      return cms.findOne<APIResponseData<"api::quiz.quiz">>("quizzes", quizId, {
+        populate: {
+          questions: {
+            fields: ["question_type"],
+            populate: {
+              answers: {
+                fields: ["is_correct"],
+              },
+            },
+          },
+        },
+      });
+    } catch (error) {
+      Sentry.captureException(error);
+      logger.error("Failed to get correct answers for quiz", { error, quizId });
+      throw error;
+    }
+  },
+
   async getAll() {
     try {
       return cms.find<APIResponseCollection<"api::quiz.quiz">["data"]>("quizzes", {
@@ -19,7 +61,24 @@ export const QuizService = {
     }
   },
 
-  async getAllQuizProgress(userId: string) {
+  async getProgress(quizId: number, userId: string) {
+    try {
+      return db.userQuizProgress.findUnique({
+        where: {
+          userId_quizId: {
+            quizId,
+            userId,
+          },
+        },
+      });
+    } catch (error) {
+      Sentry.captureException(error);
+      logger.error("Failed to get quiz progress", { error, quizId, userId });
+      throw error;
+    }
+  },
+
+  async getAllProgress(userId: string) {
     try {
       return await db.userQuizProgress.findMany({ where: { userId } });
     } catch (error) {
@@ -29,7 +88,7 @@ export const QuizService = {
     }
   },
 
-  async resetAllQuizProgress(userId: string) {
+  async resetAllProgress(userId: string) {
     try {
       return await db.userQuizProgress.deleteMany({ where: { userId } });
     } catch (error) {
@@ -39,7 +98,7 @@ export const QuizService = {
     }
   },
 
-  async resetQuizProgress(quizId: number, userId: string) {
+  async resetProgress(quizId: number, userId: string) {
     try {
       return db.userQuizProgress.delete({
         where: {
@@ -56,7 +115,7 @@ export const QuizService = {
     }
   },
 
-  async updateQuizProgress(data: { quizId: number; userId: string; score: number; passingScore: number }) {
+  async updateProgress(data: { quizId: number; userId: string; score: number; passingScore: number }) {
     try {
       const quizProgress = await db.userQuizProgress.upsert({
         where: {
@@ -80,6 +139,20 @@ export const QuizService = {
     } catch (error) {
       Sentry.captureException(error);
       logger.error("Failed to update quiz progress", { error });
+      throw error;
+    }
+  },
+
+  async markAsPassed(quizId: number, userId: string, score: number) {
+    try {
+      return db.userQuizProgress.upsert({
+        where: { userId_quizId: { quizId, userId } },
+        create: { quizId, userId, score, isCompleted: true },
+        update: { score, isCompleted: true },
+      });
+    } catch (error) {
+      Sentry.captureException(error);
+      logger.error("Failed to mark quiz as passed", { error, quizId, userId });
       throw error;
     }
   },

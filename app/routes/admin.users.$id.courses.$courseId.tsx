@@ -51,7 +51,7 @@ export async function loader(args: LoaderFunctionArgs) {
     LessonService.getAllFromCMS(),
     QuizService.getAll(),
     ProgressService.getAll(userId),
-    QuizService.getAllQuizProgress(userId),
+    QuizService.getAllProgress(userId),
   ]);
 
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
@@ -78,7 +78,7 @@ export async function action(args: ActionFunctionArgs) {
     case "reset-all-progress": {
       // Reset all progress for this user in this course
       await ProgressService.resetAll(userId);
-      await QuizService.resetAllQuizProgress(userId);
+      await QuizService.resetAllProgress(userId);
       return Toasts.dataWithSuccess({ ok: true }, { message: "Success", description: "All progress has been reset." });
     }
 
@@ -145,7 +145,7 @@ export async function action(args: ActionFunctionArgs) {
           },
         );
       }
-      await QuizService.resetQuizProgress(quizId, userId);
+      await QuizService.resetProgress(quizId, userId);
       return Toasts.dataWithSuccess({ ok: true }, { message: "Success", description: "Quiz progress has been reset." });
     }
 
@@ -159,7 +159,7 @@ export async function action(args: ActionFunctionArgs) {
           },
         );
       }
-      await QuizService.updateQuizProgress({ quizId, userId, score: score, passingScore: passingScore });
+      await QuizService.updateProgress({ quizId, userId, score: score, passingScore: passingScore });
       return Toasts.dataWithSuccess(
         { ok: true },
         { message: "Success", description: "Quiz has been marked complete." },

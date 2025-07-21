@@ -7,11 +7,14 @@ import { SubmitButton } from "~/components/ui/submit-button";
 import { useCourseData } from "~/hooks/useCourseData";
 import { cms } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
+import { createLogger } from "~/integrations/logger.server";
 import { Sentry } from "~/integrations/sentry";
 import { Toasts } from "~/lib/toast.server";
 import { useUser } from "~/lib/utils";
 import { SessionService } from "~/services/session.server";
 import { APIResponseData } from "~/types/utils";
+
+const logger = createLogger("Routes.CourseCertificate");
 
 export async function loader(args: LoaderFunctionArgs) {
   const user = await SessionService.requireUser(args);
@@ -19,6 +22,7 @@ export async function loader(args: LoaderFunctionArgs) {
   const linkedCourse = await db.course.findUnique({ where: { host } });
 
   if (!linkedCourse) {
+    logger.error("Course not found", { host });
     return Toasts.redirectWithError("/preview", {
       message: "Error claiming certificate",
       description: "Please try again later.",
@@ -36,6 +40,14 @@ export async function loader(args: LoaderFunctionArgs) {
   });
 
   if (!userCourse) {
+    logger.warn("User does not have access to course", { userId: user.id, courseId: linkedCourse.id });
+    Sentry.captureMessage("User tried to claim certificate without having access to course", {
+      extra: {
+        user: { id: user.id, email: user.email },
+        course: { id: linkedCourse.id },
+      },
+      level: "warning",
+    });
     return Toasts.redirectWithError("/preview", {
       message: "No access to course",
       description: "Please purchase the course to access it.",
@@ -54,6 +66,7 @@ export async function action(args: ActionFunctionArgs) {
     const linkedCourse = await db.course.findUnique({ where: { host } });
 
     if (!linkedCourse) {
+      logger.error("Course not found", { host });
       return Toasts.redirectWithError("/preview", {
         message: "Error claiming certificate",
         description: "Please try again later.",
@@ -62,6 +75,10 @@ export async function action(args: ActionFunctionArgs) {
 
     const userHasAccess = user.courses.some((c) => c.courseId === linkedCourse.id);
     if (!userHasAccess) {
+      logger.warn("User tried to claim certificate without access to course", {
+        userId: user.id,
+        courseId: linkedCourse.id,
+      });
       return Toasts.redirectWithError("/preview", {
         message: "No access to course",
         description: "Please purchase the course to access it.",
@@ -69,22 +86,26 @@ export async function action(args: ActionFunctionArgs) {
     }
 
     // Verify all lessons and quizzes are completed
-    const course = await cms.findOne<APIResponseData<"api::course.course">>("courses", linkedCourse.strapiId, {
-      fields: ["title"],
-      populate: {
-        sections: {
-          fields: ["title"],
-          populate: {
-            quiz: {
-              fields: ["title"],
-            },
-            lessons: {
-              fields: ["title"],
+    const [course, progress, quizProgress] = await Promise.all([
+      cms.findOne<APIResponseData<"api::course.course">>("courses", linkedCourse.strapiId, {
+        fields: ["title"],
+        populate: {
+          sections: {
+            fields: ["title"],
+            populate: {
+              quiz: {
+                fields: ["title"],
+              },
+              lessons: {
+                fields: ["title"],
+              },
             },
           },
         },
-      },
-    });
+      }),
+      db.userLessonProgress.findMany({ where: { userId: user.id } }),
+      db.userQuizProgress.findMany({ where: { userId: user.id } }),
+    ]);
 
     const allLessonIds = course.data.attributes.sections
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
@@ -93,9 +114,6 @@ export async function action(args: ActionFunctionArgs) {
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     const allQuizIds = course.data.attributes.sections.flatMap((s) => s.quiz?.data?.id).filter(Boolean);
 
-    const progress = await db.userLessonProgress.findMany({ where: { userId: user.id } });
-    const quizProgress = await db.userQuizProgress.findMany({ where: { userId: user.id } });
-
     const allLessonProgress = progress.map((p) => p.lessonId);
     const allQuizProgress = quizProgress.map((p) => p.quizId);
 
@@ -103,6 +121,10 @@ export async function action(args: ActionFunctionArgs) {
     const allQuizzesCompleted = allQuizIds.every((id) => allQuizProgress.includes(id));
 
     if (!allLessonsCompleted || !allQuizzesCompleted) {
+      logger.warn("User tried to claim certificate without completing all lessons and quizzes", {
+        userId: user.id,
+        courseId: linkedCourse.id,
+      });
       Sentry.captureMessage("User tried to claim certificate without completing all lessons and quizzes", {
         extra: {
           user: { id: user.id, email: user.email },
@@ -123,9 +145,20 @@ export async function action(args: ActionFunctionArgs) {
     });
 
     if (!job.id) {
+      logger.error("Failed to initiate certificate generation job", {
+        userId: user.id,
+        courseId: linkedCourse.id,
+      });
       throw new Error("Failed to initiate certificate generation job.");
     }
 
+    logger.info("Certificate claim job initiated", {
+      userId: user.id,
+      courseId: linkedCourse.id,
+      jobId: job.id,
+    });
+
+    logger.info("Certificate successfully claimed", { userId: user.id, courseId: linkedCourse.id });
     return Toasts.dataWithSuccess(
       { success: true },
       {
@@ -135,7 +168,7 @@ export async function action(args: ActionFunctionArgs) {
       },
     );
   } catch (error) {
-    console.error(error);
+    logger.error("Error claiming certificate", { userId: user.id });
     Sentry.captureException(error);
     return Toasts.redirectWithError("/preview", {
       message: "Error claiming certificate",
@@ -155,7 +188,7 @@ export default function CourseCertificate() {
     <>
       <title>Certificate | {cmsCourse.attributes.title}</title>
       <PageTitle>Certificate</PageTitle>
-      {children}
+      <div className="mt-8">{children}</div>
     </>
   );
 
@@ -170,9 +203,7 @@ export default function CourseCertificate() {
   if (!isCourseComplete) {
     return (
       <Wrapper>
-        <p className="mt-8 rounded-md border border-destructive bg-destructive/5 p-4 text-destructive">
-          You must complete all lessons and quizzes before you can claim your certificate.
-        </p>
+        <ErrorText>You must complete all lessons and quizzes before you can claim your certificate.</ErrorText>
       </Wrapper>
     );
   }
@@ -180,12 +211,12 @@ export default function CourseCertificate() {
   if (!userHasVerifiedIdentity) {
     return (
       <Wrapper>
-        <div className="mt-8 rounded-md border border-destructive bg-destructive/5 p-4 text-destructive">
-          <p>You must verify your identity before you can claim your certificate for this course. </p>
+        <ErrorText>
+          <span>You must verify your identity before you can claim your certificate for this course. </span>
           <Link to="/account/identity" className="mt-2 block text-lg font-bold underline decoration-2">
             Verify Now
           </Link>
-        </div>
+        </ErrorText>
       </Wrapper>
     );
   }
@@ -193,7 +224,7 @@ export default function CourseCertificate() {
   if (userCourse.certificateClaimed && userCourse.certificateS3Key) {
     return (
       <Wrapper>
-        <p className="mt-8 rounded-md border border-success bg-success/5 p-4 text-success">
+        <SuccessText>
           You have claimed your certificate.{" "}
           <a
             className="mt-2 block text-lg font-bold underline decoration-2"
@@ -203,7 +234,7 @@ export default function CourseCertificate() {
           >
             Access it here.
           </a>
-        </p>
+        </SuccessText>
       </Wrapper>
     );
   }
@@ -211,27 +242,35 @@ export default function CourseCertificate() {
   if (actionData?.success) {
     return (
       <Wrapper>
-        <p className="mt-8 rounded-md border border-success bg-success/5 p-4 text-success">
+        <SuccessText>
           Thank you! Your certificate will be emailed to <span className="font-bold">{user.email}</span> shortly.
-        </p>
+        </SuccessText>
       </Wrapper>
     );
   }
 
   return (
     <Wrapper>
-      <p className="mt-8 rounded-md border border-success bg-success/5 p-4 text-success">
+      <SuccessText>
         Congratulations on successfully completing <span className="font-bold">{data.course.attributes.title}</span>!
         <br />
         <br />
         Click the button below to claim your certificate. It will be emailed to{" "}
         <span className="font-bold">{user.email}</span>.
-      </p>
+      </SuccessText>
       <Form className="mt-8" method="post">
         <SubmitButton className="sm:w-auto">Claim Certificate</SubmitButton>
       </Form>
     </Wrapper>
   );
+}
+
+function SuccessText({ children }: { children: React.ReactNode }) {
+  return <p className="rounded-md border border-success bg-success/5 p-4 text-success">{children}</p>;
+}
+
+function ErrorText({ children }: { children: React.ReactNode }) {
+  return <p className="rounded-md border border-destructive bg-destructive/5 p-4 text-destructive">{children}</p>;
 }
 
 export function ErrorBoundary() {
