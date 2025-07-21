@@ -186,7 +186,7 @@ export default function CourseCertificate() {
 
   const Wrapper = ({ children }: { children: React.ReactNode }) => (
     <>
-      <title>Certificate | {cmsCourse.attributes.title}</title>
+      <title>{`Certificate | ${cmsCourse.attributes.title}`}</title>
       <PageTitle>Certificate</PageTitle>
       <div className="mt-8">{children}</div>
     </>

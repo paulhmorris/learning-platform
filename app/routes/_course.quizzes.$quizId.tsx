@@ -130,9 +130,7 @@ export default function Quiz() {
 
   const Wrapper = ({ children }: { children: React.ReactNode }) => (
     <>
-      <title>
-        {quiz.attributes.title} | {course.attributes.title}
-      </title>
+      <title>{`${quiz.attributes.title} | ${course.attributes.title}`}</title>
       <PageTitle>{quiz.attributes.title}</PageTitle>
       <div className="mt-4">{children}</div>
     </>
