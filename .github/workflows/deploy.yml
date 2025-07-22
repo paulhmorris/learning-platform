@@ -22,7 +22,7 @@ jobs:
           cache: "npm"
       - run: npm ci --no-audit --no-fund
       - run: npm run typegen
-      - run: npm run lint
+      - run: npm run lint:ci
 
   # test:
   #   name: 🧪 Test

@@ -9,6 +9,7 @@
     "dev": "NODE_OPTIONS='--import ./instrument.server.mjs --trace-warnings' react-router dev",
     "format": "prettier --write .",
     "lint": "eslint . --cache",
+    "lint:ci": "eslint . --max-warnings=0",
     "ngrok": "ngrok http --domain=legally-sterling-crayfish.ngrok-free.app 3000 --host-header localhost:3000",
     "postinstall": "prisma generate --no-hints && patch-package",
     "prepare": "husky",
