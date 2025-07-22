@@ -1,3 +1,4 @@
+import { nanoid } from "nanoid";
 import { createCookieSessionStorage } from "react-router";
 import { createThemeAction, createThemeSessionResolver } from "remix-themes";
 
@@ -7,7 +8,7 @@ const themeSessionStorage = createCookieSessionStorage({
     httpOnly: false,
     path: "/",
     sameSite: "lax",
-    secrets: [process.env.SESSION_SECRET],
+    secrets: [nanoid(32)],
     secure: process.env.NODE_ENV === "production",
     maxAge: 60 * 60 * 24 * 365,
   },
