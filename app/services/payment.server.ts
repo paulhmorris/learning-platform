@@ -9,6 +9,12 @@ type CreateCustomerOptions = {
   metadata?: Record<string, string>;
 };
 
+type CreateCourseCheckoutSessionArgs = {
+  userId: string;
+  stripePriceId: string;
+  baseUrl: string;
+};
+
 export const PaymentService = {
   async createCustomer(userId: string, options: CreateCustomerOptions = {}) {
     try {
@@ -33,13 +39,10 @@ export const PaymentService = {
     }
   },
 
-  async createCourseCheckoutSession(userId: string, stripePriceId: string) {
+  async createCourseCheckoutSession({ userId, stripePriceId, baseUrl }: CreateCourseCheckoutSessionArgs) {
     try {
-      const success_url = new URL(
-        "/purchase?success=true&session_id={CHECKOUT_SESSION_ID}",
-        process.env.SITE_URL,
-      ).toString();
-      const cancel_url = new URL("/api/purchase?success=false", process.env.SITE_URL).toString();
+      const success_url = new URL("/purchase?success=true&session_id={CHECKOUT_SESSION_ID}", baseUrl).toString();
+      const cancel_url = new URL("/api/purchase?success=false", baseUrl).toString();
 
       const user = await UserService.getById(userId);
       let stripeCustomerId = user?.stripeId ?? undefined;

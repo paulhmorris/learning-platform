@@ -2,10 +2,6 @@
 import { z } from "zod/v4";
 
 const _serverEnvValidation = z.object({
-  // General
-  SESSION_SECRET: z.string().min(32),
-  SITE_URL: z.url(),
-
   // Clerk
   AUTH_DOMAIN: z.url(),
   CLERK_SECRET_KEY: z.string().min(1),

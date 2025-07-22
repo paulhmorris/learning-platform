@@ -64,7 +64,11 @@ export async function action(args: ActionFunctionArgs) {
     await PaymentService.createCustomer(user.id);
   }
 
-  const session = await PaymentService.createCourseCheckoutSession(user.id, course.stripePriceId);
+  const session = await PaymentService.createCourseCheckoutSession({
+    userId: user.id,
+    stripePriceId: course.stripePriceId,
+    baseUrl: url.origin,
+  });
   return redirect(session.url ?? "/", { status: 303 });
 }
 
