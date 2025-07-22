@@ -9,7 +9,7 @@ export default defineConfig({
   project: "proj_wkknrufxoeexxegqdcsz",
   build: {
     extensions: [prismaExtension({ schema: "prisma/schema.prisma" })],
-    external: ["@napi-rs/canvas"],
+    external: ["@napi-rs/canvas", "fsevents"],
   },
   // eslint-disable-next-line @typescript-eslint/require-await
   onFailure: async (_, error) => {
