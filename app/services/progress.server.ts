@@ -1,8 +1,11 @@
 import { UserLessonProgress } from "@prisma/client";
 
 import { db } from "~/integrations/db.server";
-import { redis } from "~/integrations/redis.server";
+import { createLogger } from "~/integrations/logger.server";
 import { SUBMIT_INTERVAL_MS } from "~/routes/api.lesson-progress";
+import { CacheKeys, CacheService } from "~/services/cache.server";
+
+const logger = createLogger("ProgressService");
 
 export const ProgressService = {
   async incrementProgress(userId: string, lessonId: number) {
@@ -11,13 +14,15 @@ export const ProgressService = {
       create: { userId, lessonId, durationInSeconds: SUBMIT_INTERVAL_MS / 1_000 },
       update: { durationInSeconds: { increment: SUBMIT_INTERVAL_MS / 1_000 } },
     });
-    await redis.set(`user-lesson-progress:${userId}:${lessonId}`, progress, { ex: 12 });
+    logger.info("Incremented progress", { userId, lessonId });
+    await CacheService.set(CacheKeys.progressLesson(userId, lessonId), progress, { ex: 12 });
     return progress;
   },
 
   async getByLessonId(userId: string, lessonId: number) {
-    const cachedProgress = await redis.get<UserLessonProgress>(`user-lesson-progress:${userId}:${lessonId}`);
+    const cachedProgress = await CacheService.get<UserLessonProgress>(CacheKeys.progressLesson(userId, lessonId));
     if (cachedProgress) {
+      logger.debug("Returning cached progress", { userId, lessonId });
       return cachedProgress;
     }
     const progress = await db.userLessonProgress.findUnique({
@@ -26,24 +31,29 @@ export const ProgressService = {
       },
     });
     if (progress) {
-      await redis.set<UserLessonProgress>(`user-lesson-progress:${userId}:${lessonId}`, progress, { ex: 12 });
+      await CacheService.set(CacheKeys.progressLesson(userId, lessonId), progress, { ex: 12 });
     }
+    logger.debug("Returning progress", { userId, lessonId });
     return progress;
   },
 
   async getAll(userId: string) {
+    logger.debug("Retrieving all lesson progress for user", { userId });
     return db.userLessonProgress.findMany({ where: { userId } });
   },
 
   async getAllQuiz(userId: string) {
+    logger.debug("Retrieving all quiz progress for user", { userId });
     return db.userQuizProgress.findMany({ where: { userId } });
   },
 
   async resetAll(userId: string) {
+    logger.info("Resetting all progress for user", { userId });
     return db.userLessonProgress.deleteMany({ where: { userId } });
   },
 
   async resetLesson(lessonId: number, userId: string) {
+    logger.info("Resetting lesson progress", { lessonId, userId });
     return db.userLessonProgress.delete({
       where: {
         userId_lessonId: { lessonId, userId },
@@ -57,6 +67,11 @@ export const ProgressService = {
     durationInSeconds: number;
     requiredDurationInSeconds: number;
   }) {
+    logger.debug("Updating progress", {
+      lessonId: data.lessonId,
+      userId: data.userId,
+      durationInSeconds: data.durationInSeconds,
+    });
     return db.userLessonProgress.upsert({
       where: {
         userId_lessonId: { userId: data.userId, lessonId: data.lessonId },
@@ -90,7 +105,8 @@ export const ProgressService = {
         isCompleted: true,
       },
     });
-    await redis.set<UserLessonProgress>(`user-lesson-progress:${data.userId}:${data.lessonId}`, progress, { ex: 12 });
+    await CacheService.set(CacheKeys.progressLesson(data.userId, data.lessonId), progress, { ex: 12 });
+    logger.info("Marked lesson as complete", { lessonId: data.lessonId, userId: data.userId });
     return progress;
   },
 };

@@ -1,6 +1,7 @@
-import { z } from "zod";
+import { z } from "zod/v4";
 
 export const CheckboxSchema = z
   .string()
   .transform((val) => val === "on")
-  .or(z.undefined());
+  .or(z.undefined())
+  .pipe(z.boolean());

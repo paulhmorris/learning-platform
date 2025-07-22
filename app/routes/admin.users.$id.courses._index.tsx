@@ -1,47 +1,51 @@
-import { Link, MetaFunction, useLoaderData } from "@remix-run/react";
-import { LoaderFunctionArgs, json } from "@vercel/remix";
+import { Link, LoaderFunctionArgs, useLoaderData } from "react-router";
 
 import { ErrorComponent } from "~/components/error-component";
 import { IconCertificate } from "~/components/icons";
 import { AdminButton } from "~/components/ui/admin-button";
 import { Button } from "~/components/ui/button";
 import { Card, CardFooter, CardHeader, CardTitle } from "~/components/ui/card";
+import { useAdminUserData } from "~/hooks/useAdminUserData";
 import { db } from "~/integrations/db.server";
-import { notFound, serverError } from "~/lib/responses.server";
+import { Responses } from "~/lib/responses.server";
 import { CourseService } from "~/services/course.server";
 import { SessionService } from "~/services/session.server";
 
-export const meta: MetaFunction = () => {
-  return [{ title: `User Courses | Plumb Media & Education` }];
-};
+export async function loader(args: LoaderFunctionArgs) {
+  await SessionService.requireAdmin(args);
 
-export async function loader({ request, params }: LoaderFunctionArgs) {
-  await SessionService.requireAdmin(request);
-
-  const userId = params.id;
-  if (!userId) {
-    throw notFound("User not found.");
+  const clerkId = args.params.id;
+  if (!clerkId) {
+    throw Responses.notFound();
   }
 
-  const user = await db.user.findUnique({
-    where: { id: userId },
-    include: {
-      courses: {
-        include: {
-          course: true,
+  const [user, cmsCourses] = await Promise.all([
+    db.user.findUnique({
+      where: { clerkId },
+      select: {
+        courses: {
+          select: {
+            id: true,
+            isCompleted: true,
+            completedAt: true,
+            certificateClaimed: true,
+            certificateS3Key: true,
+            createdAt: true,
+            course: {
+              select: {
+                id: true,
+                strapiId: true,
+              },
+            },
+          },
         },
       },
-    },
-  });
+    }),
+    CourseService.getAll(),
+  ]);
 
-  if (!user) {
-    throw notFound({ message: "User not found." });
-  }
-
-  const cmsCourses = await CourseService.getAll();
-
-  if (!cmsCourses.length) {
-    throw serverError("Failed to fetch courses");
+  if (!user || !cmsCourses.length) {
+    throw Responses.notFound();
   }
 
   const courses = user.courses.map((dbCourse) => {
@@ -53,19 +57,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     };
   });
 
-  return json({ user, courses });
+  return { courses };
 }
 
 export default function AdminUserCourses() {
-  const { user, courses } = useLoaderData<typeof loader>();
+  const { user: layoutUser } = useAdminUserData();
+  const { courses } = useLoaderData<typeof loader>();
+
   return (
     <>
+      <title>User Courses | Plumb Media & Education</title>
       <h1 className="sr-only">Courses</h1>
-      <p className="text-base">
-        {courses.length > 0
-          ? `${user.firstName} is enrolled in the following courses`
-          : `${user.firstName} is not currently enrolled in any courses`}
-      </p>
+      {courses.length === 0 ? (
+        <p className="text-base">{layoutUser.firstName} is not currently enrolled in any courses</p>
+      ) : null}
       <ul className="mt-4">
         {courses.map((course) => {
           return (
@@ -80,7 +85,7 @@ export default function AdminUserCourses() {
                 </CardHeader>
                 <CardFooter>
                   <Button variant="admin" asChild className="w-auto">
-                    <Link to={`/admin/users/${user.id}/courses/${course.id}`}>View Progress</Link>
+                    <Link to={`${course.id}`}>View Progress</Link>
                   </Button>
                   {/* certificate */}
                   {course.certificateClaimed ? (

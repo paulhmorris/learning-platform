@@ -1,21 +1,20 @@
-import { useLoaderData, useRevalidator } from "@remix-run/react";
 import { loadStripe, Stripe } from "@stripe/stripe-js";
 import { IconCircleCheckFilled, IconExclamationCircle, IconFileSearch } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
+import { useRevalidator } from "react-router";
 import { toast } from "sonner";
 
 import { AdminButton } from "~/components/ui/admin-button";
 import { Sentry } from "~/integrations/sentry";
 import { useUser } from "~/lib/utils";
-import { loader } from "~/routes/account.profile";
+import { VerificationSession } from "~/services/identity.server";
 
 const stripePromise = typeof window !== "undefined" ? loadStripe(window.ENV.STRIPE_PUBLIC_KEY) : null;
 
-export function IdentityVerification() {
+export function IdentityVerification({ session }: { session: VerificationSession | null }) {
   const user = useUser();
   const [submitted, setSubmitted] = useState(false);
   const [stripe, setStripe] = useState<Stripe | null>(null);
-  const { identitySession } = useLoaderData<typeof loader>();
   const revalidator = useRevalidator();
 
   useEffect(() => {
@@ -49,13 +48,13 @@ export function IdentityVerification() {
       Sentry.captureException(error);
       toast.error("An error occurred while trying to verify your identity.");
     } finally {
-      revalidator.revalidate();
+      void revalidator.revalidate();
     }
   }
 
-  const status = identitySession?.status;
-  const code = identitySession?.last_error?.code;
-  const errorReason = identitySession?.last_error?.reason;
+  const status = session?.status;
+  const code = session?.last_error?.code;
+  const errorReason = session?.last_error?.reason;
 
   if (user.isIdentityVerified || status === "verified") {
     return (
@@ -96,7 +95,7 @@ export function IdentityVerification() {
     );
   }
 
-  if (!identitySession || status === "requires_input") {
+  if (!session || status === "requires_input") {
     return (
       <Wrapper>
         <p className="mb-4 text-xs text-muted-foreground" id="verify-btn-description">
@@ -119,7 +118,7 @@ export function IdentityVerification() {
 
 function Wrapper({ children }: { children: React.ReactNode }) {
   return (
-    <div className="rounded-lg border px-4 py-2">
+    <div className="px-4 py-2">
       <h2 className="text-lg font-semibold">Identity Verification</h2>
       {children}
     </div>

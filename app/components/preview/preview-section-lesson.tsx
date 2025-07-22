@@ -1,6 +1,6 @@
 import { UserLessonProgress } from "@prisma/client";
-import { useParams } from "@remix-run/react";
 import React from "react";
+import { useParams } from "react-router";
 
 import { LessonLocked } from "~/components/preview/lesson-locked";
 import { PreviewCompleted } from "~/components/preview/preview-completed";
@@ -90,8 +90,8 @@ export function PreviewSectionLesson(props: SectionLessonProps) {
   }
 
   // Completed state
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  if (userProgress && userProgress.isCompleted) {
+
+  if (userProgress?.isCompleted) {
     return <PreviewCompleted lesson={lesson} />;
   }
 

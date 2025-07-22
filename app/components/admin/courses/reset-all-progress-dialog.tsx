@@ -1,6 +1,6 @@
-import { useFetcher } from "@remix-run/react";
 import { IconLoader } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
+import { useFetcher } from "react-router";
 
 import { AdminButton } from "~/components/ui/admin-button";
 import {
@@ -12,7 +12,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "~/components/ui/dialog";
-import { action } from "~/routes/admin.users.$id.courses.$courseId";
+import type { action } from "~/routes/admin.users.$id.courses.$courseId";
 
 export function ResetAllProgressDialog() {
   const fetcher = useFetcher<typeof action>();
@@ -20,7 +20,6 @@ export function ResetAllProgressDialog() {
   const [resetProgressModalOpen, setResetProgressModalOpen] = useState(false);
 
   useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (fetcher.data?.ok) {
       setResetProgressModalOpen(false);
     }

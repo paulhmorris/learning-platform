@@ -1,19 +1,28 @@
-import * as CheckboxPrimitive from "@radix-ui/react-checkbox";
-import { IconCurrencyDollar } from "@tabler/icons-react";
-import React, { useId } from "react";
-import { useField } from "remix-validated-form";
+import { FormScope, useField, ValueOfInputType } from "@rvf/react-router";
+import { IconCurrencyDollar, IconEye, IconEyeOff } from "@tabler/icons-react";
+import { ComponentPropsWithRef, forwardRef, JSX, useId, useState } from "react";
 
+import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
 import { Textarea } from "~/components/ui/textarea";
 import { cn } from "~/lib/utils";
 
-function FieldError({ id, error }: { id: string; error?: string }) {
+export function GenericFieldError({ error }: { error?: string | null }) {
   if (!error) return null;
   return (
-    <p id={`${id}-error`} className="ml-1 mt-1 text-xs font-medium text-destructive">
-      {error}
+    <p aria-live="polite" role="alert" className="ml-1 mt-1 text-xs font-medium text-destructive">
+      {error ? <span>{error}</span> : null}
+    </p>
+  );
+}
+
+function FieldError({ id, error }: { id: string; error?: string | null }) {
+  if (!error) return null;
+  return (
+    <p aria-live="polite" role="alert" id={`${id}-error`} className="ml-1 mt-1 text-xs font-medium text-destructive">
+      {error ? <span>{error}</span> : null}
     </p>
   );
 }
@@ -21,190 +30,220 @@ function FieldError({ id, error }: { id: string; error?: string }) {
 function FieldDescription({ id, description }: { id: string; description?: string }) {
   if (!description) return null;
   return (
-    <p id={`${id}-description`} className="mt-1 text-xs text-muted-foreground">
+    <p id={`${id}-description`} className="ml-1 mt-1 text-xs text-muted-foreground">
       {description}
     </p>
   );
 }
 
-interface FieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  name: string;
-  label: string;
-  description?: string;
-  isCurrency?: boolean;
-  formId?: string;
-  hideLabel?: boolean;
-}
-export function FormField({
-  isCurrency = false,
-  hideLabel = false,
-  name,
-  label,
-  formId,
-  className,
-  ...props
-}: FieldProps) {
-  const fallbackId = useId();
-  const { error, getInputProps } = useField(name, { formId });
-
-  const id = props.id ?? fallbackId;
-
+function LabelOptionalIndicator({ required, error }: { required?: boolean; error: string | null }) {
   return (
-    <div className={cn("relative w-full")}>
-      <Label
-        htmlFor={id}
-        className={cn(
-          hideLabel ? "sr-only" : "mb-1.5",
-          error && "text-destructive",
-          props.disabled && "cursor-not-allowed opacity-50",
-        )}
-      >
-        <span>{label}</span>
-        <span
-          className={cn(
-            "ml-1 inline-block font-normal",
-            props.required || error ? "text-destructive" : "text-muted-foreground/60",
-            !props.required && "text-xs",
-          )}
-        >
-          {props.required ? "*" : "(optional)"}
-        </span>
-      </Label>
-      <Input
-        id={id}
-        inputMode={isCurrency ? "decimal" : props.inputMode}
-        aria-invalid={error ? true : props["aria-invalid"]}
-        aria-describedby={`${id}-error`}
-        className={cn(error && "border-destructive focus-visible:ring-destructive/50", isCurrency && "pl-7", className)}
-        {...getInputProps()}
-        onBlur={(e) => {
-          if (isCurrency) {
-            const value = parseFloat(e.currentTarget.value);
-            if (isNaN(value)) {
-              e.currentTarget.value = "";
-            } else {
-              e.currentTarget.value = value.toFixed(2);
-            }
-          }
-          props.onBlur?.(e);
-        }}
-        {...props}
-      />
-      {isCurrency ? (
-        <span className="pointer-events-none absolute left-2 top-9 text-muted-foreground">
-          <IconCurrencyDollar className="h-4 w-4 text-muted-foreground" strokeWidth={2.5} />
-        </span>
-      ) : null}
-      <FieldDescription id={id} description={props.description} />
-      <FieldError id={id} error={error} />
-    </div>
+    <span className={cn(required || error ? "text-destructive" : "text-muted-foreground", !required && "text-xs")}>
+      {required ? "*" : "(optional)"}
+    </span>
   );
 }
-interface FormTextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
-  name: string;
+
+type BaseFieldProps = Omit<ComponentPropsWithRef<"input">, "type">;
+interface FieldProps<Type extends string> extends BaseFieldProps {
+  scope: FormScope<ValueOfInputType<Type> | null | undefined>;
   label: string;
+  type?: Type;
   description?: string;
-  formId?: string;
+  isCurrency?: boolean;
   hideLabel?: boolean;
 }
-export function FormTextarea({ hideLabel = false, name, label, formId, className, ...props }: FormTextareaProps) {
-  const fallbackId = useId();
-  const { error, getInputProps } = useField(name, { formId });
 
-  const id = props.id ?? fallbackId;
+export const FormField = forwardRef<HTMLInputElement, FieldProps<string>>(
+  ({ scope, label, className, description, hideLabel = false, isCurrency = false, type: _type, ...props }, ref) => {
+    const fallbackId = useId();
+    const field = useField(scope);
+    const [type, setType] = useState(_type);
+
+    const inputId = props.id ?? fallbackId;
+    const error = field.error();
+
+    return (
+      <div className={cn("relative w-full")}>
+        <div
+          className={cn(
+            "flex items-center gap-x-1 leading-4",
+            error && "text-destructive",
+            props.disabled && "cursor-not-allowed opacity-50",
+            hideLabel && "sr-only",
+          )}
+        >
+          <Label htmlFor={inputId}>{label}</Label>
+          <LabelOptionalIndicator required={props.required} error={error} />
+        </div>
+        <div className="relative mt-0.5">
+          <Input
+            {...field.getInputProps({
+              ref,
+              type,
+              id: inputId,
+              inputMode: isCurrency ? "decimal" : props.inputMode,
+              "aria-invalid": error ? true : props["aria-invalid"],
+              "aria-errormessage": error ? `${inputId}-error` : props["aria-errormessage"],
+              "aria-describedby": description ? `${inputId}-description` : props["aria-describedby"],
+              className: cn(isCurrency && "pl-7", _type === "password" && "pr-10", className),
+              onBlur: (e) => {
+                if (isCurrency) {
+                  const value = parseFloat(e.currentTarget.value);
+                  if (isNaN(value)) {
+                    e.currentTarget.value = "";
+                  } else {
+                    e.currentTarget.value = value.toFixed(2);
+                  }
+                }
+                props.onBlur?.(e);
+              },
+              ...props,
+            })}
+          />
+          {isCurrency ? (
+            <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2">
+              <IconCurrencyDollar className="size-4" strokeWidth={2.5} />
+            </span>
+          ) : null}
+          {_type === "password" ? (
+            <button
+              type="button"
+              className="focus:outline-hidden focus-visible:ring-3 absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer rounded p-2 text-xs transition hover:underline focus-visible:ring-primary/50"
+              onClick={() => setType((t) => (t === "password" ? "text" : "password"))}
+            >
+              {type === "password" ? (
+                <IconEyeOff className="size-5.5" aria-hidden="true" />
+              ) : (
+                <IconEye className="size-5.5" aria-hidden="true" />
+              )}
+              <span className="sr-only">{type === "password" ? "Show password" : "Hide password"}</span>
+            </button>
+          ) : null}
+        </div>
+        {error ? (
+          <FieldError id={inputId} error={error} />
+        ) : (
+          <FieldDescription id={inputId} description={description} />
+        )}
+      </div>
+    );
+  },
+);
+
+interface FormTextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+  scope: FormScope<string | null | undefined>;
+  label: string;
+  description?: string;
+  hideLabel?: boolean;
+}
+export function FormTextarea({ hideLabel = false, scope, label, className, description, ...props }: FormTextareaProps) {
+  const fallbackId = useId();
+  const field = useField(scope);
+  const error = field.error();
+  const inputId = props.id ?? fallbackId;
 
   return (
     <div className={cn("relative w-full")}>
-      <Label
-        htmlFor={id}
+      <div
         className={cn(
-          hideLabel ? "sr-only" : "mb-1.5",
+          "flex items-center gap-x-1 leading-4",
           error && "text-destructive",
           props.disabled && "cursor-not-allowed opacity-50",
+          hideLabel && "sr-only",
         )}
       >
-        <span>{label}</span>
-        <span
-          className={cn(
-            "ml-1 inline-block font-normal",
-            props.required ? "text-destructive" : "text-xs text-muted-foreground/60",
-          )}
-        >
-          {props.required ? "*" : "(optional)"}
-        </span>
-      </Label>
-      <Textarea
-        id={id}
-        aria-invalid={error ? true : props["aria-invalid"]}
-        aria-describedby={`${id}-error`}
-        className={cn(error && "border-destructive focus-visible:ring-destructive/50", className)}
-        {...getInputProps()}
-        {...props}
-      />
-      <FieldDescription id={id} description={props.description} />
-      <FieldError id={id} error={error} />
+        <Label htmlFor={inputId}>{label}</Label>
+        <LabelOptionalIndicator required={props.required} error={error} />
+      </div>
+      <div className="mt-0.5">
+        <Textarea
+          {...field.getInputProps({
+            id: inputId,
+            "aria-invalid": error ? true : props["aria-invalid"],
+            "aria-errormessage": error ? `${inputId}-error` : props["aria-errormessage"],
+            "aria-describedby": description ? `${inputId}-description` : props["aria-describedby"],
+            className: cn(className),
+            ...props,
+          })}
+        />
+      </div>
+      {error ? <FieldError id={inputId} error={error} /> : <FieldDescription id={inputId} description={description} />}
     </div>
   );
 }
 
 export interface FormSelectProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  name: string;
+  scope: FormScope<string | number | null | undefined>;
   label: string;
   placeholder: string;
   description?: string;
   required?: boolean;
-  id?: string;
-  options?: Array<{ value: string | number | null; label: string | JSX.Element | null }>;
+  options?: Array<{ value: string | number | null; label: string | JSX.Element | null; disabled?: boolean }>;
   hideLabel?: boolean;
   divProps?: React.HTMLAttributes<HTMLDivElement>;
   children?: React.ReactNode;
 }
 
 export function FormSelect(props: FormSelectProps) {
-  const { name, label, placeholder, options, hideLabel, divProps, ...rest } = props;
-  const { error, getInputProps } = useField(name);
-  const { onChange, ...field } = getInputProps({});
-  const fallbackId = useId();
-  const id = props.id ?? fallbackId;
+  const { scope, label, placeholder, options, hideLabel, divProps, ...rest } = props;
+  const field = useField(scope);
+  const selectId = useId();
+  const { onChange, name, ...input } = field.getControlProps();
+  const error = field.error();
 
   return (
     <div {...divProps} className={cn("relative w-full", divProps?.className)}>
-      <Label
-        htmlFor={id}
+      <div
         className={cn(
-          hideLabel ? "sr-only" : "mb-1",
+          "flex items-center gap-x-1 leading-4",
           error && "text-destructive",
           props.disabled && "cursor-not-allowed opacity-50",
+          hideLabel && "sr-only",
         )}
       >
-        <span>{label}</span>
-        <span
-          className={cn(
-            "ml-1 inline-block font-normal",
-            props.required ? "text-destructive" : "text-xs text-muted-foreground/60",
-          )}
-        >
-          {props.required ? "*" : "(optional)"}
-        </span>
-      </Label>
-      <Select {...field} onValueChange={onChange}>
+        <Label htmlFor={selectId}>{label}</Label>
+        <LabelOptionalIndicator required={props.required} error={error} />
+      </div>
+      <input type="hidden" name={name} value={input.value?.toString()} />
+      <Select
+        {...input}
+        value={String(input.value)}
+        onValueChange={(v) => {
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+          if (v === undefined || v === "undefined") {
+            onChange("");
+          } else {
+            onChange(v);
+          }
+        }}
+      >
         <SelectTrigger
-          id={id}
+          id={selectId}
           {...rest}
-          className={cn(error && "border-destructive focus-visible:ring-destructive/50", rest.className)}
+          aria-label={placeholder}
+          className={cn(
+            "mt-0.5",
+            error && "border-destructive ring-destructive/20 dark:ring-destructive/40",
+            rest.className,
+          )}
         >
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent>
           {options && options.length === 0 ? (
             // @ts-expect-error see https://github.com/radix-ui/primitives/issues/1569#issuecomment-1567414323
-            <SelectItem value={null} disabled>
+            <SelectItem key={`${selectId}-no-options`} value={undefined} disabled>
               No options
             </SelectItem>
           ) : (
             !props.required && (
-              // @ts-expect-error see https://github.com/radix-ui/primitives/issues/1569#issuecomment-1567414323
-              <SelectItem value={null} className="text-muted-foreground/60 focus:text-muted-foreground/60">
+              <SelectItem
+                key={`${selectId}-undefined-option`}
+                // @ts-expect-error see https://github.com/radix-ui/primitives/issues/1569#issuecomment-1567414323
+                value={undefined}
+                className="text-muted-foreground/60 focus:text-muted-foreground/60"
+              >
                 {placeholder}
               </SelectItem>
             )
@@ -214,46 +253,67 @@ export function FormSelect(props: FormSelectProps) {
                 if (o.value === null || o.label === null) return null;
 
                 return (
-                  <SelectItem key={o.value} value={o.value.toString()}>
+                  <SelectItem
+                    disabled={o.disabled}
+                    key={`${selectId}-${o.value.toString()}`}
+                    value={o.value.toString()}
+                  >
                     {o.label}
                   </SelectItem>
                 );
               })
             : props.children}
         </SelectContent>
-        <FieldDescription id={id} description={props.description} />
-        <FieldError id={id} error={error} />
+        {error ? (
+          <FieldError id={selectId} error={error} />
+        ) : (
+          <FieldDescription id={selectId} description={props.description} />
+        )}
       </Select>
     </div>
   );
 }
 
-export const Checkbox = React.forwardRef<
-  React.ElementRef<typeof CheckboxPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root>
->(({ className, ...props }, ref) => (
-  <CheckboxPrimitive.Root
-    ref={ref}
-    className={cn(
-      "peer h-5 w-5 shrink-0 cursor-pointer rounded-[3px] border border-muted-foreground/50 ring-offset-background transition duration-75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-      "data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground contrast-more:border-2 contrast-more:border-black data-[state=checked]:contrast-more:border-black dark:contrast-more:border-white dark:data-[state=checked]:contrast-more:border-primary",
-      className,
-    )}
-    {...props}
-  >
-    <CheckboxPrimitive.Indicator className={cn("flex items-center justify-center text-current")}>
-      <svg
-        viewBox="0 0 16 16"
-        stroke="currentColor"
-        fill="currentColor"
-        strokeWidth="1"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path d="M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z" />
-      </svg>
-    </CheckboxPrimitive.Indicator>
-  </CheckboxPrimitive.Root>
-));
-Checkbox.displayName = CheckboxPrimitive.Root.displayName;
+export function FormCheckbox({
+  scope,
+  label,
+  description,
+}: {
+  scope: FormScope<boolean | string | null | undefined>;
+  label: string;
+  description?: string;
+}) {
+  const field = useField(scope);
+  const inputId = useId();
+  const error = field.error();
+
+  const { value, onChange, ref } = field.getControlProps();
+
+  return (
+    <div>
+      <Label className="inline-flex cursor-pointer items-center gap-2">
+        <Checkbox ref={ref} checked={!!value} onCheckedChange={onChange} />
+        <span>{label}</span>
+      </Label>
+      <FieldDescription id={inputId} description={description} />
+      <FieldError id={inputId} error={error} />
+    </div>
+  );
+}
+
+export function UncontrolledCheckbox({
+  label,
+  description,
+  ...rest
+}: ComponentPropsWithRef<typeof Checkbox> & { label: string; description?: string }) {
+  const inputId = useId();
+  return (
+    <div>
+      <Label className="inline-flex cursor-pointer items-center gap-x-2">
+        <Checkbox {...rest} />
+        <span>{label}</span>
+      </Label>
+      <FieldDescription id={inputId} description={description} />
+    </div>
+  );
+}

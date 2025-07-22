@@ -1,5 +1,6 @@
+import { SignOutButton } from "@clerk/react-router";
 import { UserRole } from "@prisma/client";
-import { Link, useMatches } from "@remix-run/react";
+import { Link, useMatches } from "react-router";
 
 import { IconAvatar } from "~/components/icons";
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
@@ -13,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import { useRootData } from "~/hooks/useRootData";
+import { Sentry } from "~/integrations/sentry";
 import { useOptionalUser } from "~/lib/utils";
 
 export function UserMenu() {
@@ -70,7 +72,7 @@ export function UserMenu() {
               </DropdownMenuItem>
             ) : null}
             <DropdownMenuItem asChild>
-              <Link className="cursor-pointer" to="/account/profile">
+              <Link className="cursor-pointer" to="/account">
                 Account
               </Link>
             </DropdownMenuItem>
@@ -84,9 +86,11 @@ export function UserMenu() {
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuItem className="px-0 py-0">
-            <form className="w-full" method="post" action="/logout">
-              <button className="w-full px-2 py-1.5 text-left">Log out</button>
-            </form>
+            <SignOutButton>
+              <button onClick={() => Sentry.setUser(null)} className="w-full cursor-pointer px-2 py-1.5 text-left">
+                Log out
+              </button>
+            </SignOutButton>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

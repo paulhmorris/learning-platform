@@ -1,6 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unnecessary-condition */
-import { Link, useLocation } from "@remix-run/react";
 import { IconCertificate } from "@tabler/icons-react";
+import { Link, useLocation } from "react-router";
 
 import {
   Section,

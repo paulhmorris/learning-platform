@@ -77,7 +77,7 @@ export function SectionLesson(props: SectionLessonProps) {
   }
 
   // Completed state
-  if (userProgress && userProgress.isCompleted) {
+  if (userProgress?.isCompleted) {
     return <SectionLessonCompleted lesson={lesson} />;
   }
 

@@ -1,4 +1,4 @@
-import { Link, NavLink, NavLinkProps } from "@remix-run/react";
+import { Link, NavLink, NavLinkProps } from "react-router";
 
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";

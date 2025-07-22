@@ -1,30 +1,26 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
-import { Link, useLocation, useMatches, useRouteLoaderData } from "@remix-run/react";
+import { Link, useMatches, useRouteLoaderData } from "react-router";
 import { Theme, useTheme } from "remix-themes";
 
 import { ThemeModeToggle } from "~/components/theme-mode-toggle";
 import { Button } from "~/components/ui/button";
 import { UserMenu } from "~/components/user-menu";
 import { useOptionalUser } from "~/lib/utils";
-import { loader } from "~/root";
+import type { loader } from "~/root";
 
 export function Header() {
   const [theme] = useTheme();
   const user = useOptionalUser();
   const rootData = useRouteLoaderData<typeof loader>("root");
-  const location = useLocation();
   const matches = useMatches();
-
-  if (["join", "login", "passwords"].includes(location.pathname.split("/")[1])) {
-    return null;
-  }
 
   const course = rootData?.course?.data?.attributes;
   const courseLogoUrl =
     theme === Theme.LIGHT ? course?.logo?.data?.attributes?.url : course?.dark_mode_logo?.data?.attributes?.url;
   const courseTitle = course?.title;
   const shouldShowGoToCourse =
-    matches.findIndex((m) => m.id.includes("$lessonSlug") || m.id.includes("preview")) === -1;
+    matches.findIndex((m) => m.id.includes("$lessonSlug") || m.id.includes("$quizId") || m.id.includes("preview")) ===
+    -1;
 
   return (
     <>

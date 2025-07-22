@@ -1,19 +1,16 @@
-/* eslint-disable no-console */
-/* eslint-disable @typescript-eslint/no-unnecessary-condition */
-import { Pool, neonConfig } from "@neondatabase/serverless";
+import { neonConfig } from "@neondatabase/serverless";
 import { PrismaNeon } from "@prisma/adapter-neon";
 import { PrismaClient } from "@prisma/client";
 import invariant from "tiny-invariant";
 import ws from "ws";
 
-const singleton = <Value>(name: string, valueFactory: () => Value): Value => {
+export const singleton = <Value>(name: string, valueFactory: () => Value): Value => {
   const g = global as unknown as { __singletons: Record<string, unknown> };
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   g.__singletons ??= {};
   g.__singletons[name] ??= valueFactory();
   return g.__singletons[name] as Value;
 };
-
-const db = singleton("prisma", getPrismaClient);
 
 function getPrismaClient() {
   const { DATABASE_URL } = process.env;
@@ -29,15 +26,19 @@ function getPrismaClient() {
       },
     });
     void client.$connect();
+
     return client;
   }
 
   neonConfig.webSocketConstructor = ws;
-  const pool = new Pool({ connectionString: DATABASE_URL, ...neonConfig });
-  const adapter = new PrismaNeon(pool);
-  const client = new PrismaClient({ adapter });
-  void client.$connect();
+  const adapter = new PrismaNeon({ connectionString: `${DATABASE_URL}` });
+  const client = new PrismaClient({
+    adapter,
+  });
   return client;
 }
+
+// Hard-code a unique key, so we can look up the client when this module gets re-imported
+const db = singleton("prisma", getPrismaClient);
 
 export { db };

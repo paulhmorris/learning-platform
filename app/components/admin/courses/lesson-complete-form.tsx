@@ -1,8 +1,8 @@
-import { useFetcher, useFetchers } from "@remix-run/react";
 import { IconLoader } from "@tabler/icons-react";
+import { useFetcher, useFetchers } from "react-router";
 
 import { AdminButton } from "~/components/ui/admin-button";
-import { loader } from "~/routes/admin.users.$id.courses.$courseId";
+import type { loader } from "~/routes/admin.users.$id.courses.$courseId";
 
 export function LessonCompleteForm(props: {
   lesson: { id: number; attributes: { required_duration_in_seconds?: number } };
@@ -25,14 +25,14 @@ export function LessonCompleteForm(props: {
       <input
         type="hidden"
         name="requiredDurationInSeconds"
-        value={lesson.attributes.required_duration_in_seconds || 0}
+        value={lesson.attributes.required_duration_in_seconds ?? 0}
       />
       <AdminButton
         variant="secondary"
         type="submit"
         name="_action"
         value="complete-lesson"
-        disabled={progress?.isCompleted || isBeingUpdated}
+        disabled={progress?.isCompleted ?? isBeingUpdated}
         className="hover:bg-primary hover:text-white dark:hover:text-black"
       >
         {isBeingUpdated ? <IconLoader className="size-4 animate-spin" /> : null}

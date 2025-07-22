@@ -1,119 +1,48 @@
-import bcrypt from "bcryptjs";
-import { customAlphabet } from "nanoid";
+import { clerkClient as client } from "~/integrations/clerk.server";
+import { createLogger } from "~/integrations/logger.server";
+import { Sentry } from "~/integrations/sentry";
 
-import { db } from "~/integrations/db.server";
-import { UserService } from "~/services/user.server";
+const logger = createLogger("AuthService");
 
-class Service {
-  public hashPassword(password: string) {
-    return bcrypt.hash(password, 10);
-  }
-
-  public compare(password: string, hash: string) {
-    return bcrypt.compare(password, hash);
-  }
-
-  public async verifyLogin(email: string, password: string) {
-    const userWithPassword = await UserService.getByEmailWithPassword(email);
-    if (!userWithPassword || !userWithPassword.password) {
-      return null;
+export const AuthService = {
+  async getUserList(args: Parameters<typeof client.users.getUserList>[0] = {}) {
+    try {
+      return client.users.getUserList(args);
+    } catch (error) {
+      Sentry.captureException(error);
+      logger.error("Failed to get user list", { error, args });
+      throw error;
     }
+  },
 
-    const isValid = await bcrypt.compare(password, userWithPassword.password.hash);
-
-    if (!isValid) {
-      return null;
+  async getInvitationsByEmail(email: string) {
+    try {
+      const { data } = await client.invitations.getInvitationList({ query: email });
+      return data;
+    } catch (error) {
+      Sentry.captureException(error);
+      logger.error("Failed to get invitations by email", { error, email });
+      throw error;
     }
+  },
 
-    const { password: _password, ...userWithoutPassword } = userWithPassword;
+  async revokeSession(sessionId: string) {
+    try {
+      return client.sessions.revokeSession(sessionId);
+    } catch (error) {
+      Sentry.captureException(error);
+      logger.error("Failed to revoke session", { error, sessionId });
+      throw error;
+    }
+  },
 
-    return userWithoutPassword;
-  }
-
-  public async generateReset(email: string) {
-    const user = await db.user.findUniqueOrThrow({ where: { email } });
-    const reset = await db.passwordReset.create({
-      data: {
-        expiresAt: new Date(Date.now() + 15 * 60 * 1000),
-        user: { connect: { id: user.id } },
-      },
-      select: { id: true, token: true },
-    });
-    return reset;
-  }
-
-  public async getResetByToken(token: string) {
-    const reset = await db.passwordReset.findUnique({
-      where: { token },
-      select: {
-        token: true,
-        userId: true,
-        expiresAt: true,
-      },
-    });
-    return reset;
-  }
-
-  public async getResetByUserId(userId: string) {
-    const reset = await db.passwordReset.findFirst({
-      where: { userId, expiresAt: { gte: new Date() } },
-    });
-    return reset;
-  }
-
-  public async expireReset(token: string) {
-    const reset = await db.passwordReset.updateMany({
-      where: { token },
-      data: { expiresAt: new Date(0), usedAt: new Date() },
-    });
-    return reset;
-  }
-
-  public async deleteReset(id: string) {
-    const reset = await db.passwordReset.delete({ where: { id }, select: {} });
-    return reset;
-  }
-
-  public async generateVerificationById(userId: string) {
-    const token = customAlphabet("1234567890", 6)();
-    const verification = await db.userVerification.upsert({
-      where: { userId },
-      create: {
-        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-        token,
-        user: {
-          connect: { id: userId },
-        },
-      },
-      update: {
-        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-        token,
-      },
-      select: {
-        token: true,
-        user: {
-          select: {
-            id: true,
-            email: true,
-          },
-        },
-      },
-    });
-    return verification;
-  }
-
-  public async generateVerificationByEmail(email: string) {
-    const user = await db.user.findUniqueOrThrow({ where: { email } });
-    const verification = await this.generateVerificationById(user.id);
-    return verification;
-  }
-
-  public async getVerificationByUserId(userId: string) {
-    const verification = await db.userVerification.findUnique({
-      where: { userId, expiresAt: { gte: new Date() } },
-    });
-    return verification;
-  }
-}
-
-export const AuthService = new Service();
+  async saveExternalId(clerkId: string, externalId: string) {
+    try {
+      return client.users.updateUser(clerkId, { externalId });
+    } catch (error) {
+      Sentry.captureException(error);
+      logger.error("Failed to save external ID", { error, clerkId, externalId });
+      throw error;
+    }
+  },
+};

@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
-import { Outlet, useLoaderData, useParams } from "@remix-run/react";
-import { json, LoaderFunctionArgs } from "@vercel/remix";
 import { useState } from "react";
+import { LoaderFunctionArgs, Outlet, useLoaderData, useParams } from "react-router";
 import { useIsClient, useMediaQuery } from "usehooks-ts";
 
 import { BackLink } from "~/components/common/back-link";
+import { ErrorComponent } from "~/components/error-component";
 import { Section, SectionHeader } from "~/components/section";
 import { SectionCertificate } from "~/components/section/section-certificate";
 import { CourseProgressBar } from "~/components/sidebar/course-progress-bar";
@@ -17,27 +17,25 @@ import { cn, getCourseLayoutValues, getLessonsInOrder } from "~/lib/utils";
 import { CourseService } from "~/services/course.server";
 import { ProgressService } from "~/services/progress.server";
 import { SessionService } from "~/services/session.server";
-import { APIResponseData } from "~/types/utils";
 
-export async function loader({ request }: LoaderFunctionArgs) {
-  const user = await SessionService.requireUser(request);
+export async function loader(args: LoaderFunctionArgs) {
+  const user = await SessionService.requireUser(args);
 
   try {
-    const { host } = new URL(request.url);
+    const { host } = new URL(args.request.url);
     const linkedCourse = await CourseService.getByHost(host);
 
     if (!linkedCourse) {
       return Toasts.redirectWithError("/preview", {
-        title: "Course not found",
+        message: "Course not found",
         description: "Please try again later",
       });
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    const userHasAccess = user.courses && user.courses.some((c) => c.courseId === linkedCourse.id);
+    const userHasAccess = user?.courses.some((c) => c.courseId === linkedCourse.id);
     if (!userHasAccess) {
       return Toasts.redirectWithError("/preview", {
-        title: "No access to course",
+        message: "No access to course",
         description: "Please purchase the course to access it.",
       });
     }
@@ -46,7 +44,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
     if (!course) {
       return Toasts.redirectWithError("/preview", {
-        title: "Failed to load course",
+        message: "Failed to load course",
         description: "Please try again later",
       });
     }
@@ -58,12 +56,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
     const lessons = getLessonsInOrder({ course, progress: lessonProgress });
 
-    return json({ course: course.data, lessonProgress, lessons, quizProgress, userHasAccess });
+    return { course: course.data, lessonProgress, lessons, quizProgress, userHasAccess };
   } catch (error) {
     console.error(error);
     Sentry.captureException(error);
     return Toasts.redirectWithError("/preview", {
-      title: "Failed to load course",
+      message: "Failed to load course",
       description: "Please try again later",
     });
   }
@@ -133,7 +131,7 @@ export default function CourseLayout() {
               })
               .map((section, section_index) => {
                 const durationInSeconds = section.lessons?.data.reduce(
-                  (acc, curr) => Math.ceil((curr.attributes.required_duration_in_seconds || 0) + acc),
+                  (acc, curr) => Math.ceil((curr.attributes.required_duration_in_seconds ?? 0) + acc),
                   0,
                 );
 
@@ -143,7 +141,7 @@ export default function CourseLayout() {
                 return (
                   <li key={`section-${section.id}`} data-sectionid={section.id}>
                     <Section className={cn(isCollapsed && "pb-16")}>
-                      <SectionHeader sectionTitle={section.title} durationInMinutes={(durationInSeconds || 0) / 60} />
+                      <SectionHeader sectionTitle={section.title} durationInMinutes={(durationInSeconds ?? 0) / 60} />
                       <Separator className={cn(isCollapsed ? "my-2 bg-transparent" : "my-4")} />
                       <ul className="flex flex-col gap-6">
                         {section.lessons?.data
@@ -169,20 +167,19 @@ export default function CourseLayout() {
                               section_index > 0 ? course.attributes.sections[section_index - 1] : null;
                             const previousSectionQuiz = previousSection?.quiz;
                             const previousSectionQuizIsCompleted = quizProgress.find(
-                              // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
                               (p) => p.isCompleted && p.quizId === previousSectionQuiz?.data?.id,
                             );
 
                             const previousLessonIsCompleted = lessons[lastCompletedLessonIndex]?.isCompleted;
                             const isLessonLocked =
-                              (lessonIndex > 0 && !previousLessonIsCompleted) || // Previous lesson is not completed
-                              (previousSectionQuiz?.data && !previousSectionQuizIsCompleted) || // Previous section quiz is not completed
+                              (lessonIndex > 0 && !previousLessonIsCompleted) ?? // Previous lesson is not completed
+                              (previousSectionQuiz?.data && !previousSectionQuizIsCompleted) ?? // Previous section quiz is not completed
                               (!isCourseCompleted && lessonIndex > lastCompletedLessonIndex + 1); // Course is not completed and lesson index is greater than last completed lesson index + 1
 
                             return (
                               <SectionLesson
                                 key={l.attributes.uuid}
-                                lesson={l as APIResponseData<"api::lesson.lesson">}
+                                lesson={l}
                                 userProgress={lessonProgress.find((lp) => lp.lessonId === l.id) ?? null}
                                 locked={isLessonLocked}
                               />
@@ -190,7 +187,7 @@ export default function CourseLayout() {
                           })}
                         {section.quiz?.data && shouldShowQuizInSection ? (
                           <SectionQuiz
-                            quiz={section.quiz.data as APIResponseData<"api::quiz.quiz">}
+                            quiz={section.quiz.data}
                             userProgress={quizProgress.find((qp) => qp.quizId === section.quiz?.data.id) ?? null}
                             locked={isQuizLocked}
                           />
@@ -222,4 +219,8 @@ export default function CourseLayout() {
       </div>
     </>
   );
+}
+
+export function ErrorBoundary() {
+  return <ErrorComponent />;
 }

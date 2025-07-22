@@ -1,52 +1,14 @@
 import { User, UserLessonProgress, UserQuizProgress } from "@prisma/client";
-import { SerializeFrom } from "@remix-run/node";
-import { Params, useMatches, useRouteLoaderData } from "@remix-run/react";
 import type { Attribute } from "@strapi/strapi";
-import clsx, { ClassValue } from "clsx";
-import { useMemo } from "react";
+import { ClassValue, clsx } from "clsx";
+import { Params, useRouteLoaderData } from "react-router";
 import { StrapiResponse } from "strapi-sdk-js";
 import { twMerge } from "tailwind-merge";
 
 import { IconCameraFilled, IconClipboard } from "~/components/icons";
-import { loader } from "~/root";
+import type { loader } from "~/root";
 import { LessonInOrder } from "~/routes/preview";
 import { APIResponseData } from "~/types/utils";
-
-const DEFAULT_REDIRECT = "/";
-
-/**
- * This should be used any time the redirect path is user-provided
- * (Like the query string on our login/signup pages). This avoids
- * open-redirect vulnerabilities.
- * @param {string} to The redirect destination
- * @param {string} defaultRedirect The redirect to use if the to is unsafe.
- */
-export function safeRedirect(
-  to: FormDataEntryValue | string | null | undefined,
-  defaultRedirect: string = DEFAULT_REDIRECT,
-) {
-  if (!to || typeof to !== "string") {
-    return defaultRedirect;
-  }
-
-  if (!to.startsWith("/") || to.startsWith("//")) {
-    return defaultRedirect;
-  }
-
-  return to;
-}
-
-/**
- * This base hook is used in other hooks to quickly search for specific data
- * across all loader data using useMatches.
- * @param {string} id The route id
- * @returns {JSON|undefined} The router data or undefined if not found
- */
-export function useMatchesData(id: string): Record<string, unknown> | undefined {
-  const matchingRoutes = useMatches();
-  const route = useMemo(() => matchingRoutes.find((route) => route.id === id), [matchingRoutes, id]);
-  return route?.data as Record<string, unknown>;
-}
 
 function isUser(user: unknown): user is User {
   return user != null && typeof user === "object" && "email" in user && typeof user.email === "string";
@@ -60,7 +22,7 @@ export function useOptionalUser() {
   return data.user;
 }
 
-export function useUser(): NonNullable<SerializeFrom<typeof loader>["user"]> {
+export function useUser(): NonNullable<Awaited<ReturnType<typeof loader>>["data"]["user"]> {
   const maybeUser = useOptionalUser();
   if (!maybeUser) {
     throw new Error(
@@ -68,10 +30,6 @@ export function useUser(): NonNullable<SerializeFrom<typeof loader>["user"]> {
     );
   }
   return maybeUser;
-}
-
-export function validateEmail(email: unknown): email is string {
-  return typeof email === "string" && email.length > 3 && email.includes("@");
 }
 
 export function cn(...inputs: Array<ClassValue>) {
@@ -189,7 +147,7 @@ export function getLessonAttributes(lesson: APIResponseData<"api::lesson.lesson"
   const isTimed =
     typeof lesson.attributes.required_duration_in_seconds !== "undefined" &&
     lesson.attributes.required_duration_in_seconds > 0;
-  const durationInMinutes = isTimed ? Math.ceil((lesson.attributes.required_duration_in_seconds || 0) / 60) : 0;
+  const durationInMinutes = isTimed ? Math.ceil((lesson.attributes.required_duration_in_seconds ?? 0) / 60) : 0;
   const Icon = hasVideo ? IconCameraFilled : IconClipboard;
 
   return { hasVideo, isTimed, durationInMinutes, Icon, title: lesson.attributes.title, slug: lesson.attributes.slug };
@@ -198,8 +156,8 @@ export function getLessonAttributes(lesson: APIResponseData<"api::lesson.lesson"
 interface GetPreviewValueArgs {
   lessons: Array<LessonInOrder>;
   course: APIResponseData<"api::course.course">;
-  quizProgress: SerializeFrom<Array<UserQuizProgress>>;
-  lessonProgress: SerializeFrom<Array<UserLessonProgress>>;
+  quizProgress: Array<UserQuizProgress>;
+  lessonProgress: Array<UserLessonProgress>;
 }
 type GetPreviewValuesReturn = {
   nextQuiz: APIResponseData<"api::quiz.quiz"> | null;
@@ -215,7 +173,7 @@ export function getPreviewValues(data: GetPreviewValueArgs): GetPreviewValuesRet
   const cacheKey = JSON.stringify(data);
 
   if (getPreviewValuesCache.has(cacheKey)) {
-    return getPreviewValuesCache.get(cacheKey) as GetPreviewValuesReturn;
+    return getPreviewValuesCache.get(cacheKey)!;
   }
 
   const { lessons, course, quizProgress, lessonProgress } = data;
@@ -249,9 +207,7 @@ export function getPreviewValues(data: GetPreviewValueArgs): GetPreviewValuesRet
 
   const totalQuizDurationInSeconds = course.attributes.sections.reduce((acc, curr) => {
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    const quizDuration = curr.quiz?.data?.attributes.required_duration_in_seconds
-      ? curr.quiz.data.attributes.required_duration_in_seconds
-      : 0;
+    const quizDuration = curr.quiz?.data?.attributes.required_duration_in_seconds ?? 0;
     return acc + quizDuration;
   }, 0);
 
@@ -260,8 +216,7 @@ export function getPreviewValues(data: GetPreviewValueArgs): GetPreviewValuesRet
     ? lessonProgress.reduce((acc, curr) => acc + (curr.durationInSeconds ?? 0), 0)
     : completedLessonCount + completedQuizCount;
   const totalLessonDurationInSeconds = courseIsTimed
-    ? // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-      lessons.reduce((acc, curr) => acc + (curr.requiredDurationInSeconds ?? 0), 0)
+    ? lessons.reduce((acc, curr) => acc + (curr.requiredDurationInSeconds ?? 0), 0)
     : numberOfLessons + numberOfQuizzes;
 
   const result = {
@@ -288,8 +243,8 @@ type GetCourseLayoutReturn = {
   activeSection?: APIResponseData<"api::course.course">["attributes"]["sections"][number];
   courseIsTimed: boolean;
   isCourseCompleted: boolean;
-  activeQuizProgress: SerializeFrom<UserQuizProgress> | undefined;
-  activeLessonProgress: SerializeFrom<UserLessonProgress> | undefined;
+  activeQuizProgress: UserQuizProgress | undefined;
+  activeLessonProgress: UserLessonProgress | undefined;
   totalProgressInSeconds: number;
   totalDurationInSeconds: number;
   lastCompletedLessonIndex: number;
@@ -300,7 +255,7 @@ export function getCourseLayoutValues(data: GetCourseLayoutValueArgs): GetCourse
   const cacheKey = JSON.stringify(data);
 
   if (courseLayoutCache.has(cacheKey)) {
-    return courseLayoutCache.get(cacheKey) as GetCourseLayoutReturn;
+    return courseLayoutCache.get(cacheKey)!;
   }
 
   const { lessons, course, quizProgress, lessonProgress, params } = data;
@@ -325,7 +280,7 @@ export function getCourseLayoutValues(data: GetCourseLayoutValueArgs): GetCourse
   const activeSection = activeQuiz
     ? // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       sections.find((s) => s.quiz?.data?.attributes.uuid === activeQuiz.data?.attributes.uuid)
-    : sections.find((s) => s.id === activeLesson?.sectionId) ?? sections[0];
+    : (sections.find((s) => s.id === activeLesson?.sectionId) ?? sections[0]);
 
   const numberOfLessons = lessons.length;
   const numberOfQuizzes = course.attributes.sections.filter((s) => s.quiz?.data).length;
@@ -336,9 +291,7 @@ export function getCourseLayoutValues(data: GetCourseLayoutValueArgs): GetCourse
 
   const totalQuizDurationInSeconds = course.attributes.sections.reduce((acc, curr) => {
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    const quizDuration = curr.quiz?.data?.attributes.required_duration_in_seconds
-      ? curr.quiz.data.attributes.required_duration_in_seconds
-      : 0;
+    const quizDuration = curr.quiz?.data?.attributes.required_duration_in_seconds ?? 0;
     return acc + quizDuration;
   }, 0);
 

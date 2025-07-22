@@ -1,40 +1,49 @@
-import { MetaFunction, useLoaderData } from "@remix-run/react";
-import { json, LoaderFunctionArgs } from "@vercel/remix";
+import { LoaderFunctionArgs, useLoaderData } from "react-router";
 import invariant from "tiny-invariant";
 
 import { PageTitle } from "~/components/common/page-title";
 import { ErrorComponent } from "~/components/error-component";
-import { LessonContentRenderer, StrapiContent } from "~/components/lesson/lesson-content-renderer";
+import { LessonContentRenderer } from "~/components/lesson/lesson-content-renderer";
 import { LessonProgressBar } from "~/components/lesson/lesson-progress-bar";
 import { MarkCompleteButton } from "~/components/lesson/mark-complete-button";
-import { loader as courseLoader } from "~/routes/_course";
+import { useCourseData } from "~/hooks/useCourseData";
+import { createLogger } from "~/integrations/logger.server";
+import { Sentry } from "~/integrations/sentry";
+import { Responses } from "~/lib/responses.server";
 import { LessonService } from "~/services/lesson.server";
 import { ProgressService } from "~/services/progress.server";
 import { SessionService } from "~/services/session.server";
 
-export async function loader({ params, request }: LoaderFunctionArgs) {
-  const userId = await SessionService.requireUserId(request);
+const logger = createLogger("Routes.LessonIndex");
 
-  const lessonSlug = params.lessonSlug;
-  invariant(lessonSlug, "Lesson slug is required");
+export async function loader(args: LoaderFunctionArgs) {
+  const userId = await SessionService.requireUserId(args);
 
-  const lesson = await LessonService.getBySlugWithContent(lessonSlug);
-  const progress = await ProgressService.getByLessonId(userId, lesson.id);
-  const isTimed = lesson.attributes.required_duration_in_seconds && lesson.attributes.required_duration_in_seconds > 0;
-  return json({ lesson, progress, isTimed });
+  try {
+    const lessonSlug = args.params.lessonSlug;
+    invariant(lessonSlug, "Lesson slug is required");
+
+    const lesson = await LessonService.getBySlugWithContent(lessonSlug);
+    const progress = await ProgressService.getByLessonId(userId, lesson.id);
+    const isTimed =
+      lesson.attributes.required_duration_in_seconds && lesson.attributes.required_duration_in_seconds > 0;
+    return { lesson, progress, isTimed };
+  } catch (error) {
+    logger.error("Error loading lesson data", { error, lessonSlug: args.params.lessonSlug });
+    Sentry.captureException(error, { extra: { lessonSlug: args.params.lessonSlug, userId } });
+    throw Responses.serverError();
+  }
 }
 
-export const meta: MetaFunction<typeof loader, { "routes/_course": typeof courseLoader }> = ({ data, matches }) => {
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  const match = matches.find((m) => m.id === "routes/_course")?.data.course;
-  return [{ title: `${data?.lesson.attributes.title} | ${match?.attributes.title}` }];
-};
-
 export default function Course() {
+  const { course } = useCourseData();
   const { lesson, progress, isTimed } = useLoaderData<typeof loader>();
 
   return (
     <>
+      <title>
+        {lesson.attributes.title} | {course.attributes.title}
+      </title>
       <PageTitle>{lesson.attributes.title}</PageTitle>
       <div className="my-4 lg:hidden">
         <LessonProgressBar
@@ -43,7 +52,7 @@ export default function Course() {
         />
       </div>
       <div className="mt-8">
-        <LessonContentRenderer content={lesson.attributes.content as StrapiContent} />
+        <LessonContentRenderer content={lesson.attributes.content} />
       </div>
       {!isTimed ? (
         <div className="mt-12 flex w-full justify-center">

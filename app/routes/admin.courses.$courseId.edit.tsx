@@ -1,44 +1,37 @@
-import { MetaFunction, useRouteLoaderData } from "@remix-run/react";
-import { withZod } from "@remix-validated-form/with-zod";
-import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@vercel/remix";
-import { ValidatedForm, validationError } from "remix-validated-form";
-import { z } from "zod";
+import { parseFormData, ValidatedForm, validationError } from "@rvf/react-router";
+import { ActionFunctionArgs, LoaderFunctionArgs, useRouteLoaderData } from "react-router";
+import { z } from "zod/v4";
 
 import { ErrorComponent } from "~/components/error-component";
-import { Checkbox, FormField } from "~/components/ui/form";
+import { Checkbox } from "~/components/ui/checkbox";
+import { FormField } from "~/components/ui/form";
 import { Label } from "~/components/ui/label";
 import { SubmitButton } from "~/components/ui/submit-button";
 import { db } from "~/integrations/db.server";
-import { CheckboxSchema } from "~/lib/schemas";
+import { Responses } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
-import { loader as adminCourseLoader } from "~/routes/admin.courses.$courseId";
+import type { loader as adminCourseLoader } from "~/routes/admin.courses.$courseId";
+import { checkbox, number, text } from "~/schemas/fields";
 import { SessionService } from "~/services/session.server";
 
-export async function loader({ request }: LoaderFunctionArgs) {
-  await SessionService.requireAdmin(request);
-  return json({});
+export async function loader(args: LoaderFunctionArgs) {
+  await SessionService.requireAdmin(args);
+  return Responses.ok();
 }
 
-const validator = withZod(
-  z.object({
-    host: z
-      .string({ message: "Host is required" })
-      .regex(/^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z]{2,})+$/, {
-        message: "Must match the expected pattern",
-      })
-      .or(z.string().regex(/localhost/, { message: "Must match the expected pattern" })),
-    strapiId: z.coerce.number({ message: "Strapi ID is required" }),
-    stripePriceId: z.string({ message: "Stripe price ID is required" }),
-    stripeProductId: z.string({ message: "Stripe product ID is required" }),
-    requiresIdentityVerification: CheckboxSchema,
-  }),
-);
+const schema = z.object({
+  host: text,
+  strapiId: number,
+  stripePriceId: text,
+  stripeProductId: text,
+  requiresIdentityVerification: checkbox,
+});
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  await SessionService.requireAdmin(request);
-  const id = params.courseId;
+export async function action(args: ActionFunctionArgs) {
+  await SessionService.requireAdmin(args);
+  const id = args.params.courseId;
 
-  const result = await validator.validate(await request.formData());
+  const result = await parseFormData(args.request, schema);
   if (result.error) {
     return validationError(result.error);
   }
@@ -47,10 +40,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     where: { id },
     data: result.data,
   });
-  return Toasts.jsonWithSuccess({ course }, { title: "Course updated successfully." });
+  return Toasts.dataWithSuccess({ course }, { message: "Course updated successfully." });
 }
-
-export const meta: MetaFunction = () => [{ title: "Edit Course | Plumb Media & Education" }];
 
 export default function AdminEditCourse() {
   const data = useRouteLoaderData<typeof adminCourseLoader>("routes/admin.courses.$courseId");
@@ -60,43 +51,73 @@ export default function AdminEditCourse() {
   }
 
   return (
-    <ValidatedForm
-      id="course-form"
-      method="PUT"
-      validator={validator}
-      defaultValues={{ ...data.course }}
-      className="max-w-md space-y-4"
-    >
-      <FormField
-        required
-        label="Host"
-        name="host"
-        description="e.g. course.hiphopdriving.com"
-        pattern="^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}a-zA-Z0-9+$"
-      />
-      <FormField required label="CMS ID" name="strapiId" description="ID of the course in the CMS" />
-      <FormField required label="Stripe Price ID" name="stripePriceId" description="Refer to the Stripe dashboard" />
-      <FormField
-        required
-        label="Stripe Product ID"
-        name="stripeProductId"
-        description="Refer to the Stripe dashboard"
-      />
-      <div className="flex items-center gap-x-2">
-        <Checkbox
-          id="requiresIdentityVerification"
-          name="requiresIdentityVerification"
-          aria-labelledby="identity-label"
-          defaultChecked={data.course.requiresIdentityVerification}
-        />
-        <Label id="identity-label" htmlFor="requiresIdentityVerification" className="cursor-pointer">
-          Require identity verification to receive certificate
-        </Label>
-      </div>
-      <SubmitButton variant="admin" className="mt-4">
-        Save
-      </SubmitButton>
-    </ValidatedForm>
+    <>
+      <title>Edit Course | Plumb Media & Education</title>
+      <ValidatedForm
+        id="course-form"
+        method="PUT"
+        schema={schema}
+        defaultValues={{
+          host: data.course.host,
+          strapiId: data.course.strapiId.toString(),
+          stripePriceId: data.course.stripePriceId,
+          stripeProductId: data.course.stripeProductId,
+          requiresIdentityVerification: data.course.requiresIdentityVerification,
+        }}
+        className="max-w-md space-y-4"
+      >
+        {(form) => (
+          <>
+            <FormField
+              scope={form.scope("host")}
+              required
+              label="Host"
+              name="host"
+              description="e.g. hiphopdriving.plumbmedia.org"
+            />
+            <FormField
+              scope={form.scope("strapiId")}
+              required
+              label="CMS ID"
+              name="strapiId"
+              description="ID of the course in the CMS"
+            />
+            <FormField
+              scope={form.scope("stripePriceId")}
+              required
+              label="Stripe Price ID"
+              name="stripePriceId"
+              description="Refer to the Stripe dashboard"
+            />
+            <FormField
+              required
+              scope={form.scope("stripeProductId")}
+              label="Stripe Product ID"
+              name="stripeProductId"
+              description="Refer to the Stripe dashboard"
+            />
+            <div className="flex items-center gap-x-2">
+              <Checkbox
+                id="requiresIdentityVerification"
+                name="requiresIdentityVerification"
+                aria-labelledby="identity-label"
+                defaultChecked={data.course.requiresIdentityVerification}
+              />
+              <Label
+                id="identity-label"
+                htmlFor="requiresIdentityVerification"
+                className="cursor-pointer leading-normal"
+              >
+                Require identity verification
+              </Label>
+            </div>
+            <SubmitButton isSubmitting={form.formState.isSubmitting} variant="admin" className="mt-4">
+              Save
+            </SubmitButton>
+          </>
+        )}
+      </ValidatedForm>
+    </>
   );
 }
 

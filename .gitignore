@@ -3,10 +3,11 @@ node_modules
 /build
 /public/build
 .env
+.eslintcache
 
 /postgres-data
 
-# Sentry Config File
+.react-router
 .sentryclirc
 /test-results/
 /playwright-report/

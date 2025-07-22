@@ -1,37 +1,19 @@
-import { Prisma } from "@prisma/client";
-import { Link, useLoaderData } from "@remix-run/react";
-import { IconPlus } from "@tabler/icons-react";
+import { IconExternalLink } from "@tabler/icons-react";
 import { ColumnDef } from "@tanstack/react-table";
-import { LoaderFunctionArgs, MetaFunction, json } from "@vercel/remix";
+import dayjs from "dayjs";
+import { Link, LoaderFunctionArgs, useLoaderData } from "react-router";
 
 import { ErrorComponent } from "~/components/error-component";
-import { AdminButton } from "~/components/ui/admin-button";
+import { Button } from "~/components/ui/button";
 import { DataTable } from "~/components/ui/data-table/data-table";
 import { DataTableColumnHeader } from "~/components/ui/data-table/data-table-column-header";
-import { Facet } from "~/components/ui/data-table/data-table-toolbar";
-import { db } from "~/integrations/db.server";
+import { AuthService } from "~/services/auth.server";
 import { SessionService } from "~/services/session.server";
 
-export const meta: MetaFunction = () => {
-  return [{ title: `Users | Plumb Media & Education}` }];
-};
-
-export async function loader({ request }: LoaderFunctionArgs) {
-  await SessionService.requireAdmin(request);
-  const users = await db.user.findMany({
-    select: {
-      id: true,
-      firstName: true,
-      lastName: true,
-      email: true,
-      phone: true,
-      role: true,
-      courses: {
-        select: { id: true },
-      },
-    },
-  });
-  return json({ users });
+export async function loader(args: LoaderFunctionArgs) {
+  await SessionService.requireAdmin(args);
+  const list = await AuthService.getUserList();
+  return { users: list.data };
 }
 
 export default function UsersIndex() {
@@ -39,14 +21,16 @@ export default function UsersIndex() {
 
   return (
     <>
-      <AdminButton asChild variant="secondary">
-        <Link to="/admin/users/new" className="mb-4 flex items-center space-x-2">
-          <IconPlus className="size-5" />
-          <span>New User</span>
-        </Link>
-      </AdminButton>
-
-      <DataTable data={users} columns={columns} facets={facets} />
+      <title>Users | Plumb Media & Education</title>
+      <Button asChild variant="ghost" className="w-auto font-normal text-muted-foreground">
+        <a className="block" href="https://dashboard.clerk.com" target="_blank" rel="noreferrer">
+          <span>Manage User Authentication on Clerk</span>
+          <IconExternalLink className="size-4" />
+        </a>
+      </Button>
+      <div className="mt-4">
+        <DataTable data={users} columns={columns} />
+      </div>
     </>
   );
 }
@@ -55,19 +39,8 @@ export function ErrorBoundary() {
   return <ErrorComponent />;
 }
 
-type User = Prisma.UserGetPayload<{
-  select: {
-    id: true;
-    firstName: true;
-    lastName: true;
-    email: true;
-    phone: true;
-    role: true;
-    courses: {
-      select: { id: true };
-    };
-  };
-}>;
+type User = Awaited<ReturnType<typeof loader>>["users"][number];
+
 const columns: Array<ColumnDef<User>> = [
   {
     accessorKey: "name",
@@ -85,19 +58,8 @@ const columns: Array<ColumnDef<User>> = [
     enableColumnFilter: false,
   },
   {
-    accessorKey: "role",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Role" />,
-    cell: ({ row }) => {
-      return (
-        <div>
-          <span className="max-w-[120px] truncate font-medium">{row.getValue("role")}</span>
-        </div>
-      );
-    },
-    enableColumnFilter: false,
-  },
-  {
     accessorKey: "email",
+    accessorFn: (row) => row.emailAddresses.at(0)?.emailAddress ?? "No email",
     header: ({ column }) => <DataTableColumnHeader column={column} title="Email" />,
     cell: ({ row }) => {
       return (
@@ -109,35 +71,16 @@ const columns: Array<ColumnDef<User>> = [
     enableColumnFilter: false,
   },
   {
-    accessorKey: "phone",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Phone" />,
+    accessorKey: "createdAt",
+    accessorFn: (row) => dayjs(row.createdAt).format("MM/DD/YY h:mm a"),
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Created" />,
     cell: ({ row }) => {
       return (
         <div className="max-w-[100px]">
-          <span className="max-w-[500px] truncate font-medium">{row.getValue("phone")}</span>
+          <span className="max-w-[500px] truncate font-medium">{row.getValue("createdAt")}</span>
         </div>
       );
     },
     enableColumnFilter: false,
-  },
-  {
-    accessorKey: "courses",
-    accessorFn: (row) => `${row.courses.length}`,
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Courses" />,
-    cell: ({ row }) => {
-      return (
-        <div className="max-w-[100px]">
-          <span className="max-w-[500px] truncate font-medium">{row.getValue("courses")}</span>
-        </div>
-      );
-    },
-    enableColumnFilter: false,
-  },
-];
-
-const facets: Array<Facet> = [
-  {
-    columnId: "role",
-    title: "Role",
   },
 ];

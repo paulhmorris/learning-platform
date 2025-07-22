@@ -1,20 +1,19 @@
-import { Outlet, useLoaderData } from "@remix-run/react";
-import { LoaderFunctionArgs, json } from "@vercel/remix";
+import { LoaderFunctionArgs, Outlet, useLoaderData } from "react-router";
 
 import { BackLink } from "~/components/common/back-link";
 import { ErrorComponent } from "~/components/error-component";
 import { db } from "~/integrations/db.server";
-import { notFound } from "~/lib/responses.server";
+import { Responses } from "~/lib/responses.server";
 import { CourseService } from "~/services/course.server";
 import { SessionService } from "~/services/session.server";
 
-export async function loader({ request, params }: LoaderFunctionArgs) {
-  await SessionService.requireAdmin(request);
-  const id = params.courseId;
+export async function loader(args: LoaderFunctionArgs) {
+  await SessionService.requireAdmin(args);
+  const id = args.params.courseId;
 
   const dbCourse = await db.course.findUnique({ where: { id }, include: { userCourses: true } });
   if (!dbCourse) {
-    throw notFound(null);
+    throw Responses.notFound();
   }
   const cmsCourse = await CourseService.getFromCMSForRoot(dbCourse.strapiId);
   if (!cmsCourse) {
@@ -25,7 +24,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     title: cmsCourse.data.attributes.title,
     description: cmsCourse.data.attributes.description ?? "",
   };
-  return json({ course });
+  return { course };
 }
 
 export default function AdminEditCourse() {

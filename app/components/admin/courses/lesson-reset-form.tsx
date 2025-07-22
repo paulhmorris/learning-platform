@@ -1,8 +1,8 @@
-import { useFetcher, useFetchers } from "@remix-run/react";
 import { IconLoader } from "@tabler/icons-react";
+import { useFetcher, useFetchers } from "react-router";
 
 import { AdminButton } from "~/components/ui/admin-button";
-import { loader } from "~/routes/admin.users.$id.courses.$courseId";
+import type { loader } from "~/routes/admin.users.$id.courses.$courseId";
 
 export function LessonResetForm(props: {
   lesson: { id: number; attributes: { required_duration_in_seconds?: number } };
@@ -25,7 +25,7 @@ export function LessonResetForm(props: {
       <input
         type="hidden"
         name="requiredDurationInSeconds"
-        value={lesson.attributes.required_duration_in_seconds || 0}
+        value={lesson.attributes.required_duration_in_seconds ?? 0}
       />
       <AdminButton
         variant="secondary"

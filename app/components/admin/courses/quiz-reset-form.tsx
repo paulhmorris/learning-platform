@@ -1,8 +1,8 @@
-import { useFetcher, useFetchers } from "@remix-run/react";
 import { IconLoader } from "@tabler/icons-react";
+import { useFetcher, useFetchers } from "react-router";
 
 import { AdminButton } from "~/components/ui/admin-button";
-import { loader } from "~/routes/admin.users.$id.courses.$courseId";
+import type { loader } from "~/routes/admin.users.$id.courses.$courseId";
 
 export function QuizResetForm(props: { quiz: { id: number }; hasProgress: boolean }) {
   const fetcher = useFetcher<typeof loader>();

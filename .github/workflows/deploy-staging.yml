@@ -4,6 +4,10 @@ env:
   VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
   SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   workflow_dispatch:
   push:
@@ -11,39 +15,49 @@ on:
       - staging
 
 jobs:
-  test:
-    name: 🧪 Test
+  lint:
+    name: ✨ Lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20.18.0
+          node-version: 22.17.0
           cache: "npm"
+      - run: npm ci --no-audit --no-fund
+      - run: npm run typegen
+      - run: npm run lint
 
-      - uses: actions/cache@v4
-        id: cache
-        env:
-          cache-name: cache-node-modules
+  # test:
+  #   name: 🧪 Test
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/setup-node@v4
+  #       with:
+  #         node-version: 22.17.0
+  #         cache: "npm"
+  #     - run: npm ci --no-audit --no-fund
+  #     - run: npm run test
+
+  typecheck:
+    name: 🧠 Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          path: ./node_modules
-          key: modules-${{ hashFiles('**/package-lock.json') }}
-
-      - name: Install Dependencies
-        if: steps.cache.outputs.cache-hit != 'true'
-        run: npm ci --no-audit --no-fund
-
-      - name: Type Check
-        run: npx tsc --noEmit --pretty
-
-      - name: Lint
-        run: npx eslint . --quiet
+          node-version: 22.17.0
+          cache: "npm"
+      - run: npm ci --no-audit --no-fund
+      - run: npm run typegen
+      - run: npm run typecheck
 
   deploy:
     name: 🚧 Deploy to Staging
     runs-on: ubuntu-latest
     environment: staging
-    needs: test
+    needs: [lint, typecheck]
 
     steps:
       - uses: actions/checkout@v4

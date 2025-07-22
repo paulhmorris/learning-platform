@@ -1,129 +1,126 @@
-import { User, UserRole } from "@prisma/client";
-import { Session as RemixSession, SessionData, redirect } from "@vercel/remix";
+import { getAuth } from "@clerk/react-router/ssr.server";
+import { UserRole } from "@prisma/client";
+import { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 
-import { forbidden, unauthorized } from "~/lib/responses.server";
-import { sessionStorage } from "~/lib/session.server";
+import { db } from "~/integrations/db.server";
+import { createLogger } from "~/integrations/logger.server";
+import { Responses } from "~/lib/responses.server";
+import { AuthService } from "~/services/auth.server";
 import { UserService } from "~/services/user.server";
 
-class Session {
-  private static USER_SESSION_KEY = "userId";
+const logger = createLogger("SessionService");
 
-  async logout(request: Request) {
-    const session = await this.getSession(request);
-    return redirect("/login", {
-      headers: {
-        "Set-Cookie": await sessionStorage.destroySession(session),
-      },
-    });
-  }
-
-  async getSession(request: Request) {
-    const cookie = request.headers.get("Cookie");
-    return sessionStorage.getSession(cookie);
-  }
-
-  async commitSession(session: RemixSession<SessionData, SessionData>) {
-    return sessionStorage.commitSession(session);
-  }
-
-  async getUserId(request: Request): Promise<User["id"] | undefined> {
-    const session = await this.getSession(request);
-    const userId = session.get(Session.USER_SESSION_KEY) as User["id"] | undefined;
-    return userId;
-  }
-
-  async getUser(request: Request) {
-    const userId = await this.getUserId(request);
-    if (userId === undefined) return null;
-
-    const user = await UserService.getById(userId);
-    if (user) {
-      if (!user.isActive) {
-        throw await this.logout(request);
-      }
-      return user;
+class _SessionService {
+  async logout(sessionId: string | null) {
+    if (sessionId) {
+      logger.info("Logging out user", { sessionId });
+      await AuthService.revokeSession(sessionId);
     }
-
-    throw await this.logout(request);
+    logger.info("No sessionId provided, skipping logout and redirecting to sign in");
+    throw Responses.redirectToSignIn("/");
   }
 
-  async getSessionUser(request: Request) {
-    const userId = await this.getUserId(request);
-    if (userId === undefined) return null;
-
-    const user = await UserService.getById(userId);
-    if (user) return user;
-
-    throw await this.logout(request);
+  async getSession(args: LoaderFunctionArgs | ActionFunctionArgs) {
+    logger.debug("Getting session from Clerk", { requestUrl: args.request.url });
+    return getAuth(args);
   }
 
-  async requireUserId(request: Request, redirectTo: string = new URL(request.url).pathname) {
-    const userId = await this.getUserId(request);
+  async getUserId(args: LoaderFunctionArgs | ActionFunctionArgs): Promise<string | null> {
+    const { sessionClaims } = await getAuth(args);
+    logger.debug("Getting userId from session claims", { requestUrl: args.request.url, userId: sessionClaims?.eid });
+    return sessionClaims?.eid ?? null;
+  }
+
+  async getUser(args: LoaderFunctionArgs | ActionFunctionArgs) {
+    const { userId, sessionId } = await this.getSession(args);
     if (!userId) {
-      const searchParams = new URLSearchParams([["redirectTo", redirectTo]]);
-      throw redirect(`/login?${searchParams.toString()}`);
+      logger.warn("No userId found in session claims", { sessionId });
+      return null;
     }
-    return userId;
-  }
 
-  private async requireUserByRole(request: Request, allowedRoles?: Array<UserRole>) {
-    const defaultAllowedRoles: Array<UserRole> = ["USER", "ADMIN"];
-    const userId = await this.requireUserId(request);
-
-    const user = await UserService.getById(userId);
-
-    if (user && user.role === UserRole.SUPERADMIN) {
+    const user = await UserService.getByClerkId(userId);
+    if (user) {
+      logger.debug("Returning user found in the database", { userId, sessionId });
       return user;
     }
 
-    if (user && allowedRoles && allowedRoles.length > 0) {
+    logger.warn("User not found in the database, logging out", { clerkId: userId, sessionId });
+    await this.logout(sessionId);
+    throw Responses.redirectToSignIn(args.request.url);
+  }
+
+  async requireUserId(args: LoaderFunctionArgs | ActionFunctionArgs) {
+    const userId = await this.getUserId(args);
+
+    // There might be a case where a db user didn't get linked to their clerk external_id
+    if (!userId) {
+      logger.error("external_id not found in claims. Attempting to link...", { requestUrl: args.request.url });
+
+      const { userId: clerkId, sessionId } = await this.getSession(args);
+      if (!clerkId) {
+        logger.error("No userId found in session, redirecting to sign in", { requestUrl: args.request.url });
+        await this.logout(sessionId);
+        throw Responses.redirectToSignIn(args.request.url);
+      }
+
+      const user = await db.user.findUniqueOrThrow({ where: { clerkId } });
+      logger.info("Found user with clerkId", { clerkId, userId: user.id });
+
+      const clerkUser = await AuthService.saveExternalId(clerkId, user.id);
+      logger.info("Successfully linked user to Clerk", { clerkId, userId: clerkUser.externalId });
+
+      // We still need to log them out to refresh the session
+      await this.logout(sessionId);
+      throw Responses.redirectToSignIn(args.request.url);
+    }
+
+    return userId;
+  }
+
+  private async requireUserByRole(args: LoaderFunctionArgs | ActionFunctionArgs, allowedRoles?: Array<UserRole>) {
+    const defaultAllowedRoles: Array<UserRole> = ["USER", "ADMIN"];
+    const user = await this.getUser(args);
+    logger.debug("Checking user role", { requestUrl: args.request.url, userId: user?.id, allowedRoles });
+
+    if (!user) {
+      logger.warn("No user found", { requestUrl: args.request.url });
+      throw Responses.unauthorized();
+    }
+
+    if (user.role === UserRole.SUPERADMIN) {
+      logger.debug("User is a super admin, allowing access", { userId: user.id });
+      return user;
+    }
+
+    if (allowedRoles && allowedRoles.length > 0) {
       if (allowedRoles.includes(user.role)) {
+        logger.debug("User has required role, allowing access", { userId: user.id, role: user.role });
         return user;
       }
-      throw unauthorized({ user });
+      logger.warn("User does not have required role", { userId: user.id, role: user.role });
+      throw Responses.unauthorized();
     }
 
-    if (user && defaultAllowedRoles.includes(user.role)) {
+    if (defaultAllowedRoles.includes(user.role)) {
+      logger.debug("User has default allowed role, allowing access", { userId: user.id, role: user.role });
       return user;
     }
-    throw forbidden({ user });
+
+    logger.warn("User does not have any allowed roles", { userId: user.id, role: user.role });
+    throw Responses.forbidden();
   }
 
-  async requireUser(request: Request) {
-    return this.requireUserByRole(request);
+  async requireUser(args: LoaderFunctionArgs | ActionFunctionArgs) {
+    return this.requireUserByRole(args);
   }
 
-  async requireAdmin(request: Request) {
-    return this.requireUserByRole(request, ["ADMIN"]);
+  async requireAdmin(args: LoaderFunctionArgs | ActionFunctionArgs) {
+    return this.requireUserByRole(args, ["ADMIN"]);
   }
 
-  async requireSuperAdmin(request: Request) {
-    return this.requireUserByRole(request, ["SUPERADMIN"]);
-  }
-
-  async createUserSession({
-    request,
-    userId,
-    remember,
-    redirectTo,
-  }: {
-    request: Request;
-    userId: string;
-    remember: boolean;
-    redirectTo: string;
-  }) {
-    const session = await this.getSession(request);
-    session.set(Session.USER_SESSION_KEY, userId);
-    return redirect(redirectTo, {
-      headers: {
-        "Set-Cookie": await sessionStorage.commitSession(session, {
-          maxAge: remember
-            ? 60 * 60 * 24 * 30 // 30 days
-            : undefined,
-        }),
-      },
-    });
+  async requireSuperAdmin(args: LoaderFunctionArgs | ActionFunctionArgs) {
+    return this.requireUserByRole(args, ["SUPERADMIN"]);
   }
 }
 
-export const SessionService = new Session();
+export const SessionService = new _SessionService();

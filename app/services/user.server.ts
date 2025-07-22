@@ -1,120 +1,153 @@
-import { Prisma, User } from "@prisma/client";
+import { Prisma, UserRole } from "@prisma/client";
 
+import { clerkClient } from "~/integrations/clerk.server";
 import { db } from "~/integrations/db.server";
-import { redis } from "~/integrations/redis.server";
-import { stripe } from "~/integrations/stripe.server";
+import { createLogger } from "~/integrations/logger.server";
+import { Sentry } from "~/integrations/sentry";
 import { AuthService } from "~/services/auth.server";
+import { PaymentService } from "~/services/payment.server";
 
-class Service {
-  async resetOrSetupPassword({ userId, password }: { userId: User["id"]; password: string }) {
-    const hashedPassword = await AuthService.hashPassword(password);
+const logger = createLogger("UserService");
 
-    const user = await db.user.update({
-      where: { id: userId },
-      data: {
-        password: {
-          upsert: {
-            create: { hash: hashedPassword },
-            update: { hash: hashedPassword },
-          },
-        },
-      },
-    });
-    return user;
-  }
-  public async getById(id: User["id"]) {
-    const cachedUser = await redis.get<
-      Prisma.UserGetPayload<{
-        include: { courses: { include: { course: { select: { requiresIdentityVerification: true } } } } };
-      }>
-    >(`user-${id}`);
-    if (cachedUser) {
-      return cachedUser;
-    }
-    const user = await db.user.findUnique({
-      where: { id },
-      include: { courses: { include: { course: { select: { requiresIdentityVerification: true } } } } },
-    });
-    if (user) {
-      await redis.set<User>(`user-${id}`, user, { ex: 30 });
-    }
-    return user;
-  }
-
-  public async getByEmail(email: User["email"]) {
-    const user = await db.user.findUnique({
-      where: { email },
+type ClerkData = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+};
+type UserWithPIIAndCourses = Prisma.UserGetPayload<{
+  include: {
+    courses: {
       include: {
-        password: true,
-      },
-    });
-    if (user) {
-      await redis.set<User>(`user-${user.id}`, user, { ex: 30 });
+        course: { select: { requiresIdentityVerification: true } };
+      };
+    };
+  };
+}> &
+  ClerkData & {
+    isActive: boolean;
+  };
+
+export const UserService = {
+  async getById(id: string) {
+    try {
+      const user = await db.user.findUnique({
+        where: { id },
+        include: { courses: { include: { course: { select: { requiresIdentityVerification: true } } } } },
+      });
+
+      if (!user) {
+        return null;
+      }
+
+      // TODO: Remove when clerkId is required
+      const backendUser = await clerkClient.users.getUser(user.clerkId!);
+      const userWithPII: UserWithPIIAndCourses = {
+        ...user,
+        firstName: backendUser.firstName!,
+        lastName: backendUser.lastName!,
+        email: backendUser.primaryEmailAddress!.emailAddress,
+        phone: backendUser.primaryPhoneNumber?.phoneNumber,
+        isActive: !backendUser.locked,
+      };
+      return userWithPII;
+    } catch (error) {
+      Sentry.captureException(error);
+      logger.error("Failed to get user by ID", { error, userId: id });
+      throw error;
     }
-    return user;
-  }
+  },
 
-  public async getByEmailWithPassword(email: User["email"]) {
-    const user = await db.user.findUnique({
-      where: { email },
-      include: { password: true },
-    });
-    return user;
-  }
+  async getByClerkId(clerkId: string) {
+    try {
+      const user = await db.user.findUnique({
+        where: { clerkId },
+        include: { courses: { include: { course: { select: { requiresIdentityVerification: true } } } } },
+      });
 
-  public async create(email: User["email"], password: string, data: Omit<Prisma.UserCreateArgs["data"], "email">) {
-    const hashedPassword = await AuthService.hashPassword(password);
-    const user = await db.user.create({
-      data: {
-        ...data,
-        email,
-        password: {
-          create: {
-            hash: hashedPassword,
-          },
-        },
-      },
-    });
+      if (!user) {
+        return null;
+      }
 
-    const stripeCus = await stripe.customers.create({
-      email: user.email,
-      name: `${user.firstName}${user.lastName ? " " + user.lastName : ""}`,
-      phone: user.phone ?? undefined,
-      metadata: {
-        user_id: user.id,
-      },
-    });
+      // TODO: Remove when clerkId is required
+      const backendUser = await clerkClient.users.getUser(user.clerkId!);
+      const userWithPII: UserWithPIIAndCourses = {
+        ...user,
+        firstName: backendUser.firstName!,
+        lastName: backendUser.lastName!,
+        email: backendUser.primaryEmailAddress!.emailAddress,
+        phone: backendUser.primaryPhoneNumber?.phoneNumber,
+        isActive: !backendUser.locked,
+      };
+      return userWithPII;
+    } catch (error) {
+      Sentry.captureException(error);
+      logger.error("Failed to get user by Clerk ID", { error, clerkId });
+      throw error;
+    }
+  },
 
-    await db.user.update({
-      where: { id: user.id },
-      data: { stripeId: stripeCus.id },
-    });
-    await redis.set<User>(`user-${user.id}`, user, { ex: 30 });
-    return user;
-  }
+  async create(clerkId: string) {
+    try {
+      const user = await db.user.upsert({
+        where: { clerkId },
+        update: {},
+        create: { clerkId, role: UserRole.USER },
+      });
+      logger.info("User upserted:", { user });
 
-  public async exists(email: User["email"]) {
-    const count = await db.user.count({ where: { email } });
-    return count > 0;
-  }
+      const stripeCustomer = await PaymentService.createCustomer(user.id, { metadata: { clerk_id: clerkId } });
+      logger.info("Stripe customer created:", { stripeCustomer });
 
-  public async update(id: User["id"], data: Prisma.UserUpdateArgs["data"]) {
-    const user = await db.user.update({ where: { id }, data });
-    await redis.del(`user-${user.id}`);
-    return user;
-  }
+      await this.update(user.id, { stripeId: stripeCustomer.id });
+      logger.info("User updated with Stripe ID:", { userId: user.id, stripeId: stripeCustomer.id });
 
-  public async delete(id: User["id"]) {
-    const user = await db.user.delete({ where: { id } });
-    await redis.del(`user-${user.id}`);
-    return user;
-  }
+      await AuthService.saveExternalId(clerkId, user.id);
+      logger.info("External ID saved for user:", { userId: user.id });
+      return user;
+    } catch (error) {
+      Sentry.captureException(error);
+      logger.error("Failed to create user", { error, clerkId });
+      throw error;
+    }
+  },
 
-  public async deleteByEmail(email: User["email"]) {
-    const user = await db.user.delete({ where: { email } });
-    await redis.del(`user-${user.id}`);
-    return user;
-  }
-}
+  async update(id: string, data: Prisma.UserUpdateArgs["data"]) {
+    try {
+      return db.user.update({ where: { id }, data, select: { id: true } });
+    } catch (error) {
+      Sentry.captureException(error);
+      logger.error("Failed to update user", { error, userId: id });
+      throw error;
+    }
+  },
 
-export const UserService = new Service();
+  async delete(userId: string) {
+    try {
+      return db.$transaction([
+        db.userQuizProgress.deleteMany({ where: { userId } }),
+        db.userLessonProgress.deleteMany({ where: { userId } }),
+        db.userCourses.deleteMany({ where: { userId } }),
+        db.user.delete({ where: { id: userId } }),
+      ]);
+    } catch (error) {
+      Sentry.captureException(error);
+      logger.error("Failed to delete user", { error, userId });
+      throw error;
+    }
+  },
+
+  async deleteByClerkId(clerkId: string) {
+    try {
+      const user = await this.getByClerkId(clerkId);
+      if (!user) {
+        throw new Error(`User with Clerk ID ${clerkId} not found`);
+      }
+      return this.delete(user.id);
+    } catch (error) {
+      Sentry.captureException(error);
+      logger.error("Failed to delete user by Clerk ID", { error, clerkId });
+      throw error;
+    }
+  },
+};
