@@ -17,6 +17,7 @@ model User {
   stripeId String?
 
   stripeVerificationSessionId String?
+  isIdentityVerified          Boolean @default(false)
 
   courses          UserCourses[]
   quizProgresses   UserQuizProgress[]
