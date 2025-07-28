@@ -13,6 +13,7 @@ import { createLogger } from "~/integrations/logger.server";
 import { Responses } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
 import { formatSeconds } from "~/lib/utils";
+import { ProgressService } from "~/services/progress.server";
 import { QuizService } from "~/services/quiz.server";
 import { SessionService } from "~/services/session.server";
 
@@ -32,7 +33,7 @@ export async function loader(args: LoaderFunctionArgs) {
     throw Responses.notFound();
   }
 
-  const progress = await QuizService.getProgress(parseInt(quizId), userId);
+  const progress = await ProgressService.getByQuizId(userId, parseInt(quizId));
 
   return { quiz: quiz.data, progress };
 }

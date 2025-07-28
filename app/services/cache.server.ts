@@ -12,7 +12,9 @@ type CacheKey =
   | `cms:course:layout:${string | number}`
   | `lesson:${string}`
   | `lesson-duration:${number}`
-  | `user-lesson-progress:${string}:${number}`;
+  | `user-lesson-progress:${string}:${number}`
+  | `user-quiz-progress:${string}:${number}`
+  | `user-lesson-progress:${string}:all`;
 
 export const CacheKeys = {
   coursesAll: () => `cms:course:all`,
@@ -22,6 +24,8 @@ export const CacheKeys = {
   lesson: (slug: string) => `lesson:${slug}`,
   lessonDuration: (lessonId: number) => `lesson-duration:${lessonId}`,
   progressLesson: (userId: string, lessonId: number) => `user-lesson-progress:${userId}:${lessonId}`,
+  progressQuiz: (userId: string, quizId: number) => `user-quiz-progress:${userId}:${quizId}`,
+  progressAll: (userId: string) => `user-lesson-progress:${userId}:all`,
 } satisfies Record<string, (...args: any) => CacheKey>;
 
 const logger = createLogger("CacheService");
