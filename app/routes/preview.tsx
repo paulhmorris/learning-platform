@@ -1,5 +1,14 @@
 import { useEffect, useState } from "react";
-import { ActionFunctionArgs, Link, LoaderFunctionArgs, redirect, useLoaderData, useSearchParams } from "react-router";
+import {
+  ActionFunctionArgs,
+  data,
+  HeadersArgs,
+  Link,
+  LoaderFunctionArgs,
+  redirect,
+  useLoaderData,
+  useSearchParams,
+} from "react-router";
 
 import { StrapiImage } from "~/components/common/strapi-image";
 import { CourseHeader } from "~/components/course/course-header";
@@ -18,7 +27,7 @@ import { Button } from "~/components/ui/button";
 import { Separator } from "~/components/ui/separator";
 import { getCourse } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
-import { Responses } from "~/lib/responses.server";
+import { HttpHeaders, Responses } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
 import { getLessonsInOrder, getPreviewValues } from "~/lib/utils";
 import { PaymentService } from "~/services/payment.server";
@@ -44,9 +53,19 @@ export async function loader(args: LoaderFunctionArgs) {
   const userHasAccess = user?.courses.some((c) => c.courseId === linkedCourse.id);
   const lessons = getLessonsInOrder({ course, progress: lessonProgress });
 
-  return { course: course.data, lessonProgress, lessons, quizProgress, userHasAccess };
+  const headers = new Headers();
+  const TTL = 60;
+  headers.set(HttpHeaders.CacheControl, `private, max-age=${TTL}`);
+
+  return data({ course: course.data, lessonProgress, lessons, quizProgress, userHasAccess }, { headers });
 }
-export type LessonInOrder = Awaited<ReturnType<typeof loader>>["lessons"][number];
+
+export function headers({ actionHeaders, loaderHeaders }: HeadersArgs) {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  return actionHeaders ? actionHeaders : loaderHeaders;
+}
+
+export type LessonInOrder = Awaited<ReturnType<typeof loader>>["data"]["lessons"][number];
 
 export async function action(args: ActionFunctionArgs) {
   const user = await SessionService.requireUser(args);

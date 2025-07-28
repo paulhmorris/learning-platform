@@ -56,7 +56,7 @@ export async function loader(args: LoaderFunctionArgs) {
 
     const lessons = getLessonsInOrder({ course, progress: lessonProgress });
 
-    return { course: course.data, lessonProgress, lessons, quizProgress, userHasAccess };
+    return { course: course.data, lessonProgress, lessons, quizProgress };
   } catch (error) {
     console.error(error);
     Sentry.captureException(error);
@@ -68,11 +68,11 @@ export async function loader(args: LoaderFunctionArgs) {
 }
 
 export default function CourseLayout() {
-  const { course, lessons, lessonProgress, quizProgress } = useLoaderData<typeof loader>();
   const params = useParams();
-  const [isShowingMore, setIsShowingMore] = useState(false);
   const isClient = useIsClient();
+  const [isShowingMore, setIsShowingMore] = useState(false);
   const isLargeScreen = useMediaQuery("(min-width: 1024px)");
+  const { course, lessons, lessonProgress, quizProgress } = useLoaderData<typeof loader>();
   const isCollapsed = !isShowingMore && !isLargeScreen;
 
   function toggleShowMore() {
