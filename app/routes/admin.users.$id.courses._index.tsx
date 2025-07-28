@@ -14,14 +14,14 @@ import { SessionService } from "~/services/session.server";
 export async function loader(args: LoaderFunctionArgs) {
   await SessionService.requireAdmin(args);
 
-  const clerkId = args.params.id;
-  if (!clerkId) {
+  const id = args.params.id;
+  if (!id) {
     throw Responses.notFound();
   }
 
   const [user, cmsCourses] = await Promise.all([
     db.user.findUnique({
-      where: { clerkId },
+      where: { id },
       select: {
         courses: {
           select: {

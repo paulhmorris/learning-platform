@@ -49,7 +49,10 @@ const columns: Array<ColumnDef<User>> = [
     cell: ({ row }) => {
       return (
         <div>
-          <Link to={`/admin/users/${row.original.id}`} className="max-w-[120px] truncate font-medium text-primary">
+          <Link
+            to={`/admin/users/${row.original.externalId}`}
+            className="max-w-[120px] truncate font-medium text-primary"
+          >
             {row.getValue("name")}
           </Link>
         </div>

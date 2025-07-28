@@ -1,7 +1,6 @@
 import { parseFormData } from "@rvf/react-router";
 import { IconCircleCheckFilled, IconCircleDashed, IconCircleDashedCheck, IconCircleXFilled } from "@tabler/icons-react";
 import { ActionFunctionArgs, LoaderFunctionArgs, useLoaderData } from "react-router";
-import invariant from "tiny-invariant";
 import { z } from "zod/v4";
 
 import { LessonCompleteForm } from "~/components/admin/courses/lesson-complete-form";
@@ -43,21 +42,18 @@ export async function loader(args: LoaderFunctionArgs) {
   await SessionService.requireAdmin(args);
   const userId = args.params.id;
   const courseId = args.params.courseId;
-  invariant(userId, "User not found.");
-  invariant(courseId, "Course not found.");
+
+  if (!userId || !courseId) {
+    throw Responses.notFound();
+  }
 
   // Load user and course data
   const [lessons, quizzes, lessonProgress, quizProgress] = await Promise.all([
     LessonService.getAllFromCMS(),
     QuizService.getAll(),
     ProgressService.getAll(userId),
-    QuizService.getAllProgress(userId),
+    ProgressService.getAllQuiz(userId),
   ]);
-
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  if (!lessons || !quizzes) {
-    throw Responses.notFound();
-  }
 
   return { lessons, quizzes, lessonProgress, quizProgress };
 }
@@ -65,7 +61,9 @@ export async function loader(args: LoaderFunctionArgs) {
 export async function action(args: ActionFunctionArgs) {
   await SessionService.requireAdmin(args);
   const userId = args.params.id;
-  invariant(userId, "User ID not found.");
+  if (!userId) {
+    return Toasts.dataWithError({ ok: false }, { message: "Error", description: "User ID is required." });
+  }
   const result = await parseFormData(args.request, schema);
 
   if (result.error) {

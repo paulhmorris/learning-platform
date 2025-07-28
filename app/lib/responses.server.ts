@@ -41,3 +41,7 @@ export const Responses = {
     throw redirect(url.toString());
   },
 };
+
+export const HttpHeaders = {
+  CacheControl: "Cache-Control",
+};

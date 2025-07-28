@@ -64,6 +64,7 @@ export default function AccountLayout() {
 
   return (
     <>
+      <title>Account</title>
       <div className="flex min-h-[calc(100dvh-80px)] flex-col items-center justify-center md:bg-secondary dark:bg-background">
         <main>
           <UserProfile>

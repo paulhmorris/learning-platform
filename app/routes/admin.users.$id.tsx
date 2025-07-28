@@ -11,11 +11,14 @@ import { LoaderFunctionArgs, NavLink, Outlet, useLoaderData } from "react-router
 import { BackLink } from "~/components/common/back-link";
 import { ErrorComponent } from "~/components/error-component";
 import { Badge } from "~/components/ui/badge";
+import { createLogger } from "~/integrations/logger.server";
 import { stripe } from "~/integrations/stripe.server";
 import { Responses } from "~/lib/responses.server";
 import { cn } from "~/lib/utils";
 import { SessionService } from "~/services/session.server";
 import { UserService } from "~/services/user.server";
+
+const logger = createLogger("Routes.Admin.Users.$id");
 
 const links = [
   { href: "", text: "Profile", end: true, icon: <IconUserCircle className="size-[1.125rem]" /> },
@@ -29,9 +32,10 @@ export async function loader(args: LoaderFunctionArgs) {
     throw Responses.notFound();
   }
 
-  const user = await UserService.getByClerkId(id);
+  const user = await UserService.getById(id);
   // TODO: Handle once clerkId is required
   if (!user?.clerkId) {
+    logger.error("User not found", { id });
     throw Responses.notFound();
   }
 

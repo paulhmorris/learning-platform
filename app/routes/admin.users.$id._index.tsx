@@ -56,7 +56,8 @@ export default function AdminUserIndex() {
   return (
     <>
       <title>User Profile | Plumb Media & Education</title>
-      <div className="max-w-md">
+      <pre className="text-xs text-muted-foreground">{user.clerkId}</pre>
+      <div className="mt-2 max-w-md">
         <ValidatedForm
           method="put"
           action="?index"

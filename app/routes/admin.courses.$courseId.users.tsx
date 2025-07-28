@@ -1,6 +1,13 @@
 import { parseFormData } from "@rvf/react-router";
 import { useState } from "react";
-import { ActionFunctionArgs, LoaderFunctionArgs, useFetcher, useLoaderData, useRouteLoaderData } from "react-router";
+import {
+  ActionFunctionArgs,
+  Link,
+  LoaderFunctionArgs,
+  useFetcher,
+  useLoaderData,
+  useRouteLoaderData,
+} from "react-router";
 import invariant from "tiny-invariant";
 import { z } from "zod/v4";
 
@@ -22,17 +29,22 @@ export async function loader(args: LoaderFunctionArgs) {
     db.user.findMany({ orderBy: { createdAt: "asc" } }),
   ]);
 
-  const users = backendList.data.map((user) => {
-    const localUser = localList.find((u) => u.clerkId === user.id);
-    return {
-      id: user.id,
-      firstName: user.firstName ?? "",
-      lastName: user.lastName ?? "",
-      email: user.emailAddresses.at(0)?.emailAddress ?? "",
-      phone: user.phoneNumbers.at(0)?.phoneNumber ?? undefined,
-      createdAt: localUser?.createdAt ?? new Date(),
-    };
-  });
+  const users = backendList.data
+    .map((user) => {
+      const localUser = localList.find((u) => u.clerkId === user.id);
+      if (!localUser) {
+        return undefined;
+      }
+      return {
+        id: localUser.id,
+        firstName: user.firstName ?? "",
+        lastName: user.lastName ?? "",
+        email: user.emailAddresses.at(0)?.emailAddress ?? "",
+        phone: user.phoneNumbers.at(0)?.phoneNumber ?? undefined,
+        createdAt: localUser.createdAt,
+      };
+    })
+    .filter(Boolean);
   return { users };
 }
 
@@ -101,9 +113,12 @@ export default function AdminEditCourse() {
         {filteredUsers.map((u) => {
           return (
             <li key={u.id} className="grid w-full max-w-lg grid-cols-2 items-center gap-8 py-3 md:py-2">
-              <h2 className="col-span-1 truncate text-sm">
+              <Link
+                to={`/admin/users/${u.id}/courses/${data.course.id}`}
+                className="col-span-1 truncate text-sm hover:text-primary"
+              >
                 {u.firstName} {u.lastName}
-              </h2>
+              </Link>
               {!data.course.userCourses.some((uc) => uc.userId === u.id) ? (
                 <fetcher.Form method="put" className="col-span-1">
                   <input type="hidden" name="userId" value={u.id} />
