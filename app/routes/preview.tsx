@@ -1,14 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  ActionFunctionArgs,
-  data,
-  HeadersArgs,
-  Link,
-  LoaderFunctionArgs,
-  redirect,
-  useLoaderData,
-  useSearchParams,
-} from "react-router";
+import { ActionFunctionArgs, Link, LoaderFunctionArgs, redirect, useLoaderData, useSearchParams } from "react-router";
 
 import { StrapiImage } from "~/components/common/strapi-image";
 import { CourseHeader } from "~/components/course/course-header";
@@ -53,19 +44,16 @@ export async function loader(args: LoaderFunctionArgs) {
   const userHasAccess = user?.courses.some((c) => c.courseId === linkedCourse.id);
   const lessons = getLessonsInOrder({ course, progress: lessonProgress });
 
-  const headers = new Headers();
-  const TTL = 60;
-  headers.set(HttpHeaders.CacheControl, `private, max-age=${TTL}`);
-
-  return data({ course: course.data, lessonProgress, lessons, quizProgress, userHasAccess }, { headers });
+  return { course: course.data, lessonProgress, lessons, quizProgress, userHasAccess };
 }
 
-export function headers({ actionHeaders, loaderHeaders }: HeadersArgs) {
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  return actionHeaders ? actionHeaders : loaderHeaders;
+export function headers() {
+  return {
+    [HttpHeaders.CacheControl]: "private, max-age=60",
+  };
 }
 
-export type LessonInOrder = Awaited<ReturnType<typeof loader>>["data"]["lessons"][number];
+export type LessonInOrder = Awaited<ReturnType<typeof loader>>["lessons"][number];
 
 export async function action(args: ActionFunctionArgs) {
   const user = await SessionService.requireUser(args);
