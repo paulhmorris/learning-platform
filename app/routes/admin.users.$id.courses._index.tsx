@@ -6,58 +6,47 @@ import { AdminButton } from "~/components/ui/admin-button";
 import { Button } from "~/components/ui/button";
 import { Card, CardFooter, CardHeader, CardTitle } from "~/components/ui/card";
 import { useAdminUserData } from "~/hooks/useAdminUserData";
-import { db } from "~/integrations/db.server";
+import { createLogger } from "~/integrations/logger.server";
+import { Sentry } from "~/integrations/sentry";
 import { Responses } from "~/lib/responses.server";
 import { CourseService } from "~/services/course.server";
 import { SessionService } from "~/services/session.server";
+import { UserService } from "~/services/user.server";
+
+const logger = createLogger("Routes.AdminUserCourses");
 
 export async function loader(args: LoaderFunctionArgs) {
   await SessionService.requireAdmin(args);
 
   const id = args.params.id;
   if (!id) {
+    logger.error("User ID not found");
     throw Responses.notFound();
   }
 
-  const [user, cmsCourses] = await Promise.all([
-    db.user.findUnique({
-      where: { id },
-      select: {
-        courses: {
-          select: {
-            id: true,
-            isCompleted: true,
-            completedAt: true,
-            certificateClaimed: true,
-            certificateS3Key: true,
-            createdAt: true,
-            course: {
-              select: {
-                id: true,
-                strapiId: true,
-              },
-            },
-          },
-        },
-      },
-    }),
-    CourseService.getAll(),
-  ]);
+  try {
+    const [user, cmsCourses] = await Promise.all([UserService.getByIdWithCourse(id), CourseService.getAll()]);
 
-  if (!user || !cmsCourses.length) {
-    throw Responses.notFound();
+    if (!user || !cmsCourses.length) {
+      logger.error("User or courses not found", { user, cmsCourses });
+      throw Responses.notFound();
+    }
+
+    const courses = user.courses.map((dbCourse) => {
+      const cmsCourse = cmsCourses.find((course) => course.id === dbCourse.course.strapiId);
+      return {
+        ...dbCourse,
+        title: cmsCourse?.attributes.title,
+        description: cmsCourse?.attributes.description,
+      };
+    });
+
+    return { courses };
+  } catch (error) {
+    Sentry.captureException(error);
+    logger.error("Failed to load user courses", { error, userId: id });
+    throw Responses.serverError();
   }
-
-  const courses = user.courses.map((dbCourse) => {
-    const cmsCourse = cmsCourses.find((course) => course.id === dbCourse.course.strapiId);
-    return {
-      ...dbCourse,
-      title: cmsCourse?.attributes.title,
-      description: cmsCourse?.attributes.description,
-    };
-  });
-
-  return { courses };
 }
 
 export default function AdminUserCourses() {

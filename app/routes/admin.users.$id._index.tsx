@@ -6,11 +6,15 @@ import { z } from "zod/v4";
 import { ErrorComponent } from "~/components/error-component";
 import { FormField, FormSelect } from "~/components/ui/form";
 import { SubmitButton } from "~/components/ui/submit-button";
-import { db } from "~/integrations/db.server";
+import { createLogger } from "~/integrations/logger.server";
+import { Sentry } from "~/integrations/sentry";
 import { Toasts } from "~/lib/toast.server";
 import type { loader } from "~/routes/admin.users.$id";
 import { cuid, optionalText, selectEnum } from "~/schemas/fields";
 import { SessionService } from "~/services/session.server";
+import { UserService } from "~/services/user.server";
+
+const logger = createLogger("Routes.AdminUserIndex");
 
 const schema = z.object({
   id: cuid,
@@ -26,13 +30,16 @@ export async function action(args: ActionFunctionArgs) {
     return validationError(result.error);
   }
 
-  const { id, ...rest } = result.data;
+  const { id, ...data } = result.data;
 
-  const updatedUser = await db.user.update({
-    where: { id },
-    data: { ...rest },
-  });
-  return Toasts.dataWithSuccess({ updatedUser }, { message: "Success", description: "User updated successfully." });
+  try {
+    const updatedUser = await UserService.update(id, data);
+    return Toasts.dataWithSuccess({ updatedUser }, { message: "Success", description: "User updated successfully." });
+  } catch (error) {
+    Sentry.captureException(error);
+    logger.error("Failed to update user", { error, userId: id });
+    return Toasts.dataWithError(null, { message: "Error", description: "Failed to update user." });
+  }
 }
 
 export default function AdminUserIndex() {

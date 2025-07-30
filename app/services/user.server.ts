@@ -150,4 +150,34 @@ export const UserService = {
       throw error;
     }
   },
+
+  async getByIdWithCourse(id: string) {
+    try {
+      return db.user.findUnique({
+        where: { id },
+        select: {
+          courses: {
+            select: {
+              id: true,
+              isCompleted: true,
+              completedAt: true,
+              certificateClaimed: true,
+              certificateS3Key: true,
+              createdAt: true,
+              course: {
+                select: {
+                  id: true,
+                  strapiId: true,
+                },
+              },
+            },
+          },
+        },
+      });
+    } catch (error) {
+      Sentry.captureException(error);
+      logger.error("Failed to get user by ID with course", { error, userId: id });
+      throw error;
+    }
+  },
 };
