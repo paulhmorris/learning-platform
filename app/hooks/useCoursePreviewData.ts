@@ -9,8 +9,7 @@ export function useCoursePreviewData() {
   const data = useRouteLoaderData<typeof loader>("routes/preview");
 
   useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (!data?.course || !data.lessons || !data.lessonProgress || !data.quizProgress) {
+    if (!data?.course) {
       void navigate("/");
       toast.error("Error loading course.", {
         description: "There was an error loading the course data. Please try again.",

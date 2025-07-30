@@ -9,10 +9,12 @@ import { QuizQuestions } from "~/components/quiz/quiz-questions";
 import { QuizResults } from "~/components/quiz/quiz-results";
 import { Button } from "~/components/ui/button";
 import { useCourseData } from "~/hooks/useCourseData";
+import { useProgress } from "~/hooks/useProgress";
 import { createLogger } from "~/integrations/logger.server";
+import { Sentry } from "~/integrations/sentry";
 import { Responses } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
-import { formatSeconds } from "~/lib/utils";
+import { formatSeconds, getLessonsInOrder } from "~/lib/utils";
 import { ProgressService } from "~/services/progress.server";
 import { QuizService } from "~/services/quiz.server";
 import { SessionService } from "~/services/session.server";
@@ -25,17 +27,25 @@ export async function loader(args: LoaderFunctionArgs) {
   const quizId = args.params.quizId;
   invariant(quizId, "Quiz ID is required");
 
-  const quiz = await QuizService.getById(quizId);
+  try {
+    const quiz = await QuizService.getById(quizId);
 
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  if (!quiz) {
-    logger.error("Quiz not found", { quizId });
-    throw Responses.notFound();
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (!quiz) {
+      logger.error("Quiz not found", { quizId });
+      throw Responses.notFound();
+    }
+
+    const progress = await ProgressService.getByQuizId(userId, parseInt(quizId));
+    return { quiz: quiz.data, progress };
+  } catch (error) {
+    Sentry.captureException(error, { extra: { userId, quizId } });
+    logger.error("Error loading quiz", { quizId, error });
+    if (error instanceof Response) {
+      throw error;
+    }
+    throw Responses.serverError();
   }
-
-  const progress = await ProgressService.getByQuizId(userId, parseInt(quizId));
-
-  return { quiz: quiz.data, progress };
 }
 
 export async function action(args: ActionFunctionArgs) {
@@ -115,10 +125,13 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export default function Quiz() {
-  const { course, lessons } = useCourseData();
+  const { course } = useCourseData();
   const { quiz, progress } = useLoaderData<typeof loader>();
+  const { lessonProgress } = useProgress();
   const actionData = useActionData<typeof action>();
   const resultsRef = useRef<HTMLDivElement>(null);
+
+  const lessons = getLessonsInOrder({ course, progress: lessonProgress });
 
   const duration = quiz.attributes.required_duration_in_seconds ?? 0;
 

@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
-import { useState } from "react";
-import { LoaderFunctionArgs, Outlet, useLoaderData, useParams } from "react-router";
+import { useEffect, useState } from "react";
+import { LoaderFunctionArgs, Outlet, useLoaderData, useNavigate, useParams } from "react-router";
+import { toast } from "sonner";
 import { useIsClient, useMediaQuery } from "usehooks-ts";
 
 import { BackLink } from "~/components/common/back-link";
@@ -11,15 +12,16 @@ import { CourseProgressBar } from "~/components/sidebar/course-progress-bar";
 import { SectionLesson } from "~/components/sidebar/section-lesson";
 import { SectionQuiz } from "~/components/sidebar/section-quiz";
 import { Separator } from "~/components/ui/separator";
+import { useProgress } from "~/hooks/useProgress";
 import { Sentry } from "~/integrations/sentry";
+import { HttpHeaders } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
-import { cn, getCourseLayoutValues, getLessonsInOrder } from "~/lib/utils";
+import { cn, getCourseLayoutValues, getLessonsInOrder, useUser } from "~/lib/utils";
 import { CourseService } from "~/services/course.server";
-import { ProgressService } from "~/services/progress.server";
 import { SessionService } from "~/services/session.server";
 
 export async function loader(args: LoaderFunctionArgs) {
-  const user = await SessionService.requireUser(args);
+  await SessionService.requireUserId(args);
 
   try {
     const { host } = new URL(args.request.url);
@@ -32,14 +34,6 @@ export async function loader(args: LoaderFunctionArgs) {
       });
     }
 
-    const userHasAccess = user?.courses.some((c) => c.courseId === linkedCourse.id);
-    if (!userHasAccess) {
-      return Toasts.redirectWithError("/preview", {
-        message: "No access to course",
-        description: "Please purchase the course to access it.",
-      });
-    }
-
     const course = await CourseService.getFromCMSForCourseLayout(linkedCourse.strapiId);
 
     if (!course) {
@@ -49,14 +43,7 @@ export async function loader(args: LoaderFunctionArgs) {
       });
     }
 
-    const [lessonProgress, quizProgress] = await Promise.all([
-      ProgressService.getAll(user.id),
-      ProgressService.getAllQuiz(user.id),
-    ]);
-
-    const lessons = getLessonsInOrder({ course, progress: lessonProgress });
-
-    return { course: course.data, lessonProgress, lessons, quizProgress };
+    return { course: course.data, linkedCourse };
   } catch (error) {
     console.error(error);
     Sentry.captureException(error);
@@ -67,18 +54,36 @@ export async function loader(args: LoaderFunctionArgs) {
   }
 }
 
+export function headers() {
+  return {
+    [HttpHeaders.CacheControl]: "public, s-maxage=60, max-age=60, stale-while-revalidate=300",
+  };
+}
+
 export default function CourseLayout() {
+  const user = useUser();
+  const navigate = useNavigate();
   const params = useParams();
   const isClient = useIsClient();
   const [isShowingMore, setIsShowingMore] = useState(false);
   const isLargeScreen = useMediaQuery("(min-width: 1024px)");
-  const { course, lessons, lessonProgress, quizProgress } = useLoaderData<typeof loader>();
+  const { course, linkedCourse } = useLoaderData<typeof loader>();
+  const { lessonProgress, quizProgress } = useProgress();
   const isCollapsed = !isShowingMore && !isLargeScreen;
+
+  useEffect(() => {
+    const userHasAccess = user?.courses.some((c) => c.courseId === linkedCourse.id);
+    if (!userHasAccess) {
+      toast.error("You do not have access to this course. Please purchase it to continue.");
+      void navigate("/preview");
+    }
+  }, [user, linkedCourse.id]);
 
   function toggleShowMore() {
     setIsShowingMore((prev) => !prev);
   }
 
+  const lessons = getLessonsInOrder({ course, progress: lessonProgress });
   const { sections } = course.attributes;
 
   const {

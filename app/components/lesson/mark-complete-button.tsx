@@ -13,7 +13,7 @@ export function MarkCompleteButton({ lessonId, isCompleted }: Props) {
   const isSubmitting = fetcher.state === "submitting" || fetcher.state === "loading";
 
   return (
-    <fetcher.Form method="POST" action="/api/lesson-progress">
+    <fetcher.Form method="POST" action="/api/progress">
       <input type="hidden" name="lessonId" value={lessonId} />
       <Button
         disabled={isCompleted || isSubmitting}

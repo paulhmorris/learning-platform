@@ -16,44 +16,47 @@ import { Section, SectionHeader } from "~/components/section";
 import { CourseProgressBar } from "~/components/sidebar/course-progress-bar";
 import { Button } from "~/components/ui/button";
 import { Separator } from "~/components/ui/separator";
+import { useProgress } from "~/hooks/useProgress";
 import { getCourse } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
+import { createLogger } from "~/integrations/logger.server";
+import { Sentry } from "~/integrations/sentry";
 import { HttpHeaders, Responses } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
-import { getLessonsInOrder, getPreviewValues } from "~/lib/utils";
+import { getLessonsInOrder, getPreviewValues, useUser } from "~/lib/utils";
 import { PaymentService } from "~/services/payment.server";
-import { ProgressService } from "~/services/progress.server";
 import { SessionService } from "~/services/session.server";
 
+const logger = createLogger("Routes.Preview");
+
 export async function loader(args: LoaderFunctionArgs) {
-  const user = await SessionService.requireUser(args);
+  await SessionService.requireUserId(args);
 
   const url = new URL(args.request.url);
-  const linkedCourse = await db.course.findUnique({ where: { host: url.host } });
-  if (!linkedCourse) {
-    throw Responses.notFound();
+  try {
+    const linkedCourse = await db.course.findUnique({ where: { host: url.host } });
+    if (!linkedCourse) {
+      throw Responses.notFound();
+    }
+
+    const course = await getCourse(linkedCourse.strapiId);
+
+    return { course: course.data, linkedCourse };
+  } catch (error) {
+    Sentry.captureException(error);
+    logger.error("Failed to load course", { error, host: url.host });
+    if (error instanceof Response) {
+      throw error;
+    }
+    throw Responses.serverError();
   }
-
-  const [course, lessonProgress, quizProgress] = await Promise.all([
-    getCourse(linkedCourse.strapiId),
-    ProgressService.getAll(user.id),
-    ProgressService.getAllQuiz(user.id),
-  ]);
-
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  const userHasAccess = user?.courses.some((c) => c.courseId === linkedCourse.id);
-  const lessons = getLessonsInOrder({ course, progress: lessonProgress });
-
-  return { course: course.data, lessonProgress, lessons, quizProgress, userHasAccess };
 }
 
 export function headers() {
   return {
-    [HttpHeaders.CacheControl]: "private, max-age=60",
+    [HttpHeaders.CacheControl]: "public, s-maxage=60, max-age=60, stale-while-revalidate=300",
   };
 }
-
-export type LessonInOrder = Awaited<ReturnType<typeof loader>>["lessons"][number];
 
 export async function action(args: ActionFunctionArgs) {
   const user = await SessionService.requireUser(args);
@@ -80,13 +83,18 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export default function CoursePreview() {
+  const user = useUser();
   const [searchParams] = useSearchParams();
+  const { lessonProgress, quizProgress } = useProgress();
   const [successModalOpen, setSuccessModalOpen] = useState(false);
   const [canceledModalOpen, setCanceledModalOpen] = useState(false);
-  const { course, lessonProgress, lessons, quizProgress, userHasAccess } = useLoaderData<typeof loader>();
+  const { course, linkedCourse } = useLoaderData<typeof loader>();
 
   const isSuccessful = searchParams.get("purchase_success") === "true";
   const isCanceled = searchParams.get("purchase_canceled") === "true";
+  const lessons = getLessonsInOrder({ course, progress: lessonProgress });
+
+  const userHasAccess = user.courses.some((c) => c.courseId === linkedCourse.id);
 
   // handle success or cancel
   useEffect(() => {

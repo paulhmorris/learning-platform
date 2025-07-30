@@ -2,8 +2,7 @@ import { Link } from "react-router";
 
 import { IconCameraFilled, IconClipboard, IconDocument } from "~/components/icons";
 import { Button } from "~/components/ui/button";
-import { valueIsNotNullishOrZero } from "~/lib/utils";
-import { LessonInOrder } from "~/routes/preview";
+import { LessonInOrder, valueIsNotNullishOrZero } from "~/lib/utils";
 
 type Props = {
   lesson?: LessonInOrder;

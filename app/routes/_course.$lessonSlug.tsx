@@ -8,6 +8,7 @@ import { LessonContentRenderer } from "~/components/lesson/lesson-content-render
 import { LessonProgressBar } from "~/components/lesson/lesson-progress-bar";
 import { MarkCompleteButton } from "~/components/lesson/mark-complete-button";
 import { useCourseData } from "~/hooks/useCourseData";
+import { useProgress } from "~/hooks/useProgress";
 import { createLogger } from "~/integrations/logger.server";
 import { Sentry } from "~/integrations/sentry";
 import { HttpHeaders, Responses } from "~/lib/responses.server";
@@ -17,7 +18,7 @@ import { SessionService } from "~/services/session.server";
 const logger = createLogger("Routes.LessonIndex");
 
 export const shouldRevalidate: ShouldRevalidateFunction = ({ formAction, defaultShouldRevalidate }) => {
-  if (formAction?.includes("/api/lesson-progress")) {
+  if (formAction?.includes("/api/progress")) {
     return false;
   }
   return defaultShouldRevalidate;
@@ -46,7 +47,8 @@ export async function loader(args: LoaderFunctionArgs) {
 }
 
 export default function Course() {
-  const { course, lessonProgress } = useCourseData();
+  const { lessonProgress } = useProgress();
+  const { course } = useCourseData();
   const { lesson } = useLoaderData<typeof loader>();
 
   const progress = useMemo(() => {

@@ -14,7 +14,7 @@ import { APIResponseData } from "~/types/utils";
 
 type Props = {
   lesson: APIResponseData<"api::lesson.lesson">;
-  userProgress: Omit<UserLessonProgress, "createdAt" | "updatedAt">;
+  userProgress: Pick<UserLessonProgress, "lessonId" | "isCompleted" | "durationInSeconds">;
   clientProgressPercentage: number | null;
   setClientProgressPercentage: (value: number | null) => void;
 };

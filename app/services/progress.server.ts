@@ -2,7 +2,7 @@ import { UserLessonProgress, UserQuizProgress } from "@prisma/client";
 
 import { db } from "~/integrations/db.server";
 import { createLogger } from "~/integrations/logger.server";
-import { SUBMIT_INTERVAL_MS } from "~/routes/api.lesson-progress";
+import { SUBMIT_INTERVAL_MS } from "~/routes/api.progress";
 import { CacheKeys, CacheService } from "~/services/cache.server";
 
 const logger = createLogger("ProgressService");

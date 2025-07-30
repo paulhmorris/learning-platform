@@ -1,7 +1,8 @@
 import { parseFormData, validationError } from "@rvf/react-router";
-import { ActionFunctionArgs } from "react-router";
+import { ActionFunctionArgs, LoaderFunctionArgs, ShouldRevalidateFunctionArgs } from "react-router";
 import { z } from "zod/v4";
 
+import { db } from "~/integrations/db.server";
 import { createLogger } from "~/integrations/logger.server";
 import { Sentry } from "~/integrations/sentry";
 import { Toasts } from "~/lib/toast.server";
@@ -17,6 +18,38 @@ const schema = z.object({
   intent: z.enum(["mark-complete", "increment-duration"]),
 });
 export const SUBMIT_INTERVAL_MS = 15_000;
+
+export function shouldRevalidate({ formAction }: ShouldRevalidateFunctionArgs) {
+  if (formAction === "/api/progress") {
+    return true;
+  }
+
+  return false;
+}
+
+export async function loader(args: LoaderFunctionArgs) {
+  const userId = await SessionService.requireUserId(args);
+  try {
+    const [lessonProgress, quizProgress] = await db.$transaction([
+      db.userLessonProgress.findMany({
+        select: { isCompleted: true, durationInSeconds: true, lessonId: true },
+        where: { userId },
+      }),
+      db.userQuizProgress.findMany({
+        select: { isCompleted: true, quizId: true, score: true },
+        where: { userId },
+      }),
+    ]);
+    return { lessonProgress, quizProgress };
+  } catch (error) {
+    logger.error("Error loading lesson progress", { error, userId });
+    Sentry.captureException(error, { extra: { userId } });
+    return Toasts.dataWithError(null, {
+      message: "An error occurred trying to load your progress.",
+      description: "If the problem persists, please contact support.",
+    });
+  }
+}
 
 export async function action(args: ActionFunctionArgs) {
   const userId = await SessionService.requireUserId(args);
@@ -87,5 +120,3 @@ export async function action(args: ActionFunctionArgs) {
     });
   }
 }
-
-export const shouldRevalidate = () => false;

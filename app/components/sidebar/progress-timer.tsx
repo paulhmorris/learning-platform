@@ -5,19 +5,19 @@ import { useFetcher } from "react-router";
 import { useCountdown } from "react-timing-hooks";
 
 import { cn, formatSeconds } from "~/lib/utils";
-import { SUBMIT_INTERVAL_MS } from "~/routes/api.lesson-progress";
+import { SUBMIT_INTERVAL_MS } from "~/routes/api.progress";
 import { APIResponseData } from "~/types/utils";
 
 interface Props {
   lesson: APIResponseData<"api::lesson.lesson">;
-  progress: Omit<UserLessonProgress, "createdAt" | "updatedAt"> | null;
+  progress: Pick<UserLessonProgress, "lessonId" | "isCompleted" | "durationInSeconds"> | null;
   setClientProgressPercentage: (percentage: number) => void;
 }
 
 export function ProgressTimer({ lesson, progress, setClientProgressPercentage }: Props) {
   // const progress = useLessonProgress(lesson.id);
   const duration = lesson.attributes.required_duration_in_seconds ?? 0;
-  const fetcher = useFetcher({ key: "lesson-progress" });
+  const fetcher = useFetcher();
   const countdownStart = duration - (progress?.durationInSeconds ?? 0);
   const [countdownValue, { stop, isStopped, start }] = useCountdown(countdownStart, 0, {
     startOnMount: true,
@@ -41,7 +41,7 @@ export function ProgressTimer({ lesson, progress, setClientProgressPercentage }:
     if (shouldSubmit) {
       void fetcher.submit(
         { lessonId: lesson.id, intent: "increment-duration" },
-        { method: "POST", action: "/api/lesson-progress" },
+        { method: "POST", action: "/api/progress" },
       );
     }
   }, [shouldSubmit]);
