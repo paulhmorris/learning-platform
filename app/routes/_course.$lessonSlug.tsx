@@ -10,7 +10,7 @@ import { MarkCompleteButton } from "~/components/lesson/mark-complete-button";
 import { useCourseData } from "~/hooks/useCourseData";
 import { createLogger } from "~/integrations/logger.server";
 import { Sentry } from "~/integrations/sentry";
-import { Responses } from "~/lib/responses.server";
+import { HttpHeaders, Responses } from "~/lib/responses.server";
 import { LessonService } from "~/services/lesson.server";
 import { SessionService } from "~/services/session.server";
 
@@ -23,6 +23,12 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({ formAction, default
   return defaultShouldRevalidate;
 };
 
+export function headers() {
+  return {
+    [HttpHeaders.CacheControl]: "public, s-maxage=300, max-age=300, stale-while-revalidate=86400",
+  };
+}
+
 export async function loader(args: LoaderFunctionArgs) {
   const userId = await SessionService.requireUserId(args);
 
@@ -31,8 +37,7 @@ export async function loader(args: LoaderFunctionArgs) {
     invariant(lessonSlug, "Lesson slug is required");
 
     const lesson = await LessonService.getBySlugWithContent(lessonSlug);
-    const isTimed = Boolean(lesson.attributes.required_duration_in_seconds);
-    return { lesson, isTimed };
+    return { lesson };
   } catch (error) {
     logger.error("Error loading lesson data", { error, lessonSlug: args.params.lessonSlug });
     Sentry.captureException(error, { extra: { lessonSlug: args.params.lessonSlug, userId } });
@@ -42,11 +47,13 @@ export async function loader(args: LoaderFunctionArgs) {
 
 export default function Course() {
   const { course, lessonProgress } = useCourseData();
-  const { lesson, isTimed } = useLoaderData<typeof loader>();
+  const { lesson } = useLoaderData<typeof loader>();
 
   const progress = useMemo(() => {
     return lessonProgress.find((p) => p.lessonId === lesson.id) ?? null;
   }, [lesson.id, lessonProgress]);
+
+  const isTimed = Boolean(lesson.attributes.required_duration_in_seconds);
 
   return (
     <>
