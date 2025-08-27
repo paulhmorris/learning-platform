@@ -54,7 +54,10 @@ class _SessionService {
 
     // There might be a case where a db user didn't get linked to their clerk external_id
     if (!userId) {
-      logger.error("external_id not found in claims. Attempting to link...", { requestUrl: args.request.url });
+      logger.error("external_id not found in claims. Attempting to link...", {
+        external_id: userId,
+        requestUrl: args.request.url,
+      });
 
       const { userId: clerkId, sessionId } = await this.getSession(args);
       if (!clerkId) {

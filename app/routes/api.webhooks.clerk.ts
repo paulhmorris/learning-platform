@@ -9,7 +9,14 @@ const logger = createLogger("Api.Webhooks.Clerk");
 
 // Webhook for Clerk
 export async function action(args: ActionFunctionArgs) {
-  const event = await verifyWebhook(args.request);
+  let event;
+  try {
+    event = await verifyWebhook(args.request);
+  } catch (error) {
+    logger.error("Error verifying Clerk webhook", { error });
+    return Responses.badRequest("Invalid webhook");
+  }
+
   const eventType = event.type;
 
   logger.info("Received Clerk webhook event", { event });
