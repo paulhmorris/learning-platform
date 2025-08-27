@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
 export const CONFIG = {
-  emailFromDomain: "hiphopdriving.com",
+  emailFromDomain: "plumblearning.com",
   isCI: Boolean(process.env.CI),
   baseUrl: process.env.BASE_URL,
   environment: process.env.VERCEL_ENV || "development",

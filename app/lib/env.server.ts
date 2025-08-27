@@ -35,6 +35,9 @@ const _serverEnvValidation = z.object({
   STRIPE_SECRET_KEY: z.string().startsWith("sk_"),
   STRIPE_WEBHOOK_SECRET: z.string().startsWith("whsec_"),
 
+  // Resend
+  RESEND_API_KEY: z.string().min(1),
+
   // Upstash
   UPSTASH_REDIS_REST_URL: z.url(),
   UPSTASH_REDIS_REST_TOKEN: z.string().min(1),

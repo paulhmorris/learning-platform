@@ -73,7 +73,7 @@ export default function AdminEditCourse() {
               required
               label="Host"
               name="host"
-              description="e.g. hiphopdriving.plumbmedia.org"
+              description="e.g. hiphopdriving.plumblearning.com"
             />
             <FormField
               scope={form.scope("strapiId")}

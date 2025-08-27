@@ -84,6 +84,7 @@
     "remix-themes": "^2.0.4",
     "remix-toast": "^3.1.0",
     "remix-utils": "^8.7.0",
+    "resend": "^6.0.1",
     "sonner": "^2.0.6",
     "strapi-sdk-js": "^2.3.3",
     "stripe": "^15.12.0",
@@ -143,8 +144,8 @@
     "vitest": "^3.2.4"
   },
   "optionalDependencies": {
-    "fsevents": "~2.3.2",
-    "@rollup/rollup-linux-x64-gnu": "*"
+    "@rollup/rollup-linux-x64-gnu": "*",
+    "fsevents": "~2.3.2"
   },
   "lint-staged": {
     "*": "prettier --write --ignore-unknown"
