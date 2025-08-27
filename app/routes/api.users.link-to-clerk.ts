@@ -1,9 +1,12 @@
 import { ActionFunctionArgs } from "react-router";
 
 import { db } from "~/integrations/db.server";
+import { createLogger } from "~/integrations/logger.server";
 import { Toasts } from "~/lib/toast.server";
 import { AuthService } from "~/services/auth.server";
 import { SessionService } from "~/services/session.server";
+
+const logger = createLogger("Api.Users.LinkToClerk");
 
 export async function action(args: ActionFunctionArgs) {
   await SessionService.requireSuperAdmin(args);
@@ -28,6 +31,7 @@ export async function action(args: ActionFunctionArgs) {
   const user = await db.user.findUnique({ where: { clerkId } });
 
   if (!user) {
+    logger.error("User not found in database", { clerkId });
     return Toasts.dataWithError(null, {
       message: "Error",
       description: "User not found in database",
@@ -37,6 +41,7 @@ export async function action(args: ActionFunctionArgs) {
   // Link the user to Clerk
   await AuthService.saveExternalId(clerkId, user.id);
 
+  logger.info("User linked to Clerk", { clerkId, userId: user.id });
   return Toasts.dataWithSuccess(null, {
     message: "Success",
     description: "User has been linked to Clerk",
