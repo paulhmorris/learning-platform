@@ -15,7 +15,7 @@ type ClerkData = {
   email: string;
   phone?: string;
 };
-type UserWithPIIAndCourses = Prisma.UserGetPayload<{
+export type UserWithPIIAndCourses = Prisma.UserGetPayload<{
   include: {
     courses: {
       include: {
@@ -97,7 +97,6 @@ export const UserService = {
       logger.info("User upserted:", { user });
 
       const stripeCustomer = await PaymentService.createCustomer(user.id, { metadata: { clerk_id: clerkId } });
-      logger.info("Stripe customer created:", { stripeCustomer });
 
       await this.update(user.id, { stripeId: stripeCustomer.id });
       logger.info("User updated with Stripe ID:", { userId: user.id, stripeId: stripeCustomer.id });

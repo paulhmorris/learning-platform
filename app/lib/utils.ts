@@ -1,35 +1,12 @@
-import { User, UserLessonProgress, UserQuizProgress } from "@prisma/client";
+import { UserLessonProgress, UserQuizProgress } from "@prisma/client";
 import type { Attribute } from "@strapi/strapi";
 import { ClassValue, clsx } from "clsx";
-import { Params, useRouteLoaderData } from "react-router";
+import { Params } from "react-router";
 import { StrapiResponse } from "strapi-sdk-js";
 import { twMerge } from "tailwind-merge";
 
 import { IconCameraFilled, IconClipboard } from "~/components/icons";
-import type { loader } from "~/root";
 import { APIResponseData } from "~/types/utils";
-
-function isUser(user: unknown): user is User {
-  return user != null && typeof user === "object" && "email" in user && typeof user.email === "string";
-}
-
-export function useOptionalUser() {
-  const data = useRouteLoaderData<typeof loader>("root");
-  if (!data || !isUser(data.user)) {
-    return undefined;
-  }
-  return data.user;
-}
-
-export function useUser(): NonNullable<Awaited<ReturnType<typeof loader>>["data"]["user"]> {
-  const maybeUser = useOptionalUser();
-  if (!maybeUser) {
-    throw new Error(
-      "No user found in root loader, but user is required by useUser. If user is optional, try useOptionalUser instead.",
-    );
-  }
-  return maybeUser;
-}
 
 export function cn(...inputs: Array<ClassValue>) {
   return twMerge(clsx(inputs));

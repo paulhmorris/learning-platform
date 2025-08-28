@@ -8,7 +8,7 @@ import { ErrorComponent } from "~/components/error-component";
 import { Button } from "~/components/ui/button";
 import { DataTable } from "~/components/ui/data-table/data-table";
 import { DataTableColumnHeader } from "~/components/ui/data-table/data-table-column-header";
-import { useUser } from "~/lib/utils";
+import { useUser } from "~/hooks/useUser";
 import { AuthService } from "~/services/auth.server";
 import { SessionService } from "~/services/session.server";
 

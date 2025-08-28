@@ -11,13 +11,9 @@ import { UserService } from "~/services/user.server";
 const logger = createLogger("SessionService");
 
 class _SessionService {
-  async logout(sessionId: string | null) {
-    if (sessionId) {
-      logger.info("Logging out user", { sessionId });
-      await AuthService.revokeSession(sessionId);
-    }
-    logger.info("No sessionId provided, skipping logout and redirecting to sign in");
-    throw Responses.redirectToSignIn("/");
+  async logout(sessionId: string) {
+    logger.info("Logging out user", { sessionId });
+    return AuthService.revokeSession(sessionId);
   }
 
   async getSession(args: LoaderFunctionArgs | ActionFunctionArgs) {
@@ -39,14 +35,16 @@ class _SessionService {
     }
 
     const user = await UserService.getByClerkId(userId);
-    if (user) {
-      logger.debug("Returning user found in the database", { userId, sessionId });
-      return user;
+
+    if (!user) {
+      logger.warn("User not found in the database, attempting to create...", { clerkId: userId, sessionId });
+      const newUser = await UserService.create(userId);
+      const newFullUser = await UserService.getByClerkId(newUser.id);
+      return newFullUser;
     }
 
-    logger.warn("User not found in the database, logging out", { clerkId: userId, sessionId });
-    await this.logout(sessionId);
-    throw Responses.redirectToSignIn(args.request.url);
+    logger.debug("Returning user found in the database", { userId, sessionId });
+    return user;
   }
 
   async requireUserId(args: LoaderFunctionArgs | ActionFunctionArgs) {
@@ -62,7 +60,9 @@ class _SessionService {
       const { userId: clerkId, sessionId } = await this.getSession(args);
       if (!clerkId) {
         logger.error("No userId found in session, redirecting to sign in", { requestUrl: args.request.url });
-        await this.logout(sessionId);
+        if (sessionId) {
+          throw this.logout(sessionId);
+        }
         throw Responses.redirectToSignIn(args.request.url);
       }
 
@@ -73,8 +73,7 @@ class _SessionService {
       logger.info("Successfully linked user to Clerk", { clerkId, userId: clerkUser.externalId });
 
       // We still need to log them out to refresh the session
-      await this.logout(sessionId);
-      throw Responses.redirectToSignIn(args.request.url);
+      throw this.logout(sessionId);
     }
 
     return userId;

@@ -1,4 +1,4 @@
-import { ClerkProvider, RedirectToSignIn, SignedIn, SignedOut } from "@clerk/react-router";
+import { ClerkProvider, SignedIn } from "@clerk/react-router";
 import { rootAuthLoader } from "@clerk/react-router/ssr.server";
 import { dark } from "@clerk/themes";
 import "@fontsource-variable/inter/wght.css";
@@ -78,11 +78,8 @@ export default function App({ loaderData }: Route.ComponentProps) {
     >
       <SignedIn>
         <Header />
-        <Outlet />
       </SignedIn>
-      <SignedOut>
-        <RedirectToSignIn />
-      </SignedOut>
+      <Outlet />
     </ClerkProvider>
   );
 }

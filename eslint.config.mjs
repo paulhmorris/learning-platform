@@ -32,6 +32,8 @@ export default tseslint.config(
       "test-results",
       "*.env",
       ".react-router/",
+      ".vercel/",
+      ".trigger/",
       "**/types/generated/**",
     ],
   },

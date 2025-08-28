@@ -17,13 +17,14 @@ import { CourseProgressBar } from "~/components/sidebar/course-progress-bar";
 import { Button } from "~/components/ui/button";
 import { Separator } from "~/components/ui/separator";
 import { useProgress } from "~/hooks/useProgress";
+import { useUser } from "~/hooks/useUser";
 import { getCourse } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
 import { createLogger } from "~/integrations/logger.server";
 import { Sentry } from "~/integrations/sentry";
 import { HttpHeaders, Responses } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
-import { getLessonsInOrder, getPreviewValues, useUser } from "~/lib/utils";
+import { getLessonsInOrder, getPreviewValues } from "~/lib/utils";
 import { PaymentService } from "~/services/payment.server";
 import { SessionService } from "~/services/session.server";
 
@@ -144,7 +145,7 @@ export default function CoursePreview() {
           </div>
         </nav>
 
-        <main className="max-w-screen-md lg:py-14">
+        <main className="w-full lg:max-w-screen-lg lg:py-14 xl:max-w-screen-md">
           <div className="space-y-8">
             <CourseHeader courseTitle={course.attributes.title} numLessons={lessons.length || 0} />
             <CourseProgressBar

@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
+import { RedirectToSignIn, SignedIn, SignedOut } from "@clerk/react-router";
 import { useEffect, useState } from "react";
 import { LoaderFunctionArgs, Outlet, useLoaderData, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
@@ -13,10 +14,11 @@ import { SectionLesson } from "~/components/sidebar/section-lesson";
 import { SectionQuiz } from "~/components/sidebar/section-quiz";
 import { Separator } from "~/components/ui/separator";
 import { useProgress } from "~/hooks/useProgress";
+import { useUser } from "~/hooks/useUser";
 import { Sentry } from "~/integrations/sentry";
 import { HttpHeaders } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
-import { cn, getCourseLayoutValues, getLessonsInOrder, useUser } from "~/lib/utils";
+import { cn, getCourseLayoutValues, getLessonsInOrder } from "~/lib/utils";
 import { CourseService } from "~/services/course.server";
 import { SessionService } from "~/services/session.server";
 
@@ -112,116 +114,121 @@ export default function CourseLayout() {
 
   return (
     <>
-      <div className="max-w-screen-xl">
-        <nav className="overflow-visible px-4 py-4 lg:fixed lg:bottom-0 lg:left-0 lg:top-20 lg:w-[448px] lg:overflow-auto lg:py-12">
-          <BackLink to="/preview">Back to overview</BackLink>
-          <div className="my-7">
-            <CourseProgressBar
-              progress={totalProgressInSeconds}
-              duration={totalDurationInSeconds}
-              isTimed={courseIsTimed}
-            />
-          </div>
+      <SignedOut>
+        <RedirectToSignIn />
+      </SignedOut>
+      <SignedIn>
+        <div className="max-w-screen-xl">
+          <nav className="overflow-visible px-4 py-4 lg:fixed lg:bottom-0 lg:left-0 lg:top-20 lg:w-[448px] lg:overflow-auto lg:py-12">
+            <BackLink to="/preview">Back to overview</BackLink>
+            <div className="my-7">
+              <CourseProgressBar
+                progress={totalProgressInSeconds}
+                duration={totalDurationInSeconds}
+                isTimed={courseIsTimed}
+              />
+            </div>
 
-          <ul className="relative space-y-7">
-            {sections
-              .filter((s) => {
-                if (isCollapsed) {
-                  if (activeLessonProgress?.isCompleted || activeQuizProgress?.isCompleted) {
-                    return s.id === activeSection?.id || s.id === nextLesson?.sectionId;
+            <ul className="relative space-y-7">
+              {sections
+                .filter((s) => {
+                  if (isCollapsed) {
+                    if (activeLessonProgress?.isCompleted || activeQuizProgress?.isCompleted) {
+                      return s.id === activeSection?.id || s.id === nextLesson?.sectionId;
+                    }
+                    return s.id === activeSection?.id;
                   }
-                  return s.id === activeSection?.id;
-                }
-                return true;
-              })
-              .map((section, section_index) => {
-                const durationInSeconds = section.lessons?.data.reduce(
-                  (acc, curr) => Math.ceil((curr.attributes.required_duration_in_seconds ?? 0) + acc),
-                  0,
-                );
+                  return true;
+                })
+                .map((section, section_index) => {
+                  const durationInSeconds = section.lessons?.data.reduce(
+                    (acc, curr) => Math.ceil((curr.attributes.required_duration_in_seconds ?? 0) + acc),
+                    0,
+                  );
 
-                const isQuizLocked = lessons.filter((l) => l.sectionId === section.id).some((l) => !l.isCompleted);
-                const shouldShowQuizInSection = isCollapsed ? isQuizActive || !isQuizLocked : true;
+                  const isQuizLocked = lessons.filter((l) => l.sectionId === section.id).some((l) => !l.isCompleted);
+                  const shouldShowQuizInSection = isCollapsed ? isQuizActive || !isQuizLocked : true;
 
-                return (
-                  <li key={`section-${section.id}`} data-sectionid={section.id}>
-                    <Section className={cn(isCollapsed && "pb-16")}>
-                      <SectionHeader sectionTitle={section.title} durationInMinutes={(durationInSeconds ?? 0) / 60} />
-                      <Separator className={cn(isCollapsed ? "my-2 bg-transparent" : "my-4")} />
-                      <ul className="flex flex-col gap-6">
-                        {section.lessons?.data
-                          .filter((l) => {
-                            if (isCollapsed) {
-                              // If lesson is completed, show the next lesson too
-                              if (activeLessonProgress?.isCompleted || activeQuizProgress?.isCompleted) {
-                                return (
-                                  l.attributes.uuid === activeLesson?.uuid ||
-                                  (nextLesson && l.attributes.uuid === nextLesson.uuid)
-                                );
+                  return (
+                    <li key={`section-${section.id}`} data-sectionid={section.id}>
+                      <Section className={cn(isCollapsed && "pb-16")}>
+                        <SectionHeader sectionTitle={section.title} durationInMinutes={(durationInSeconds ?? 0) / 60} />
+                        <Separator className={cn(isCollapsed ? "my-2 bg-transparent" : "my-4")} />
+                        <ul className="flex flex-col gap-6">
+                          {section.lessons?.data
+                            .filter((l) => {
+                              if (isCollapsed) {
+                                // If lesson is completed, show the next lesson too
+                                if (activeLessonProgress?.isCompleted || activeQuizProgress?.isCompleted) {
+                                  return (
+                                    l.attributes.uuid === activeLesson?.uuid ||
+                                    (nextLesson && l.attributes.uuid === nextLesson.uuid)
+                                  );
+                                }
+                                // Or just show active lesson when collapsed
+                                return l.attributes.uuid === activeLesson?.uuid;
                               }
-                              // Or just show active lesson when collapsed
-                              return l.attributes.uuid === activeLesson?.uuid;
-                            }
-                            return true;
-                          })
-                          .map((l) => {
-                            const lessonIndex = lessons.findIndex((li) => li.uuid === l.attributes.uuid);
+                              return true;
+                            })
+                            .map((l) => {
+                              const lessonIndex = lessons.findIndex((li) => li.uuid === l.attributes.uuid);
 
-                            // Lock the lesson if the previous section's quiz is not completed
-                            const previousSection =
-                              section_index > 0 ? course.attributes.sections[section_index - 1] : null;
-                            const previousSectionQuiz = previousSection?.quiz;
-                            const previousSectionQuizIsCompleted = quizProgress.find(
-                              (p) => p.isCompleted && p.quizId === previousSectionQuiz?.data?.id,
-                            );
+                              // Lock the lesson if the previous section's quiz is not completed
+                              const previousSection =
+                                section_index > 0 ? course.attributes.sections[section_index - 1] : null;
+                              const previousSectionQuiz = previousSection?.quiz;
+                              const previousSectionQuizIsCompleted = quizProgress.find(
+                                (p) => p.isCompleted && p.quizId === previousSectionQuiz?.data?.id,
+                              );
 
-                            const previousLessonIsCompleted = lessons[lastCompletedLessonIndex]?.isCompleted;
-                            const isLessonLocked =
-                              (lessonIndex > 0 && !previousLessonIsCompleted) ?? // Previous lesson is not completed
-                              (previousSectionQuiz?.data && !previousSectionQuizIsCompleted) ?? // Previous section quiz is not completed
-                              (!isCourseCompleted && lessonIndex > lastCompletedLessonIndex + 1); // Course is not completed and lesson index is greater than last completed lesson index + 1
+                              const previousLessonIsCompleted = lessons[lastCompletedLessonIndex]?.isCompleted;
+                              const isLessonLocked =
+                                (lessonIndex > 0 && !previousLessonIsCompleted) ?? // Previous lesson is not completed
+                                (previousSectionQuiz?.data && !previousSectionQuizIsCompleted) ?? // Previous section quiz is not completed
+                                (!isCourseCompleted && lessonIndex > lastCompletedLessonIndex + 1); // Course is not completed and lesson index is greater than last completed lesson index + 1
 
-                            return (
-                              <SectionLesson
-                                key={l.attributes.uuid}
-                                lesson={l}
-                                userProgress={lessonProgress.find((lp) => lp.lessonId === l.id) ?? null}
-                                locked={isLessonLocked}
-                              />
-                            );
-                          })}
-                        {section.quiz?.data && shouldShowQuizInSection ? (
-                          <SectionQuiz
-                            quiz={section.quiz.data}
-                            userProgress={quizProgress.find((qp) => qp.quizId === section.quiz?.data.id) ?? null}
-                            locked={isQuizLocked}
-                          />
-                        ) : null}
-                      </ul>
-                    </Section>
-                  </li>
-                );
-              })}
-            <li key="section-certificate">
-              <SectionCertificate isCourseCompleted={isCourseCompleted} />
-            </li>
-            {!isLargeScreen ? (
-              <button
-                className={cn(
-                  "absolute left-1/2 -translate-x-1/2 self-center rounded text-center text-base font-light ring-offset-background transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                  !isCollapsed ? "-bottom-12" : "bottom-6",
-                )}
-                onClick={toggleShowMore}
-              >
-                {!isCollapsed ? "Show less" : "Show more"}
-              </button>
-            ) : null}
-          </ul>
-        </nav>
-        <main className="px-4 py-12 lg:ml-[480px] lg:max-w-screen-lg lg:pl-0 lg:pr-4">
-          <Outlet />
-        </main>
-      </div>
+                              return (
+                                <SectionLesson
+                                  key={l.attributes.uuid}
+                                  lesson={l}
+                                  userProgress={lessonProgress.find((lp) => lp.lessonId === l.id) ?? null}
+                                  locked={isLessonLocked}
+                                />
+                              );
+                            })}
+                          {section.quiz?.data && shouldShowQuizInSection ? (
+                            <SectionQuiz
+                              quiz={section.quiz.data}
+                              userProgress={quizProgress.find((qp) => qp.quizId === section.quiz?.data.id) ?? null}
+                              locked={isQuizLocked}
+                            />
+                          ) : null}
+                        </ul>
+                      </Section>
+                    </li>
+                  );
+                })}
+              <li key="section-certificate">
+                <SectionCertificate isCourseCompleted={isCourseCompleted} />
+              </li>
+              {!isLargeScreen ? (
+                <button
+                  className={cn(
+                    "absolute left-1/2 -translate-x-1/2 self-center rounded text-center text-base font-light ring-offset-background transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                    !isCollapsed ? "-bottom-12" : "bottom-6",
+                  )}
+                  onClick={toggleShowMore}
+                >
+                  {!isCollapsed ? "Show less" : "Show more"}
+                </button>
+              ) : null}
+            </ul>
+          </nav>
+          <main className="px-4 py-12 lg:ml-[480px] lg:max-w-screen-lg lg:pl-0 lg:pr-4">
+            <Outlet />
+          </main>
+        </div>
+      </SignedIn>
     </>
   );
 }

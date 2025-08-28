@@ -9,6 +9,4 @@ export const CONFIG = {
   isProd: process.env.VERCEL_ENV === "production" && process.env.NODE_ENV === "production",
   isPreview: process.env.VERCEL_ENV === "preview" && process.env.NODE_ENV === "production",
   authDomain: process.env.AUTH_DOMAIN,
-  signInUrl: new URL("/sign-in", process.env.AUTH_DOMAIN),
-  signUpUrl: new URL("/sign-up", process.env.AUTH_DOMAIN),
-};
+} as const;

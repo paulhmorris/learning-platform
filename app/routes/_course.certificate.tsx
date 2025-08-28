@@ -6,12 +6,13 @@ import { ErrorComponent } from "~/components/error-component";
 import { SubmitButton } from "~/components/ui/submit-button";
 import { useCourseData } from "~/hooks/useCourseData";
 import { useProgress } from "~/hooks/useProgress";
+import { useUser } from "~/hooks/useUser";
 import { cms } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
 import { createLogger } from "~/integrations/logger.server";
 import { Sentry } from "~/integrations/sentry";
 import { Toasts } from "~/lib/toast.server";
-import { getLessonsInOrder, useUser } from "~/lib/utils";
+import { getLessonsInOrder } from "~/lib/utils";
 import { SessionService } from "~/services/session.server";
 import { APIResponseData } from "~/types/utils";
 
