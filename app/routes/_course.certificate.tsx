@@ -1,6 +1,5 @@
 import { ActionFunctionArgs, Form, Link, LoaderFunctionArgs, useActionData, useLoaderData } from "react-router";
 
-import { claimCertificateJob } from "jobs/claim-certificate";
 import { PageTitle } from "~/components/common/page-title";
 import { ErrorComponent } from "~/components/error-component";
 import { SubmitButton } from "~/components/ui/submit-button";
@@ -15,6 +14,7 @@ import { Toasts } from "~/lib/toast.server";
 import { getLessonsInOrder } from "~/lib/utils";
 import { SessionService } from "~/services/session.server";
 import { APIResponseData } from "~/types/utils";
+import { claimCertificateJob } from "../../jobs/claim-certificate";
 
 const logger = createLogger("Routes.CourseCertificate");
 
