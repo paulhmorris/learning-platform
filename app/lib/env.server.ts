@@ -3,7 +3,6 @@ import { z } from "zod/v4";
 
 const _serverEnvValidation = z.object({
   // Clerk
-  AUTH_DOMAIN: z.url(),
   CLERK_SECRET_KEY: z.string().min(1),
   CLERK_WEBHOOK_SIGNING_SECRET: z.string().min(1),
 
