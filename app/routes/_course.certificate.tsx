@@ -14,6 +14,7 @@ import { Toasts } from "~/lib/toast.server";
 import { getLessonsInOrder } from "~/lib/utils";
 import { SessionService } from "~/services/session.server";
 import { APIResponseData } from "~/types/utils";
+
 import { claimCertificateJob } from "../../jobs/claim-certificate";
 
 const logger = createLogger("Routes.CourseCertificate");
