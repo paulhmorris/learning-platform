@@ -68,7 +68,11 @@ class _SessionService {
         logger.warn("User not found in the database, attempting to create...", { clerkId });
         const newUser = await UserService.create(clerkId);
         const newFullUser = await UserService.getByClerkId(newUser.id);
-        return newFullUser;
+        if (!newFullUser) {
+          logger.error("Failed to create new user", { clerkId });
+          throw Responses.redirectToSignIn(args.request.url);
+        }
+        return newFullUser.id;
       }
 
       logger.info("Found user with clerkId", { clerkId, userId: user.id });
