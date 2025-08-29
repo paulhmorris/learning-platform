@@ -22,7 +22,7 @@ const devLogger = new Logger({
 });
 
 export function createLogger(module: string) {
-  if (!CONFIG.isProd) {
+  if (CONFIG.isDev) {
     return devLogger.with({ module });
   }
 
