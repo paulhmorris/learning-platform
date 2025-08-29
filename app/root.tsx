@@ -75,6 +75,12 @@ export default function App({ loaderData }: Route.ComponentProps) {
       telemetry={{ disabled: true }}
       appearance={{ baseTheme: theme === Theme.DARK ? dark : undefined }}
       publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY}
+      signInUrl="/sign-in"
+      signUpUrl="/sign-up"
+      signInForceRedirectUrl="/preview"
+      signUpForceRedirectUrl="/preview"
+      signInFallbackRedirectUrl="/preview"
+      signUpFallbackRedirectUrl="/preview"
     >
       <SignedIn>
         <Header />

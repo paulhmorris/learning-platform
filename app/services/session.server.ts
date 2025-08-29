@@ -63,7 +63,14 @@ class _SessionService {
         throw Responses.redirectToSignIn(args.request.url);
       }
 
-      const user = await db.user.findUniqueOrThrow({ where: { clerkId } });
+      const user = await db.user.findUnique({ where: { clerkId } });
+      if (!user) {
+        logger.warn("User not found in the database, attempting to create...", { clerkId });
+        const newUser = await UserService.create(clerkId);
+        const newFullUser = await UserService.getByClerkId(newUser.id);
+        return newFullUser;
+      }
+
       logger.info("Found user with clerkId", { clerkId, userId: user.id });
 
       const clerkUser = await AuthService.saveExternalId(clerkId, user.id);
