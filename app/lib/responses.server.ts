@@ -1,5 +1,7 @@
 import { data, redirect } from "react-router";
 
+import { CONFIG } from "~/config.server";
+
 function responseFactory(status: number) {
   return <T = unknown>(body?: T, init?: Omit<ResponseInit, "status">) => {
     return data(body ?? null, { ...init, status });
@@ -24,21 +26,21 @@ export const Responses = {
   },
 
   redirectToSignIn(redirect_url?: string) {
-    const path = "/sign-in";
-    const params = new URLSearchParams();
+    const url = CONFIG.signInUrl;
+
     if (redirect_url) {
-      params.set("redirect_url", redirect_url);
+      url.searchParams.set("redirect_url", redirect_url);
     }
-    return redirect(`${path}?${params.toString()}`);
+    return redirect(url.toString());
   },
 
   redirectToSignUp(redirect_url?: string) {
-    const path = "/sign-up";
-    const params = new URLSearchParams();
+    const url = CONFIG.signUpUrl;
+
     if (redirect_url) {
-      params.set("redirect_url", redirect_url);
+      url.searchParams.set("redirect_url", redirect_url);
     }
-    return redirect(`${path}?${params.toString()}`);
+    return redirect(url.toString());
   },
 };
 

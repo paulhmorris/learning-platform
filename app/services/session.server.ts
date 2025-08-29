@@ -23,7 +23,7 @@ class _SessionService {
 
   async getUserId(args: LoaderFunctionArgs | ActionFunctionArgs): Promise<string | null> {
     const { sessionClaims } = await getAuth(args);
-    logger.debug("Getting userId from session claims", { requestUrl: args.request.url, userId: sessionClaims?.eid });
+    logger.info("Getting userId from session claims", { requestUrl: args.request.url, sessionClaims });
     return sessionClaims?.eid ?? null;
   }
 
@@ -43,7 +43,7 @@ class _SessionService {
       return newFullUser;
     }
 
-    logger.debug("Returning user found in the database", { userId, sessionId });
+    logger.info("Returning user found in the database", { userId, sessionId });
     return user;
   }
 
@@ -57,12 +57,9 @@ class _SessionService {
         requestUrl: args.request.url,
       });
 
-      const { userId: clerkId, sessionId } = await this.getSession(args);
+      const { userId: clerkId } = await this.getSession(args);
       if (!clerkId) {
-        logger.error("No userId found in session, redirecting to sign in", { requestUrl: args.request.url });
-        if (sessionId) {
-          throw this.logout(sessionId);
-        }
+        logger.error("No userId found in session, redirecting to sign in", { redirectUrl: args.request.url });
         throw Responses.redirectToSignIn(args.request.url);
       }
 
@@ -73,7 +70,8 @@ class _SessionService {
       logger.info("Successfully linked user to Clerk", { clerkId, userId: clerkUser.externalId });
 
       // We still need to log them out to refresh the session
-      throw this.logout(sessionId);
+      logger.info("Redirecting to sign in", { redirectUrl: args.request.url });
+      throw Responses.redirectToSignIn(args.request.url);
     }
 
     return userId;
