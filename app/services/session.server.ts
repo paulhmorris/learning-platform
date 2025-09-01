@@ -2,7 +2,6 @@ import { getAuth } from "@clerk/react-router/ssr.server";
 import { UserRole } from "@prisma/client";
 import { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 
-import { db } from "~/integrations/db.server";
 import { createLogger } from "~/integrations/logger.server";
 import { Responses } from "~/lib/responses.server";
 import { AuthService } from "~/services/auth.server";
@@ -10,69 +9,52 @@ import { UserService } from "~/services/user.server";
 
 const logger = createLogger("SessionService");
 
+type Args = LoaderFunctionArgs | ActionFunctionArgs;
+
 class _SessionService {
   async logout(sessionId: string) {
     logger.info("Logging out user", { sessionId });
     return AuthService.revokeSession(sessionId);
   }
 
-  async getSession(args: LoaderFunctionArgs | ActionFunctionArgs) {
-    logger.debug("Getting session from Clerk", { requestUrl: args.request.url });
-    return getAuth(args);
-  }
-
-  async getUserId(args: LoaderFunctionArgs | ActionFunctionArgs): Promise<string | null> {
-    const { sessionClaims } = await getAuth(args);
-    logger.info("Getting userId from session claims", { requestUrl: args.request.url, sessionClaims });
-    return sessionClaims?.eid ?? null;
-  }
-
-  async getUser(args: LoaderFunctionArgs | ActionFunctionArgs) {
+  async getUser(args: Args) {
     const { userId, sessionId } = await this.getSession(args);
     if (!userId) {
       logger.warn("No userId found in session claims", { sessionId });
       return null;
     }
 
-    const user = await UserService.getByClerkId(userId);
+    const user = await this.getOrCreateUserByClerkId(userId);
 
-    if (!user) {
-      logger.warn("User not found in the database, attempting to create...", { clerkId: userId, sessionId });
-      const newUser = await UserService.create(userId);
-      const newFullUser = await UserService.getByClerkId(newUser.id);
-      return newFullUser;
-    }
-
-    logger.info("Returning user found in the database", { userId, sessionId });
+    logger.debug("Returning user found in the database", { userId, sessionId });
     return user;
   }
 
-  async requireUserId(args: LoaderFunctionArgs | ActionFunctionArgs) {
-    const userId = await this.getUserId(args);
+  async requireUserId(args: Args) {
+    const { sessionClaims, userId: clerkId } = await this.getSession(args);
+
+    if (!clerkId) {
+      return Responses.redirectToSignIn(args.request.url);
+    }
+
+    const externalId = sessionClaims.eid ?? null;
 
     // There might be a case where a db user didn't get linked to their clerk external_id
-    if (!userId) {
+    if (!externalId) {
       logger.error("external_id not found in claims. Attempting to link...", {
-        external_id: userId,
+        external_id: externalId,
         requestUrl: args.request.url,
       });
 
-      const { userId: clerkId } = await this.getSession(args);
       if (!clerkId) {
         logger.error("No userId found in session, redirecting to sign in", { redirectUrl: args.request.url });
         throw Responses.redirectToSignIn(args.request.url);
       }
 
-      const user = await db.user.findUnique({ where: { clerkId } });
+      const user = await this.getOrCreateUserByClerkId(clerkId);
       if (!user) {
-        logger.warn("User not found in the database, attempting to create...", { clerkId });
-        const newUser = await UserService.create(clerkId);
-        const newFullUser = await UserService.getByClerkId(newUser.id);
-        if (!newFullUser) {
-          logger.error("Failed to create new user", { clerkId });
-          throw Responses.redirectToSignIn(args.request.url);
-        }
-        return newFullUser.id;
+        logger.error("Failed to find or create user", { clerkId });
+        throw Responses.redirectToSignIn(args.request.url);
       }
 
       logger.info("Found user with clerkId", { clerkId, userId: user.id });
@@ -80,15 +62,41 @@ class _SessionService {
       const clerkUser = await AuthService.saveExternalId(clerkId, user.id);
       logger.info("Successfully linked user to Clerk", { clerkId, userId: clerkUser.externalId });
 
-      // We still need to log them out to refresh the session
-      logger.info("Redirecting to sign in", { redirectUrl: args.request.url });
-      throw Responses.redirectToSignIn(args.request.url);
+      return clerkUser.externalId;
     }
 
-    return userId;
+    return externalId;
   }
 
-  private async requireUserByRole(args: LoaderFunctionArgs | ActionFunctionArgs, allowedRoles?: Array<UserRole>) {
+  async requireUser(args: Args) {
+    return this.requireUserByRole(args);
+  }
+
+  async requireAdmin(args: Args) {
+    return this.requireUserByRole(args, ["ADMIN"]);
+  }
+
+  async requireSuperAdmin(args: Args) {
+    return this.requireUserByRole(args, ["SUPERADMIN"]);
+  }
+
+  private async getSession(args: Args) {
+    logger.debug("Getting session from Clerk", { requestUrl: args.request.url });
+    return getAuth(args);
+  }
+
+  private async getOrCreateUserByClerkId(clerkId: string) {
+    const user = await UserService.getByClerkId(clerkId);
+    if (user) {
+      return user;
+    }
+
+    logger.warn("User not found in the database, attempting to create...", { clerkId });
+    const newUser = await UserService.create(clerkId);
+    return UserService.getByClerkId(newUser.id);
+  }
+
+  private async requireUserByRole(args: Args, allowedRoles?: Array<UserRole>) {
     const defaultAllowedRoles: Array<UserRole> = ["USER", "ADMIN"];
     const user = await this.getUser(args);
     logger.debug("Checking user role", { requestUrl: args.request.url, userId: user?.id, allowedRoles });
@@ -119,18 +127,6 @@ class _SessionService {
 
     logger.warn("User does not have any allowed roles", { userId: user.id, role: user.role });
     throw Responses.forbidden();
-  }
-
-  async requireUser(args: LoaderFunctionArgs | ActionFunctionArgs) {
-    return this.requireUserByRole(args);
-  }
-
-  async requireAdmin(args: LoaderFunctionArgs | ActionFunctionArgs) {
-    return this.requireUserByRole(args, ["ADMIN"]);
-  }
-
-  async requireSuperAdmin(args: LoaderFunctionArgs | ActionFunctionArgs) {
-    return this.requireUserByRole(args, ["SUPERADMIN"]);
   }
 }
 

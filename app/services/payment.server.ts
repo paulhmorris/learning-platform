@@ -41,7 +41,7 @@ export const PaymentService = {
 
   async createCourseCheckoutSession({ userId, stripePriceId, baseUrl }: CreateCourseCheckoutSessionArgs) {
     try {
-      const success_url = new URL("/purchase?success=true&session_id={CHECKOUT_SESSION_ID}", baseUrl).toString();
+      const success_url = new URL("/api/purchase?success=true&session_id={CHECKOUT_SESSION_ID}", baseUrl).toString();
       const cancel_url = new URL("/api/purchase?success=false", baseUrl).toString();
 
       const user = await UserService.getById(userId);
