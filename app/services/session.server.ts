@@ -30,11 +30,11 @@ class _SessionService {
     return user;
   }
 
-  async requireUserId(args: Args) {
+  async requireUserId(args: Args): Promise<string> {
     const { sessionClaims, userId: clerkId } = await this.getSession(args);
 
     if (!clerkId) {
-      return Responses.redirectToSignIn(args.request.url);
+      throw Responses.redirectToSignIn(args.request.url);
     }
 
     const externalId = sessionClaims.eid ?? null;
@@ -62,6 +62,10 @@ class _SessionService {
       const clerkUser = await AuthService.saveExternalId(clerkId, user.id);
       logger.info("Successfully linked user to Clerk", { clerkId, userId: clerkUser.externalId });
 
+      if (!clerkUser.externalId) {
+        logger.error("Linked user to Clerk, but externalId is still missing", { clerkId, userId: user.id });
+        throw Responses.redirectToSignIn(args.request.url);
+      }
       return clerkUser.externalId;
     }
 
