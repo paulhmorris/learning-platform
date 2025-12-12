@@ -36,8 +36,12 @@ export async function loader(args: LoaderFunctionArgs) {
 
   try {
     const user = await UserService.getById(id);
+
+    if (!user) {
+      throw new Error("User not found");
+    }
     // TODO: Handle once clerkId is required
-    if (!user?.clerkId) {
+    if (!user.clerkId) {
       logger.error("User found but clerkId is missing", { id });
       throw Responses.serverError();
     }

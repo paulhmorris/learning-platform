@@ -51,7 +51,7 @@ export function getStrapiImgSrcSetAndSizes(formats: Attribute.JsonValue | undefi
 }
 
 export function valueIsNotNullishOrZero<T>(value: T | null | undefined): value is T {
-  return value !== null && value !== 0;
+  return value !== null && value !== undefined && value !== 0;
 }
 
 export function formatSeconds(seconds: number) {

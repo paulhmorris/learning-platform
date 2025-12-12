@@ -23,6 +23,7 @@ export const claimCertificateJob = task({
             id: true,
             courseId: true,
             certificateClaimed: true,
+            certificateNumber: true,
             certificateS3Key: true,
           },
         },
@@ -92,7 +93,7 @@ export const claimCertificateJob = task({
     logger.info("Certificate generated");
 
     // Upload certificate to S3
-    const key = `certificates/${user.email}-${nanoid(8)}.png`;
+    const key = `certificates/${user.email}-${nanoid(24)}.png`;
     const upload = await Bucket.uploadFile({ key, file: canvas.toBuffer("image/png") });
 
     logger.info("Certificate uploaded", upload as unknown as Record<string, unknown>);
