@@ -58,7 +58,7 @@ export function PreviewSectionLesson(props: SectionLessonProps) {
           <SectionItemIconContainer>
             <Icon className={cn("text-foreground", hasVideo ? "h-8 w-7" : "h-7 w-6")} />
           </SectionItemIconContainer>
-          <div className="flex flex-col justify-center">
+          <div>
             <SectionItemTitle>{lesson.attributes.title}</SectionItemTitle>
             {params.lessonSlug === lesson.attributes.slug ? (
               <SectionItemDescription>

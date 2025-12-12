@@ -1,13 +1,10 @@
 import { useEffect, useState } from "react";
 import { ActionFunctionArgs, Link, LoaderFunctionArgs, redirect, useLoaderData, useSearchParams } from "react-router";
 
-import { StrapiImage } from "~/components/common/strapi-image";
 import { CourseHeader } from "~/components/course/course-header";
 import { CoursePurchaseCTA } from "~/components/course/course-purchase-cta";
 import { CourseUpNext } from "~/components/course/course-up-next";
 import { ErrorComponent } from "~/components/error-component";
-import { IconClipboard, IconDocument } from "~/components/icons";
-import { CoursePreviewLink } from "~/components/preview/course-preview-link";
 import { PreviewSectionLesson } from "~/components/preview/preview-section-lesson";
 import { PreviewSectionQuiz } from "~/components/preview/preview-section-quiz";
 import { PurchaseCanceledModal } from "~/components/purchase-canceled-modal";
@@ -120,8 +117,10 @@ export default function CoursePreview() {
   return (
     <>
       <title>{`Preview | ${course.attributes.title}`}</title>
-      <div className="flex flex-col gap-x-12 px-4 py-4 lg:flex-row lg:py-4">
-        <nav className="left-0 top-[88px] h-full shrink-0 basis-[320px] py-4 sm:py-10 lg:sticky lg:py-14">
+      <div className="flex justify-center px-6 pt-6">
+        {/* Don't like the chapters / certificate nav on preview for now */}
+        {/* <div className="flex flex-col gap-x-12 px-4 py-4 lg:flex-row lg:py-4"> */}
+        {/* <nav className="left-0 top-[88px] h-full shrink-0 basis-[320px] py-4 sm:py-10 lg:sticky lg:py-14">
           <StrapiImage
             asset={course.attributes.cover_image}
             height={240}
@@ -143,7 +142,7 @@ export default function CoursePreview() {
               <span>Certificate</span>
             </CoursePreviewLink>
           </div>
-        </nav>
+        </nav> */}
 
         <main className="w-full lg:max-w-screen-lg lg:py-14 xl:max-w-screen-md">
           <div className="space-y-8">
@@ -214,8 +213,8 @@ export default function CoursePreview() {
 
                         const userLessonProgress = lessonProgress.find((lp) => lp.lessonId === l.id) ?? null;
                         return (
-                          <div key={l.attributes.uuid} className="flex flex-wrap items-center justify-between gap-2">
-                            <div className="shrink-0 grow">
+                          <div key={l.attributes.uuid} className="flex flex-wrap justify-between gap-2">
+                            <div className="grow">
                               <PreviewSectionLesson
                                 lesson={l}
                                 userProgress={userLessonProgress}
@@ -223,7 +222,7 @@ export default function CoursePreview() {
                               />
                             </div>
                             {!isLessonLocked ? (
-                              <Button asChild className="ml-12 grow-0 sm:ml-0 sm:w-auto" variant="secondary">
+                              <Button asChild className="ml-12 grow-0 md:ml-0 md:w-auto" variant="secondary">
                                 <Link to={`/${l.attributes.slug}`}>
                                   {!userLessonProgress
                                     ? "Start"
