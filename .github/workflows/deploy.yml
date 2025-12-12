@@ -53,7 +53,7 @@ jobs:
     name: 🚀 Deploy
     runs-on: ubuntu-latest
     environment: production
-    needs: [lint, typecheck]
+    needs: [lint, test, typecheck]
 
     steps:
       - uses: actions/checkout@v5

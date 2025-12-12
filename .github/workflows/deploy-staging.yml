@@ -57,7 +57,7 @@ jobs:
     name: 🚧 Deploy to Staging
     runs-on: ubuntu-latest
     environment: staging
-    needs: [lint, typecheck]
+    needs: [lint, test, typecheck]
 
     steps:
       - uses: actions/checkout@v5
