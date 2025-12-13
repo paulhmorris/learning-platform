@@ -23,8 +23,15 @@ export const claimCertificateJob = task({
             id: true,
             courseId: true,
             certificateClaimed: true,
-            certificateNumber: true,
-            certificateS3Key: true,
+            certificate: {
+              select: {
+                id: true,
+                number: true,
+                s3Key: true,
+              },
+            },
+            // certificateNumber: true,
+            // certificateS3Key: true,
           },
         },
       },
@@ -56,7 +63,7 @@ export const claimCertificateJob = task({
     }
 
     // Check if certificate has already been claimed
-    if (thisCourse.certificateClaimed) {
+    if (thisCourse.certificate) {
       logger.info("Certificate already claimed. Sending another email.", user);
       const email = await EmailService.send({
         from: `Plumb Media & Education <no-reply@${CONFIG.emailFromDomain}>`,
@@ -65,10 +72,11 @@ export const claimCertificateJob = task({
         html: `
           <p>Hi ${user.firstName},</p>
           <p>Congratulations on completing the ${payload.courseName} course! Your certificate is ready to download.</p>
-          <p><a href="https://assets.hiphopdriving.com/${thisCourse.certificateS3Key}" target="_blank">Download Certificate</a></p>
+          <p><a href="https://assets.hiphopdriving.com/${thisCourse.certificate.s3Key}" target="_blank">Download Certificate</a></p>
         `,
       });
       logger.info("Email sent", email);
+      return;
     }
 
     // Generate certificate
@@ -112,7 +120,8 @@ export const claimCertificateJob = task({
     logger.info("Email sent", sentEmail);
 
     // Update user course
-    const updatedCourse = await db.userCourses.update({
+    // TODO: Pull certificate from allocation
+    const updatedCourse = await db.userCourse.update({
       where: {
         userId_courseId: {
           userId: payload.userId,

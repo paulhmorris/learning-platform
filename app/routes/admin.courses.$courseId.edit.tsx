@@ -25,6 +25,7 @@ const schema = z.object({
   stripePriceId: text,
   stripeProductId: text,
   requiresIdentityVerification: checkbox,
+  issuesCertificate: checkbox,
 });
 
 export async function action(args: ActionFunctionArgs) {
@@ -63,6 +64,7 @@ export default function AdminEditCourse() {
           stripePriceId: data.course.stripePriceId,
           stripeProductId: data.course.stripeProductId,
           requiresIdentityVerification: data.course.requiresIdentityVerification,
+          issuesCertificate: data.course.issuesCertificate,
         }}
         className="max-w-md space-y-4"
       >

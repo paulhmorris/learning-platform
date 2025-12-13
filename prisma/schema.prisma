@@ -19,7 +19,8 @@ model User {
   stripeVerificationSessionId String?
   isIdentityVerified          Boolean @default(false)
 
-  courses          UserCourses[]
+  courses          UserCourse[]
+  certificates     Certificate[]
   quizProgresses   UserQuizProgress[]
   lessonProgresses UserLessonProgress[]
 
@@ -40,11 +41,12 @@ model Course {
   strapiId                     Int
   stripePriceId                String
   stripeProductId              String
-  /// e.g. "course.hiphopdriving.com"
   host                         String  @unique
+  issuesCertificate            Boolean @default(false)
   requiresIdentityVerification Boolean @default(false)
 
-  userCourses UserCourses[]
+  userCourses                  UserCourse[]
+  certificateNumberAllocations CertificateNumberAllocation[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -53,23 +55,23 @@ model Course {
 }
 
 // Relations
-model UserCourses {
+model UserCourse {
   id                 Int       @id @default(autoincrement())
   isCompleted        Boolean   @default(false)
   completedAt        DateTime?
   certificateClaimed Boolean   @default(false)
-  certificateS3Key   String?
-  certificateNumber  String?
   userId             String
   courseId           String
 
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  course Course @relation(fields: [courseId], references: [id])
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  course      Course       @relation(fields: [courseId], references: [id])
+  certificate Certificate?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@unique([userId, courseId])
+  @@map("UserCourses")
 }
 
 model UserLessonProgress {
@@ -103,4 +105,36 @@ model UserQuizProgress {
   updatedAt DateTime @updatedAt
 
   @@unique([userId, quizId])
+}
+
+model Certificate {
+  id       Int      @id @default(autoincrement())
+  number   String   @unique
+  s3Key    String?
+  issuedAt DateTime @default(now())
+
+  userCourse   UserCourse @relation(fields: [userCourseId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  userCourseId Int        @unique
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  userId       String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([userCourseId])
+}
+
+model CertificateNumberAllocation {
+  id     Int     @id @default(autoincrement())
+  number String  @unique
+  isUsed Boolean @default(false)
+
+  course   Course @relation(fields: [courseId], references: [id])
+  courseId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([courseId])
 }

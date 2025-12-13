@@ -77,10 +77,10 @@ export default function AdminUserCourses() {
                     <Link to={`${course.id}`}>View Progress</Link>
                   </Button>
                   {/* certificate */}
-                  {course.certificateClaimed ? (
+                  {course.certificate ? (
                     <AdminButton variant="outline" asChild className="w-auto">
                       <a
-                        href={`https://assets.hiphopdriving.com/${course.certificateS3Key}`}
+                        href={`https://assets.hiphopdriving.com/${course.certificate.s3Key}`}
                         target="_blank"
                         rel="noreferrer"
                         className="flex items-center gap-2"

@@ -32,11 +32,16 @@ export async function loader(args: LoaderFunctionArgs) {
     });
   }
 
-  const userCourse = await db.userCourses.findUnique({
+  const userCourse = await db.userCourse.findUnique({
     where: { userId_courseId: { userId: user.id, courseId: linkedCourse.id } },
     select: {
-      certificateClaimed: true,
-      certificateS3Key: true,
+      certificate: {
+        select: {
+          id: true,
+          issuedAt: true,
+          s3Key: true,
+        },
+      },
       isCompleted: true,
       completedAt: true,
     },
@@ -227,7 +232,7 @@ export default function CourseCertificate() {
     );
   }
 
-  if (userCourse.certificateClaimed && userCourse.certificateS3Key) {
+  if (userCourse.certificate) {
     return (
       <Wrapper>
         <SuccessText>
@@ -236,7 +241,7 @@ export default function CourseCertificate() {
             className="mt-2 block text-lg font-bold underline decoration-2"
             target="_blank"
             rel="noreferrer"
-            href={`https://assets.hiphopdriving.com/${userCourse.certificateS3Key}`}
+            href={`https://assets.hiphopdriving.com/${userCourse.certificate.s3Key}`}
           >
             Access it here.
           </a>

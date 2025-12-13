@@ -68,16 +68,25 @@ export async function action(args: ActionFunctionArgs) {
     });
   }
 
-  if (!user.stripeId) {
-    await PaymentService.createCustomer(user.id);
-  }
+  try {
+    if (!user.stripeId) {
+      await PaymentService.createCustomer(user.id);
+    }
 
-  const session = await PaymentService.createCourseCheckoutSession({
-    userId: user.id,
-    stripePriceId: course.stripePriceId,
-    baseUrl: url.origin,
-  });
-  return redirect(session.url ?? "/", { status: 303 });
+    const session = await PaymentService.createCourseCheckoutSession({
+      userId: user.id,
+      stripePriceId: course.stripePriceId,
+      baseUrl: url.origin,
+    });
+    return redirect(session.url ?? "/", { status: 303 });
+  } catch (error) {
+    Sentry.captureException(error);
+    logger.error("Failed to create checkout session", { error, userId: user.id, courseId: course.id });
+    return Toasts.redirectWithError("/", {
+      message: "Unable to enroll",
+      description: "Please try again later",
+    });
+  }
 }
 
 export default function CoursePreview() {
