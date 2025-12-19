@@ -7,7 +7,7 @@
   "scripts": {
     "build": "react-router build",
     "copytypes": "node copyTypes.cjs && npx prettier --write .",
-    "dev": "NODE_OPTIONS='--import ./instrument.server.mjs --trace-warnings' react-router dev",
+    "dev": "react-router dev",
     "format": "prettier --write .",
     "lint": "eslint . --cache",
     "lint:prepush": "eslint . --cache --max-warnings=0",
@@ -56,11 +56,11 @@
     "@radix-ui/react-tabs": "^1.1.12",
     "@radix-ui/react-toggle": "^1.1.9",
     "@radix-ui/react-tooltip": "^1.2.7",
-    "@react-router/fs-routes": "^7.7.0",
-    "@react-router/node": "^7.7.0",
+    "@react-router/fs-routes": "^7.11.0",
+    "@react-router/node": "^7.11.0",
     "@rvf/react-router": "^7.1.5",
-    "@sentry/profiling-node": "^9.40.0",
-    "@sentry/react-router": "^9.40.0",
+    "@sentry/profiling-node": "^10.32.0",
+    "@sentry/react-router": "^10.32.0",
     "@strapi/blocks-react-renderer": "^1.0.2",
     "@stripe/react-stripe-js": "^2.9.0",
     "@stripe/stripe-js": "^3.5.0",
@@ -79,14 +79,14 @@
     "isbot": "^5.1.28",
     "nanoid": "^5.1.5",
     "patch-package": "^8.0.0",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
-    "react-router": "^7.7.0",
-    "react-router-hono-server": "^2.16.0",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "react-router": "^7.11.0",
+    "react-router-hono-server": "^2.22.0",
     "react-timing-hooks": "^5.1.0",
     "remix-themes": "^2.0.4",
     "remix-toast": "^3.1.0",
-    "remix-utils": "^8.7.0",
+    "remix-utils": "^9.0.0",
     "resend": "^6.0.1",
     "sonner": "^2.0.6",
     "strapi-sdk-js": "^2.3.3",
@@ -103,7 +103,7 @@
     "@eslint/js": "^9.31.0",
     "@faker-js/faker": "^9.9.0",
     "@playwright/test": "^1.54.1",
-    "@react-router/dev": "^7.7.0",
+    "@react-router/dev": "^7.11.0",
     "@strapi/strapi": "^4.25.1",
     "@tailwindcss/forms": "^0.5.10",
     "@tailwindcss/typography": "^0.5.16",
@@ -162,6 +162,6 @@
     "seed": "tsx prisma/seed.ts"
   },
   "volta": {
-    "node": "22.17.0"
+    "node": "22.21.1"
   }
 }
