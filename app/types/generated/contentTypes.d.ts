@@ -1,4 +1,4 @@
-import type { Attribute, Schema } from "@strapi/strapi";
+import type { Schema, Attribute } from "@strapi/strapi";
 
 export interface AdminPermission extends Schema.CollectionType {
   collectionName: "admin_permissions";
@@ -282,150 +282,6 @@ export interface AdminTransferTokenPermission extends Schema.CollectionType {
     updatedAt: Attribute.DateTime;
     createdBy: Attribute.Relation<"admin::transfer-token-permission", "oneToOne", "admin::user"> & Attribute.Private;
     updatedBy: Attribute.Relation<"admin::transfer-token-permission", "oneToOne", "admin::user"> & Attribute.Private;
-  };
-}
-
-export interface ApiCourseCourse extends Schema.CollectionType {
-  collectionName: "courses";
-  info: {
-    singularName: "course";
-    pluralName: "courses";
-    displayName: "Course";
-    description: "";
-  };
-  options: {
-    draftAndPublish: true;
-  };
-  attributes: {
-    title: Attribute.String & Attribute.Required & Attribute.Unique;
-    description: Attribute.Text;
-    cover_image: Attribute.Media;
-    lessons: Attribute.Relation<"api::course.course", "oneToMany", "api::lesson.lesson">;
-    slug: Attribute.UID<"api::course.course", "title"> &
-      Attribute.Required &
-      Attribute.SetMinMaxLength<{
-        minLength: 8;
-      }>;
-    uuid: Attribute.UID & Attribute.CustomField<"plugin::strapi-advanced-uuid.uuid">;
-    sections: Attribute.DynamicZone<["course.section"]> & Attribute.Required;
-    logo: Attribute.Media & Attribute.Required;
-    primary_color: Attribute.String & Attribute.Required & Attribute.CustomField<"plugin::color-picker.color">;
-    secondary_color: Attribute.String & Attribute.Required & Attribute.CustomField<"plugin::color-picker.color">;
-    dark_mode_logo: Attribute.Media;
-    createdAt: Attribute.DateTime;
-    updatedAt: Attribute.DateTime;
-    publishedAt: Attribute.DateTime;
-    createdBy: Attribute.Relation<"api::course.course", "oneToOne", "admin::user"> & Attribute.Private;
-    updatedBy: Attribute.Relation<"api::course.course", "oneToOne", "admin::user"> & Attribute.Private;
-  };
-}
-
-export interface ApiHipHopLandingPageHipHopLandingPage extends Schema.SingleType {
-  collectionName: "hip_hop_landing_pages";
-  info: {
-    singularName: "hip-hop-landing-page";
-    pluralName: "hip-hop-landing-pages";
-    displayName: "Hip Hop Landing Page";
-    description: "";
-  };
-  options: {
-    draftAndPublish: true;
-  };
-  attributes: {
-    hero_title: Attribute.String;
-    hero_subtitle: Attribute.String;
-    feature_card: Attribute.Component<"page-content.feature-card", true>;
-    feature: Attribute.Component<"page-content.feature", true>;
-    slide: Attribute.Component<"page-content.slide", true>;
-    cta_dark: Attribute.String & Attribute.Required;
-    faq: Attribute.Component<"page-content.faq", true>;
-    cta_large: Attribute.String;
-    module_card: Attribute.Component<"page-content.module-card", true>;
-    insurance_cta: Attribute.String;
-    hero_highlighted: Attribute.String;
-    createdAt: Attribute.DateTime;
-    updatedAt: Attribute.DateTime;
-    publishedAt: Attribute.DateTime;
-    createdBy: Attribute.Relation<"api::hip-hop-landing-page.hip-hop-landing-page", "oneToOne", "admin::user"> &
-      Attribute.Private;
-    updatedBy: Attribute.Relation<"api::hip-hop-landing-page.hip-hop-landing-page", "oneToOne", "admin::user"> &
-      Attribute.Private;
-  };
-}
-
-export interface ApiLessonLesson extends Schema.CollectionType {
-  collectionName: "lessons";
-  info: {
-    singularName: "lesson";
-    pluralName: "lessons";
-    displayName: "Lesson";
-    description: "";
-  };
-  options: {
-    draftAndPublish: true;
-  };
-  attributes: {
-    title: Attribute.String & Attribute.Required;
-    description: Attribute.Text;
-    slug: Attribute.UID<"api::lesson.lesson", "title"> &
-      Attribute.Required &
-      Attribute.SetMinMaxLength<{
-        minLength: 8;
-      }>;
-    content: Attribute.DynamicZone<["blocks.audio", "blocks.image", "blocks.text", "blocks.video", "blocks.slideshow"]>;
-    uuid: Attribute.UID & Attribute.CustomField<"plugin::strapi-advanced-uuid.uuid">;
-    has_video: Attribute.Boolean & Attribute.Required & Attribute.DefaultTo<true>;
-    required_duration_in_seconds: Attribute.Integer &
-      Attribute.SetMinMax<
-        {
-          min: 60;
-        },
-        number
-      >;
-    createdAt: Attribute.DateTime;
-    updatedAt: Attribute.DateTime;
-    publishedAt: Attribute.DateTime;
-    createdBy: Attribute.Relation<"api::lesson.lesson", "oneToOne", "admin::user"> & Attribute.Private;
-    updatedBy: Attribute.Relation<"api::lesson.lesson", "oneToOne", "admin::user"> & Attribute.Private;
-  };
-}
-
-export interface ApiQuizQuiz extends Schema.CollectionType {
-  collectionName: "quizzes";
-  info: {
-    singularName: "quiz";
-    pluralName: "quizzes";
-    displayName: "Quiz";
-    description: "";
-  };
-  options: {
-    draftAndPublish: true;
-  };
-  attributes: {
-    uuid: Attribute.UID & Attribute.CustomField<"plugin::strapi-advanced-uuid.uuid">;
-    questions: Attribute.Component<"course.quiz-question", true>;
-    title: Attribute.String;
-    passing_score: Attribute.Integer &
-      Attribute.Required &
-      Attribute.SetMinMax<
-        {
-          max: 100;
-        },
-        number
-      > &
-      Attribute.DefaultTo<60>;
-    required_duration_in_seconds: Attribute.Integer &
-      Attribute.SetMinMax<
-        {
-          min: 60;
-        },
-        number
-      >;
-    createdAt: Attribute.DateTime;
-    updatedAt: Attribute.DateTime;
-    publishedAt: Attribute.DateTime;
-    createdBy: Attribute.Relation<"api::quiz.quiz", "oneToOne", "admin::user"> & Attribute.Private;
-    updatedBy: Attribute.Relation<"api::quiz.quiz", "oneToOne", "admin::user"> & Attribute.Private;
   };
 }
 
@@ -798,6 +654,171 @@ export interface PluginMuxVideoUploaderMuxAsset extends Schema.CollectionType {
   };
 }
 
+export interface ApiCourseCourse extends Schema.CollectionType {
+  collectionName: "courses";
+  info: {
+    singularName: "course";
+    pluralName: "courses";
+    displayName: "Course";
+    description: "";
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    title: Attribute.String & Attribute.Required & Attribute.Unique;
+    description: Attribute.Text;
+    cover_image: Attribute.Media;
+    lessons: Attribute.Relation<"api::course.course", "oneToMany", "api::lesson.lesson">;
+    slug: Attribute.UID<"api::course.course", "title"> &
+      Attribute.Required &
+      Attribute.SetMinMaxLength<{
+        minLength: 8;
+      }>;
+    uuid: Attribute.UID & Attribute.CustomField<"plugin::strapi-advanced-uuid.uuid">;
+    sections: Attribute.DynamicZone<["course.section"]> & Attribute.Required;
+    primary_color: Attribute.String & Attribute.Required & Attribute.CustomField<"plugin::color-picker.color">;
+    secondary_color: Attribute.String & Attribute.Required & Attribute.CustomField<"plugin::color-picker.color">;
+    createdAt: Attribute.DateTime;
+    updatedAt: Attribute.DateTime;
+    publishedAt: Attribute.DateTime;
+    createdBy: Attribute.Relation<"api::course.course", "oneToOne", "admin::user"> & Attribute.Private;
+    updatedBy: Attribute.Relation<"api::course.course", "oneToOne", "admin::user"> & Attribute.Private;
+  };
+}
+
+export interface ApiHipHopLandingPageHipHopLandingPage extends Schema.SingleType {
+  collectionName: "hip_hop_landing_pages";
+  info: {
+    singularName: "hip-hop-landing-page";
+    pluralName: "hip-hop-landing-pages";
+    displayName: "Hip Hop Landing Page";
+    description: "";
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    hero_title: Attribute.String;
+    hero_subtitle: Attribute.String;
+    feature_card: Attribute.Component<"page-content.feature-card", true>;
+    feature: Attribute.Component<"page-content.feature", true>;
+    slide: Attribute.Component<"page-content.slide", true>;
+    cta_dark: Attribute.String & Attribute.Required;
+    faq: Attribute.Component<"page-content.faq", true>;
+    cta_large: Attribute.String;
+    module_card: Attribute.Component<"page-content.module-card", true>;
+    insurance_cta: Attribute.String;
+    hero_highlighted: Attribute.String;
+    createdAt: Attribute.DateTime;
+    updatedAt: Attribute.DateTime;
+    publishedAt: Attribute.DateTime;
+    createdBy: Attribute.Relation<"api::hip-hop-landing-page.hip-hop-landing-page", "oneToOne", "admin::user"> &
+      Attribute.Private;
+    updatedBy: Attribute.Relation<"api::hip-hop-landing-page.hip-hop-landing-page", "oneToOne", "admin::user"> &
+      Attribute.Private;
+  };
+}
+
+export interface ApiLessonLesson extends Schema.CollectionType {
+  collectionName: "lessons";
+  info: {
+    singularName: "lesson";
+    pluralName: "lessons";
+    displayName: "Lesson";
+    description: "";
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    title: Attribute.String & Attribute.Required;
+    description: Attribute.Text;
+    slug: Attribute.UID<"api::lesson.lesson", "title"> &
+      Attribute.Required &
+      Attribute.SetMinMaxLength<{
+        minLength: 8;
+      }>;
+    content: Attribute.DynamicZone<["blocks.audio", "blocks.image", "blocks.text", "blocks.video", "blocks.slideshow"]>;
+    uuid: Attribute.UID & Attribute.CustomField<"plugin::strapi-advanced-uuid.uuid">;
+    has_video: Attribute.Boolean & Attribute.Required & Attribute.DefaultTo<true>;
+    required_duration_in_seconds: Attribute.Integer &
+      Attribute.SetMinMax<
+        {
+          min: 60;
+        },
+        number
+      >;
+    createdAt: Attribute.DateTime;
+    updatedAt: Attribute.DateTime;
+    publishedAt: Attribute.DateTime;
+    createdBy: Attribute.Relation<"api::lesson.lesson", "oneToOne", "admin::user"> & Attribute.Private;
+    updatedBy: Attribute.Relation<"api::lesson.lesson", "oneToOne", "admin::user"> & Attribute.Private;
+  };
+}
+
+export interface ApiQuizQuiz extends Schema.CollectionType {
+  collectionName: "quizzes";
+  info: {
+    singularName: "quiz";
+    pluralName: "quizzes";
+    displayName: "Quiz";
+    description: "";
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    uuid: Attribute.UID & Attribute.CustomField<"plugin::strapi-advanced-uuid.uuid">;
+    questions: Attribute.Component<"course.quiz-question", true>;
+    title: Attribute.String;
+    passing_score: Attribute.Integer &
+      Attribute.Required &
+      Attribute.SetMinMax<
+        {
+          max: 100;
+        },
+        number
+      > &
+      Attribute.DefaultTo<60>;
+    required_duration_in_seconds: Attribute.Integer &
+      Attribute.SetMinMax<
+        {
+          min: 60;
+        },
+        number
+      >;
+    createdAt: Attribute.DateTime;
+    updatedAt: Attribute.DateTime;
+    publishedAt: Attribute.DateTime;
+    createdBy: Attribute.Relation<"api::quiz.quiz", "oneToOne", "admin::user"> & Attribute.Private;
+    updatedBy: Attribute.Relation<"api::quiz.quiz", "oneToOne", "admin::user"> & Attribute.Private;
+  };
+}
+
+export interface ApiTermsAndConditionsTermsAndConditions extends Schema.SingleType {
+  collectionName: "terms_and_conditions_all";
+  info: {
+    singularName: "terms-and-conditions";
+    pluralName: "terms-and-conditions-all";
+    displayName: "Terms And Conditions";
+    description: "";
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    content: Attribute.RichText;
+    createdAt: Attribute.DateTime;
+    updatedAt: Attribute.DateTime;
+    publishedAt: Attribute.DateTime;
+    createdBy: Attribute.Relation<"api::terms-and-conditions.terms-and-conditions", "oneToOne", "admin::user"> &
+      Attribute.Private;
+    updatedBy: Attribute.Relation<"api::terms-and-conditions.terms-and-conditions", "oneToOne", "admin::user"> &
+      Attribute.Private;
+  };
+}
+
 declare module "@strapi/types" {
   export module Shared {
     export interface ContentTypes {
@@ -808,10 +829,6 @@ declare module "@strapi/types" {
       "admin::api-token-permission": AdminApiTokenPermission;
       "admin::transfer-token": AdminTransferToken;
       "admin::transfer-token-permission": AdminTransferTokenPermission;
-      "api::course.course": ApiCourseCourse;
-      "api::hip-hop-landing-page.hip-hop-landing-page": ApiHipHopLandingPageHipHopLandingPage;
-      "api::lesson.lesson": ApiLessonLesson;
-      "api::quiz.quiz": ApiQuizQuiz;
       "plugin::upload.file": PluginUploadFile;
       "plugin::upload.folder": PluginUploadFolder;
       "plugin::content-releases.release": PluginContentReleasesRelease;
@@ -821,6 +838,11 @@ declare module "@strapi/types" {
       "plugin::users-permissions.role": PluginUsersPermissionsRole;
       "plugin::users-permissions.user": PluginUsersPermissionsUser;
       "plugin::mux-video-uploader.mux-asset": PluginMuxVideoUploaderMuxAsset;
+      "api::course.course": ApiCourseCourse;
+      "api::hip-hop-landing-page.hip-hop-landing-page": ApiHipHopLandingPageHipHopLandingPage;
+      "api::lesson.lesson": ApiLessonLesson;
+      "api::quiz.quiz": ApiQuizQuiz;
+      "api::terms-and-conditions.terms-and-conditions": ApiTermsAndConditionsTermsAndConditions;
     }
   }
 }

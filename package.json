@@ -6,7 +6,7 @@
   "packageManager": "npm@10.9.2",
   "scripts": {
     "build": "react-router build",
-    "copytypes": "node copyTypes.cjs && npx prettier --write .",
+    "copytypes": "node copyTypes.mjs && npx prettier --write .",
     "dev": "react-router dev",
     "format": "prettier --write .",
     "lint": "eslint . --cache",
