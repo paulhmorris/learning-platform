@@ -20,7 +20,6 @@ model User {
   isIdentityVerified          Boolean @default(false)
 
   courses          UserCourse[]
-  certificates     Certificate[]
   quizProgresses   UserQuizProgress[]
   lessonProgresses UserLessonProgress[]
 
@@ -115,13 +114,10 @@ model Certificate {
 
   userCourse   UserCourse @relation(fields: [userCourseId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   userCourseId Int        @unique
-  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  userId       String
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([userId])
   @@index([userCourseId])
 }
 

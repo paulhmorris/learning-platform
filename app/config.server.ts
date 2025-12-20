@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
-export const CONFIG = {
+export const SERVER_CONFIG = {
   emailFromDomain: "plumblearning.com",
   isCI: Boolean(process.env.CI),
   baseUrl: process.env.BASE_URL,
