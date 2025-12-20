@@ -19,7 +19,7 @@ import { getCourse } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
 import { createLogger } from "~/integrations/logger.server";
 import { Sentry } from "~/integrations/sentry";
-import { HttpHeaders, Responses } from "~/lib/responses.server";
+import { Responses } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
 import { getLessonsInOrder, getPreviewValues } from "~/lib/utils";
 import { PaymentService } from "~/services/payment.server";
@@ -48,12 +48,6 @@ export async function loader(args: LoaderFunctionArgs) {
     }
     throw Responses.serverError();
   }
-}
-
-export function headers() {
-  return {
-    [HttpHeaders.CacheControl]: "public, s-maxage=60, max-age=60, stale-while-revalidate=300",
-  };
 }
 
 export async function action(args: ActionFunctionArgs) {

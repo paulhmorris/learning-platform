@@ -2,13 +2,14 @@ import { createCanvas, loadImage } from "@napi-rs/canvas";
 import { logger, task } from "@trigger.dev/sdk/v3";
 import { nanoid } from "nanoid";
 
-import { CONFIG } from "~/config.server";
+import { CONFIG } from "~/config";
+import { SERVER_CONFIG } from "~/config.server";
 import { Bucket } from "~/integrations/bucket.server";
 import { clerkClient } from "~/integrations/clerk.server";
 import { db } from "~/integrations/db.server";
 import { EmailService } from "~/integrations/email.server";
-
-// TODO: Add certificate number to pdf
+import { Sentry } from "~/integrations/sentry";
+import { CertificateService } from "~/services/certificate.server";
 
 export const claimCertificateJob = task({
   id: "claim-certificate",
@@ -30,8 +31,6 @@ export const claimCertificateJob = task({
                 s3Key: true,
               },
             },
-            // certificateNumber: true,
-            // certificateS3Key: true,
           },
         },
       },
@@ -56,37 +55,75 @@ export const claimCertificateJob = task({
 
     logger.info("User found", user);
 
-    const thisCourse = user.courses.find((c) => c.courseId === payload.courseId);
-    if (!thisCourse) {
+    const thisUserCourse = user.courses.find((c) => c.courseId === payload.courseId);
+    if (!thisUserCourse) {
       logger.error("User has not completed this course", user);
       throw new Error("User has not completed this course");
     }
 
     // Check if certificate has already been claimed
-    if (thisCourse.certificate) {
+    if (thisUserCourse.certificate) {
       logger.info("Certificate already claimed. Sending another email.", user);
       const email = await EmailService.send({
-        from: `Plumb Media & Education <no-reply@${CONFIG.emailFromDomain}>`,
+        from: `Plumb Media & Education <no-reply@${SERVER_CONFIG.emailFromDomain}>`,
         to: user.email,
         subject: "View Your Certificate!",
         html: `
           <p>Hi ${user.firstName},</p>
           <p>Congratulations on completing the ${payload.courseName} course! Your certificate is ready to download.</p>
-          <p><a href="https://assets.hiphopdriving.com/${thisCourse.certificate.s3Key}" target="_blank">Download Certificate</a></p>
+          <p><a href="https://assets.hiphopdriving.com/${thisUserCourse.certificate.s3Key}" target="_blank">Download Certificate</a></p>
         `,
       });
       logger.info("Email sent", email);
       return;
     }
 
+    const key = `certificates/${user.email}-${nanoid(24)}.png`;
+
+    // Pull certificate allocation and create certificate entry
+    const allocation = await CertificateService.getNextAllocationForCourse(payload.courseId);
+    if (!allocation) {
+      logger.error("No allocations available");
+      const sentEmail = await EmailService.send({
+        from: `${payload.courseName} <no-reply@${SERVER_CONFIG.emailFromDomain}>`,
+        to: user.email,
+        subject: "There was an issue creating your certificate!",
+        html: `
+        <p>Hi ${user.firstName},</p>
+        <p>Congratulations on completing the ${payload.courseName} course! However, there was an issue on our end creating your certificate.</p>
+        <p>Our team has been notified, but feel free to reach out to support at ${CONFIG.supportEmail} for more help. Rest assured, <b>Your course is completed and your progress has been saved</b>.</p>
+      `,
+      });
+      logger.info("Email sent", sentEmail);
+      return;
+    }
+
+    logger.info(`Found available allocation with id ${allocation.id} and number ${allocation.number}`);
+
+    try {
+      const updatedCourseAndCertifiate = await CertificateService.createAndUpdateCourse({
+        s3Key: key,
+        number: allocation.number,
+        userCourseId: thisUserCourse.id,
+      });
+      logger.info(
+        "User course marked complete and certificate linked. Beginning certificate creation...",
+        updatedCourseAndCertifiate,
+      );
+    } catch (error) {
+      Sentry.captureException(error);
+      logger.error(error instanceof Error ? error.message : "", error as Record<string, unknown>);
+      return;
+    }
+
     // Generate certificate
-    const canvas = createCanvas(1920, 1357);
+    const canvas = createCanvas(1650, 1275);
     const ctx = canvas.getContext("2d");
     const certImage = await loadImage("https://assets.hiphopdriving.com/certificate_f2ffea5abd.png");
 
     const date = new Date().toLocaleDateString("en-US");
 
-    ctx.drawImage(certImage, 0, 0, 1920, 1357);
+    ctx.drawImage(certImage, 0, 0, 1650, 1275);
     ctx.textAlign = "center";
 
     ctx.font = "48px Helvetica";
@@ -101,41 +138,29 @@ export const claimCertificateJob = task({
     logger.info("Certificate generated");
 
     // Upload certificate to S3
-    const key = `certificates/${user.email}-${nanoid(24)}.png`;
-    const upload = await Bucket.uploadFile({ key, file: canvas.toBuffer("image/png") });
+    try {
+      const upload = await Bucket.uploadFile({ key, file: canvas.toBuffer("image/png") });
 
-    logger.info("Certificate uploaded", upload as unknown as Record<string, unknown>);
+      logger.info(
+        `Certificate uploaded with status code ${upload.$metadata.httpStatusCode} and requestId ${upload.$metadata.requestId}`,
+      );
 
-    // send email with link to image
-    const sentEmail = await EmailService.send({
-      from: `${payload.courseName} <no-reply@${CONFIG.emailFromDomain}>`,
-      to: user.email,
-      subject: "Your certificate is ready!",
-      html: `
-        <p>Hi ${user.firstName},</p>
-        <p>Congratulations on completing the ${payload.courseName} course! Your certificate is ready to download.</p>
-        <p><a href="https://assets.hiphopdriving.com/${key}" target="_blank">Download Certificate</a></p>
-      `,
-    });
-    logger.info("Email sent", sentEmail);
-
-    // Update user course
-    // TODO: Pull certificate from allocation
-    const updatedCourse = await db.userCourse.update({
-      where: {
-        userId_courseId: {
-          userId: payload.userId,
-          courseId: payload.courseId,
-        },
-      },
-      data: {
-        isCompleted: true,
-        completedAt: new Date(),
-        certificateS3Key: key,
-        certificateClaimed: true,
-      },
-    });
-
-    logger.info("User course updated", updatedCourse);
+      // send email with link to image
+      const sentEmail = await EmailService.send({
+        from: `${payload.courseName} <no-reply@${SERVER_CONFIG.emailFromDomain}>`,
+        to: user.email,
+        subject: "Your certificate is ready!",
+        html: `
+          <p>Hi ${user.firstName},</p>
+          <p>Congratulations on completing the ${payload.courseName} course! Your certificate is ready to download.</p>
+          <p><a href="https://assets.hiphopdriving.com/${key}" target="_blank">Download Certificate</a></p>
+        `,
+      });
+      logger.info("Email sent", sentEmail);
+    } catch (error) {
+      Sentry.captureException(error);
+      logger.error(error instanceof Error ? error.message : "", error as Record<string, unknown>);
+      return;
+    }
   },
 });
