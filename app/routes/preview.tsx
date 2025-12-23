@@ -160,7 +160,10 @@ export default function CoursePreview() {
             ) : isCourseCompleted ? (
               <div className="text-center">
                 <p className="rounded-md border border-success bg-success/5 p-4 text-lg text-success">
-                  You have completed this course.
+                  You have completed this course.{" "}
+                  <a className="font-bold underline decoration-2" href="/certificate">
+                    Claim your certificate now.
+                  </a>
                 </p>
               </div>
             ) : nextQuiz ? (
