@@ -19,9 +19,10 @@ model User {
   stripeVerificationSessionId String?
   isIdentityVerified          Boolean @default(false)
 
-  courses          UserCourse[]
-  quizProgresses   UserQuizProgress[]
-  lessonProgresses UserLessonProgress[]
+  courses                 UserCourse[]
+  quizProgresses          UserQuizProgress[]
+  lessonProgresses        UserLessonProgress[]
+  preCertificationAnswers PreCertificationAnswer[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -45,6 +46,7 @@ model Course {
   requiresIdentityVerification Boolean @default(false)
 
   userCourses                  UserCourse[]
+  preCertificationQuestions    PreCertificationQuestion[]
   certificateNumberAllocations CertificateNumberAllocation[]
 
   createdAt DateTime @default(now())
@@ -104,6 +106,47 @@ model UserQuizProgress {
   updatedAt DateTime @updatedAt
 
   @@unique([userId, quizId])
+}
+
+/// Some courses require a few questions to be answered before receiving a certificate
+/// e.g. the Hip Hop Driving course requires an address to put on the certificate.
+/// These will be shown on the certificate redemption page at the end of the course.
+/// The button to retrieve the certificate will be disabled until the required questions are answered.
+model PreCertificationQuestion {
+  id                   Int     @id @default(autoincrement())
+  courseId             String
+  fieldLabel           String
+  /// text | textarea | date | select
+  fieldType            String
+  fieldPlaceholder     String?
+  fieldRequired        Boolean @default(true)
+  fieldPattern         String?
+  fieldMinLength       Int?
+  fieldMaxLength       Int?
+  /// For when the field is type select.
+  /// Format: Array<{ value: string, label string }>
+  fieldDropdownOptions Json?
+
+  course                  Course                   @relation(fields: [courseId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  preCertificationAnswers PreCertificationAnswer[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PreCertificationAnswer {
+  id         Int    @id @default(autoincrement())
+  questionId Int
+  userId     String
+  value      String
+
+  user     User                     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  question PreCertificationQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, questionId])
 }
 
 model Certificate {
