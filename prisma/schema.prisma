@@ -118,11 +118,13 @@ model PreCertificationQuestion {
   fieldLabel           String
   /// text | textarea | date | select
   fieldType            String
+  fieldName            String
   fieldPlaceholder     String?
   fieldRequired        Boolean @default(true)
   fieldPattern         String?
   fieldMinLength       Int?
   fieldMaxLength       Int?
+  fieldAutocomplete    String?
   /// For when the field is type select.
   /// Format: Array<{ value: string, label string }>
   fieldDropdownOptions Json?

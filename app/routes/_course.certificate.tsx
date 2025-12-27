@@ -1,7 +1,9 @@
-import { ActionFunctionArgs, Form, Link, LoaderFunctionArgs, useActionData, useLoaderData } from "react-router";
+import { ActionFunctionArgs, Link, LoaderFunctionArgs, useActionData, useLoaderData } from "react-router";
 
 import { PageTitle } from "~/components/common/page-title";
 import { ErrorComponent } from "~/components/error-component";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
 import { SubmitButton } from "~/components/ui/submit-button";
 import { useCourseData } from "~/hooks/useCourseData";
 import { useProgress } from "~/hooks/useProgress";
@@ -10,8 +12,9 @@ import { cms } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
 import { createLogger } from "~/integrations/logger.server";
 import { Sentry } from "~/integrations/sentry";
+import { Responses } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
-import { getLessonsInOrder } from "~/lib/utils";
+import { cn, getLessonsInOrder } from "~/lib/utils";
 import { SessionService } from "~/services/session.server";
 import { APIResponseData } from "~/types/utils";
 
@@ -22,47 +25,64 @@ const logger = createLogger("Routes.CourseCertificate");
 export async function loader(args: LoaderFunctionArgs) {
   const user = await SessionService.requireUser(args);
   const { host } = new URL(args.request.url);
-  const linkedCourse = await db.course.findUnique({ where: { host } });
 
-  if (!linkedCourse) {
-    logger.error("Course not found", { host });
-    return Toasts.redirectWithError("/preview", {
-      message: "Error claiming certificate",
-      description: "Please try again later.",
+  try {
+    const linkedCourse = await db.course.findUnique({ where: { host } });
+
+    if (!linkedCourse) {
+      logger.error("Course not found", { host });
+      throw await Toasts.redirectWithError("/preview", {
+        message: "Error claiming certificate",
+        description: "Please try again later.",
+      });
+    }
+
+    const userCourse = await db.userCourse.findUnique({
+      where: { userId_courseId: { userId: user.id, courseId: linkedCourse.id } },
+      select: {
+        certificate: {
+          select: {
+            id: true,
+            issuedAt: true,
+            s3Key: true,
+          },
+        },
+        isCompleted: true,
+        completedAt: true,
+      },
     });
-  }
 
-  const userCourse = await db.userCourse.findUnique({
-    where: { userId_courseId: { userId: user.id, courseId: linkedCourse.id } },
-    select: {
-      certificate: {
-        select: {
-          id: true,
-          issuedAt: true,
-          s3Key: true,
+    if (!userCourse) {
+      logger.warn("User does not have access to course", { userId: user.id, courseId: linkedCourse.id });
+      Sentry.captureMessage("User tried to claim certificate without having access to course", {
+        extra: {
+          user: { id: user.id, email: user.email },
+          course: { id: linkedCourse.id },
+        },
+        level: "warning",
+      });
+      throw await Toasts.redirectWithError("/preview", {
+        message: "No access to course",
+        description: "Please purchase the course to access it.",
+      });
+    }
+
+    const preCertQuestions = await db.preCertificationQuestion.findMany({
+      where: { courseId: linkedCourse.id },
+      include: {
+        preCertificationAnswers: {
+          where: { userId: user.id },
         },
       },
-      isCompleted: true,
-      completedAt: true,
-    },
-  });
+      orderBy: { createdAt: "asc" },
+    });
 
-  if (!userCourse) {
-    logger.warn("User does not have access to course", { userId: user.id, courseId: linkedCourse.id });
-    Sentry.captureMessage("User tried to claim certificate without having access to course", {
-      extra: {
-        user: { id: user.id, email: user.email },
-        course: { id: linkedCourse.id },
-      },
-      level: "warning",
-    });
-    return Toasts.redirectWithError("/preview", {
-      message: "No access to course",
-      description: "Please purchase the course to access it.",
-    });
+    return { userCourse, preCertQuestions, course: linkedCourse };
+  } catch (error) {
+    console.error(error);
+    Sentry.captureException(error);
+    throw Responses.serverError();
   }
-
-  return { userCourse, course: linkedCourse };
 }
 
 export async function action(args: ActionFunctionArgs) {
@@ -178,7 +198,7 @@ export async function action(args: ActionFunctionArgs) {
   } catch (error) {
     logger.error("Error claiming certificate", { userId: user.id });
     Sentry.captureException(error);
-    return Toasts.redirectWithError("/preview", {
+    return Toasts.dataWithError(null, {
       message: "Error claiming certificate",
       description: "Please try again later",
     });
@@ -188,7 +208,7 @@ export async function action(args: ActionFunctionArgs) {
 export default function CourseCertificate() {
   const { lessonProgress, quizProgress } = useProgress();
   const { course: cmsCourse } = useCourseData();
-  const { userCourse, course } = useLoaderData<typeof loader>();
+  const { userCourse, course, preCertQuestions } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const data = useCourseData();
   const user = useUser();
@@ -260,18 +280,84 @@ export default function CourseCertificate() {
     );
   }
 
+  let Questions = () => <></>;
+  if (preCertQuestions.length) {
+    Questions = () => (
+      <div>
+        <span className="block text-lg font-bold">
+          You're almost there! We need you to answer a few questions before finalizing your certificate for this course.
+        </span>
+        <div className="mt-4 flex flex-col gap-y-4">
+          {preCertQuestions.map((q) => {
+            const existingAnswer = q.preCertificationAnswers.at(0)?.value ?? "";
+
+            return (
+              <div className="space-y-2">
+                <Label>{q.fieldLabel}</Label>
+                {q.fieldType === "text" || q.fieldType === "date" ? (
+                  <Input
+                    id={`precert-question-${q.id}`}
+                    type={q.fieldType}
+                    name={q.fieldName}
+                    required={q.fieldRequired}
+                    placeholder={q.fieldPlaceholder ?? undefined}
+                    pattern={q.fieldPattern ?? undefined}
+                    minLength={q.fieldMinLength ?? undefined}
+                    maxLength={q.fieldMaxLength ?? undefined}
+                    autoComplete={q.fieldAutocomplete ?? undefined}
+                    defaultValue={existingAnswer}
+                  />
+                ) : // Todo: implement textareas
+                q.fieldType === "select" ? (
+                  <select
+                    defaultValue={existingAnswer}
+                    autoComplete={q.fieldAutocomplete ?? undefined}
+                    required={q.fieldRequired}
+                    className={cn(
+                      "data-placeholder:text-foreground flex h-10 w-full cursor-pointer touch-manipulation select-none items-center justify-between truncate rounded-md border border-input bg-background px-3 py-2 text-sm capitalize ring-offset-background transition-[color,box-shadow] [&>span]:line-clamp-1",
+                      "focus-visible:outline-hidden focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/25",
+                      "disabled:cursor-not-allowed disabled:opacity-50",
+                    )}
+                  >
+                    <option value="" selected disabled>
+                      {q.fieldPlaceholder}
+                    </option>
+                    {(q.fieldDropdownOptions as Array<{ value: string; label: string }>).map((o) => {
+                      return (
+                        <option key={o.value.toString()} value={o.value.toString()} className="capitalize">
+                          {o.label}
+                        </option>
+                      );
+                    })}
+                  </select>
+                ) : // <PreCertificateDropdown question={q} />
+                null}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <Wrapper>
       <SuccessText>
         Congratulations on successfully completing <span className="font-bold">{data.course.attributes.title}</span>!
-        <br />
-        <br />
-        Click the button below to claim your certificate. It will be emailed to{" "}
-        <span className="font-bold">{user.email}</span>.
+        {preCertQuestions.length ? null : (
+          <>
+            <br />
+            <br />
+            Click the button below to claim your certificate. It will be emailed to{" "}
+            <span className="font-bold">{user.email}</span>.
+          </>
+        )}
       </SuccessText>
-      <Form className="mt-8" method="post">
+      <form className="mt-8" method="post">
+        <Questions />
+        <div className="mt-4"></div>
         <SubmitButton className="sm:w-auto">Claim Certificate</SubmitButton>
-      </Form>
+      </form>
     </Wrapper>
   );
 }
