@@ -181,9 +181,10 @@ export default function CourseLayout() {
                                 (p) => p.isCompleted && p.quizId === previousSectionQuiz?.data?.id,
                               );
 
-                              const previousLessonIsCompleted = lessons[lastCompletedLessonIndex]?.isCompleted;
+                              const previousLessonIsCompleted = lessons[lessonIndex - 1]?.isCompleted;
                               const isLessonLocked =
-                                (lessonIndex > 0 && !previousLessonIsCompleted) ?? // Previous lesson is not completed
+                                (!user?.courses?.some((c) => c.courseId === linkedCourse.id) || // user doesn't have access
+                                  (lessonIndex > 0 && !previousLessonIsCompleted)) ?? // Previous lesson is not completed
                                 (previousSectionQuiz?.data && !previousSectionQuizIsCompleted) ?? // Previous section quiz is not completed
                                 (!isCourseCompleted && lessonIndex > lastCompletedLessonIndex + 1); // Course is not completed and lesson index is greater than last completed lesson index + 1
 
