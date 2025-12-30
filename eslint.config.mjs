@@ -34,6 +34,8 @@ export default tseslint.config(
       ".vercel/",
       ".trigger/",
       ".react-router/",
+      ".vercel/",
+      ".trigger/",
       "**/types/generated/**",
     ],
   },
@@ -147,5 +149,11 @@ export default tseslint.config(
   {
     files: ["app/**/*.test.{ts,tsx}"],
     ...vitest.configs.recommended,
+    rules: {
+      ...vitest.configs.recommended.rules,
+      "@typescript-eslint/no-unsafe-call": "off",
+      "@typescript-eslint/no-unsafe-assignment": "off",
+      "@typescript-eslint/no-unsafe-member-access": "off",
+    },
   },
 );

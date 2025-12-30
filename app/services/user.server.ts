@@ -15,7 +15,7 @@ type ClerkData = {
   email: string;
   phone?: string;
 };
-type UserWithPIIAndCourses = Prisma.UserGetPayload<{
+export type UserWithPIIAndCourses = Prisma.UserGetPayload<{
   include: {
     courses: {
       include: {
@@ -97,7 +97,6 @@ export const UserService = {
       logger.info("User upserted:", { user });
 
       const stripeCustomer = await PaymentService.createCustomer(user.id, { metadata: { clerk_id: clerkId } });
-      logger.info("Stripe customer created:", { stripeCustomer });
 
       await this.update(user.id, { stripeId: stripeCustomer.id });
       logger.info("User updated with Stripe ID:", { userId: user.id, stripeId: stripeCustomer.id });
@@ -147,6 +146,36 @@ export const UserService = {
     } catch (error) {
       Sentry.captureException(error);
       logger.error("Failed to delete user by Clerk ID", { error, clerkId });
+      throw error;
+    }
+  },
+
+  async getByIdWithCourse(id: string) {
+    try {
+      return db.user.findUnique({
+        where: { id },
+        select: {
+          courses: {
+            select: {
+              id: true,
+              isCompleted: true,
+              completedAt: true,
+              certificateClaimed: true,
+              certificateS3Key: true,
+              createdAt: true,
+              course: {
+                select: {
+                  id: true,
+                  strapiId: true,
+                },
+              },
+            },
+          },
+        },
+      });
+    } catch (error) {
+      Sentry.captureException(error);
+      logger.error("Failed to get user by ID with course", { error, userId: id });
       throw error;
     }
   },

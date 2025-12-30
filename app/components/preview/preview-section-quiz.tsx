@@ -14,7 +14,7 @@ import { APIResponseData } from "~/types/utils";
 
 interface SectionQuizProps extends React.HTMLAttributes<HTMLDivElement> {
   quiz: APIResponseData<"api::quiz.quiz">;
-  userProgress: Omit<UserQuizProgress, "createdAt" | "updatedAt"> | null;
+  userProgress: Pick<UserQuizProgress, "quizId" | "isCompleted"> | null;
   locked?: boolean;
 }
 export function PreviewSectionQuiz(props: SectionQuizProps) {

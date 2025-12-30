@@ -5,7 +5,7 @@ import { Theme, useTheme } from "remix-themes";
 import { ThemeModeToggle } from "~/components/theme-mode-toggle";
 import { Button } from "~/components/ui/button";
 import { UserMenu } from "~/components/user-menu";
-import { useOptionalUser } from "~/lib/utils";
+import { useOptionalUser } from "~/hooks/useOptionalUser";
 import type { loader } from "~/root";
 
 export function Header() {

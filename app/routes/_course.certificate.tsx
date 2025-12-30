@@ -1,18 +1,21 @@
 import { ActionFunctionArgs, Form, Link, LoaderFunctionArgs, useActionData, useLoaderData } from "react-router";
 
-import { claimCertificateJob } from "jobs/claim-certificate";
 import { PageTitle } from "~/components/common/page-title";
 import { ErrorComponent } from "~/components/error-component";
 import { SubmitButton } from "~/components/ui/submit-button";
 import { useCourseData } from "~/hooks/useCourseData";
+import { useProgress } from "~/hooks/useProgress";
+import { useUser } from "~/hooks/useUser";
 import { cms } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
 import { createLogger } from "~/integrations/logger.server";
 import { Sentry } from "~/integrations/sentry";
 import { Toasts } from "~/lib/toast.server";
-import { useUser } from "~/lib/utils";
+import { getLessonsInOrder } from "~/lib/utils";
 import { SessionService } from "~/services/session.server";
 import { APIResponseData } from "~/types/utils";
+
+import { claimCertificateJob } from "../../jobs/claim-certificate";
 
 const logger = createLogger("Routes.CourseCertificate");
 
@@ -178,11 +181,14 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export default function CourseCertificate() {
+  const { lessonProgress, quizProgress } = useProgress();
   const { course: cmsCourse } = useCourseData();
   const { userCourse, course } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const data = useCourseData();
   const user = useUser();
+
+  const lessons = getLessonsInOrder({ course: cmsCourse, progress: lessonProgress });
 
   const Wrapper = ({ children }: { children: React.ReactNode }) => (
     <>
@@ -195,9 +201,9 @@ export default function CourseCertificate() {
   const userHasVerifiedIdentity = course.requiresIdentityVerification ? user.isIdentityVerified : true;
 
   const isCourseComplete =
-    data.lessons.every((l) => l.isCompleted) &&
-    data.course.attributes.sections.every((s) => {
-      return !s.quiz?.data || data.quizProgress.find((p) => p.quizId === s.quiz?.data.id)?.isCompleted;
+    lessons.every((l) => l.isCompleted) &&
+    cmsCourse.attributes.sections.every((s) => {
+      return !s.quiz?.data || quizProgress.find((p) => p.quizId === s.quiz?.data.id)?.isCompleted;
     });
 
   if (!isCourseComplete) {

@@ -7,7 +7,7 @@ const logger = createLogger("AuthService");
 export const AuthService = {
   async getUserList(args: Parameters<typeof client.users.getUserList>[0] = {}) {
     try {
-      return client.users.getUserList(args);
+      return await client.users.getUserList(args);
     } catch (error) {
       Sentry.captureException(error);
       logger.error("Failed to get user list", { error, args });
@@ -28,7 +28,7 @@ export const AuthService = {
 
   async revokeSession(sessionId: string) {
     try {
-      return client.sessions.revokeSession(sessionId);
+      return await client.sessions.revokeSession(sessionId);
     } catch (error) {
       Sentry.captureException(error);
       logger.error("Failed to revoke session", { error, sessionId });
@@ -38,7 +38,7 @@ export const AuthService = {
 
   async saveExternalId(clerkId: string, externalId: string) {
     try {
-      return client.users.updateUser(clerkId, { externalId });
+      return await client.users.updateUser(clerkId, { externalId });
     } catch (error) {
       Sentry.captureException(error);
       logger.error("Failed to save external ID", { error, clerkId, externalId });

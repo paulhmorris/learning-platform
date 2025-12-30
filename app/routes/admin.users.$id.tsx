@@ -11,11 +11,15 @@ import { LoaderFunctionArgs, NavLink, Outlet, useLoaderData } from "react-router
 import { BackLink } from "~/components/common/back-link";
 import { ErrorComponent } from "~/components/error-component";
 import { Badge } from "~/components/ui/badge";
+import { createLogger } from "~/integrations/logger.server";
+import { Sentry } from "~/integrations/sentry";
 import { stripe } from "~/integrations/stripe.server";
 import { Responses } from "~/lib/responses.server";
 import { cn } from "~/lib/utils";
 import { SessionService } from "~/services/session.server";
 import { UserService } from "~/services/user.server";
+
+const logger = createLogger("Routes.Admin.Users.$id");
 
 const links = [
   { href: "", text: "Profile", end: true, icon: <IconUserCircle className="size-[1.125rem]" /> },
@@ -26,22 +30,34 @@ export async function loader(args: LoaderFunctionArgs) {
   await SessionService.requireAdmin(args);
   const id = args.params.id;
   if (!id) {
+    logger.error("User ID not found", { params: args.params });
     throw Responses.notFound();
   }
 
-  const user = await UserService.getByClerkId(id);
-  // TODO: Handle once clerkId is required
-  if (!user?.clerkId) {
-    throw Responses.notFound();
-  }
+  try {
+    const user = await UserService.getById(id);
 
-  let identityVerificationStatus;
-  if (user.stripeVerificationSessionId) {
-    const session = await stripe.identity.verificationSessions.retrieve(user.stripeVerificationSessionId);
-    identityVerificationStatus = session.status;
-  }
+    if (!user) {
+      throw new Error("User not found");
+    }
+    // TODO: Handle once clerkId is required
+    if (!user.clerkId) {
+      logger.error("User found but clerkId is missing", { id });
+      throw Responses.serverError();
+    }
 
-  return { user, identityVerificationStatus };
+    let identityVerificationStatus;
+    if (user.stripeVerificationSessionId) {
+      const session = await stripe.identity.verificationSessions.retrieve(user.stripeVerificationSessionId);
+      identityVerificationStatus = session.status;
+    }
+
+    return { user, identityVerificationStatus };
+  } catch (error) {
+    logger.error("Failed to load user data", { error, userId: id });
+    Sentry.captureException(error);
+    throw Responses.serverError();
+  }
 }
 
 export default function UsersIndex() {

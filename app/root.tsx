@@ -1,4 +1,4 @@
-import { ClerkProvider, RedirectToSignIn, SignedIn, SignedOut } from "@clerk/react-router";
+import { ClerkProvider, SignedIn } from "@clerk/react-router";
 import { rootAuthLoader } from "@clerk/react-router/ssr.server";
 import { dark } from "@clerk/themes";
 import "@fontsource-variable/inter/wght.css";
@@ -11,8 +11,9 @@ import { getToast } from "remix-toast";
 import { ErrorComponent } from "~/components/error-component";
 import { Header } from "~/components/header";
 import { Notifications } from "~/components/notifications";
+import { CONFIG } from "~/config.server";
 import { Sentry } from "~/integrations/sentry";
-import { Responses } from "~/lib/responses.server";
+import { HttpHeaders, Responses } from "~/lib/responses.server";
 import { cn, hexToPartialHSL } from "~/lib/utils";
 import { themeSessionResolver } from "~/routes/api.set-theme";
 import { CourseService } from "~/services/course.server";
@@ -27,7 +28,7 @@ export const links: LinksFunction = () => [{ rel: "stylesheet", href: globalStyl
 export const loader = async (args: LoaderFunctionArgs) => {
   const user = await SessionService.getUser(args);
   const theme = (await themeSessionResolver(args.request)).getTheme();
-  const { toast, headers } = await getToast(args.request);
+  const { toast, headers: _headers } = await getToast(args.request);
 
   const defaultResponse = {
     user,
@@ -46,6 +47,10 @@ export const loader = async (args: LoaderFunctionArgs) => {
     return rootAuthLoader(args, async () => {
       const { host } = new URL(args.request.url);
       const linkedCourse = await CourseService.getByHost(host);
+
+      const headers = new Headers(_headers);
+      const TTL = CONFIG.isProd ? 300 : 60;
+      headers.set(HttpHeaders.CacheControl, `private, max-age=${TTL}`);
 
       if (!linkedCourse) {
         return data({ ...defaultResponse, hasLinkedCourse: false }, { headers });
@@ -67,17 +72,20 @@ export default function App({ loaderData }: Route.ComponentProps) {
   return (
     <ClerkProvider
       loaderData={loaderData}
+      telemetry={{ disabled: true }}
       appearance={{ baseTheme: theme === Theme.DARK ? dark : undefined }}
       publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY}
-      telemetry={{ disabled: true }}
+      signInUrl="/sign-in"
+      signUpUrl="/sign-up"
+      signInForceRedirectUrl="/preview"
+      signUpForceRedirectUrl="/preview"
+      signInFallbackRedirectUrl="/preview"
+      signUpFallbackRedirectUrl="/preview"
     >
       <SignedIn>
         <Header />
-        <Outlet />
       </SignedIn>
-      <SignedOut>
-        <RedirectToSignIn />
-      </SignedOut>
+      <Outlet />
     </ClerkProvider>
   );
 }

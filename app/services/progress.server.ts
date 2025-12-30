@@ -1,8 +1,8 @@
-import { UserLessonProgress } from "@prisma/client";
+import { UserLessonProgress, UserQuizProgress } from "@prisma/client";
 
 import { db } from "~/integrations/db.server";
 import { createLogger } from "~/integrations/logger.server";
-import { SUBMIT_INTERVAL_MS } from "~/routes/api.lesson-progress";
+import { SUBMIT_INTERVAL_MS } from "~/routes/api.progress";
 import { CacheKeys, CacheService } from "~/services/cache.server";
 
 const logger = createLogger("ProgressService");
@@ -37,9 +37,38 @@ export const ProgressService = {
     return progress;
   },
 
+  async getByQuizId(userId: string, quizId: number) {
+    logger.debug("Retrieving quiz progress for user", { userId, quizId });
+    const cachedProgress = await CacheService.get<UserQuizProgress>(CacheKeys.progressQuiz(userId, quizId));
+    if (cachedProgress) {
+      logger.debug("Returning cached quiz progress", { userId, quizId });
+      return cachedProgress;
+    }
+    const progress = await db.userQuizProgress.findUnique({
+      where: {
+        userId_quizId: { userId, quizId },
+      },
+    });
+    if (progress) {
+      await CacheService.set(CacheKeys.progressQuiz(userId, quizId), progress, { ex: 12 });
+    }
+    logger.debug("Returning quiz progress", { userId, quizId });
+    return progress;
+  },
+
   async getAll(userId: string) {
     logger.debug("Retrieving all lesson progress for user", { userId });
-    return db.userLessonProgress.findMany({ where: { userId } });
+    const cachedProgress = await CacheService.get<Array<UserLessonProgress>>(CacheKeys.progressAll(userId));
+    if (cachedProgress) {
+      logger.debug("Returning cached progress for all lessons", { userId });
+      return cachedProgress;
+    }
+    const progress = await db.userLessonProgress.findMany({ where: { userId } });
+    if (progress.length) {
+      await CacheService.set(CacheKeys.progressAll(userId), progress, { ex: 12 });
+    }
+    logger.debug("Returning progress for all lessons", { userId });
+    return progress;
   },
 
   async getAllQuiz(userId: string) {

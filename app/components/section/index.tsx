@@ -37,7 +37,7 @@ export function SectionItemButton({ children, to }: { children: React.ReactNode;
 
 export function SectionItemTitle({ children, className, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
-    <h3 {...props} className={cn("text-pretty text-lg font-medium", className)}>
+    <h3 {...props} className={cn("min-w-0 text-pretty break-words text-lg font-medium", className)}>
       {children}
     </h3>
   );

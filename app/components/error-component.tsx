@@ -22,7 +22,7 @@ export function ErrorComponent({ error }: { error?: unknown }) {
   }
 
   return (
-    <div className="mt-20">
+    <div className="mt-20 p-6">
       <h1 className="text-3xl font-bold tracking-tight sm:text-5xl">{message}</h1>
       <p className="mt-2 font-mono text-sm text-muted-foreground">{details}</p>
       {stack ? (

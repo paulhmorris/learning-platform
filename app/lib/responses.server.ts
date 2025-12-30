@@ -1,7 +1,5 @@
 import { data, redirect } from "react-router";
 
-import { CONFIG } from "~/config.server";
-
 function responseFactory(status: number) {
   return <T = unknown>(body?: T, init?: Omit<ResponseInit, "status">) => {
     return data(body ?? null, { ...init, status });
@@ -25,19 +23,13 @@ export const Responses = {
     return redirect(request.headers.get("Referer") ?? fallback, init);
   },
 
-  redirectToSignIn(redirect_url?: string): never {
-    const url = CONFIG.signInUrl;
-    if (redirect_url) {
-      url.searchParams.set("redirect_url", redirect_url);
-    }
-    throw redirect(url.toString());
+  redirectToSignIn(redirect_url: string) {
+    const path = "/sign-in";
+    const params = new URLSearchParams({ redirect_url });
+    return redirect(`${path}?${params.toString()}`);
   },
+};
 
-  redirectToSignUp(redirect_url?: string): never {
-    const url = CONFIG.signUpUrl;
-    if (redirect_url) {
-      url.searchParams.set("redirect_url", redirect_url);
-    }
-    throw redirect(url.toString());
-  },
+export const HttpHeaders = {
+  CacheControl: "Cache-Control",
 };

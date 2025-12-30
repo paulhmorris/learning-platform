@@ -5,8 +5,8 @@ import { useRevalidator } from "react-router";
 import { toast } from "sonner";
 
 import { AdminButton } from "~/components/ui/admin-button";
+import { useUser } from "~/hooks/useUser";
 import { Sentry } from "~/integrations/sentry";
-import { useUser } from "~/lib/utils";
 import { VerificationSession } from "~/services/identity.server";
 
 const stripePromise = typeof window !== "undefined" ? loadStripe(window.ENV.STRIPE_PUBLIC_KEY) : null;

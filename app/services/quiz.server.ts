@@ -61,33 +61,6 @@ export const QuizService = {
     }
   },
 
-  async getProgress(quizId: number, userId: string) {
-    try {
-      return db.userQuizProgress.findUnique({
-        where: {
-          userId_quizId: {
-            quizId,
-            userId,
-          },
-        },
-      });
-    } catch (error) {
-      Sentry.captureException(error);
-      logger.error("Failed to get quiz progress", { error, quizId, userId });
-      throw error;
-    }
-  },
-
-  async getAllProgress(userId: string) {
-    try {
-      return await db.userQuizProgress.findMany({ where: { userId } });
-    } catch (error) {
-      Sentry.captureException(error);
-      logger.error("Failed to get all quiz progress", { error });
-      throw error;
-    }
-  },
-
   async resetAllProgress(userId: string) {
     try {
       return await db.userQuizProgress.deleteMany({ where: { userId } });

@@ -2,14 +2,16 @@ import { lazy } from "react";
 import { StrapiResponse } from "strapi-sdk-js";
 import { useIsClient } from "usehooks-ts";
 
-// eslint-disable-next-line import/order
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "~/components/ui/carousel";
+// eslint-disable-next-line import/order
+import { useUser } from "~/hooks/useUser";
+
 const MuxPlayer = lazy(() => import("@mux/mux-player-react"));
 const BlocksRenderer = lazy(() =>
   import("@strapi/blocks-react-renderer").then((module) => ({ default: module.BlocksRenderer })),
 );
 
-import { getStrapiImgSrcSetAndSizes, useOptionalUser } from "~/lib/utils";
+import { getStrapiImgSrcSetAndSizes } from "~/lib/utils";
 import { APIResponseData } from "~/types/utils";
 
 export type StrapiContent = StrapiResponse<APIResponseData<"api::lesson.lesson">>["data"]["attributes"]["content"];
@@ -18,7 +20,7 @@ type Props = {
 };
 
 export function LessonContentRenderer({ content }: Props) {
-  const user = useOptionalUser();
+  const user = useUser();
 
   const isClient = useIsClient();
   if (!isClient) {
@@ -46,7 +48,7 @@ export function LessonContentRenderer({ content }: Props) {
                 metadata={{
                   video_id: video.asset_id,
                   video_title: video.title,
-                  viewer_user_id: user?.id,
+                  viewer_user_id: user.id,
                 }}
               />
             );

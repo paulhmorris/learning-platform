@@ -1,3 +1,4 @@
 {
-  "typescript.preferences.autoImportFileExcludePatterns": ["node_modules/@radix-ui", "node_modules/postcss", "stripe"]
+  "typescript.preferences.autoImportFileExcludePatterns": ["node_modules/@radix-ui", "node_modules/postcss", "stripe"],
+  "prisma.pinToPrisma6": true
 }

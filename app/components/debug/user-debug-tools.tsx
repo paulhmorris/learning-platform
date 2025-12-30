@@ -1,7 +1,8 @@
 import { IconArrowsDiagonal } from "@tabler/icons-react";
 import { useState } from "react";
 
-import { cn, useUser } from "~/lib/utils";
+import { useUser } from "~/hooks/useUser";
+import { cn } from "~/lib/utils";
 
 export function UserDebugTools() {
   const user = useUser();

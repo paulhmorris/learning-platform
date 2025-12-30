@@ -13,9 +13,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
+import { useOptionalUser } from "~/hooks/useOptionalUser";
 import { useRootData } from "~/hooks/useRootData";
 import { Sentry } from "~/integrations/sentry";
-import { useOptionalUser } from "~/lib/utils";
 
 export function UserMenu() {
   const user = useOptionalUser();
@@ -86,7 +86,7 @@ export function UserMenu() {
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuItem className="px-0 py-0">
-            <SignOutButton>
+            <SignOutButton redirectUrl="/sign-in">
               <button onClick={() => Sentry.setUser(null)} className="w-full cursor-pointer px-2 py-1.5 text-left">
                 Log out
               </button>

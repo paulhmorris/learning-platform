@@ -1,25 +1,27 @@
 import { UserLessonProgress } from "@prisma/client";
 import { IconPlayerPauseFilled, IconPlayerPlayFilled } from "@tabler/icons-react";
 import { useEffect } from "react";
-import { createPortal } from "react-dom";
 import { useFetcher } from "react-router";
 import { useCountdown } from "react-timing-hooks";
 
 import { cn, formatSeconds } from "~/lib/utils";
-import { SUBMIT_INTERVAL_MS } from "~/routes/api.lesson-progress";
+import { SUBMIT_INTERVAL_MS } from "~/routes/api.progress";
 import { APIResponseData } from "~/types/utils";
 
 interface Props {
   lesson: APIResponseData<"api::lesson.lesson">;
-  progress: Omit<UserLessonProgress, "createdAt" | "updatedAt"> | null;
+  progress: Pick<UserLessonProgress, "lessonId" | "isCompleted" | "durationInSeconds"> | null;
   setClientProgressPercentage: (percentage: number) => void;
 }
 
 export function ProgressTimer({ lesson, progress, setClientProgressPercentage }: Props) {
+  // const progress = useLessonProgress(lesson.id);
   const duration = lesson.attributes.required_duration_in_seconds ?? 0;
-  const fetcher = useFetcher({ key: "lesson-progress" });
+  const fetcher = useFetcher();
   const countdownStart = duration - (progress?.durationInSeconds ?? 0);
-  const [countdownValue, { pause, resume, isPaused }] = useCountdown(countdownStart, 0, { startOnMount: true });
+  const [countdownValue, { stop, isStopped, start }] = useCountdown(countdownStart, 0, {
+    startOnMount: true,
+  });
 
   // Update client side progress percentage
   useEffect(() => {
@@ -39,19 +41,17 @@ export function ProgressTimer({ lesson, progress, setClientProgressPercentage }:
     if (shouldSubmit) {
       void fetcher.submit(
         { lessonId: lesson.id, intent: "increment-duration" },
-        { method: "POST", action: "/api/lesson-progress" },
+        { method: "POST", action: "/api/progress" },
       );
     }
   }, [shouldSubmit]);
 
   // Pause the timer when the tab is not visible
+  const handleVisibilityChange = () => (document.hidden ? stop() : start());
   useEffect(() => {
-    const handleVisibilityChange = () => (document.hidden ? pause() : resume());
-
     document.addEventListener("visibilitychange", handleVisibilityChange);
-
     return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
-  }, [pause, resume]);
+  }, [stop, start]);
 
   if (!duration) {
     return null;
@@ -73,18 +73,15 @@ export function ProgressTimer({ lesson, progress, setClientProgressPercentage }:
       >
         {formatSeconds(countdownValue)} remaining
       </span>
-      {process.env.NODE_ENV === "development" && typeof document !== "undefined"
-        ? createPortal(
-            <button
-              type="button"
-              className="fixed bottom-8 left-8 rounded bg-primary p-3 font-bold text-black shadow-xl hover:bg-primary/90"
-              onClick={isPaused ? resume : pause}
-            >
-              {isPaused ? <IconPlayerPlayFilled /> : <IconPlayerPauseFilled />}
-            </button>,
-            document.body,
-          )
-        : null}
+      {process.env.NODE_ENV === "development" && typeof document !== "undefined" ? (
+        <button
+          type="button"
+          className="fixed bottom-8 left-8 rounded bg-primary p-3 font-bold text-black shadow-xl hover:bg-primary/90"
+          onClick={isStopped ? start : stop}
+        >
+          {isStopped ? <IconPlayerPlayFilled /> : <IconPlayerPauseFilled />}
+        </button>
+      ) : null}
     </>
   );
 }

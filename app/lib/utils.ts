@@ -1,36 +1,12 @@
-import { User, UserLessonProgress, UserQuizProgress } from "@prisma/client";
+import { UserLessonProgress, UserQuizProgress } from "@prisma/client";
 import type { Attribute } from "@strapi/strapi";
 import { ClassValue, clsx } from "clsx";
-import { Params, useRouteLoaderData } from "react-router";
+import { Params } from "react-router";
 import { StrapiResponse } from "strapi-sdk-js";
 import { twMerge } from "tailwind-merge";
 
 import { IconCameraFilled, IconClipboard } from "~/components/icons";
-import type { loader } from "~/root";
-import { LessonInOrder } from "~/routes/preview";
 import { APIResponseData } from "~/types/utils";
-
-function isUser(user: unknown): user is User {
-  return user != null && typeof user === "object" && "email" in user && typeof user.email === "string";
-}
-
-export function useOptionalUser() {
-  const data = useRouteLoaderData<typeof loader>("root");
-  if (!data || !isUser(data.user)) {
-    return undefined;
-  }
-  return data.user;
-}
-
-export function useUser(): NonNullable<Awaited<ReturnType<typeof loader>>["data"]["user"]> {
-  const maybeUser = useOptionalUser();
-  if (!maybeUser) {
-    throw new Error(
-      "No user found in root loader, but user is required by useUser. If user is optional, try useOptionalUser instead.",
-    );
-  }
-  return maybeUser;
-}
 
 export function cn(...inputs: Array<ClassValue>) {
   return twMerge(clsx(inputs));
@@ -75,7 +51,7 @@ export function getStrapiImgSrcSetAndSizes(formats: Attribute.JsonValue | undefi
 }
 
 export function valueIsNotNullishOrZero<T>(value: T | null | undefined): value is T {
-  return value !== null && value !== 0;
+  return value !== null && value !== undefined && value !== 0;
 }
 
 export function formatSeconds(seconds: number) {
@@ -142,6 +118,10 @@ export function hexToPartialHSL(H: string | undefined) {
   return `${h} ${s}% ${l}%`;
 }
 
+const getPreviewValuesCache = new Map<string, GetPreviewValuesReturn>();
+const courseLayoutCache = new Map<string, GetCourseLayoutReturn>();
+const lessonsInOrderCache = new Map<string, Array<LessonInOrder>>();
+
 export function getLessonAttributes(lesson: APIResponseData<"api::lesson.lesson">) {
   const { has_video: hasVideo } = lesson.attributes;
   const isTimed =
@@ -156,8 +136,8 @@ export function getLessonAttributes(lesson: APIResponseData<"api::lesson.lesson"
 interface GetPreviewValueArgs {
   lessons: Array<LessonInOrder>;
   course: APIResponseData<"api::course.course">;
-  quizProgress: Array<UserQuizProgress>;
-  lessonProgress: Array<UserLessonProgress>;
+  quizProgress: Array<Pick<UserQuizProgress, "quizId" | "isCompleted">>;
+  lessonProgress: Array<Pick<UserLessonProgress, "lessonId" | "isCompleted" | "durationInSeconds">>;
 }
 type GetPreviewValuesReturn = {
   nextQuiz: APIResponseData<"api::quiz.quiz"> | null;
@@ -168,7 +148,6 @@ type GetPreviewValuesReturn = {
   totalDurationInSeconds: number;
   lastCompletedLessonIndex: number;
 };
-const getPreviewValuesCache = new Map<string, GetPreviewValuesReturn>();
 export function getPreviewValues(data: GetPreviewValueArgs): GetPreviewValuesReturn {
   const cacheKey = JSON.stringify(data);
 
@@ -243,13 +222,12 @@ type GetCourseLayoutReturn = {
   activeSection?: APIResponseData<"api::course.course">["attributes"]["sections"][number];
   courseIsTimed: boolean;
   isCourseCompleted: boolean;
-  activeQuizProgress: UserQuizProgress | undefined;
-  activeLessonProgress: UserLessonProgress | undefined;
+  activeQuizProgress: Pick<UserQuizProgress, "quizId" | "isCompleted"> | undefined;
+  activeLessonProgress: Pick<UserLessonProgress, "lessonId" | "isCompleted" | "durationInSeconds"> | undefined;
   totalProgressInSeconds: number;
   totalDurationInSeconds: number;
   lastCompletedLessonIndex: number;
 };
-const courseLayoutCache = new Map<string, GetCourseLayoutReturn>();
 
 export function getCourseLayoutValues(data: GetCourseLayoutValueArgs): GetCourseLayoutReturn {
   const cacheKey = JSON.stringify(data);
@@ -321,10 +299,15 @@ export function getCourseLayoutValues(data: GetCourseLayoutValueArgs): GetCourse
 }
 
 export function getLessonsInOrder(data: {
-  course: StrapiResponse<APIResponseData<"api::course.course">>;
-  progress: Array<UserLessonProgress>;
+  course: StrapiResponse<APIResponseData<"api::course.course">>["data"];
+  progress: Array<Pick<UserLessonProgress, "lessonId" | "isCompleted" | "durationInSeconds">>;
 }) {
-  return data.course.data.attributes.sections.flatMap((section) => {
+  const cacheKey = JSON.stringify(data);
+  if (lessonsInOrderCache.has(cacheKey)) {
+    return lessonsInOrderCache.get(cacheKey)!;
+  }
+
+  const result = data.course.attributes.sections.flatMap((section) => {
     return (
       section.lessons?.data.map((l) => {
         const lessonProgress = data.progress.find((p) => p.lessonId === l.id);
@@ -336,7 +319,7 @@ export function getLessonsInOrder(data: {
           sectionId: section.id,
           sectionTitle: section.title,
           isCompleted: lessonProgress?.isCompleted ?? false,
-          isTimed: l.attributes.required_duration_in_seconds && l.attributes.required_duration_in_seconds > 0,
+          isTimed: Boolean(l.attributes.required_duration_in_seconds && l.attributes.required_duration_in_seconds > 0),
           hasVideo: l.attributes.has_video,
           requiredDurationInSeconds: l.attributes.required_duration_in_seconds,
           progressDuration: lessonProgress?.durationInSeconds,
@@ -344,4 +327,20 @@ export function getLessonsInOrder(data: {
       }) ?? []
     );
   });
+  lessonsInOrderCache.set(cacheKey, result);
+  return result;
 }
+
+export type LessonInOrder = {
+  id: number;
+  uuid: string | undefined;
+  slug: string;
+  title: string;
+  sectionId: number;
+  sectionTitle: string;
+  isCompleted: boolean;
+  isTimed: boolean;
+  hasVideo: boolean;
+  requiredDurationInSeconds: number | undefined;
+  progressDuration: number | null | undefined;
+};

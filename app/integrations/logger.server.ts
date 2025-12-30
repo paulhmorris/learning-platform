@@ -15,7 +15,17 @@ const logger = new Logger({
   ],
 });
 
+const devLogger = new Logger({
+  logLevel,
+  args: { environment: process.env.VERCEL_ENV },
+  transports: [new ConsoleTransport({ logLevel, prettyPrint: true })],
+});
+
 export function createLogger(module: string) {
+  if (CONFIG.isDev) {
+    return devLogger.with({ module });
+  }
+
   return logger.with({ module });
 }
 

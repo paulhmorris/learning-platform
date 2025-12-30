@@ -3,7 +3,7 @@ import { z } from "zod/v4";
 
 const _serverEnvValidation = z.object({
   // Clerk
-  AUTH_DOMAIN: z.url(),
+  AUTH_DOMAIN: z.string().min(1),
   CLERK_SECRET_KEY: z.string().min(1),
   CLERK_WEBHOOK_SIGNING_SECRET: z.string().min(1),
 
@@ -34,6 +34,9 @@ const _serverEnvValidation = z.object({
   STRIPE_PUBLIC_KEY: z.string().startsWith("pk_"),
   STRIPE_SECRET_KEY: z.string().startsWith("sk_"),
   STRIPE_WEBHOOK_SECRET: z.string().startsWith("whsec_"),
+
+  // Resend
+  RESEND_API_KEY: z.string().min(1),
 
   // Upstash
   UPSTASH_REDIS_REST_URL: z.url(),

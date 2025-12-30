@@ -9,13 +9,10 @@ import {
   useSearchParams,
 } from "react-router";
 
-import { StrapiImage } from "~/components/common/strapi-image";
 import { CourseHeader } from "~/components/course/course-header";
 import { CoursePurchaseCTA } from "~/components/course/course-purchase-cta";
 import { CourseUpNext } from "~/components/course/course-up-next";
 import { ErrorComponent } from "~/components/error-component";
-import { IconClipboard, IconDocument } from "~/components/icons";
-import { CoursePreviewLink } from "~/components/preview/course-preview-link";
 import { PreviewSectionLesson } from "~/components/preview/preview-section-lesson";
 import { PreviewSectionQuiz } from "~/components/preview/preview-section-quiz";
 import { PurchaseCanceledModal } from "~/components/purchase-canceled-modal";
@@ -24,39 +21,48 @@ import { Section, SectionHeader } from "~/components/section";
 import { CourseProgressBar } from "~/components/sidebar/course-progress-bar";
 import { Button } from "~/components/ui/button";
 import { Separator } from "~/components/ui/separator";
+import { useProgress } from "~/hooks/useProgress";
+import { useUser } from "~/hooks/useUser";
 import { getCourse } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
-import { Responses } from "~/lib/responses.server";
+import { createLogger } from "~/integrations/logger.server";
+import { Sentry } from "~/integrations/sentry";
+import { HttpHeaders, Responses } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
 import { getLessonsInOrder, getPreviewValues } from "~/lib/utils";
 import { PaymentService } from "~/services/payment.server";
-import { ProgressService } from "~/services/progress.server";
 import { SessionService } from "~/services/session.server";
 
-import { Route } from ".react-router/types/app/routes/+types/preview";
+const logger = createLogger("Routes.Preview");
 
 export async function loader(args: LoaderFunctionArgs) {
-  const user = await SessionService.requireUser(args);
+  await SessionService.requireUserId(args);
 
   const url = new URL(args.request.url);
-  const linkedCourse = await db.course.findUnique({ where: { host: url.host } });
-  if (!linkedCourse) {
-    throw Responses.notFound();
+  try {
+    const linkedCourse = await db.course.findUnique({ where: { host: url.host } });
+    if (!linkedCourse) {
+      throw Responses.notFound();
+    }
+
+    const course = await getCourse(linkedCourse.strapiId);
+
+    return { course: course.data, linkedCourse };
+  } catch (error) {
+    Sentry.captureException(error);
+    logger.error("Failed to load course", { error, host: url.host });
+    if (error instanceof Response) {
+      throw error;
+    }
+    throw Responses.serverError();
   }
-
-  const [course, lessonProgress, quizProgress] = await Promise.all([
-    getCourse(linkedCourse.strapiId),
-    ProgressService.getAll(user.id),
-    ProgressService.getAllQuiz(user.id),
-  ]);
-
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  const userHasAccess = user?.courses.some((c) => c.courseId === linkedCourse.id);
-  const lessons = getLessonsInOrder({ course, progress: lessonProgress });
-
-  return { course: course.data, lessonProgress, lessons, quizProgress, userHasAccess };
 }
-export type LessonInOrder = Awaited<ReturnType<typeof loader>>["lessons"][number];
+
+export function headers() {
+  return {
+    [HttpHeaders.CacheControl]: "public, s-maxage=60, max-age=60, stale-while-revalidate=300",
+  };
+}
 
 export async function action(args: ActionFunctionArgs) {
   const user = await SessionService.requireUser(args);
@@ -83,13 +89,18 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export default function CoursePreview() {
+  const user = useUser();
   const [searchParams] = useSearchParams();
+  const { lessonProgress, quizProgress } = useProgress();
   const [successModalOpen, setSuccessModalOpen] = useState(false);
   const [canceledModalOpen, setCanceledModalOpen] = useState(false);
-  const { course, lessonProgress, lessons, quizProgress, userHasAccess } = useLoaderData<typeof loader>();
+  const { course, linkedCourse } = useLoaderData<typeof loader>();
 
   const isSuccessful = searchParams.get("purchase_success") === "true";
   const isCanceled = searchParams.get("purchase_canceled") === "true";
+  const lessons = getLessonsInOrder({ course, progress: lessonProgress });
+
+  const userHasAccess = user.courses.some((c) => c.courseId === linkedCourse.id);
 
   // handle success or cancel
   useEffect(() => {
@@ -114,8 +125,10 @@ export default function CoursePreview() {
   return (
     <>
       <title>{`Preview | ${course.attributes.title}`}</title>
-      <div className="flex flex-col gap-x-12 px-4 py-4 lg:flex-row lg:py-4">
-        <nav className="left-0 top-[88px] h-full shrink-0 basis-[320px] py-4 sm:py-10 lg:sticky lg:py-14">
+      <div className="flex justify-center px-6 pt-6">
+        {/* Don't like the chapters / certificate nav on preview for now */}
+        {/* <div className="flex flex-col gap-x-12 px-4 py-4 lg:flex-row lg:py-4"> */}
+        {/* <nav className="left-0 top-[88px] h-full shrink-0 basis-[320px] py-4 sm:py-10 lg:sticky lg:py-14">
           <StrapiImage
             asset={course.attributes.cover_image}
             height={240}
@@ -137,9 +150,9 @@ export default function CoursePreview() {
               <span>Certificate</span>
             </CoursePreviewLink>
           </div>
-        </nav>
+        </nav> */}
 
-        <main className="max-w-screen-md lg:py-14">
+        <main className="w-full lg:max-w-screen-lg lg:py-14 xl:max-w-screen-md">
           <div className="space-y-8">
             <CourseHeader courseTitle={course.attributes.title} numLessons={lessons.length || 0} />
             <CourseProgressBar
@@ -208,8 +221,8 @@ export default function CoursePreview() {
 
                         const userLessonProgress = lessonProgress.find((lp) => lp.lessonId === l.id) ?? null;
                         return (
-                          <div key={l.attributes.uuid} className="flex flex-wrap items-center justify-between gap-2">
-                            <div className="shrink-0 grow">
+                          <div key={l.attributes.uuid} className="flex flex-wrap justify-between gap-2">
+                            <div className="grow">
                               <PreviewSectionLesson
                                 lesson={l}
                                 userProgress={userLessonProgress}
@@ -217,7 +230,7 @@ export default function CoursePreview() {
                               />
                             </div>
                             {!isLessonLocked ? (
-                              <Button asChild className="ml-12 grow-0 sm:ml-0 sm:w-auto" variant="secondary">
+                              <Button asChild className="ml-12 grow-0 md:ml-0 md:w-auto" variant="secondary">
                                 <Link to={`/${l.attributes.slug}`}>
                                   {!userLessonProgress
                                     ? "Start"
