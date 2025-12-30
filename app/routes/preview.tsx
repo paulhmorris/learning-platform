@@ -1,5 +1,13 @@
 import { useEffect, useState } from "react";
-import { ActionFunctionArgs, Link, LoaderFunctionArgs, redirect, useLoaderData, useSearchParams } from "react-router";
+import {
+  ActionFunctionArgs,
+  isRouteErrorResponse,
+  Link,
+  LoaderFunctionArgs,
+  redirect,
+  useLoaderData,
+  useSearchParams,
+} from "react-router";
 
 import { CourseHeader } from "~/components/course/course-header";
 import { CoursePurchaseCTA } from "~/components/course/course-purchase-cta";
@@ -270,6 +278,26 @@ export default function CoursePreview() {
   );
 }
 
-export function ErrorBoundary() {
-  return <ErrorComponent />;
+export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+  if (isRouteErrorResponse(error)) {
+    if (error.status === 404) {
+      return (
+        <div className="flex h-screen w-full flex-col items-center justify-center gap-y-4">
+          <h2 className="text-center text-4xl">We couldn't find this course.</h2>
+          <p className="text-center">
+            If you're registered for a course, head to your{" "}
+            <Link className="text-primary underline decoration-2 underline-offset-2" to="/account/courses">
+              account
+            </Link>{" "}
+            and choose it from there.
+          </p>
+        </div>
+      );
+    }
+  }
+  return (
+    <div className="flex h-screen w-full items-center justify-center">
+      <ErrorComponent error={error} />
+    </div>
+  );
 }

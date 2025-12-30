@@ -31,6 +31,8 @@ export default tseslint.config(
       "node_modules/",
       "test-results",
       "*.env",
+      ".vercel/",
+      ".trigger/",
       ".react-router/",
       ".vercel/",
       ".trigger/",
@@ -88,6 +90,7 @@ export default tseslint.config(
           "newlines-between": "always",
         },
       ],
+      "import/no-unresolved": [2, { ignore: ["^.react-router"] }],
     },
   },
 
