@@ -33,6 +33,9 @@ import { getLessonsInOrder, getPreviewValues } from "~/lib/utils";
 import { PaymentService } from "~/services/payment.server";
 import { SessionService } from "~/services/session.server";
 
+// eslint-disable-next-line import/no-unresolved
+import { Route } from "../+types/root";
+
 const logger = createLogger("Routes.Preview");
 
 export async function loader(args: LoaderFunctionArgs) {
