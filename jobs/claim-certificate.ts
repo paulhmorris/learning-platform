@@ -157,6 +157,7 @@ export const claimCertificateJob = task({
         `,
       });
       logger.info("Email sent", sentEmail);
+      return;
     } catch (error) {
       Sentry.captureException(error);
       logger.error(error instanceof Error ? error.message : "", error as Record<string, unknown>);
