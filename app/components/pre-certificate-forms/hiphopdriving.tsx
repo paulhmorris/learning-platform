@@ -86,7 +86,7 @@ export function HiphopDrivingPreCertificateForm() {
       {(form) => (
         <>
           <legend>
-            The state of Texas requires some additional information before issuing your certificate. Please feel out the
+            The state of Texas requires some additional information before issuing your certificate. Please fill out the
             fields below.
           </legend>
           <div className="mt-4 grid max-w-lg grid-cols-2 gap-4">
