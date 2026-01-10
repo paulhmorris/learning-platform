@@ -60,6 +60,14 @@ export const CertificateService = {
             },
           },
         },
+        select: {
+          id: true,
+          certificate: {
+            select: {
+              number: true,
+            },
+          },
+        },
       });
       return updatedCourseAndCertifiate;
     } catch (error) {

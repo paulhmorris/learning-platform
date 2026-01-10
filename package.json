@@ -21,6 +21,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
+    "trigger": "npx trigger.dev@4.3.1 dev",
     "typecheck": "tsgo",
     "typegen": "react-router typegen"
   },

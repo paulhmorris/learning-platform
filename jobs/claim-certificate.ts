@@ -1,7 +1,8 @@
-import { createCanvas, loadImage } from "@napi-rs/canvas";
+import { Canvas, createCanvas, loadImage } from "@napi-rs/canvas";
 import { logger, task } from "@trigger.dev/sdk/v3";
 import { nanoid } from "nanoid";
 
+import { hipHopDrivingCertificationSchema } from "~/components/pre-certificate-forms/hiphopdriving";
 import { CONFIG } from "~/config";
 import { SERVER_CONFIG } from "~/config.server";
 import { Bucket } from "~/integrations/bucket.server";
@@ -10,6 +11,17 @@ import { db } from "~/integrations/db.server";
 import { EmailService } from "~/integrations/email.server";
 import { Sentry } from "~/integrations/sentry";
 import { CertificateService } from "~/services/certificate.server";
+
+// BUSINESS LOGIC
+const certificateMap = [
+  {
+    // Dev, staging, and prod Ids
+    courseIds: ["cmj3fal250001sbom8cjbvh8y", "cm3kbh75c0002qls5gvtkh6ev"],
+    verifyCanvasReadyFunction: hipHopCanvasFunctionIsReady,
+    canvasFunction: generateHipHopCertificate,
+  },
+];
+// END BUSINESS LOGIC
 
 export const claimCertificateJob = task({
   id: "claim-certificate",
@@ -24,6 +36,7 @@ export const claimCertificateJob = task({
             id: true,
             courseId: true,
             certificateClaimed: true,
+            completedAt: true,
             certificate: {
               select: {
                 id: true,
@@ -36,8 +49,13 @@ export const claimCertificateJob = task({
       },
     });
 
+    if (!_user.clerkId) {
+      logger.error("User missing clerkId", { userId: payload.userId });
+      throw new Error("User identity not available");
+    }
+
     // TODO: Update when clerkId is required
-    const clerkUser = await clerkClient.users.getUser(_user.clerkId!);
+    const clerkUser = await clerkClient.users.getUser(_user.clerkId);
 
     const email = clerkUser.emailAddresses.at(0)?.emailAddress;
     if (!email) {
@@ -78,7 +96,24 @@ export const claimCertificateJob = task({
       return;
     }
 
-    const key = `certificates/${user.email}-${nanoid(24)}.png`;
+    const safeCourseName = payload.courseName
+      .replace(/\s+/g, "-")
+      .replace(/[^a-zA-Z0-9-_]/g, "")
+      .toLowerCase();
+    const safeEmail = encodeURIComponent(user.email);
+    const key = `certificates/${safeCourseName}/${safeEmail}-${nanoid(24)}.png`;
+
+    // Verify that the certificate generation function is ready
+    const canvasReadyFunction = certificateMap.find((c) =>
+      c.courseIds.includes(payload.courseId),
+    )?.verifyCanvasReadyFunction;
+    if (canvasReadyFunction) {
+      const isReady = await canvasReadyFunction(thisUserCourse.id);
+      if (!isReady) {
+        logger.error("Certificate generation function is not ready", { userCourseId: thisUserCourse.id });
+        throw new Error("Certificate generation function is not ready");
+      }
+    }
 
     // Pull certificate allocation and create certificate entry
     const allocation = await CertificateService.getNextAllocationForCourse(payload.courseId);
@@ -100,15 +135,16 @@ export const claimCertificateJob = task({
 
     logger.info(`Found available allocation with id ${allocation.id} and number ${allocation.number}`);
 
+    let courseWithCertificate = null;
     try {
-      const updatedCourseAndCertifiate = await CertificateService.createAndUpdateCourse({
+      courseWithCertificate = await CertificateService.createAndUpdateCourse({
         s3Key: key,
         number: allocation.number,
         userCourseId: thisUserCourse.id,
       });
       logger.info(
         "User course marked complete and certificate linked. Beginning certificate creation...",
-        updatedCourseAndCertifiate,
+        courseWithCertificate,
       );
     } catch (error) {
       Sentry.captureException(error);
@@ -117,26 +153,23 @@ export const claimCertificateJob = task({
     }
 
     // Generate certificate
-    const canvas = createCanvas(1650, 1275);
-    const ctx = canvas.getContext("2d");
-    const certImage = await loadImage("https://assets.hiphopdriving.com/certificate_f2ffea5abd.png");
+    const canvasFunction = certificateMap.find((c) => c.courseIds.includes(payload.courseId))?.canvasFunction;
+    if (!canvasFunction) {
+      logger.error("No certificate generation function found for course", { courseId: payload.courseId });
+      return;
+    }
 
-    const date = new Date().toLocaleDateString("en-US");
+    // TODO: update for additional courses
+    const canvas = await canvasFunction({
+      userCourseId: thisUserCourse.id,
+      certificateNumber: courseWithCertificate.certificate!.number,
+      completionDate: thisUserCourse.completedAt?.toLocaleDateString("en-US") ?? new Date().toLocaleDateString("en-US"),
+    });
 
-    ctx.drawImage(certImage, 0, 0, 1650, 1275);
-    ctx.textAlign = "center";
-
-    ctx.font = "48px Helvetica";
-    ctx.fillText(`${user.firstName} ${user.lastName}`, 972, 624);
-
-    ctx.font = "32px Helvetica";
-    ctx.fillText(payload.courseName, 972, 728);
-
-    ctx.font = "24px Helvetica";
-    ctx.fillText(date, 812, 1080);
-
-    logger.info("Certificate generated");
-
+    if (!canvas) {
+      logger.error("Certificate generation failed", { userCourseId: thisUserCourse.id });
+      return;
+    }
     // Upload certificate to S3
     try {
       const upload = await Bucket.uploadFile({ key, file: canvas.toBuffer("image/png") });
@@ -165,3 +198,72 @@ export const claimCertificateJob = task({
     }
   },
 });
+
+async function hipHopCanvasFunctionIsReady(userCourseId: number) {
+  const formSubmissionCount = await db.preCertificationFormSubmission.count({ where: { userCourseId } });
+  return formSubmissionCount > 0;
+}
+
+type HipHopCertificateArgs = {
+  userCourseId: number;
+  certificateNumber: string;
+  completionDate: string;
+};
+async function generateHipHopCertificate(args: HipHopCertificateArgs): Promise<Canvas | null> {
+  const answers = await db.preCertificationFormSubmission.findFirst({ where: { userCourseId: args.userCourseId } });
+  if (!answers) {
+    logger.error("No precertification form submission found for user course", { userCourseId: args.userCourseId });
+    return null;
+  }
+  const parsedAnswers = hipHopDrivingCertificationSchema.safeParse(answers.formData);
+  if (!parsedAnswers.success) {
+    logger.error("Precertification form submission data is invalid", {
+      userCourseId: args.userCourseId,
+      errors: parsedAnswers.error.message,
+    });
+    return null;
+  }
+  const canvas = createCanvas(1650, 1275);
+  const ctx = canvas.getContext("2d");
+  const certImage = await loadImage("https://assets.hiphopdriving.com/certificate_f2ffea5abd.png").catch((err) => {
+    logger.error("Failed to load certificate base image", { error: err });
+    return null;
+  });
+
+  if (!certImage) {
+    return null;
+  }
+  const date = new Date().toLocaleDateString("en-US");
+
+  const firstRowY = 800;
+  const secondRowY = 870;
+  const thirdRowY = 945;
+
+  const firstColX = 316;
+  const secondColX = 736;
+  const thirdColX = 1_130;
+  const fourthColX = 1_455;
+
+  ctx.drawImage(certImage, 0, 0, 1650, 1275);
+  ctx.textAlign = "left";
+  ctx.font = "24px Arial";
+
+  // Row 1
+  ctx.fillText(args.certificateNumber, firstColX, firstRowY);
+  ctx.fillText(`${parsedAnswers.data.firstName} ${parsedAnswers.data.lastName}`, secondColX, firstRowY);
+  ctx.fillText(parsedAnswers.data.driversLicenseNumber, thirdColX, firstRowY);
+  ctx.fillText(parsedAnswers.data.dateOfBirth, fourthColX, firstRowY);
+
+  // Row 2
+  ctx.fillText(args.completionDate, firstColX, secondRowY);
+  ctx.fillText(date, secondColX, secondRowY);
+  ctx.fillText(parsedAnswers.data.reasonCode, thirdColX, secondRowY);
+  ctx.fillText(parsedAnswers.data.courtName ?? "N/A", fourthColX, secondRowY);
+
+  // Row 3
+  const { street, city, state, zipCode } = parsedAnswers.data;
+  ctx.fillText(`${street}, ${city}, ${state} ${zipCode}`, firstColX, thirdRowY);
+
+  logger.info("Certificate generated");
+  return canvas;
+}
