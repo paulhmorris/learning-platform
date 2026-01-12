@@ -9,7 +9,7 @@ import { APIResponseCollection, APIResponseData } from "~/types/utils";
 
 const logger = createLogger("CourseService");
 
-const TTL = 120;
+const TTL = 60 * 5; // 5 minutes
 type AllCoursesCMS = APIResponseCollection<"api::course.course">["data"];
 type CourseCMS = StrapiResponse<APIResponseData<"api::course.course">>;
 

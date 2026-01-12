@@ -37,6 +37,7 @@ export default tseslint.config(
       ".vercel/",
       ".trigger/",
       "**/types/generated/**",
+      "one-offs/",
     ],
   },
 

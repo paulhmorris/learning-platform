@@ -7,6 +7,8 @@ import { CacheKeys, CacheService } from "~/services/cache.server";
 
 const logger = createLogger("ProgressService");
 
+const PROGRESS_CACHE_TTL = 22; // 22 seconds
+
 export const ProgressService = {
   async incrementProgress(userId: string, lessonId: number) {
     const progress = await db.userLessonProgress.upsert({
@@ -15,7 +17,7 @@ export const ProgressService = {
       update: { durationInSeconds: { increment: SUBMIT_INTERVAL_MS / 1_000 } },
     });
     logger.info("Incremented progress", { userId, lessonId });
-    await CacheService.set(CacheKeys.progressLesson(userId, lessonId), progress, { ex: 12 });
+    await CacheService.set(CacheKeys.progressLesson(userId, lessonId), progress, { ex: PROGRESS_CACHE_TTL });
     return progress;
   },
 
@@ -31,7 +33,7 @@ export const ProgressService = {
       },
     });
     if (progress) {
-      await CacheService.set(CacheKeys.progressLesson(userId, lessonId), progress, { ex: 12 });
+      await CacheService.set(CacheKeys.progressLesson(userId, lessonId), progress, { ex: PROGRESS_CACHE_TTL });
     }
     logger.debug("Returning progress", { userId, lessonId });
     return progress;
@@ -50,7 +52,7 @@ export const ProgressService = {
       },
     });
     if (progress) {
-      await CacheService.set(CacheKeys.progressQuiz(userId, quizId), progress, { ex: 12 });
+      await CacheService.set(CacheKeys.progressQuiz(userId, quizId), progress, { ex: PROGRESS_CACHE_TTL });
     }
     logger.debug("Returning quiz progress", { userId, quizId });
     return progress;
@@ -65,7 +67,7 @@ export const ProgressService = {
     }
     const progress = await db.userLessonProgress.findMany({ where: { userId } });
     if (progress.length) {
-      await CacheService.set(CacheKeys.progressAll(userId), progress, { ex: 12 });
+      await CacheService.set(CacheKeys.progressAll(userId), progress, { ex: PROGRESS_CACHE_TTL });
     }
     logger.debug("Returning progress for all lessons", { userId });
     return progress;
@@ -134,7 +136,7 @@ export const ProgressService = {
         isCompleted: true,
       },
     });
-    await CacheService.set(CacheKeys.progressLesson(data.userId, data.lessonId), progress, { ex: 12 });
+    await CacheService.set(CacheKeys.progressLesson(data.userId, data.lessonId), progress, { ex: PROGRESS_CACHE_TTL });
     logger.info("Marked lesson as complete", { lessonId: data.lessonId, userId: data.userId });
     return progress;
   },

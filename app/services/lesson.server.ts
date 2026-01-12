@@ -7,6 +7,8 @@ type Lesson = APIResponseCollection<"api::lesson.lesson">["data"][0];
 
 const logger = createLogger("LessonService");
 
+const TTL = 120; // 2 minutes
+
 export const LessonService = {
   async getAllFromCMS() {
     try {
@@ -48,7 +50,7 @@ export const LessonService = {
         throw new Error("Lesson not found");
       }
 
-      await CacheService.set(CacheKeys.lesson(slug), lesson.data[0], { ex: 60 });
+      await CacheService.set(CacheKeys.lesson(slug), lesson.data[0], { ex: TTL });
       logger.debug("Fetched lesson from CMS", { slug });
       return lesson.data[0];
     } catch (error) {
