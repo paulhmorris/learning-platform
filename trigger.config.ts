@@ -8,11 +8,16 @@ export default defineConfig({
   maxDuration: 300,
   project: "proj_wkknrufxoeexxegqdcsz",
   build: {
-    extensions: [prismaExtension({ schema: "prisma/schema.prisma" })],
-    external: ["@napi-rs/canvas", "fsevents"],
+    extensions: [
+      prismaExtension({
+        mode: "legacy",
+        schema: "prisma/schema.prisma",
+      }),
+    ],
+    external: ["@napi-rs/canvas", "fsevents", "resend"],
   },
   // eslint-disable-next-line @typescript-eslint/require-await
-  onFailure: async (_, error) => {
+  onFailure: async ({ error }) => {
     Sentry.captureException(error);
   },
 });

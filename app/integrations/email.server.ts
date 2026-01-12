@@ -3,7 +3,7 @@ import { SESv2Client, SendEmailCommand } from "@aws-sdk/client-sesv2";
 import { nanoid } from "nanoid";
 import { Resend } from "resend";
 
-import { CONFIG } from "~/config.server";
+import { SERVER_CONFIG } from "~/config.server";
 import { createLogger } from "~/integrations/logger.server";
 import { Sentry } from "~/integrations/sentry";
 
@@ -21,7 +21,7 @@ export type SendEmailInput = {
 
 async function _sendSESEmail(props: SendEmailInput) {
   const input: SendEmailCommandInput = {
-    FromEmailAddress: props.from ?? `Plumb Media & Education <no-reply@${CONFIG.emailFromDomain}`,
+    FromEmailAddress: props.from ?? `Plumb Media & Education <no-reply@${SERVER_CONFIG.emailFromDomain}`,
     Destination: {
       ToAddresses: Array.isArray(props.to) ? props.to : [props.to],
     },
@@ -47,7 +47,7 @@ async function _sendSESEmail(props: SendEmailInput) {
     },
   };
 
-  if (CONFIG.isProd || CONFIG.isPreview) {
+  if (SERVER_CONFIG.isProd || SERVER_CONFIG.isPreview) {
     try {
       const command = new SendEmailCommand(input);
       const response = await sesClient.send(command);
@@ -72,9 +72,9 @@ async function _sendSESEmail(props: SendEmailInput) {
 }
 
 async function sendResendEmail(props: SendEmailInput) {
-  if (CONFIG.isProd || CONFIG.isPreview) {
+  if (SERVER_CONFIG.isProd || SERVER_CONFIG.isPreview) {
     const response = await resend.emails.send({
-      from: props.from ?? `Plumb Media & Education <no-reply@${CONFIG.emailFromDomain}>`,
+      from: props.from ?? `Plumb Media & Education <no-reply@${SERVER_CONFIG.emailFromDomain}>`,
       to: props.to,
       subject: props.subject,
       html: props.html,

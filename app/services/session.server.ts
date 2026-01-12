@@ -97,7 +97,7 @@ class _SessionService {
 
     logger.warn("User not found in the database, attempting to create...", { clerkId });
     const newUser = await UserService.create(clerkId);
-    return UserService.getByClerkId(newUser.id);
+    return UserService.getByClerkId(newUser.clerkId!);
   }
 
   private async requireUserByRole(args: Args, allowedRoles?: Array<UserRole>) {

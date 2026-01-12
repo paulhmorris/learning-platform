@@ -1,11 +1,11 @@
 import { Axiom } from "@axiomhq/js";
 import { AxiomJSTransport, ConsoleTransport, Logger } from "@axiomhq/logging";
 
-import { CONFIG } from "~/config.server";
+import { SERVER_CONFIG } from "~/config.server";
 
 // Axiom
 const axiom = new Axiom({ token: process.env.AXIOM_TOKEN });
-const logLevel = CONFIG.isDev ? "debug" : "info";
+const logLevel = SERVER_CONFIG.isDev ? "debug" : "info";
 const logger = new Logger({
   logLevel,
   args: { environment: process.env.VERCEL_ENV },
@@ -22,7 +22,7 @@ const devLogger = new Logger({
 });
 
 export function createLogger(module: string) {
-  if (CONFIG.isDev) {
+  if (SERVER_CONFIG.isDev) {
     return devLogger.with({ module });
   }
 

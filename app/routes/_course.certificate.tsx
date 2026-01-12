@@ -1,7 +1,12 @@
-import { ActionFunctionArgs, Form, Link, LoaderFunctionArgs, useActionData, useLoaderData } from "react-router";
+import { parseFormData, validationError } from "@rvf/react-router";
+import { ActionFunctionArgs, Link, LoaderFunctionArgs, useActionData, useLoaderData } from "react-router";
 
 import { PageTitle } from "~/components/common/page-title";
 import { ErrorComponent } from "~/components/error-component";
+import {
+  HiphopDrivingPreCertificateForm,
+  hipHopDrivingCertificationSchema,
+} from "~/components/pre-certificate-forms/hiphopdriving";
 import { SubmitButton } from "~/components/ui/submit-button";
 import { useCourseData } from "~/hooks/useCourseData";
 import { useProgress } from "~/hooks/useProgress";
@@ -10,6 +15,7 @@ import { cms } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
 import { createLogger } from "~/integrations/logger.server";
 import { Sentry } from "~/integrations/sentry";
+import { Responses } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
 import { getLessonsInOrder } from "~/lib/utils";
 import { SessionService } from "~/services/session.server";
@@ -17,47 +23,70 @@ import { APIResponseData } from "~/types/utils";
 
 import { claimCertificateJob } from "../../jobs/claim-certificate";
 
+// BUSINESS LOGIC
+const courseSpecificForms = [
+  {
+    // Hiphop Driving
+    courseId: 1,
+    component: <HiphopDrivingPreCertificateForm />,
+    schema: hipHopDrivingCertificationSchema,
+  },
+];
+// END BUSINESS LOGIC
+
 const logger = createLogger("Routes.CourseCertificate");
 
 export async function loader(args: LoaderFunctionArgs) {
   const user = await SessionService.requireUser(args);
   const { host } = new URL(args.request.url);
-  const linkedCourse = await db.course.findUnique({ where: { host } });
 
-  if (!linkedCourse) {
-    logger.error("Course not found", { host });
-    return Toasts.redirectWithError("/preview", {
-      message: "Error claiming certificate",
-      description: "Please try again later.",
-    });
-  }
+  try {
+    const linkedCourse = await db.course.findUnique({ where: { host } });
 
-  const userCourse = await db.userCourses.findUnique({
-    where: { userId_courseId: { userId: user.id, courseId: linkedCourse.id } },
-    select: {
-      certificateClaimed: true,
-      certificateS3Key: true,
-      isCompleted: true,
-      completedAt: true,
-    },
-  });
+    if (!linkedCourse) {
+      logger.error("Course not found", { host });
+      throw await Toasts.redirectWithError("/preview", {
+        message: "Error claiming certificate",
+        description: "Please try again later.",
+      });
+    }
 
-  if (!userCourse) {
-    logger.warn("User does not have access to course", { userId: user.id, courseId: linkedCourse.id });
-    Sentry.captureMessage("User tried to claim certificate without having access to course", {
-      extra: {
-        user: { id: user.id, email: user.email },
-        course: { id: linkedCourse.id },
+    const userCourse = await db.userCourse.findUnique({
+      where: { userId_courseId: { userId: user.id, courseId: linkedCourse.id } },
+      select: {
+        certificate: {
+          select: {
+            id: true,
+            issuedAt: true,
+            s3Key: true,
+          },
+        },
+        isCompleted: true,
+        completedAt: true,
       },
-      level: "warning",
     });
-    return Toasts.redirectWithError("/preview", {
-      message: "No access to course",
-      description: "Please purchase the course to access it.",
-    });
-  }
 
-  return { userCourse, course: linkedCourse };
+    if (!userCourse) {
+      logger.warn("User does not have access to course", { userId: user.id, courseId: linkedCourse.id });
+      Sentry.captureMessage("User tried to claim certificate without having access to course", {
+        extra: {
+          user: { id: user.id, email: user.email },
+          course: { id: linkedCourse.id },
+        },
+        level: "warning",
+      });
+      throw await Toasts.redirectWithError("/preview", {
+        message: "No access to course",
+        description: "Please purchase the course to access it.",
+      });
+    }
+
+    return { userCourse, course: linkedCourse };
+  } catch (error) {
+    console.error(error);
+    Sentry.captureException(error);
+    throw Responses.serverError();
+  }
 }
 
 export async function action(args: ActionFunctionArgs) {
@@ -141,6 +170,20 @@ export async function action(args: ActionFunctionArgs) {
       });
     }
 
+    const courseSpecificForm = courseSpecificForms.find((f) => f.courseId === course.data.id);
+    if (courseSpecificForm) {
+      const formData = await parseFormData(args.request, courseSpecificForm.schema);
+      if (formData.error) {
+        throw validationError(formData.error);
+      }
+      await db.preCertificationFormSubmission.create({
+        data: {
+          userCourseId: user.courses.find((c) => c.courseId === linkedCourse.id)!.id,
+          formData: formData.data,
+        },
+      });
+    }
+
     const job = await claimCertificateJob.trigger({
       userId: user.id,
       courseId: linkedCourse.id,
@@ -173,7 +216,7 @@ export async function action(args: ActionFunctionArgs) {
   } catch (error) {
     logger.error("Error claiming certificate", { userId: user.id });
     Sentry.captureException(error);
-    return Toasts.redirectWithError("/preview", {
+    return Toasts.dataWithError(null, {
       message: "Error claiming certificate",
       description: "Please try again later",
     });
@@ -227,7 +270,7 @@ export default function CourseCertificate() {
     );
   }
 
-  if (userCourse.certificateClaimed && userCourse.certificateS3Key) {
+  if (userCourse.certificate) {
     return (
       <Wrapper>
         <SuccessText>
@@ -236,7 +279,7 @@ export default function CourseCertificate() {
             className="mt-2 block text-lg font-bold underline decoration-2"
             target="_blank"
             rel="noreferrer"
-            href={`https://assets.hiphopdriving.com/${userCourse.certificateS3Key}`}
+            href={`https://assets.hiphopdriving.com/${userCourse.certificate.s3Key}`}
           >
             Access it here.
           </a>
@@ -255,18 +298,20 @@ export default function CourseCertificate() {
     );
   }
 
+  const CourseSpecificForm = courseSpecificForms.find((f) => f.courseId === data.course.id)?.component;
+
   return (
     <Wrapper>
       <SuccessText>
         Congratulations on successfully completing <span className="font-bold">{data.course.attributes.title}</span>!
-        <br />
-        <br />
-        Click the button below to claim your certificate. It will be emailed to{" "}
-        <span className="font-bold">{user.email}</span>.
       </SuccessText>
-      <Form className="mt-8" method="post">
-        <SubmitButton className="sm:w-auto">Claim Certificate</SubmitButton>
-      </Form>
+      <div className="mt-8">
+        {CourseSpecificForm ?? (
+          <form method="post">
+            <SubmitButton className="sm:w-auto">Claim Certificate</SubmitButton>
+          </form>
+        )}
+      </div>
     </Wrapper>
   );
 }

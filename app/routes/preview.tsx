@@ -27,7 +27,7 @@ import { getCourse } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
 import { createLogger } from "~/integrations/logger.server";
 import { Sentry } from "~/integrations/sentry";
-import { HttpHeaders, Responses } from "~/lib/responses.server";
+import { Responses } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
 import { getLessonsInOrder, getPreviewValues } from "~/lib/utils";
 import { PaymentService } from "~/services/payment.server";
@@ -61,12 +61,6 @@ export async function loader(args: LoaderFunctionArgs) {
   }
 }
 
-export function headers() {
-  return {
-    [HttpHeaders.CacheControl]: "public, s-maxage=60, max-age=60, stale-while-revalidate=300",
-  };
-}
-
 export async function action(args: ActionFunctionArgs) {
   const user = await SessionService.requireUser(args);
   const url = new URL(args.request.url);
@@ -79,16 +73,25 @@ export async function action(args: ActionFunctionArgs) {
     });
   }
 
-  if (!user.stripeId) {
-    await PaymentService.createCustomer(user.id);
-  }
+  try {
+    if (!user.stripeId) {
+      await PaymentService.createCustomer(user.id);
+    }
 
-  const session = await PaymentService.createCourseCheckoutSession({
-    userId: user.id,
-    stripePriceId: course.stripePriceId,
-    baseUrl: url.origin,
-  });
-  return redirect(session.url ?? "/", { status: 303 });
+    const session = await PaymentService.createCourseCheckoutSession({
+      userId: user.id,
+      stripePriceId: course.stripePriceId,
+      baseUrl: url.origin,
+    });
+    return redirect(session.url ?? "/", { status: 303 });
+  } catch (error) {
+    Sentry.captureException(error);
+    logger.error("Failed to create checkout session", { error, userId: user.id, courseId: course.id });
+    return Toasts.redirectWithError("/", {
+      message: "Unable to enroll",
+      description: "Please try again later",
+    });
+  }
 }
 
 export default function CoursePreview() {
@@ -168,7 +171,10 @@ export default function CoursePreview() {
             ) : isCourseCompleted ? (
               <div className="text-center">
                 <p className="rounded-md border border-success bg-success/5 p-4 text-lg text-success">
-                  You have completed this course.
+                  You have completed this course.{" "}
+                  <a className="font-bold underline decoration-2" href="/certificate">
+                    Claim your certificate now.
+                  </a>
                 </p>
               </div>
             ) : nextQuiz ? (

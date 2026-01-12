@@ -52,13 +52,13 @@ export function AccountCourses(props: Props) {
                       Go to Course
                     </a>
                   </AdminButton>
-                  {userCourse?.certificateClaimed && userCourse.certificateS3Key ? (
+                  {userCourse?.certificateClaimed && userCourse.certificate ? (
                     <AdminButton variant="outline" asChild>
                       <a
                         className="flex items-center gap-1.5"
                         target="_blank"
                         rel="noreferrer"
-                        href={`https://assets.hiphopdriving.com/${userCourse.certificateS3Key}`}
+                        href={`https://assets.hiphopdriving.com/${userCourse.certificate.s3Key}`}
                       >
                         <IconCertificate className="size-4 shrink-0" />
                         <span>View Certificate</span>

@@ -4,6 +4,10 @@ env:
   VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
   SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   workflow_dispatch:
   push:
@@ -15,10 +19,10 @@ jobs:
     name: ✨ Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
         with:
-          node-version: 22.17.0
+          node-version: 22.21.1
           cache: "npm"
       - run: npm ci --no-audit --no-fund
       - run: npm run typegen
@@ -28,10 +32,10 @@ jobs:
     name: 🧪 Test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
         with:
-          node-version: 22.17.0
+          node-version: 22.21.1
           cache: "npm"
       - run: npm ci --no-audit --no-fund
       - run: npm run test
@@ -40,10 +44,10 @@ jobs:
     name: 🧠 Typecheck
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
         with:
-          node-version: 22.17.0
+          node-version: 22.21.1
           cache: "npm"
       - run: npm ci --no-audit --no-fund
       - run: npm run typegen
@@ -56,7 +60,7 @@ jobs:
     needs: [lint, test, typecheck]
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
@@ -85,12 +89,12 @@ jobs:
   trigger:
     name: 🔫 Deploy Trigger
     runs-on: ubuntu-latest
-    needs: [lint, typecheck]
+    needs: [lint, test, typecheck]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
         with:
-          node-version: 20.18.0
+          node-version: 22.21.1
           cache: "npm"
 
       - name: Install Dependencies
@@ -100,4 +104,4 @@ jobs:
         env:
           TRIGGER_ACCESS_TOKEN: ${{ secrets.TRIGGER_ACCESS_TOKEN }}
         run: |
-          npx trigger.dev@3.3.17 deploy
+          npx trigger.dev@4.3.1 deploy

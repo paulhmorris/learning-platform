@@ -1,6 +1,6 @@
 import { SetCommandOptions } from "@upstash/redis";
 
-import { CONFIG } from "~/config.server";
+import { SERVER_CONFIG } from "~/config.server";
 import { createLogger } from "~/integrations/logger.server";
 import { redis } from "~/integrations/redis.server";
 import { Sentry } from "~/integrations/sentry";
@@ -34,7 +34,7 @@ const DEFAULT_TTL = 60 * 60; // 1 hour
 
 export const CacheService = {
   async get<T>(key: CacheKey) {
-    if (CONFIG.isDev || CONFIG.isTest) {
+    if (SERVER_CONFIG.isDev || SERVER_CONFIG.isTest) {
       return null;
     }
 
@@ -49,7 +49,7 @@ export const CacheService = {
   },
 
   async set<T>(key: CacheKey, value: T, opts: SetCommandOptions = {}) {
-    if (CONFIG.isDev || CONFIG.isTest) {
+    if (SERVER_CONFIG.isDev || SERVER_CONFIG.isTest) {
       return;
     }
 
@@ -66,7 +66,7 @@ export const CacheService = {
   },
 
   async delete(key: CacheKey) {
-    if (CONFIG.isDev || CONFIG.isTest) {
+    if (SERVER_CONFIG.isDev || SERVER_CONFIG.isTest) {
       return;
     }
 

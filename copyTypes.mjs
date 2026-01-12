@@ -2,21 +2,20 @@
 /* eslint-disable @typescript-eslint/restrict-template-expressions */
 /* eslint-disable @typescript-eslint/no-base-to-string */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/no-require-imports */
 /* eslint-disable no-undef */
-const fs = require("fs");
-const path = require("path");
+import fs from "fs";
+import path from "path";
 
 const destinationFolder = "./app/types/generated";
 
 const files = [
   {
-    src: path.join(__dirname, "../learning-platform-cms/types/generated/contentTypes.d.ts"),
-    dest: path.join(__dirname, `./${destinationFolder}/contentTypes.d.ts`),
+    src: path.join(import.meta.dirname, "../learning-platform-cms/types/generated/contentTypes.d.ts"),
+    dest: path.join(import.meta.dirname, `./${destinationFolder}/contentTypes.d.ts`),
   },
   {
-    src: path.join(__dirname, "../learning-platform-cms/types/generated/components.d.ts"),
-    dest: path.join(__dirname, `./${destinationFolder}/components.d.ts`),
+    src: path.join(import.meta.dirname, "../learning-platform-cms/types/generated/components.d.ts"),
+    dest: path.join(import.meta.dirname, `./${destinationFolder}/components.d.ts`),
   },
 ];
 

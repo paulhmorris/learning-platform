@@ -3,14 +3,14 @@ import { getGeo } from "hono-geo-middleware";
 import { createMiddleware } from "hono/factory";
 import { isbot } from "isbot";
 
-import { CONFIG } from "~/config.server";
+import { SERVER_CONFIG } from "~/config.server";
 import { httpLogger } from "~/integrations/logger.server";
 
 const matchers = ["/assets", "favicon", ".well-known", "site.webmanifest", "sitemap.xml", "robots.txt"];
 
 export function loggerMiddleware() {
   return createMiddleware(async (c, next) => {
-    if (CONFIG.isDev) {
+    if (SERVER_CONFIG.isDev) {
       return next();
     }
     if (matchers.some((m) => c.req.url.includes(m))) {

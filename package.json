@@ -1,13 +1,13 @@
 {
-  "name": "driver-safety-course-6a8c",
+  "name": "learning-platform",
   "private": true,
   "sideEffects": false,
   "type": "module",
   "packageManager": "npm@10.9.2",
   "scripts": {
     "build": "react-router build",
-    "copytypes": "node copyTypes.cjs && npx prettier --write .",
-    "dev": "NODE_OPTIONS='--import ./instrument.server.mjs --trace-warnings' react-router dev",
+    "copytypes": "node copyTypes.mjs && npx prettier --write .",
+    "dev": "react-router dev",
     "format": "prettier --write .",
     "lint": "eslint . --cache",
     "lint:prepush": "eslint . --cache --max-warnings=0",
@@ -21,6 +21,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
+    "trigger": "npx trigger.dev@4.3.1 dev",
     "typecheck": "tsgo",
     "typegen": "react-router typegen"
   },
@@ -67,7 +68,7 @@
     "@tabler/icons-react": "3.17.0",
     "@tanstack/match-sorter-utils": "^8.19.4",
     "@tanstack/react-table": "^8.21.3",
-    "@trigger.dev/sdk": "3.3.17",
+    "@trigger.dev/sdk": "4.3.1",
     "@upstash/redis": "^1.35.1",
     "@vercel/react-router": "^1.2.2",
     "class-variance-authority": "^0.7.1",
@@ -112,7 +113,7 @@
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
     "@total-typescript/ts-reset": "^0.6.1",
-    "@trigger.dev/build": "3.3.17",
+    "@trigger.dev/build": "4.3.1",
     "@types/eslint": "^9.6.1",
     "@types/node": "^24.0.15",
     "@types/react": "^19.1.8",
@@ -162,6 +163,6 @@
     "seed": "tsx prisma/seed.ts"
   },
   "volta": {
-    "node": "22.17.0"
+    "node": "22.21.1"
   }
 }

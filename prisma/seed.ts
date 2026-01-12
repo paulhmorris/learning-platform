@@ -32,6 +32,7 @@ async function seed() {
       stripeProductId: "prod_QFenLoxmawFmBo",
       host: "localhost:3000",
       requiresIdentityVerification: true,
+      issuesCertificate: true,
       userCourses: {
         create: {
           user: {

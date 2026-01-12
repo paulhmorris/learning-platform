@@ -22,7 +22,7 @@ export async function loader(args: LoaderFunctionArgs) {
 
   try {
     const [userCourses, cmsCourses, session] = await Promise.all([
-      db.userCourses.findMany({
+      db.userCourse.findMany({
         where: { userId: user.id },
         orderBy: { createdAt: "desc" },
         select: {
@@ -30,8 +30,13 @@ export async function loader(args: LoaderFunctionArgs) {
           isCompleted: true,
           completedAt: true,
           certificateClaimed: true,
-          certificateS3Key: true,
           createdAt: true,
+          certificate: {
+            select: {
+              issuedAt: true,
+              s3Key: true,
+            },
+          },
           course: {
             select: {
               id: true,

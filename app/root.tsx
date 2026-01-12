@@ -11,7 +11,7 @@ import { getToast } from "remix-toast";
 import { ErrorComponent } from "~/components/error-component";
 import { Header } from "~/components/header";
 import { Notifications } from "~/components/notifications";
-import { CONFIG } from "~/config.server";
+import { SERVER_CONFIG } from "~/config.server";
 import { Sentry } from "~/integrations/sentry";
 import { HttpHeaders, Responses } from "~/lib/responses.server";
 import { cn, hexToPartialHSL } from "~/lib/utils";
@@ -49,7 +49,7 @@ export const loader = async (args: LoaderFunctionArgs) => {
       const linkedCourse = await CourseService.getByHost(host);
 
       const headers = new Headers(_headers);
-      const TTL = CONFIG.isProd ? 300 : 60;
+      const TTL = SERVER_CONFIG.isProd ? 300 : 60;
       headers.set(HttpHeaders.CacheControl, `private, max-age=${TTL}`);
 
       if (!linkedCourse) {

@@ -126,7 +126,7 @@ export const UserService = {
       return db.$transaction([
         db.userQuizProgress.deleteMany({ where: { userId } }),
         db.userLessonProgress.deleteMany({ where: { userId } }),
-        db.userCourses.deleteMany({ where: { userId } }),
+        db.userCourse.deleteMany({ where: { userId } }),
         db.user.delete({ where: { id: userId } }),
       ]);
     } catch (error) {
@@ -160,9 +160,14 @@ export const UserService = {
               id: true,
               isCompleted: true,
               completedAt: true,
-              certificateClaimed: true,
-              certificateS3Key: true,
               createdAt: true,
+              certificate: {
+                select: {
+                  id: true,
+                  issuedAt: true,
+                  s3Key: true,
+                },
+              },
               course: {
                 select: {
                   id: true,

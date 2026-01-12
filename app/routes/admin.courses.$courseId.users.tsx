@@ -61,7 +61,7 @@ export async function action(args: ActionFunctionArgs) {
     return result.error;
   }
 
-  await db.userCourses.create({
+  await db.userCourse.create({
     data: {
       courseId,
       userId: result.data.userId,
