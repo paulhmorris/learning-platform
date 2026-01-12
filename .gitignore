@@ -17,3 +17,5 @@ node_modules
 .trigger
 .vercel
 *seed-prod.ts
+
+one-offs/
