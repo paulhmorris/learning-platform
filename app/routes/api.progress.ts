@@ -17,7 +17,7 @@ const schema = z.object({
   lessonId: number,
   intent: z.enum(["mark-complete", "increment-duration"]),
 });
-export const SUBMIT_INTERVAL_MS = 15_000;
+export const SUBMIT_INTERVAL_MS = 30_000;
 
 export function shouldRevalidate({ formAction }: ShouldRevalidateFunctionArgs) {
   if (formAction === "/api/progress") {
