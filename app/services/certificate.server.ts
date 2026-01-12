@@ -22,7 +22,7 @@ export const CertificateService = {
         });
 
         if (!nextAllocation) {
-          logger.warn(`No allocations were found for course ${courseId}. Please add more.`);
+          logger.error(`No allocations were found for course ${courseId}. Please add more.`);
           return null;
         }
 

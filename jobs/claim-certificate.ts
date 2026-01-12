@@ -1,6 +1,5 @@
 import { Canvas, createCanvas, loadImage } from "@napi-rs/canvas";
 import { logger, task } from "@trigger.dev/sdk/v3";
-import { nanoid } from "nanoid";
 
 import { hipHopDrivingCertificationSchema } from "~/components/pre-certificate-forms/hiphopdriving";
 import { CONFIG } from "~/config";
@@ -17,7 +16,7 @@ const certificateMap = [
   {
     // Dev, staging, and prod Ids
     courseIds: ["cmj3fal250001sbom8cjbvh8y", "cm3kbh75c0002qls5gvtkh6ev"],
-    verifyCanvasReadyFunction: hipHopCanvasFunctionIsReady,
+    businessChecksFunction: runHipHopBusinessChecks,
     canvasFunction: generateHipHopCertificate,
   },
 ];
@@ -29,6 +28,7 @@ export const claimCertificateJob = task({
     const _user = await db.user.findUniqueOrThrow({
       where: { id: payload.userId },
       select: {
+        id: true,
         clerkId: true,
         courses: {
           where: { courseId: payload.courseId },
@@ -96,22 +96,25 @@ export const claimCertificateJob = task({
       return;
     }
 
+    const dateForKey = new Date();
+    const year = dateForKey.getFullYear();
+    const month = dateForKey.getMonth() + 1;
+    const day = dateForKey.getDate();
     const safeCourseName = payload.courseName
       .replace(/\s+/g, "-")
       .replace(/[^a-zA-Z0-9-_]/g, "")
       .toLowerCase();
-    const safeEmail = encodeURIComponent(user.email);
-    const key = `certificates/${safeCourseName}/${safeEmail}-${nanoid(24)}.png`;
+    const key = `certificates/${safeCourseName}/${year}/${month}/${day}/${user.id}-${Date.now()}.png`;
 
     // Verify that the certificate generation function is ready
     const canvasReadyFunction = certificateMap.find((c) =>
       c.courseIds.includes(payload.courseId),
-    )?.verifyCanvasReadyFunction;
+    )?.businessChecksFunction;
     if (canvasReadyFunction) {
       const isReady = await canvasReadyFunction(thisUserCourse.id);
       if (!isReady) {
-        logger.error("Certificate generation function is not ready", { userCourseId: thisUserCourse.id });
-        throw new Error("Certificate generation function is not ready");
+        logger.error("Certificate generation function is lacking requirements", { userCourseId: thisUserCourse.id });
+        throw new Error("Certificate generation function is lacking requirements");
       }
     }
 
@@ -126,7 +129,7 @@ export const claimCertificateJob = task({
         html: `
         <p>Hi ${user.firstName},</p>
         <p>Congratulations on completing the ${payload.courseName} course! However, there was an issue on our end creating your certificate.</p>
-        <p>Our team has been notified, but feel free to reach out to support at ${CONFIG.supportEmail} for more help. Rest assured, <b>Your course is completed and your progress has been saved</b>.</p>
+        <p>Our team has been notified, but feel free to reach out to support at ${CONFIG.supportEmail} for more help. Rest assured, <b>your course is completed and your progress has been saved</b>.</p>
       `,
       });
       logger.info("Email sent", sentEmail);
@@ -174,9 +177,7 @@ export const claimCertificateJob = task({
     try {
       const upload = await Bucket.uploadFile({ key, file: canvas.toBuffer("image/png") });
 
-      logger.info(
-        `Certificate uploaded with status code ${upload.$metadata.httpStatusCode} and requestId ${upload.$metadata.requestId}`,
-      );
+      logger.info(`Certificate uploaded with status code ${upload.$metadata.httpStatusCode}`);
 
       // send email with link to image
       const sentEmail = await EmailService.send({
@@ -199,8 +200,13 @@ export const claimCertificateJob = task({
   },
 });
 
-async function hipHopCanvasFunctionIsReady(userCourseId: number) {
+async function runHipHopBusinessChecks(userCourseId: number) {
   const formSubmissionCount = await db.preCertificationFormSubmission.count({ where: { userCourseId } });
+  if (formSubmissionCount < 1) {
+    logger.warn("HipHop certificate generation function is not ready: no precertification form submission found", {
+      userCourseId,
+    });
+  }
   return formSubmissionCount > 0;
 }
 
@@ -235,9 +241,9 @@ async function generateHipHopCertificate(args: HipHopCertificateArgs): Promise<C
   }
   const date = new Date().toLocaleDateString("en-US");
 
-  const firstRowY = 800;
-  const secondRowY = 870;
-  const thirdRowY = 945;
+  const firstRowY = 790;
+  const secondRowY = 865;
+  const thirdRowY = 935;
 
   const firstColX = 316;
   const secondColX = 736;
