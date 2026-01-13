@@ -1,3 +1,5 @@
+import { StrapiResponse } from "strapi-sdk-js";
+
 import { cms } from "~/integrations/cms.server";
 import { createLogger } from "~/integrations/logger.server";
 import { Sentry } from "~/integrations/sentry";
@@ -13,9 +15,20 @@ export const LessonService = {
   async getAllFromCMS() {
     try {
       logger.debug("Fetching all lessons from CMS");
-      return cms.find<APIResponseCollection<"api::lesson.lesson">["data"]>("lessons", {
+      const cachedLessons = await CacheService.get<StrapiResponse<APIResponseCollection<"api::lesson.lesson">["data"]>>(
+        CacheKeys.lessonsAll(),
+      );
+      if (cachedLessons) {
+        logger.debug("Returning cached lessons");
+        return cachedLessons;
+      }
+      const lessons = await cms.find<APIResponseCollection<"api::lesson.lesson">["data"]>("lessons", {
         fields: ["title", "required_duration_in_seconds", "uuid"],
+        pagination: { pageSize: 200, page: 1 },
       });
+      await CacheService.set(CacheKeys.lessonsAll(), lessons, { ex: TTL });
+      logger.debug("Fetched lessons from CMS");
+      return lessons;
     } catch (error) {
       Sentry.captureException(error);
       logger.error("Failed to retrieve lessons", { error });

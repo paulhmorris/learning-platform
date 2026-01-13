@@ -22,6 +22,7 @@ export const CacheKeys = {
   courseRootCMS: (strapiId: string | number) => `cms:course:root:${strapiId}`,
   courseLayoutCMS: (strapiId: string | number) => `cms:course:layout:${strapiId}`,
   lesson: (slug: string) => `lesson:${slug}`,
+  lessonsAll: () => `lesson:all`,
   lessonDuration: (lessonId: number) => `lesson-duration:${lessonId}`,
   progressLesson: (userId: string, lessonId: number) => `user-lesson-progress:${userId}:${lessonId}`,
   progressQuiz: (userId: string, quizId: number) => `user-quiz-progress:${userId}:${quizId}`,
