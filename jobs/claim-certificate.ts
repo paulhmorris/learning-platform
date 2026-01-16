@@ -224,7 +224,8 @@ async function generateHipHopCertificate(args: HipHopCertificateArgs): Promise<C
   const canvas = createCanvas(1650, 1275);
   const ctx = canvas.getContext("2d");
   const certImage = await loadImage("https://assets.hiphopdriving.com/certificate_f2ffea5abd.png").catch((err) => {
-    logger.error(`Failed to load certificate base image: ${err}`);
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    logger.error(`Failed to load certificate base image: ${errorMessage}`, { error: err });
     return null;
   });
 

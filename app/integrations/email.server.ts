@@ -58,7 +58,7 @@ async function _sendSESEmail(props: SendEmailInput) {
       return { messageId: response.MessageId, $metadata: response.$metadata };
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : "Unknown error";
-      logger.error(`Failed to send email: ${errorMessage}`);
+      logger.error(`Failed to send email: ${errorMessage}`, { error: e });
       Sentry.captureException(e);
       throw e;
     }
