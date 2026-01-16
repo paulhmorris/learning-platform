@@ -29,12 +29,12 @@ export const PaymentService = {
         phone: user.phone,
         metadata: { ...options.metadata, user_id: userId },
       });
-      logger.info("Created Stripe customer", { userId, stripeCustomerId: stripeCustomer.id });
+      logger.info(`Created Stripe customer ${stripeCustomer.id} for user ${userId}`);
       await UserService.update(userId, { stripeId: stripeCustomer.id });
       return { id: stripeCustomer.id };
     } catch (error) {
       Sentry.captureException(error, { extra: { userId, options } });
-      logger.error("Failed to create Stripe customer", { userId, error });
+      logger.error(`Failed to create Stripe customer for user ${userId}`, { error });
       throw error;
     }
   },
@@ -52,7 +52,7 @@ export const PaymentService = {
       }
 
       if (!user.stripeId) {
-        logger.info("Creating Stripe customer for user without stripeId", { userId });
+        logger.info(`Creating Stripe customer for user ${userId} without stripeId`);
         const customer = await this.createCustomer(user.id);
         stripeCustomerId = customer.id;
       }
@@ -67,11 +67,11 @@ export const PaymentService = {
           user_id: user.id,
         },
       });
-      logger.info("Created course checkout session", { userId, stripePriceId, sessionId: session.id });
+      logger.info(`Created course checkout session ${session.id} for user ${userId} with price ${stripePriceId}`);
       return session;
     } catch (error) {
       Sentry.captureException(error, { extra: { userId, stripePriceId } });
-      logger.error("Failed to create course checkout session", { userId, stripePriceId, error });
+      logger.error(`Failed to create course checkout session for user ${userId} with price ${stripePriceId}`, { error });
       throw error;
     }
   },

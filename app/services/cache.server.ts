@@ -39,11 +39,11 @@ export const CacheService = {
     }
 
     try {
-      logger.debug("Getting cache item", { key });
+      logger.debug(`Getting cache item: ${key}`);
       return redis.get<T>(key);
     } catch (error) {
       Sentry.captureException(error);
-      logger.error("Failed to get cache item", { error, key });
+      logger.error(`Failed to get cache item: ${key}`, { error });
       throw error;
     }
   },
@@ -56,11 +56,11 @@ export const CacheService = {
     opts.ex ??= DEFAULT_TTL;
 
     try {
-      logger.debug("Setting cache item", { key, ttl: opts.ex });
+      logger.debug(`Setting cache item: ${key} (TTL: ${opts.ex}s)`);
       await redis.set(key, value, opts);
     } catch (error) {
       Sentry.captureException(error);
-      logger.error("Failed to set cache item", { error, key });
+      logger.error(`Failed to set cache item: ${key}`, { error });
       throw error;
     }
   },
@@ -71,11 +71,11 @@ export const CacheService = {
     }
 
     try {
-      logger.debug("Deleting cache item", { key });
+      logger.debug(`Deleting cache item: ${key}`);
       await redis.del(key);
     } catch (error) {
       Sentry.captureException(error);
-      logger.error("Failed to delete cache item", { error, key });
+      logger.error(`Failed to delete cache item: ${key}`, { error });
       throw error;
     }
   },
