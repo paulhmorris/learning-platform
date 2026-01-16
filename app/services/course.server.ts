@@ -17,13 +17,13 @@ export const CourseService = {
   async getByHost(host: string) {
     const cachedCourse = await CacheService.get<Course>(CacheKeys.courseRoot(host));
     if (cachedCourse) {
-      logger.debug("Returning cached course", { host });
+      logger.debug(`Returning cached course for host ${host}`);
       return cachedCourse;
     }
 
     const course = await db.course.findUnique({ where: { host } });
     if (!course) {
-      logger.warn("No course found for host", { host });
+      logger.warn(`No course found for host ${host}`);
       return null;
     }
 
@@ -32,14 +32,14 @@ export const CourseService = {
   },
 
   async getById(id: string) {
-    logger.debug("Fetching course by ID", { id });
+    logger.debug(`Fetching course by ID ${id}`);
     return db.course.findUniqueOrThrow({ where: { id } });
   },
 
   async getFromCMSForRoot(strapiId: string | number) {
     const cachedCourse = await CacheService.get<CourseCMS>(CacheKeys.courseRootCMS(strapiId));
     if (cachedCourse) {
-      logger.debug("Returning cached course from CMS", { strapiId });
+      logger.debug(`Returning cached course from CMS for Strapi ID ${strapiId}`);
       return cachedCourse;
     }
 
@@ -57,19 +57,19 @@ export const CourseService = {
 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!course) {
-      logger.warn("No course found in CMS for ID", { strapiId });
+      logger.warn(`No course found in CMS for Strapi ID ${strapiId}`);
       return null;
     }
 
     await CacheService.set(CacheKeys.courseRootCMS(strapiId), course, { ex: TTL });
-    logger.debug("Fetched course from CMS for root", { strapiId });
+    logger.debug(`Fetched course from CMS for root with Strapi ID ${strapiId}`);
     return course;
   },
 
   async getFromCMSForCourseLayout(strapiId: string | number) {
     const cachedCourse = await CacheService.get<CourseCMS>(CacheKeys.courseLayoutCMS(strapiId));
     if (cachedCourse) {
-      logger.debug("Returning cached course layout from CMS", { strapiId });
+      logger.debug(`Returning cached course layout from CMS for Strapi ID ${strapiId}`);
       return cachedCourse;
     }
 
@@ -100,19 +100,19 @@ export const CourseService = {
 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!course) {
-      logger.warn("No course found in CMS for ID", { strapiId });
+      logger.warn(`No course found in CMS for Strapi ID ${strapiId}`);
       return null;
     }
 
     await CacheService.set(CacheKeys.courseLayoutCMS(strapiId), course, { ex: TTL });
-    logger.debug("Fetched course from CMS for layout", { strapiId });
+    logger.debug(`Fetched course from CMS for layout with Strapi ID ${strapiId}`);
     return course;
   },
 
   async getAll() {
     const cachedCourses = await CacheService.get<AllCoursesCMS>(CacheKeys.coursesAll());
     if (cachedCourses && cachedCourses.length > 0) {
-      logger.debug("Returning cached courses", { length: cachedCourses.length });
+      logger.debug(`Returning ${cachedCourses.length} cached courses`);
       return cachedCourses;
     }
 
@@ -126,7 +126,7 @@ export const CourseService = {
     }
 
     await CacheService.set(CacheKeys.coursesAll(), courses.data, { ex: TTL });
-    logger.debug("Fetched all courses", { length: courses.data.length });
+    logger.debug(`Fetched ${courses.data.length} courses from CMS`);
     return courses.data;
   },
 };
