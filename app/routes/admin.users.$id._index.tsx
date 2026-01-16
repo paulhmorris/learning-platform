@@ -37,7 +37,7 @@ export async function action(args: ActionFunctionArgs) {
     return Toasts.dataWithSuccess({ updatedUser }, { message: "Success", description: "User updated successfully." });
   } catch (error) {
     Sentry.captureException(error);
-    logger.error("Failed to update user", { error, userId: id });
+    logger.error(`Failed to update user ${id}`, { error });
     return Toasts.dataWithError(null, { message: "Error", description: "Failed to update user." });
   }
 }

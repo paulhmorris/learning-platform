@@ -19,25 +19,25 @@ export async function action(args: ActionFunctionArgs) {
 
   const eventType = event.type;
 
-  logger.info("Received Clerk webhook event", { event });
+  logger.info(`Received Clerk webhook event: ${eventType}`);
 
   if (eventType === "user.created") {
     try {
       await UserService.create(event.data.id);
     } catch (error) {
-      logger.error("Error creating user", { event, error });
+      logger.error(`Error creating user from Clerk webhook event ${eventType}`, { error });
     }
   }
 
   if (eventType === "user.deleted") {
     if (!event.data.id) {
-      logger.error("User deletion event received without user ID", { event });
+      logger.error(`User deletion event received without user ID`);
       return Responses.badRequest("User ID is required for deletion");
     }
     try {
       await UserService.delete(event.data.id);
     } catch (error) {
-      logger.error("Error deleting user", { event, error });
+      logger.error(`Error deleting user ${event.data.id} from Clerk webhook event ${eventType}`, { error });
     }
   }
 

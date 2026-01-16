@@ -20,7 +20,7 @@ export async function loader(args: LoaderFunctionArgs) {
 
   const id = args.params.id;
   if (!id) {
-    logger.error("User ID not found");
+    logger.error("User ID not found in request params");
     throw Responses.notFound();
   }
 
@@ -28,7 +28,7 @@ export async function loader(args: LoaderFunctionArgs) {
     const [user, cmsCourses] = await Promise.all([UserService.getByIdWithCourse(id), CourseService.getAll()]);
 
     if (!user || !cmsCourses.length) {
-      logger.error("User or courses not found", { user, cmsCourses });
+      logger.error(`User ${id} or courses not found`);
       throw Responses.notFound();
     }
 
@@ -44,7 +44,7 @@ export async function loader(args: LoaderFunctionArgs) {
     return { courses };
   } catch (error) {
     Sentry.captureException(error);
-    logger.error("Failed to load user courses", { error, userId: id });
+    logger.error(`Failed to load user ${id} courses`, { error });
     throw Responses.serverError();
   }
 }

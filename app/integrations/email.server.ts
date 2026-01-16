@@ -57,17 +57,16 @@ async function _sendSESEmail(props: SendEmailInput) {
 
       return { messageId: response.MessageId, $metadata: response.$metadata };
     } catch (e) {
-      logger.error(e instanceof Error ? e.message : "Unknown error");
+      const errorMessage = e instanceof Error ? e.message : "Unknown error";
+      logger.error(`Failed to send email: ${errorMessage}`);
       Sentry.captureException(e);
       throw e;
     }
   }
 
-  logger.debug("Email sent", {
-    From: props.from,
-    To: props.to,
-    Subject: props.subject,
-  });
+  logger.debug(
+    `Email sent to ${Array.isArray(props.to) ? props.to.join(", ") : props.to} (Subject: "${props.subject}")`,
+  );
   return { messageId: "test", $metadata: {} };
 }
 
@@ -81,18 +80,16 @@ async function sendResendEmail(props: SendEmailInput) {
     });
 
     if (response.error) {
-      logger.error(response.error.message);
+      logger.error(`Failed to send email via Resend: ${response.error.message}`);
       Sentry.captureException(response.error);
     }
 
     return { messageId: response.data?.id };
   }
 
-  logger.debug("Email sent", {
-    From: props.from,
-    To: props.to,
-    Subject: props.subject,
-  });
+  logger.debug(
+    `Email sent to ${Array.isArray(props.to) ? props.to.join(", ") : props.to} (Subject: "${props.subject}")`,
+  );
   return { messageId: "test" };
 }
 
