@@ -11,7 +11,7 @@ export function useProgress() {
     if (fetcher.state === "idle") {
       void fetcher.load("/api/progress");
     }
-  }, [location.pathname]);
+  }, [location.pathname, fetcher]);
 
   return (
     fetcher.data ?? {
