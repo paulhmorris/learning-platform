@@ -1,3 +1,4 @@
+import { useUser } from "@clerk/react-router";
 import { UserRole } from "@prisma/client";
 import { IconExternalLink } from "@tabler/icons-react";
 import { ColumnDef } from "@tanstack/react-table";
@@ -8,7 +9,6 @@ import { ErrorComponent } from "~/components/error-component";
 import { Button } from "~/components/ui/button";
 import { DataTable } from "~/components/ui/data-table/data-table";
 import { DataTableColumnHeader } from "~/components/ui/data-table/data-table-column-header";
-import { useUser } from "~/hooks/useUser";
 import { AuthService } from "~/services/auth.server";
 import { SessionService } from "~/services/session.server";
 
@@ -96,10 +96,10 @@ const columns: Array<ColumnDef<User>> = [
     accessorKey: "action",
     header: ({ column }) => <DataTableColumnHeader column={column} title="Action" className="sr-only" />,
     cell: ({ row }) => {
-      const user = useUser();
+      const { user } = useUser();
       const fetcher = useFetcher();
 
-      if (user.role !== UserRole.SUPERADMIN) {
+      if (user?.publicMetadata.role !== UserRole.SUPERADMIN) {
         return null;
       }
 

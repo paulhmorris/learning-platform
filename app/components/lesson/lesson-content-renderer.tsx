@@ -2,9 +2,8 @@ import { lazy } from "react";
 import { StrapiResponse } from "strapi-sdk-js";
 import { useIsClient } from "usehooks-ts";
 
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "~/components/ui/carousel";
 // eslint-disable-next-line import/order
-import { useUser } from "~/hooks/useUser";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "~/components/ui/carousel";
 
 const MuxPlayer = lazy(() => import("@mux/mux-player-react"));
 const BlocksRenderer = lazy(() =>
@@ -17,11 +16,10 @@ import { APIResponseData } from "~/types/utils";
 export type StrapiContent = StrapiResponse<APIResponseData<"api::lesson.lesson">>["data"]["attributes"]["content"];
 type Props = {
   content: StrapiContent;
+  viewerUserId?: string;
 };
 
-export function LessonContentRenderer({ content }: Props) {
-  const user = useUser();
-
+export function LessonContentRenderer({ content, viewerUserId }: Props) {
   const isClient = useIsClient();
   if (!isClient) {
     return null;
@@ -48,7 +46,7 @@ export function LessonContentRenderer({ content }: Props) {
                 metadata={{
                   video_id: video.asset_id,
                   video_title: video.title,
-                  viewer_user_id: user.id,
+                  ...(viewerUserId ? { viewer_user_id: viewerUserId } : {}),
                 }}
               />
             );

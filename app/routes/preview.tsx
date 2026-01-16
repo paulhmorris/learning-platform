@@ -14,7 +14,6 @@ import { CourseProgressBar } from "~/components/sidebar/course-progress-bar";
 import { Button } from "~/components/ui/button";
 import { Separator } from "~/components/ui/separator";
 import { useProgress } from "~/hooks/useProgress";
-import { useUser } from "~/hooks/useUser";
 import { getCourse } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
 import { createLogger } from "~/integrations/logger.server";
@@ -28,7 +27,7 @@ import { SessionService } from "~/services/session.server";
 const logger = createLogger("Routes.Preview");
 
 export async function loader(args: LoaderFunctionArgs) {
-  await SessionService.requireUserId(args);
+  const userId = await SessionService.requireUserId(args);
 
   const url = new URL(args.request.url);
   try {
@@ -37,9 +36,14 @@ export async function loader(args: LoaderFunctionArgs) {
       throw Responses.notFound();
     }
 
-    const course = await getCourse(linkedCourse.strapiId);
+    const [course, userCourses] = await Promise.all([
+      getCourse(linkedCourse.strapiId),
+      db.userCourse.findMany({ where: { userId }, select: { courseId: true } }),
+    ]);
 
-    return { course: course.data, linkedCourse };
+    const userCourseIds = userCourses.map((c) => c.courseId);
+
+    return { course: course.data, linkedCourse, userCourseIds };
   } catch (error) {
     Sentry.captureException(error);
     logger.error("Failed to load course", { error, host: url.host });
@@ -84,18 +88,17 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export default function CoursePreview() {
-  const user = useUser();
   const [searchParams] = useSearchParams();
   const { lessonProgress, quizProgress } = useProgress();
   const [successModalOpen, setSuccessModalOpen] = useState(false);
   const [canceledModalOpen, setCanceledModalOpen] = useState(false);
-  const { course, linkedCourse } = useLoaderData<typeof loader>();
+  const { course, linkedCourse, userCourseIds } = useLoaderData<typeof loader>();
 
   const isSuccessful = searchParams.get("purchase_success") === "true";
   const isCanceled = searchParams.get("purchase_canceled") === "true";
   const lessons = getLessonsInOrder({ course, progress: lessonProgress });
 
-  const userHasAccess = user.courses.some((c) => c.courseId === linkedCourse.id);
+  const userHasAccess = userCourseIds.includes(linkedCourse.id);
 
   // handle success or cancel
   useEffect(() => {

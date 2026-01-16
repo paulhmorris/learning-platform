@@ -45,7 +45,7 @@ export const CacheService = {
     } catch (error) {
       Sentry.captureException(error);
       logger.error("Failed to get cache item", { error, key });
-      throw error;
+      return null;
     }
   },
 
@@ -62,7 +62,7 @@ export const CacheService = {
     } catch (error) {
       Sentry.captureException(error);
       logger.error("Failed to set cache item", { error, key });
-      throw error;
+      return;
     }
   },
 
@@ -77,7 +77,7 @@ export const CacheService = {
     } catch (error) {
       Sentry.captureException(error);
       logger.error("Failed to delete cache item", { error, key });
-      throw error;
+      return;
     }
   },
 };

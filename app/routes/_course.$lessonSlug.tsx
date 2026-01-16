@@ -38,7 +38,7 @@ export async function loader(args: LoaderFunctionArgs) {
     invariant(lessonSlug, "Lesson slug is required");
 
     const lesson = await LessonService.getBySlugWithContent(lessonSlug);
-    return { lesson };
+    return { lesson, userId };
   } catch (error) {
     logger.error("Error loading lesson data", { error, lessonSlug: args.params.lessonSlug });
     Sentry.captureException(error, { extra: { lessonSlug: args.params.lessonSlug, userId } });
@@ -49,7 +49,7 @@ export async function loader(args: LoaderFunctionArgs) {
 export default function Course() {
   const { lessonProgress } = useProgress();
   const { course } = useCourseData();
-  const { lesson } = useLoaderData<typeof loader>();
+  const { lesson, userId } = useLoaderData<typeof loader>();
 
   const progress = useMemo(() => {
     return lessonProgress.find((p) => p.lessonId === lesson.id) ?? null;
@@ -68,7 +68,7 @@ export default function Course() {
         />
       </div>
       <div className="mt-8">
-        <LessonContentRenderer content={lesson.attributes.content} />
+        <LessonContentRenderer content={lesson.attributes.content} viewerUserId={userId} />
       </div>
       {!isTimed ? (
         <div className="mt-12 flex w-full justify-center">

@@ -1,14 +1,13 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
+import { SignedOut } from "@clerk/react-router";
 import { Link, useMatches, useRouteLoaderData } from "react-router";
 
 import { ThemeModeToggle } from "~/components/theme-mode-toggle";
 import { Button } from "~/components/ui/button";
 import { UserMenu } from "~/components/user-menu";
-import { useOptionalUser } from "~/hooks/useOptionalUser";
 import type { loader } from "~/root";
 
 export function Header() {
-  const user = useOptionalUser();
   const rootData = useRouteLoaderData<typeof loader>("root");
   const matches = useMatches();
 
@@ -37,11 +36,11 @@ export function Header() {
                 </Link>
               </Button>
             ) : null}
-            {user ? null : (
+            <SignedOut>
               <div>
                 <Link to="/login">Log in</Link>
               </div>
-            )}
+            </SignedOut>
             <ThemeModeToggle />
             <UserMenu />
           </div>

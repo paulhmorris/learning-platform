@@ -83,5 +83,11 @@ declare global {
     phn: string | null;
     /** user.external_id */
     eid: string | null;
+    /** public metadata */
+    md: {
+      // User | Admin | Super Admin
+      role: "U" | "A" | "S";
+      [key: string]: unknown;
+    };
   }
 }

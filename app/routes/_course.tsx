@@ -14,7 +14,7 @@ import { SectionLesson } from "~/components/sidebar/section-lesson";
 import { SectionQuiz } from "~/components/sidebar/section-quiz";
 import { Separator } from "~/components/ui/separator";
 import { useProgress } from "~/hooks/useProgress";
-import { useUser } from "~/hooks/useUser";
+import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
 import { HttpHeaders } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
@@ -23,7 +23,7 @@ import { CourseService } from "~/services/course.server";
 import { SessionService } from "~/services/session.server";
 
 export async function loader(args: LoaderFunctionArgs) {
-  await SessionService.requireUserId(args);
+  const userId = await SessionService.requireUserId(args);
 
   try {
     const { host } = new URL(args.request.url);
@@ -36,7 +36,10 @@ export async function loader(args: LoaderFunctionArgs) {
       });
     }
 
-    const course = await CourseService.getFromCMSForCourseLayout(linkedCourse.strapiId);
+    const [course, userCourses] = await Promise.all([
+      CourseService.getFromCMSForCourseLayout(linkedCourse.strapiId),
+      db.userCourse.findMany({ where: { userId }, select: { courseId: true } }),
+    ]);
 
     if (!course) {
       return Toasts.redirectWithError("/preview", {
@@ -45,7 +48,8 @@ export async function loader(args: LoaderFunctionArgs) {
       });
     }
 
-    return { course: course.data, linkedCourse };
+    const userCourseIds = userCourses.map((c) => c.courseId);
+    return { course: course.data, linkedCourse, userCourseIds };
   } catch (error) {
     console.error(error);
     Sentry.captureException(error);
@@ -63,23 +67,22 @@ export function headers() {
 }
 
 export default function CourseLayout() {
-  const user = useUser();
   const navigate = useNavigate();
   const params = useParams();
   const isClient = useIsClient();
   const [isShowingMore, setIsShowingMore] = useState(false);
   const isLargeScreen = useMediaQuery("(min-width: 1024px)");
-  const { course, linkedCourse } = useLoaderData<typeof loader>();
+  const { course, linkedCourse, userCourseIds } = useLoaderData<typeof loader>();
   const { lessonProgress, quizProgress } = useProgress();
   const isCollapsed = !isShowingMore && !isLargeScreen;
+  const hasAccess = userCourseIds.includes(linkedCourse.id);
 
   useEffect(() => {
-    const userHasAccess = user?.courses.some((c) => c.courseId === linkedCourse.id);
-    if (!userHasAccess) {
+    if (!hasAccess) {
       toast.error("You do not have access to this course. Please purchase it to continue.");
       void navigate("/preview");
     }
-  }, [user, linkedCourse.id]);
+  }, [hasAccess, linkedCourse.id]);
 
   function toggleShowMore() {
     setIsShowingMore((prev) => !prev);
@@ -183,7 +186,7 @@ export default function CourseLayout() {
 
                               const previousLessonIsCompleted = lessons[lessonIndex - 1]?.isCompleted;
                               const isLessonLocked =
-                                (!user?.courses?.some((c) => c.courseId === linkedCourse.id) || // user doesn't have access
+                                (!hasAccess || // user doesn't have access
                                   (lessonIndex > 0 && !previousLessonIsCompleted)) ?? // Previous lesson is not completed
                                 (previousSectionQuiz?.data && !previousSectionQuizIsCompleted) ?? // Previous section quiz is not completed
                                 (!isCourseCompleted && lessonIndex > lastCompletedLessonIndex + 1); // Course is not completed and lesson index is greater than last completed lesson index + 1

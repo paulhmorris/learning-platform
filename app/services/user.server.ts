@@ -101,7 +101,10 @@ export const UserService = {
       await this.update(user.id, { stripeId: stripeCustomer.id });
       logger.info("User updated with Stripe ID:", { userId: user.id, stripeId: stripeCustomer.id });
 
-      await AuthService.saveExternalId(clerkId, user.id);
+      await Promise.all([
+        AuthService.saveExternalId(clerkId, user.id),
+        AuthService.updatePublicMetadata(clerkId, { role: user.role }),
+      ]);
       logger.info("External ID saved for user:", { userId: user.id });
       return user;
     } catch (error) {

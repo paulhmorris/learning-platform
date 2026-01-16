@@ -45,4 +45,24 @@ export const AuthService = {
       throw error;
     }
   },
+
+  async updatePublicMetadata(clerkId: string, metadata: UserPublicMetadata) {
+    try {
+      return await client.users.updateUserMetadata(clerkId, { publicMetadata: metadata });
+    } catch (error) {
+      Sentry.captureException(error);
+      logger.error("Failed to update public metadata", { error, clerkId, metadata });
+      throw error;
+    }
+  },
+
+  async updatePrivateMetadata(clerkId: string, metadata: UserPrivateMetadata) {
+    try {
+      return await client.users.updateUserMetadata(clerkId, { privateMetadata: metadata });
+    } catch (error) {
+      Sentry.captureException(error);
+      logger.error("Failed to update private metadata", { error, clerkId, metadata });
+      throw error;
+    }
+  },
 };

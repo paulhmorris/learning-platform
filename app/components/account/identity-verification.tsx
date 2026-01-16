@@ -5,14 +5,18 @@ import { useRevalidator } from "react-router";
 import { toast } from "sonner";
 
 import { AdminButton } from "~/components/ui/admin-button";
-import { useUser } from "~/hooks/useUser";
 import { Sentry } from "~/integrations/sentry";
 import { VerificationSession } from "~/services/identity.server";
 
 const stripePromise = typeof window !== "undefined" ? loadStripe(window.ENV.STRIPE_PUBLIC_KEY) : null;
 
-export function IdentityVerification({ session }: { session: VerificationSession | null }) {
-  const user = useUser();
+export function IdentityVerification({
+  session,
+  isIdentityVerified,
+}: {
+  session: VerificationSession | null;
+  isIdentityVerified: boolean;
+}) {
   const [submitted, setSubmitted] = useState(false);
   const [stripe, setStripe] = useState<Stripe | null>(null);
   const revalidator = useRevalidator();
@@ -56,7 +60,7 @@ export function IdentityVerification({ session }: { session: VerificationSession
   const code = session?.last_error?.code;
   const errorReason = session?.last_error?.reason;
 
-  if (user.isIdentityVerified || status === "verified") {
+  if (isIdentityVerified || status === "verified") {
     return (
       <Wrapper>
         <div className="mt-2 flex items-center gap-2">

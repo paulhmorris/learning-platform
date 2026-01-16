@@ -1,11 +1,6 @@
-import { useRouteLoaderData } from "react-router";
-
-import { loader } from "~/root";
+import { useUser as useClerkUser } from "@clerk/react-router";
 
 export function useOptionalUser() {
-  const data = useRouteLoaderData<typeof loader>("root");
-  if (!data) {
-    return undefined;
-  }
-  return data.user;
+  const { user } = useClerkUser();
+  return user ?? undefined;
 }

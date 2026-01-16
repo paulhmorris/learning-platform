@@ -65,7 +65,7 @@ export async function loader(args: LoaderFunctionArgs) {
       };
     });
 
-    return { courses, userCourses, session };
+    return { courses, userCourses, session, isIdentityVerified: user.isIdentityVerified };
   } catch (error) {
     logger.error("Error in account loader", { error });
     throw Responses.serverError();
@@ -73,7 +73,7 @@ export async function loader(args: LoaderFunctionArgs) {
 }
 
 export default function AccountLayout() {
-  const { courses, userCourses, session } = useLoaderData<typeof loader>();
+  const { courses, userCourses, session, isIdentityVerified } = useLoaderData<typeof loader>();
 
   return (
     <>
@@ -86,7 +86,7 @@ export default function AccountLayout() {
           <main>
             <UserProfile>
               <UserProfile.Page label="Identity" labelIcon={<IconKey className="size-4" />} url="/identity">
-                <IdentityVerification session={session} />
+                <IdentityVerification session={session} isIdentityVerified={isIdentityVerified} />
               </UserProfile.Page>
               <UserProfile.Page label="Courses" labelIcon={<IconCertificate className="size-4" />} url="/courses">
                 <AccountCourses courses={courses} userCourses={userCourses} />

@@ -10,7 +10,6 @@ import {
 import { SubmitButton } from "~/components/ui/submit-button";
 import { useCourseData } from "~/hooks/useCourseData";
 import { useProgress } from "~/hooks/useProgress";
-import { useUser } from "~/hooks/useUser";
 import { cms } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
 import { createLogger } from "~/integrations/logger.server";
@@ -24,11 +23,17 @@ import { APIResponseData } from "~/types/utils";
 import { claimCertificateJob } from "../../jobs/claim-certificate";
 
 // BUSINESS LOGIC
+type UserProfileData = {
+  firstName: string | null;
+  lastName: string | null;
+  phone: string | null;
+};
+
 const courseSpecificForms = [
   {
     // Hiphop Driving
     courseId: 1,
-    component: <HiphopDrivingPreCertificateForm />,
+    render: (userProfile: UserProfileData) => <HiphopDrivingPreCertificateForm userProfile={userProfile} />,
     schema: hipHopDrivingCertificationSchema,
   },
 ];
@@ -81,7 +86,17 @@ export async function loader(args: LoaderFunctionArgs) {
       });
     }
 
-    return { userCourse, course: linkedCourse };
+    return {
+      userCourse,
+      course: linkedCourse,
+      userProfile: {
+        isIdentityVerified: user.isIdentityVerified,
+        firstName: (user.firstName as string | null) ?? null,
+        lastName: (user.lastName as string | null) ?? null,
+        email: user.email,
+        phone: user.phone ?? null,
+      },
+    };
   } catch (error) {
     console.error(error);
     Sentry.captureException(error);
@@ -226,10 +241,9 @@ export async function action(args: ActionFunctionArgs) {
 export default function CourseCertificate() {
   const { lessonProgress, quizProgress } = useProgress();
   const { course: cmsCourse } = useCourseData();
-  const { userCourse, course } = useLoaderData<typeof loader>();
+  const { userCourse, course, userProfile } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const data = useCourseData();
-  const user = useUser();
 
   const lessons = getLessonsInOrder({ course: cmsCourse, progress: lessonProgress });
 
@@ -241,7 +255,7 @@ export default function CourseCertificate() {
     </>
   );
 
-  const userHasVerifiedIdentity = course.requiresIdentityVerification ? user.isIdentityVerified : true;
+  const userHasVerifiedIdentity = course.requiresIdentityVerification ? userProfile.isIdentityVerified : true;
 
   const isCourseComplete =
     lessons.every((l) => l.isCompleted) &&
@@ -292,13 +306,13 @@ export default function CourseCertificate() {
     return (
       <Wrapper>
         <SuccessText>
-          Thank you! Your certificate will be emailed to <span className="font-bold">{user.email}</span> shortly.
+          Thank you! Your certificate will be emailed to <span className="font-bold">{userProfile.email}</span> shortly.
         </SuccessText>
       </Wrapper>
     );
   }
 
-  const CourseSpecificForm = courseSpecificForms.find((f) => f.courseId === data.course.id)?.component;
+  const CourseSpecificForm = courseSpecificForms.find((f) => f.courseId === data.course.id)?.render(userProfile);
 
   return (
     <Wrapper>

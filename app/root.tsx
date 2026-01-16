@@ -1,4 +1,4 @@
-import { ClerkProvider, SignedIn } from "@clerk/react-router";
+import { ClerkProvider, SignedIn, useUser } from "@clerk/react-router";
 import { rootAuthLoader } from "@clerk/react-router/ssr.server";
 import { dark } from "@clerk/themes";
 import "@fontsource-variable/inter/wght.css";
@@ -17,7 +17,6 @@ import { HttpHeaders, Responses } from "~/lib/responses.server";
 import { cn, hexToPartialHSL } from "~/lib/utils";
 import { themeSessionResolver } from "~/routes/api.set-theme";
 import { CourseService } from "~/services/course.server";
-import { SessionService } from "~/services/session.server";
 import globalStyles from "~/tailwind.css?url";
 
 // eslint-disable-next-line import/no-unresolved
@@ -26,12 +25,10 @@ import { Route } from "./+types/root";
 export const links: LinksFunction = () => [{ rel: "stylesheet", href: globalStyles, as: "style" }];
 
 export const loader = async (args: LoaderFunctionArgs) => {
-  const user = await SessionService.getUser(args);
   const theme = (await themeSessionResolver(args.request)).getTheme();
   const { toast, headers: _headers } = await getToast(args.request);
 
   const defaultResponse = {
-    user,
     theme,
     course: null,
     toast,
@@ -67,13 +64,17 @@ export const loader = async (args: LoaderFunctionArgs) => {
   }
 };
 
-export default function App({ loaderData }: Route.ComponentProps) {
-  const [theme] = useTheme();
+export default function App() {
+  return <Outlet />;
+}
+
+export function Layout({ children }: { children: React.ReactNode }) {
+  const data = useRouteLoaderData<typeof loader>("root");
   return (
     <ClerkProvider
-      loaderData={loaderData}
+      loaderData={data}
       telemetry={{ disabled: true }}
-      appearance={{ baseTheme: theme === Theme.DARK ? dark : undefined }}
+      appearance={{ baseTheme: (data?.theme ?? null) === Theme.DARK ? dark : undefined }}
       publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY}
       signInUrl="/sign-in"
       signUpUrl="/sign-up"
@@ -82,38 +83,29 @@ export default function App({ loaderData }: Route.ComponentProps) {
       signInFallbackRedirectUrl="/preview"
       signUpFallbackRedirectUrl="/preview"
     >
-      <SignedIn>
-        <Header />
-      </SignedIn>
-      <Outlet />
+      <ThemeProvider specifiedTheme={data?.theme ?? null} themeAction="/api/set-theme">
+        <InnerLayout ssrTheme={Boolean(data?.theme)}>{children}</InnerLayout>
+      </ThemeProvider>
     </ClerkProvider>
-  );
-}
-
-export function Layout({ children }: { children: React.ReactNode }) {
-  const data = useRouteLoaderData<typeof loader>("root");
-  return (
-    <ThemeProvider specifiedTheme={data?.theme ?? null} themeAction="/api/set-theme">
-      <InnerLayout ssrTheme={Boolean(data?.theme)}>{children}</InnerLayout>
-    </ThemeProvider>
   );
 }
 
 function InnerLayout({ ssrTheme, children }: { ssrTheme: boolean; children: React.ReactNode }) {
   const data = useRouteLoaderData<typeof loader>("root");
+  const { user } = useUser();
   const [theme] = useTheme();
 
   useEffect(() => {
-    if (data?.user) {
+    if (user) {
       Sentry.setUser({
-        id: data.user.id,
-        email: data.user.email,
-        username: data.user.email,
+        id: user.id,
+        email: user.primaryEmailAddress?.emailAddress ?? undefined,
+        username: user.primaryEmailAddress?.emailAddress ?? undefined,
       });
     } else {
       Sentry.setUser(null);
     }
-  }, [data?.user]);
+  }, [user]);
 
   return (
     <html lang="en" data-theme={theme ?? ssrTheme} className={cn("h-full")}>
@@ -122,7 +114,6 @@ function InnerLayout({ ssrTheme, children }: { ssrTheme: boolean; children: Reac
         <meta name="viewport" content="width=device-width,initial-scale=1" />
         <meta name="theme-color" media="(prefers-color-scheme: light)" content="#fff" />
         <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#030712" />
-        {}
         {data?.ENV ? <meta name="git-sha" content={data.ENV.VERCEL_GIT_COMMIT_SHA} /> : null}
 
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
@@ -144,6 +135,9 @@ function InnerLayout({ ssrTheme, children }: { ssrTheme: boolean; children: Reac
         <Links />
       </head>
       <body className="flex h-full min-h-full flex-col bg-background font-sans text-foreground">
+        <SignedIn>
+          <Header />
+        </SignedIn>
         {children}
         <Notifications />
         <ScrollRestoration />
