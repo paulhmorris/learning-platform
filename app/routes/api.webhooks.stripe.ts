@@ -29,14 +29,14 @@ export async function action({ request }: ActionFunctionArgs) {
           return Responses.badRequest("Error constructing event");
         }
 
-        logger.info("Received Stripe webhook event", { event });
+        logger.info(`Received Stripe webhook event: ${event.type}`);
         try {
           switch (event.type) {
             // The user must provide additional information to verify their identity
             case "identity.verification_session.requires_input": {
               const userId = event.data.object.metadata.user_id;
               const errorReason = event.data.object.last_error?.reason;
-              logger.info("Verification check failed", { userId, errorReason });
+              logger.info(`Verification check failed for user ${userId} (reason: ${errorReason || "unknown"})`);
 
               if (!userId) {
                 Sentry.captureMessage(
@@ -54,7 +54,7 @@ export async function action({ request }: ActionFunctionArgs) {
                   "Received Stripe identity.verification_session.requires_input event for unknown user: " + userId,
                   { level: "error" },
                 );
-                logger.error("User not found", { userId });
+                logger.error(`User ${userId} not found`);
                 return Responses.badRequest("User not found");
               }
 
@@ -82,7 +82,7 @@ export async function action({ request }: ActionFunctionArgs) {
                 Sentry.captureMessage("Received Stripe identity.verification_session.verified event without user ID", {
                   level: "error",
                 });
-                logger.error("User ID not found in metadata", { userId, metadata: event.data.object.metadata });
+                logger.error("User ID not found in metadata");
                 return Responses.badRequest("User ID is required for verification input");
               }
 
@@ -92,11 +92,11 @@ export async function action({ request }: ActionFunctionArgs) {
                   "Received Stripe identity.verification_session.verified event for unknown user: " + userId,
                   { level: "error" },
                 );
-                logger.error("User not found", { userId });
+                logger.error(`User ${userId} not found`);
                 return Responses.badRequest("User not found");
               }
 
-              logger.info("Verification successful for user", { userId });
+              logger.info(`Verification successful for user ${userId}`);
               await EmailService.send({
                 to: user.email,
                 from: `Plumb Media & Education <no-reply@${SERVER_CONFIG.emailFromDomain}>`,
@@ -109,7 +109,7 @@ export async function action({ request }: ActionFunctionArgs) {
             }
 
             default: {
-              logger.info("Unhandled event type", { event });
+              logger.info(`Unhandled event type: ${event.type}`);
               return Responses.ok("Unhandled event type");
             }
           }

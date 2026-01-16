@@ -32,7 +32,7 @@ export async function loader(args: LoaderFunctionArgs) {
 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!quiz) {
-      logger.error("Quiz not found", { quizId });
+      logger.error(`Quiz ${quizId} not found`);
       throw Responses.notFound();
     }
 
@@ -40,7 +40,7 @@ export async function loader(args: LoaderFunctionArgs) {
     return { quiz: quiz.data, progress };
   } catch (error) {
     Sentry.captureException(error, { extra: { userId, quizId } });
-    logger.error("Error loading quiz", { quizId, error });
+    logger.error(`Error loading quiz ${quizId}`, { error });
     if (error instanceof Response) {
       throw error;
     }
@@ -66,7 +66,7 @@ export async function action(args: ActionFunctionArgs) {
   const quiz = await QuizService.getCorrectAnswers(quizId);
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (!quiz) {
-    logger.error("Quiz not found", { quizId });
+    logger.error(`Quiz ${quizId} not found`);
     throw Responses.notFound();
   }
 
@@ -81,7 +81,7 @@ export async function action(args: ActionFunctionArgs) {
     .filter((a) => typeof a !== "undefined");
 
   if (!correctQuizAnswers?.length) {
-    logger.error("Quiz has no correct answers", { quizId });
+    logger.error(`Quiz ${quizId} has no correct answers`);
     return Toasts.dataWithError(
       { score: 0, passed: false, userAnswers: [], passingScore: quiz.data.attributes.passing_score },
       {
@@ -110,7 +110,7 @@ export async function action(args: ActionFunctionArgs) {
   score = Math.ceil((score / correctQuizAnswers.length) * 100);
   const passed = score >= quiz.data.attributes.passing_score;
 
-  logger.info("Quiz submitted", { userId, quizId, score, passed, userAnswers, correctQuizAnswers });
+  logger.info(`Quiz ${quizId} submitted by user ${userId} (score: ${score}, passed: ${passed})`);
 
   if (passed) {
     await QuizService.markAsPassed(parseInt(quizId), userId, score);

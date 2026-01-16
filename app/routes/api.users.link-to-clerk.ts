@@ -31,7 +31,7 @@ export async function action(args: ActionFunctionArgs) {
   const user = await db.user.findUnique({ where: { clerkId } });
 
   if (!user) {
-    logger.error("User not found in database", { clerkId });
+    logger.error(`User not found in database with Clerk ID ${clerkId}`);
     return Toasts.dataWithError(null, {
       message: "Error",
       description: "User not found in database",
@@ -41,7 +41,7 @@ export async function action(args: ActionFunctionArgs) {
   // Link the user to Clerk
   await AuthService.saveExternalId(clerkId, user.id);
 
-  logger.info("User linked to Clerk", { clerkId, userId: user.id });
+  logger.info(`User ${user.id} linked to Clerk ID ${clerkId}`);
   return Toasts.dataWithSuccess(null, {
     message: "Success",
     description: "User has been linked to Clerk",

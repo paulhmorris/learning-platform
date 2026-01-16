@@ -30,7 +30,7 @@ export async function loader(args: LoaderFunctionArgs) {
   await SessionService.requireAdmin(args);
   const id = args.params.id;
   if (!id) {
-    logger.error("User ID not found", { params: args.params });
+    logger.error("User ID not found in request params");
     throw Responses.notFound();
   }
 
@@ -42,7 +42,7 @@ export async function loader(args: LoaderFunctionArgs) {
     }
     // TODO: Handle once clerkId is required
     if (!user.clerkId) {
-      logger.error("User found but clerkId is missing", { id });
+      logger.error(`User ${id} found but clerkId is missing`);
       throw Responses.serverError();
     }
 
@@ -54,7 +54,7 @@ export async function loader(args: LoaderFunctionArgs) {
 
     return { user, identityVerificationStatus };
   } catch (error) {
-    logger.error("Failed to load user data", { error, userId: id });
+    logger.error(`Failed to load user data for user ${id}`, { error });
     Sentry.captureException(error);
     throw Responses.serverError();
   }

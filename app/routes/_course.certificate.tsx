@@ -44,7 +44,7 @@ export async function loader(args: LoaderFunctionArgs) {
     const linkedCourse = await db.course.findUnique({ where: { host } });
 
     if (!linkedCourse) {
-      logger.error("Course not found", { host });
+      logger.error(`Course not found for host ${host}`);
       throw await Toasts.redirectWithError("/preview", {
         message: "Error claiming certificate",
         description: "Please try again later.",
@@ -67,7 +67,7 @@ export async function loader(args: LoaderFunctionArgs) {
     });
 
     if (!userCourse) {
-      logger.warn("User does not have access to course", { userId: user.id, courseId: linkedCourse.id });
+      logger.warn(`User ${user.id} does not have access to course ${linkedCourse.id}`);
       Sentry.captureMessage("User tried to claim certificate without having access to course", {
         extra: {
           user: { id: user.id, email: user.email },
@@ -98,7 +98,7 @@ export async function action(args: ActionFunctionArgs) {
     const linkedCourse = await db.course.findUnique({ where: { host } });
 
     if (!linkedCourse) {
-      logger.error("Course not found", { host });
+      logger.error(`Course not found for host ${host}`);
       return Toasts.redirectWithError("/preview", {
         message: "Error claiming certificate",
         description: "Please try again later.",
@@ -107,10 +107,7 @@ export async function action(args: ActionFunctionArgs) {
 
     const userHasAccess = user.courses.some((c) => c.courseId === linkedCourse.id);
     if (!userHasAccess) {
-      logger.warn("User tried to claim certificate without access to course", {
-        userId: user.id,
-        courseId: linkedCourse.id,
-      });
+      logger.warn(`User ${user.id} tried to claim certificate without access to course ${linkedCourse.id}`);
       return Toasts.redirectWithError("/preview", {
         message: "No access to course",
         description: "Please purchase the course to access it.",
@@ -153,10 +150,7 @@ export async function action(args: ActionFunctionArgs) {
     const allQuizzesCompleted = allQuizIds.every((id) => allQuizProgress.includes(id));
 
     if (!allLessonsCompleted || !allQuizzesCompleted) {
-      logger.warn("User tried to claim certificate without completing all lessons and quizzes", {
-        userId: user.id,
-        courseId: linkedCourse.id,
-      });
+      logger.warn(`User ${user.id} tried to claim certificate for course ${linkedCourse.id} without completing all lessons and quizzes`);
       Sentry.captureMessage("User tried to claim certificate without completing all lessons and quizzes", {
         extra: {
           user: { id: user.id, email: user.email },
@@ -191,20 +185,13 @@ export async function action(args: ActionFunctionArgs) {
     });
 
     if (!job.id) {
-      logger.error("Failed to initiate certificate generation job", {
-        userId: user.id,
-        courseId: linkedCourse.id,
-      });
+      logger.error(`Failed to initiate certificate generation job for user ${user.id} and course ${linkedCourse.id}`);
       throw new Error("Failed to initiate certificate generation job.");
     }
 
-    logger.info("Certificate claim job initiated", {
-      userId: user.id,
-      courseId: linkedCourse.id,
-      jobId: job.id,
-    });
+    logger.info(`Certificate claim job ${job.id} initiated for user ${user.id} and course ${linkedCourse.id}`);
 
-    logger.info("Certificate successfully claimed", { userId: user.id, courseId: linkedCourse.id });
+    logger.info(`Certificate successfully claimed for user ${user.id} and course ${linkedCourse.id}`);
     return Toasts.dataWithSuccess(
       { success: true },
       {
@@ -214,7 +201,7 @@ export async function action(args: ActionFunctionArgs) {
       },
     );
   } catch (error) {
-    logger.error("Error claiming certificate", { userId: user.id });
+    logger.error(`Error claiming certificate for user ${user.id}`, { error });
     Sentry.captureException(error);
     return Toasts.dataWithError(null, {
       message: "Error claiming certificate",

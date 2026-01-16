@@ -40,7 +40,7 @@ export async function loader(args: LoaderFunctionArgs) {
     const lesson = await LessonService.getBySlugWithContent(lessonSlug);
     return { lesson };
   } catch (error) {
-    logger.error("Error loading lesson data", { error, lessonSlug: args.params.lessonSlug });
+    logger.error(`Error loading lesson data for slug ${args.params.lessonSlug}`, { error });
     Sentry.captureException(error, { extra: { lessonSlug: args.params.lessonSlug, userId } });
     throw Responses.serverError();
   }

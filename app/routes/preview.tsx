@@ -53,7 +53,7 @@ export async function loader(args: LoaderFunctionArgs) {
     return { course: course.data, linkedCourse };
   } catch (error) {
     Sentry.captureException(error);
-    logger.error("Failed to load course", { error, host: url.host });
+    logger.error(`Failed to load course for host ${url.host}`, { error });
     if (error instanceof Response) {
       throw error;
     }
@@ -86,7 +86,7 @@ export async function action(args: ActionFunctionArgs) {
     return redirect(session.url ?? "/", { status: 303 });
   } catch (error) {
     Sentry.captureException(error);
-    logger.error("Failed to create checkout session", { error, userId: user.id, courseId: course.id });
+    logger.error(`Failed to create checkout session for user ${user.id} and course ${course.id}`, { error });
     return Toasts.redirectWithError("/", {
       message: "Unable to enroll",
       description: "Please try again later",
