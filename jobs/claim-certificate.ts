@@ -50,7 +50,7 @@ export const claimCertificateJob = task({
     });
 
     if (!_user.clerkId) {
-      logger.error("User missing clerkId", { userId: payload.userId });
+      logger.error(`User ${payload.userId} missing clerkId`);
       throw new Error("User identity not available");
     }
 
@@ -59,7 +59,7 @@ export const claimCertificateJob = task({
 
     const email = clerkUser.emailAddresses.at(0)?.emailAddress;
     if (!email) {
-      logger.error("User does not have an email address", _user);
+      logger.error(`User ${payload.userId} does not have an email address`);
       throw new Error("User does not have an email address");
     }
 
@@ -71,17 +71,17 @@ export const claimCertificateJob = task({
       phoneNumber: clerkUser.phoneNumbers.at(0)?.phoneNumber,
     };
 
-    logger.info("User found", user);
+    logger.info(`User ${user.id} found for certificate claim (course ${payload.courseId})`);
 
     const thisUserCourse = user.courses.find((c) => c.courseId === payload.courseId);
     if (!thisUserCourse) {
-      logger.error("User has not completed this course", user);
+      logger.error(`User ${user.id} has not completed course ${payload.courseId}`);
       throw new Error("User has not completed this course");
     }
 
     // Check if certificate has already been claimed
     if (thisUserCourse.certificate) {
-      logger.info("Certificate already claimed. Sending another email.", user);
+      logger.info(`Certificate already claimed for user ${user.id}. Sending another email.`);
       const email = await EmailService.send({
         from: `Plumb Media & Education <no-reply@${SERVER_CONFIG.emailFromDomain}>`,
         to: user.email,
@@ -92,7 +92,7 @@ export const claimCertificateJob = task({
           <p><a href="https://assets.hiphopdriving.com/${thisUserCourse.certificate.s3Key}" target="_blank">Download Certificate</a></p>
         `,
       });
-      logger.info("Email sent", email);
+      logger.info(`Certificate email sent to ${user.email}`);
       return;
     }
 
@@ -113,7 +113,7 @@ export const claimCertificateJob = task({
     if (canvasReadyFunction) {
       const isReady = await canvasReadyFunction(thisUserCourse.id);
       if (!isReady) {
-        logger.error("Certificate generation function is lacking requirements", { userCourseId: thisUserCourse.id });
+        logger.error(`Certificate generation function lacking requirements for user course ${thisUserCourse.id}`);
         throw new Error("Certificate generation function is lacking requirements");
       }
     }
@@ -121,7 +121,7 @@ export const claimCertificateJob = task({
     // Pull certificate allocation and create certificate entry
     const allocation = await CertificateService.getNextAllocationForCourse(payload.courseId);
     if (!allocation) {
-      logger.error("No allocations available");
+      logger.error(`No certificate allocations available for course ${payload.courseId}`);
       const sentEmail = await EmailService.send({
         from: `${payload.courseName} <no-reply@${SERVER_CONFIG.emailFromDomain}>`,
         to: user.email,
@@ -132,11 +132,11 @@ export const claimCertificateJob = task({
         <p>Our team has been notified, but feel free to reach out to support at ${CONFIG.supportEmail} for more help. Rest assured, <b>your course is completed and your progress has been saved</b>.</p>
       `,
       });
-      logger.info("Email sent", sentEmail);
+      logger.info(`Certificate allocation unavailable email sent to ${user.email}`);
       return;
     }
 
-    logger.info(`Found available allocation with id ${allocation.id} and number ${allocation.number}`);
+    logger.info(`Found certificate allocation ${allocation.id} with number ${allocation.number} for course ${payload.courseId}`);
 
     let courseWithCertificate = null;
     try {
@@ -145,20 +145,17 @@ export const claimCertificateJob = task({
         number: allocation.number,
         userCourseId: thisUserCourse.id,
       });
-      logger.info(
-        "User course marked complete and certificate linked. Beginning certificate creation...",
-        courseWithCertificate,
-      );
+      logger.info(`User course ${thisUserCourse.id} marked complete and certificate linked. Beginning certificate creation...`);
     } catch (error) {
       Sentry.captureException(error);
-      logger.error(error instanceof Error ? error.message : "", error as Record<string, unknown>);
+      logger.error(`Failed to create certificate for user course ${thisUserCourse.id}`, { error });
       return;
     }
 
     // Generate certificate
     const canvasFunction = certificateMap.find((c) => c.courseIds.includes(payload.courseId))?.canvasFunction;
     if (!canvasFunction) {
-      logger.error("No certificate generation function found for course", { courseId: payload.courseId });
+      logger.error(`No certificate generation function found for course ${payload.courseId}`);
       return;
     }
 
@@ -170,14 +167,14 @@ export const claimCertificateJob = task({
     });
 
     if (!canvas) {
-      logger.error("Certificate generation failed", { userCourseId: thisUserCourse.id });
+      logger.error(`Certificate generation failed for user course ${thisUserCourse.id}`);
       return;
     }
     // Upload certificate to S3
     try {
       const upload = await Bucket.uploadFile({ key, file: canvas.toBuffer("image/png") });
 
-      logger.info(`Certificate uploaded with status code ${upload.$metadata.httpStatusCode}`);
+      logger.info(`Certificate uploaded to S3 with status ${upload.$metadata.httpStatusCode} (key: ${key})`);
 
       // send email with link to image
       const sentEmail = await EmailService.send({
@@ -190,11 +187,11 @@ export const claimCertificateJob = task({
           <p><a href="https://assets.hiphopdriving.com/${key}" target="_blank">Download Certificate</a></p>
         `,
       });
-      logger.info("Email sent", sentEmail);
+      logger.info(`Certificate email sent to ${user.email}`);
       return;
     } catch (error) {
       Sentry.captureException(error);
-      logger.error(error instanceof Error ? error.message : "", error as Record<string, unknown>);
+      logger.error(`Failed to upload certificate or send email for user ${user.id}`, { error });
       return;
     }
   },
@@ -203,9 +200,7 @@ export const claimCertificateJob = task({
 async function runHipHopBusinessChecks(userCourseId: number) {
   const formSubmissionCount = await db.preCertificationFormSubmission.count({ where: { userCourseId } });
   if (formSubmissionCount < 1) {
-    logger.warn("HipHop certificate generation function is not ready: no precertification form submission found", {
-      userCourseId,
-    });
+    logger.warn(`HipHop certificate generation not ready for user course ${userCourseId}: no precertification form submission found`);
   }
   return formSubmissionCount > 0;
 }
@@ -218,21 +213,18 @@ type HipHopCertificateArgs = {
 async function generateHipHopCertificate(args: HipHopCertificateArgs): Promise<Canvas | null> {
   const answers = await db.preCertificationFormSubmission.findFirst({ where: { userCourseId: args.userCourseId } });
   if (!answers) {
-    logger.error("No precertification form submission found for user course", { userCourseId: args.userCourseId });
+    logger.error(`No precertification form submission found for user course ${args.userCourseId}`);
     return null;
   }
   const parsedAnswers = hipHopDrivingCertificationSchema.safeParse(answers.formData);
   if (!parsedAnswers.success) {
-    logger.error("Precertification form submission data is invalid", {
-      userCourseId: args.userCourseId,
-      errors: parsedAnswers.error.message,
-    });
+    logger.error(`Precertification form submission data invalid for user course ${args.userCourseId}: ${parsedAnswers.error.message}`);
     return null;
   }
   const canvas = createCanvas(1650, 1275);
   const ctx = canvas.getContext("2d");
   const certImage = await loadImage("https://assets.hiphopdriving.com/certificate_f2ffea5abd.png").catch((err) => {
-    logger.error("Failed to load certificate base image", { error: err });
+    logger.error(`Failed to load certificate base image: ${err}`);
     return null;
   });
 
@@ -270,6 +262,6 @@ async function generateHipHopCertificate(args: HipHopCertificateArgs): Promise<C
   const { street, city, state, zipCode } = parsedAnswers.data;
   ctx.fillText(`${street}, ${city}, ${state} ${zipCode}`, firstColX, thirdRowY);
 
-  logger.info("Certificate generated");
+  logger.info(`HipHop certificate generated for user course ${args.userCourseId}`);
   return canvas;
 }
