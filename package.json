@@ -15,7 +15,7 @@
     "ngrok": "ngrok http --domain=legally-sterling-crayfish.ngrok-free.app 3000 --host-header localhost:3000",
     "postinstall": "prisma generate --no-hints && patch-package",
     "prepare": "husky",
-    "prepush": "run-p lint:prepush typecheck",
+    "prepush": "run-p lint:prepush typecheck build",
     "start": "node ./build/server/index.js",
     "test": "vitest --run",
     "test:watch": "vitest",
