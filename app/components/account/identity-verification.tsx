@@ -35,7 +35,7 @@ export function IdentityVerification({
     try {
       const response = await fetch("/api/identity-verification", { method: "POST" });
       if (!response.ok) {
-        return toast.error("A server occurred while trying to verify your identity.");
+        return toast.error("A server error occurred while trying to verify your identity.");
       }
 
       const { client_secret } = (await response.json()) as { client_secret: string };
@@ -110,7 +110,7 @@ export function IdentityVerification({
           onClick={handleStartVerification}
           disabled={!stripe}
           type="button"
-          className="w-auto bg-muted text-foreground sm:h-8 sm:text-xs"
+          className="w-auto text-foreground sm:h-8 sm:text-xs"
           aria-describedby="verify-btn-description"
         >
           <span>Verify Me</span>
@@ -118,6 +118,7 @@ export function IdentityVerification({
       </Wrapper>
     );
   }
+  return null;
 }
 
 function Wrapper({ children }: { children: React.ReactNode }) {

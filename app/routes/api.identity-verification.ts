@@ -14,13 +14,25 @@ export async function action(args: ActionFunctionArgs) {
   }
 
   if (user.stripeVerificationSessionId) {
-    const { client_secret } = await IdentityService.retrieveVerificationSession(user.stripeVerificationSessionId);
-    return { client_secret };
+    const session = await IdentityService.retrieveVerificationSession(user.stripeVerificationSessionId);
+
+    if (session.status === "verified") {
+      return Responses.conflict();
+    }
+
+    const lastErrorCode = session.last_error?.code ?? null;
+    const shouldRetry =
+      session.status === "canceled" ||
+      (session.status === "requires_input" && (lastErrorCode === "consent_declined" || lastErrorCode === "abandoned"));
+
+    if (!shouldRetry && session.client_secret) {
+      return Responses.ok({ client_secret: session.client_secret });
+    }
   }
 
   try {
     const { client_secret } = await IdentityService.createVerificationSession(user.id, user.email);
-    return { client_secret };
+    return Responses.ok({ client_secret });
   } catch (error) {
     console.error(error);
     Sentry.captureException(error);

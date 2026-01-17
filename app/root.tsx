@@ -74,7 +74,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     <ClerkProvider
       loaderData={data}
       telemetry={{ disabled: true }}
-      appearance={{ baseTheme: (data?.theme ?? null) === Theme.DARK ? dark : undefined }}
+      appearance={{ theme: (data?.theme ?? null) === Theme.DARK ? dark : undefined }}
       publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY}
       signInUrl="/sign-in"
       signUpUrl="/sign-up"
