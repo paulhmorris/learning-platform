@@ -41,16 +41,16 @@ class _SessionService {
 
     // There might be a case where a db user didn't get linked to their clerk external_id
     if (!externalId) {
-      logger.error(`external_id not found in claims for ${args.request.url}. Attempting to link...`);
+      logger.error(`external_id ${externalId} not found in claims for ${args.request.url}. Attempting to link...`);
 
       if (!clerkId) {
-        logger.error(`No userId found in session, redirecting to sign in: ${args.request.url}`);
+        logger.error(`No userId found in session, redirecting to sign-in.`);
         throw Responses.redirectToSignIn(args.request.url);
       }
 
       const user = await this.getOrCreateUserByClerkId(clerkId);
       if (!user) {
-        logger.error(`Failed to find or create user with Clerk ID ${clerkId}`);
+        logger.error(`Failed to find or create user with Clerk ID ${clerkId}. Redirecting to sign-in.`);
         throw Responses.redirectToSignIn(args.request.url);
       }
 
