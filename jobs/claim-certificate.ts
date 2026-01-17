@@ -10,6 +10,7 @@ import { db } from "~/integrations/db.server";
 import { EmailService } from "~/integrations/email.server";
 import { Sentry } from "~/integrations/sentry";
 import { CertificateService } from "~/services/certificate.server";
+import { UserCourseService } from "~/services/user-course.server";
 
 // BUSINESS LOGIC
 const certificateMap = [
@@ -30,22 +31,6 @@ export const claimCertificateJob = task({
       select: {
         id: true,
         clerkId: true,
-        courses: {
-          where: { courseId: payload.courseId },
-          select: {
-            id: true,
-            courseId: true,
-            certificateClaimed: true,
-            completedAt: true,
-            certificate: {
-              select: {
-                id: true,
-                number: true,
-                s3Key: true,
-              },
-            },
-          },
-        },
       },
     });
 
@@ -73,7 +58,9 @@ export const claimCertificateJob = task({
 
     logger.info("User found", user);
 
-    const thisUserCourse = user.courses.find((c) => c.courseId === payload.courseId);
+    // TODO: Clerk migration
+    const userCourses = await UserCourseService.getAllByUserId(_user.clerkId);
+    const thisUserCourse = userCourses.find((c) => c.courseId === payload.courseId);
     if (!thisUserCourse) {
       logger.error("User has not completed this course", user);
       throw new Error("User has not completed this course");

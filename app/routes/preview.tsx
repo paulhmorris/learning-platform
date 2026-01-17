@@ -14,32 +14,37 @@ import { CourseProgressBar } from "~/components/sidebar/course-progress-bar";
 import { Button } from "~/components/ui/button";
 import { Separator } from "~/components/ui/separator";
 import { useProgress } from "~/hooks/useProgress";
-import { getCourse } from "~/integrations/cms.server";
-import { db } from "~/integrations/db.server";
 import { createLogger } from "~/integrations/logger.server";
 import { Sentry } from "~/integrations/sentry";
 import { Responses } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
 import { getLessonsInOrder, getPreviewValues } from "~/lib/utils";
+import { CourseService } from "~/services/course.server";
 import { PaymentService } from "~/services/payment.server";
 import { SessionService } from "~/services/session.server";
+import { UserCourseService } from "~/services/user-course.server";
 
 const logger = createLogger("Routes.Preview");
 
 export async function loader(args: LoaderFunctionArgs) {
-  const userId = await SessionService.requireUserId(args);
+  const user = await SessionService.requireUser(args);
 
   const url = new URL(args.request.url);
   try {
-    const linkedCourse = await db.course.findUnique({ where: { host: url.host } });
+    const linkedCourse = await CourseService.getByHost(url.host);
     if (!linkedCourse) {
       throw Responses.notFound();
     }
 
     const [course, userCourses] = await Promise.all([
-      getCourse(linkedCourse.strapiId),
-      db.userCourse.findMany({ where: { userId }, select: { courseId: true } }),
+      CourseService.getFromCMSForCourseLayout(linkedCourse.strapiId),
+      // TODO: Clerk migration
+      UserCourseService.getAllByUserId(user.clerkId!),
     ]);
+
+    if (!course) {
+      throw Responses.notFound();
+    }
 
     const userCourseIds = userCourses.map((c) => c.courseId);
 
@@ -57,7 +62,7 @@ export async function loader(args: LoaderFunctionArgs) {
 export async function action(args: ActionFunctionArgs) {
   const user = await SessionService.requireUser(args);
   const url = new URL(args.request.url);
-  const course = await db.course.findUnique({ where: { host: url.host } });
+  const course = await CourseService.getByHost(url.host);
 
   if (!course) {
     return Toasts.redirectWithError("/", {

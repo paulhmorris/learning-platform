@@ -6,6 +6,7 @@ import { createLogger } from "~/integrations/logger.server";
 import { Sentry } from "~/integrations/sentry";
 import { AuthService } from "~/services/auth.server";
 import { PaymentService } from "~/services/payment.server";
+import { UserCourseService } from "~/services/user-course.server";
 
 const logger = createLogger("UserService");
 
@@ -15,17 +16,11 @@ type ClerkData = {
   email: string;
   phone?: string;
 };
-export type UserWithPIIAndCourses = Prisma.UserGetPayload<{
-  include: {
-    courses: {
-      include: {
-        course: { select: { requiresIdentityVerification: true } };
-      };
-    };
-  };
-}> &
+type UserWithPIIAndCourses = Prisma.UserGetPayload<any> &
   ClerkData & {
     isActive: boolean;
+  } & {
+    courses?: Awaited<ReturnType<typeof UserCourseService.getAllByUserId>>;
   };
 
 export const UserService = {
@@ -33,17 +28,20 @@ export const UserService = {
     try {
       const user = await db.user.findUnique({
         where: { id },
-        include: { courses: { include: { course: { select: { requiresIdentityVerification: true } } } } },
+        // include: { courses: { include: { course: { select: { requiresIdentityVerification: true } } } } },
       });
 
       if (!user) {
         return null;
       }
 
+      // TODO: Clerk migration
+      const userCourses = await UserCourseService.getAllByUserId(user.clerkId!);
       // TODO: Remove when clerkId is required
       const backendUser = await clerkClient.users.getUser(user.clerkId!);
       const userWithPII: UserWithPIIAndCourses = {
         ...user,
+        courses: userCourses,
         firstName: backendUser.firstName!,
         lastName: backendUser.lastName!,
         email: backendUser.primaryEmailAddress!.emailAddress,
@@ -62,17 +60,20 @@ export const UserService = {
     try {
       const user = await db.user.findUnique({
         where: { clerkId },
-        include: { courses: { include: { course: { select: { requiresIdentityVerification: true } } } } },
+        // include: { courses: { include: { course: { select: { requiresIdentityVerification: true } } } } },
       });
 
       if (!user) {
         return null;
       }
 
+      // TODO: Clerk migration
+      const userCourses = await UserCourseService.getAllByUserId(user.clerkId!);
       // TODO: Remove when clerkId is required
       const backendUser = await clerkClient.users.getUser(user.clerkId!);
       const userWithPII: UserWithPIIAndCourses = {
         ...user,
+        courses: userCourses,
         firstName: backendUser.firstName!,
         lastName: backendUser.lastName!,
         email: backendUser.primaryEmailAddress!.emailAddress,
@@ -149,41 +150,6 @@ export const UserService = {
     } catch (error) {
       Sentry.captureException(error);
       logger.error(`Failed to delete user by Clerk ID ${clerkId}`, { error });
-      throw error;
-    }
-  },
-
-  async getByIdWithCourse(id: string) {
-    try {
-      return db.user.findUnique({
-        where: { id },
-        select: {
-          courses: {
-            select: {
-              id: true,
-              isCompleted: true,
-              completedAt: true,
-              createdAt: true,
-              certificate: {
-                select: {
-                  id: true,
-                  issuedAt: true,
-                  s3Key: true,
-                },
-              },
-              course: {
-                select: {
-                  id: true,
-                  strapiId: true,
-                },
-              },
-            },
-          },
-        },
-      });
-    } catch (error) {
-      Sentry.captureException(error);
-      logger.error(`Failed to get user ${id} with course`, { error });
       throw error;
     }
   },

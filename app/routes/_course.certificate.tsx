@@ -18,6 +18,7 @@ import { Responses } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
 import { getLessonsInOrder } from "~/lib/utils";
 import { SessionService } from "~/services/session.server";
+import { UserCourseService } from "~/services/user-course.server";
 import { APIResponseData } from "~/types/utils";
 
 import { claimCertificateJob } from "../../jobs/claim-certificate";
@@ -56,26 +57,13 @@ export async function loader(args: LoaderFunctionArgs) {
       });
     }
 
-    const userCourse = await db.userCourse.findUnique({
-      where: { userId_courseId: { userId: user.id, courseId: linkedCourse.id } },
-      select: {
-        certificate: {
-          select: {
-            id: true,
-            issuedAt: true,
-            s3Key: true,
-          },
-        },
-        isCompleted: true,
-        completedAt: true,
-      },
-    });
+    const userCourse = await UserCourseService.getByUserIdAndCourseIdWithCertificate(user.clerkId!, linkedCourse.id);
 
     if (!userCourse) {
-      logger.warn(`User ${user.id} does not have access to course ${linkedCourse.id}`);
+      logger.warn(`User ${user.clerkId} does not have access to course ${linkedCourse.id}`);
       Sentry.captureMessage("User tried to claim certificate without having access to course", {
         extra: {
-          user: { id: user.id, email: user.email },
+          user: { id: user.clerkId, email: user.email },
           course: { id: linkedCourse.id },
         },
         level: "warning",
@@ -120,7 +108,9 @@ export async function action(args: ActionFunctionArgs) {
       });
     }
 
-    const userHasAccess = user.courses.some((c) => c.courseId === linkedCourse.id);
+    // TODO: Clerk migration
+    const userCourses = await UserCourseService.getAllByUserId(user.clerkId!);
+    const userHasAccess = userCourses.some((c) => c.courseId === linkedCourse.id);
     if (!userHasAccess) {
       logger.warn(`User ${user.id} tried to claim certificate without access to course ${linkedCourse.id}`);
       return Toasts.redirectWithError("/preview", {
@@ -187,9 +177,11 @@ export async function action(args: ActionFunctionArgs) {
       if (formData.error) {
         throw validationError(formData.error);
       }
+      // TODO: Clerk migration
+      const userCourses = await UserCourseService.getAllByUserId(user.clerkId!);
       await db.preCertificationFormSubmission.create({
         data: {
-          userCourseId: user.courses.find((c) => c.courseId === linkedCourse.id)!.id,
+          userCourseId: userCourses.find((c) => c.courseId === linkedCourse.id)!.id,
           formData: formData.data,
         },
       });

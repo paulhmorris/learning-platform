@@ -19,7 +19,6 @@ model User {
   stripeVerificationSessionId String?
   isIdentityVerified          Boolean @default(false)
 
-  courses          UserCourse[]
   quizProgresses   UserQuizProgress[]
   lessonProgresses UserLessonProgress[]
 
@@ -59,10 +58,10 @@ model UserCourse {
   isCompleted        Boolean   @default(false)
   completedAt        DateTime?
   certificateClaimed Boolean   @default(false)
+  /// Clerk user_id
   userId             String
   courseId           String
 
-  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   course      Course       @relation(fields: [courseId], references: [id])
   certificate Certificate?
 

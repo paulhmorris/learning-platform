@@ -21,6 +21,7 @@ import type { loader as adminCourseLoader } from "~/routes/admin.courses.$course
 import { text } from "~/schemas/fields";
 import { AuthService } from "~/services/auth.server";
 import { SessionService } from "~/services/session.server";
+import { UserCourseService } from "~/services/user-course.server";
 
 export async function loader(args: LoaderFunctionArgs) {
   await SessionService.requireAdmin(args);
@@ -36,7 +37,7 @@ export async function loader(args: LoaderFunctionArgs) {
         return undefined;
       }
       return {
-        id: localUser.id,
+        id: user.id,
         firstName: user.firstName ?? "",
         lastName: user.lastName ?? "",
         email: user.emailAddresses.at(0)?.emailAddress ?? "",
@@ -61,12 +62,7 @@ export async function action(args: ActionFunctionArgs) {
     return result.error;
   }
 
-  await db.userCourse.create({
-    data: {
-      courseId,
-      userId: result.data.userId,
-    },
-  });
+  await UserCourseService.enrollUser(result.data.userId, courseId);
 
   return Responses.created();
 }

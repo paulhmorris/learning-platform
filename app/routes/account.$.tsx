@@ -25,7 +25,8 @@ export async function loader(args: LoaderFunctionArgs) {
   try {
     const [userCourses, cmsCourses, session] = await Promise.all([
       db.userCourse.findMany({
-        where: { userId: user.id },
+        // TODO: Clerk migration
+        where: { userId: user.clerkId! },
         orderBy: { createdAt: "desc" },
         select: {
           id: true,
