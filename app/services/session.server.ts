@@ -100,7 +100,7 @@ class _SessionService {
   private async requireUserByRole(args: Args, allowedRoles?: Array<UserRole>) {
     const defaultAllowedRoles: Array<UserRole> = ["USER", "ADMIN"];
     const user = await this.getUser(args);
-    logger.debug(`Checking user role for ${args.request.url} (user ${user?.id || "unknown"})`);
+    logger.debug(`Checking user role for ${args.request.url} (user ${user?.id ?? "unknown"})`);
 
     if (!user) {
       logger.warn(`No user found for ${args.request.url}`);
