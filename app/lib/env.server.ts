@@ -85,6 +85,8 @@ declare global {
     eid: string | null;
     /** Stripe customer ID */
     strpId: string | null;
+    /** Stripe Identity Verification session id */
+    strpIdV: string | null;
     /** Is user identity verified */
     idV: boolean | null;
   }

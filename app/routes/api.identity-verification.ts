@@ -31,7 +31,8 @@ export async function action(args: ActionFunctionArgs) {
   }
 
   try {
-    const { client_secret } = await IdentityService.createVerificationSession(user.id, user.email);
+    // TODO: Clerk migration
+    const { client_secret } = await IdentityService.createVerificationSession(user.clerkId!, user.email);
     return Responses.ok({ client_secret });
   } catch (error) {
     console.error(error);

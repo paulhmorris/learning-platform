@@ -17,12 +17,12 @@ export const ProgressService = {
       update: { durationInSeconds: { increment: SUBMIT_INTERVAL_MS / 1_000 } },
     });
     logger.info(`Incremented progress for user ${userId} on lesson ${lessonId}`);
-    await CacheService.set(CacheKeys.progressLesson(userId, lessonId), progress, { ex: PROGRESS_CACHE_TTL });
+    await CacheService.set(CacheKeys.lessonProgress(userId, lessonId), progress, { ex: PROGRESS_CACHE_TTL });
     return progress;
   },
 
   async getByLessonId(userId: string, lessonId: number) {
-    const cachedProgress = await CacheService.get<UserLessonProgress>(CacheKeys.progressLesson(userId, lessonId));
+    const cachedProgress = await CacheService.get<UserLessonProgress>(CacheKeys.lessonProgress(userId, lessonId));
     if (cachedProgress) {
       logger.debug(`Returning cached progress for user ${userId} on lesson ${lessonId}`);
       return cachedProgress;
@@ -33,7 +33,7 @@ export const ProgressService = {
       },
     });
     if (progress) {
-      await CacheService.set(CacheKeys.progressLesson(userId, lessonId), progress, { ex: PROGRESS_CACHE_TTL });
+      await CacheService.set(CacheKeys.lessonProgress(userId, lessonId), progress, { ex: PROGRESS_CACHE_TTL });
     }
     logger.debug(`Returning progress for user ${userId} on lesson ${lessonId}`);
     return progress;
@@ -41,7 +41,7 @@ export const ProgressService = {
 
   async getByQuizId(userId: string, quizId: number) {
     logger.debug(`Retrieving quiz progress for user ${userId} on quiz ${quizId}`);
-    const cachedProgress = await CacheService.get<UserQuizProgress>(CacheKeys.progressQuiz(userId, quizId));
+    const cachedProgress = await CacheService.get<UserQuizProgress>(CacheKeys.quizProgress(userId, quizId));
     if (cachedProgress) {
       logger.debug(`Returning cached quiz progress for user ${userId} on quiz ${quizId}`);
       return cachedProgress;
@@ -52,22 +52,22 @@ export const ProgressService = {
       },
     });
     if (progress) {
-      await CacheService.set(CacheKeys.progressQuiz(userId, quizId), progress, { ex: PROGRESS_CACHE_TTL });
+      await CacheService.set(CacheKeys.quizProgress(userId, quizId), progress, { ex: PROGRESS_CACHE_TTL });
     }
     logger.debug(`Returning quiz progress for user ${userId} on quiz ${quizId}`);
     return progress;
   },
 
-  async getAll(userId: string) {
+  async getAllLesson(userId: string) {
     logger.debug(`Retrieving all lesson progress for user ${userId}`);
-    const cachedProgress = await CacheService.get<Array<UserLessonProgress>>(CacheKeys.progressAll(userId));
+    const cachedProgress = await CacheService.get<Array<UserLessonProgress>>(CacheKeys.lessonProgressAll(userId));
     if (cachedProgress) {
       logger.debug(`Returning cached progress for all lessons for user ${userId}`);
       return cachedProgress;
     }
     const progress = await db.userLessonProgress.findMany({ where: { userId } });
     if (progress.length) {
-      await CacheService.set(CacheKeys.progressAll(userId), progress, { ex: PROGRESS_CACHE_TTL });
+      await CacheService.set(CacheKeys.lessonProgressAll(userId), progress, { ex: PROGRESS_CACHE_TTL });
     }
     logger.debug(`Returning progress for all lessons for user ${userId}`);
     return progress;
@@ -75,16 +75,28 @@ export const ProgressService = {
 
   async getAllQuiz(userId: string) {
     logger.debug(`Retrieving all quiz progress for user ${userId}`);
-    return db.userQuizProgress.findMany({ where: { userId } });
+    const cachedProgress = await CacheService.get<Array<UserQuizProgress>>(CacheKeys.quizProgressAll(userId));
+    if (cachedProgress) {
+      logger.debug(`Returning cached quiz progress for all quizzes for user ${userId}`);
+      return cachedProgress;
+    }
+    const progress = await db.userQuizProgress.findMany({ where: { userId } });
+    if (progress.length) {
+      await CacheService.set(CacheKeys.quizProgressAll(userId), progress, { ex: PROGRESS_CACHE_TTL });
+    }
+    logger.debug(`Returning quiz progress for all quizzes for user ${userId}`);
+    return progress;
   },
 
-  async resetAll(userId: string) {
+  async resetAllLesson(userId: string) {
     logger.info(`Resetting all progress for user ${userId}`);
+    await CacheService.delete(CacheKeys.lessonProgressAll(userId));
     return db.userLessonProgress.deleteMany({ where: { userId } });
   },
 
   async resetLesson(lessonId: number, userId: string) {
     logger.info(`Resetting lesson ${lessonId} progress for user ${userId}`);
+    await CacheService.delete(CacheKeys.lessonProgress(userId, lessonId));
     return db.userLessonProgress.delete({
       where: {
         userId_lessonId: { lessonId, userId },
@@ -134,7 +146,7 @@ export const ProgressService = {
         isCompleted: true,
       },
     });
-    await CacheService.set(CacheKeys.progressLesson(data.userId, data.lessonId), progress, { ex: PROGRESS_CACHE_TTL });
+    await CacheService.set(CacheKeys.lessonProgress(data.userId, data.lessonId), progress, { ex: PROGRESS_CACHE_TTL });
     logger.info(`Marked lesson ${data.lessonId} as complete for user ${data.userId}`);
     return progress;
   },

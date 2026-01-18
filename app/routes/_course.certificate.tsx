@@ -17,6 +17,7 @@ import { Sentry } from "~/integrations/sentry";
 import { Responses } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
 import { getLessonsInOrder } from "~/lib/utils";
+import { ProgressService } from "~/services/progress.server";
 import { SessionService } from "~/services/session.server";
 import { UserCourseService } from "~/services/user-course.server";
 import { APIResponseData } from "~/types/utils";
@@ -137,8 +138,9 @@ export async function action(args: ActionFunctionArgs) {
           },
         },
       }),
-      db.userLessonProgress.findMany({ where: { userId: user.id } }),
-      db.userQuizProgress.findMany({ where: { userId: user.id } }),
+      // TODO: Clerk migration
+      ProgressService.getAllLesson(user.clerkId!),
+      ProgressService.getAllQuiz(user.clerkId!),
     ]);
 
     const allLessonIds = course.data.attributes.sections

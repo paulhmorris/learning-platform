@@ -19,9 +19,6 @@ model User {
   stripeVerificationSessionId String?
   isIdentityVerified          Boolean @default(false)
 
-  quizProgresses   UserQuizProgress[]
-  lessonProgresses UserLessonProgress[]
-
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -74,14 +71,12 @@ model UserCourse {
 }
 
 model UserLessonProgress {
-  id          Int     @id @default(autoincrement())
-  isCompleted Boolean @default(false)
-
-  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  userId   String
+  id                Int     @id @default(autoincrement())
+  isCompleted       Boolean @default(false)
+  /// Clerk user_id
+  userId            String
   /// The lesson id from Strapi
-  lessonId Int
-
+  lessonId          Int
   durationInSeconds Int?
 
   createdAt DateTime @default(now())
@@ -93,12 +88,12 @@ model UserLessonProgress {
 model UserQuizProgress {
   id          Int     @id @default(autoincrement())
   isCompleted Boolean @default(false)
+  /// Score as percentage (0-100)
   score       Int?
-
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  userId String
+  /// Clerk user_id
+  userId      String
   /// The quiz id from Strapi
-  quizId Int
+  quizId      Int
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

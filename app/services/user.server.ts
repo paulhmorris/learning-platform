@@ -90,23 +90,12 @@ export const UserService = {
 
   async create(clerkId: string) {
     try {
-      const user = await db.user.upsert({
-        where: { clerkId },
-        update: {},
-        create: { clerkId, role: UserRole.USER },
+      const stripeCustomer = await PaymentService.createCustomer(clerkId);
+      const user = await AuthService.updatePublicMetadata(clerkId, {
+        role: UserRole.USER,
+        stripeCustomerId: stripeCustomer.id,
       });
-      logger.info(`User ${user.id} upserted`);
-
-      const stripeCustomer = await PaymentService.createCustomer(user.id, { metadata: { clerk_id: clerkId } });
-
-      await this.update(user.id, { stripeId: stripeCustomer.id });
-      logger.info(`User ${user.id} updated with Stripe ID ${stripeCustomer.id}`);
-
-      await Promise.all([
-        AuthService.saveExternalId(clerkId, user.id),
-        AuthService.updatePublicMetadata(clerkId, { role: user.role }),
-      ]);
-      logger.info(`External ID saved for user ${user.id}`);
+      logger.info(`Metadata saved for user ${user.id}`);
       return user;
     } catch (error) {
       Sentry.captureException(error);
@@ -125,6 +114,7 @@ export const UserService = {
     }
   },
 
+  // TODO: Clerk migration
   async delete(userId: string) {
     try {
       return db.$transaction([
