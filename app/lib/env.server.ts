@@ -72,6 +72,16 @@ declare global {
   }
 
   // Clerk Session Claims
+  // {
+  // 	"fn": "{{user.first_name}}",
+  // 	"ln": "{{user.last_name}}",
+  // 	"eid": "{{user.external_id}}",
+  // 	"pem": "{{user.primary_email_address}}",
+  // 	"phn": "{{user.primary_phone_number}}",
+  // 	"strpId": "{{user.public_metadata.stripeCustomerId}}",
+  // 	"strpIdV": "{{user.public_metadata.stripeVerificationSessionId}}",
+  // 	"idV": "{{user.public_metadata.isIdentityVerified}}",
+  // }
   interface CustomJwtSessionClaims {
     /** user.primary_email_address */
     pem: string;
