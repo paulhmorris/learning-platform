@@ -51,7 +51,7 @@ export async function loader(args: LoaderFunctionArgs) {
   const [lessons, quizzes, lessonProgress, quizProgress] = await Promise.all([
     LessonService.getAllFromCMS(),
     QuizService.getAll(),
-    ProgressService.getAll(userId),
+    ProgressService.getAllLesson(userId),
     ProgressService.getAllQuiz(userId),
   ]);
 
@@ -75,7 +75,7 @@ export async function action(args: ActionFunctionArgs) {
   switch (_action) {
     case "reset-all-progress": {
       // Reset all progress for this user in this course
-      await ProgressService.resetAll(userId);
+      await ProgressService.resetAllLesson(userId);
       await QuizService.resetAllProgress(userId);
       return Toasts.dataWithSuccess({ ok: true }, { message: "Success", description: "All progress has been reset." });
     }

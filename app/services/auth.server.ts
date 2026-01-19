@@ -36,16 +36,6 @@ export const AuthService = {
     }
   },
 
-  async saveExternalId(clerkId: string, externalId: string) {
-    try {
-      return await client.users.updateUser(clerkId, { externalId });
-    } catch (error) {
-      Sentry.captureException(error);
-      logger.error(`Failed to save external ID for Clerk ID ${clerkId}`, { error });
-      throw error;
-    }
-  },
-
   async updatePublicMetadata(clerkId: string, metadata: UserPublicMetadata) {
     try {
       return await client.users.updateUserMetadata(clerkId, { publicMetadata: metadata });

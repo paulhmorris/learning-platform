@@ -22,7 +22,7 @@ import { SessionService } from "~/services/session.server";
 const logger = createLogger("Routes.Quiz");
 
 export async function loader(args: LoaderFunctionArgs) {
-  const userId = await SessionService.requireUserId(args);
+  const user = await SessionService.requireUser(args);
 
   const quizId = args.params.quizId;
   invariant(quizId, "Quiz ID is required");
@@ -36,10 +36,10 @@ export async function loader(args: LoaderFunctionArgs) {
       throw Responses.notFound();
     }
 
-    const progress = await ProgressService.getByQuizId(userId, parseInt(quizId));
+    const progress = await ProgressService.getByQuizId(user.id, parseInt(quizId));
     return { quiz: quiz.data, progress };
   } catch (error) {
-    Sentry.captureException(error, { extra: { userId, quizId } });
+    Sentry.captureException(error, { extra: { userId: user.id, quizId } });
     logger.error(`Error loading quiz ${quizId}`, { error });
     if (error instanceof Response) {
       throw error;
@@ -49,7 +49,7 @@ export async function loader(args: LoaderFunctionArgs) {
 }
 
 export async function action(args: ActionFunctionArgs) {
-  const userId = await SessionService.requireUserId(args);
+  const user = await SessionService.requireUser(args);
 
   const quizId = args.params.quizId;
   invariant(quizId, "Quiz ID is required");
@@ -110,10 +110,10 @@ export async function action(args: ActionFunctionArgs) {
   score = Math.ceil((score / correctQuizAnswers.length) * 100);
   const passed = score >= quiz.data.attributes.passing_score;
 
-  logger.info(`Quiz ${quizId} submitted by user ${userId} (score: ${score}, passed: ${passed})`);
+  logger.info(`Quiz ${quizId} submitted by user ${user.id} (score: ${score}, passed: ${passed})`);
 
   if (passed) {
-    await QuizService.markAsPassed(parseInt(quizId), userId, score);
+    await QuizService.markAsPassed(parseInt(quizId), user.id, score);
   }
 
   return {

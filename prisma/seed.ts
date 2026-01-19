@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import { PrismaClient, UserRole } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 
 import { AuthService } from "~/services/auth.server";
 
@@ -17,14 +17,6 @@ async function seed() {
     throw new Error(`No user found with email ${email}. Please create a user with this email in Clerk.`);
   }
 
-  const user = await prisma.user.create({
-    data: {
-      clerkId: clerkUser.data[0].id,
-      role: UserRole.SUPERADMIN,
-      isIdentityVerified: true,
-    },
-  });
-
   await prisma.course.create({
     data: {
       strapiId: 1,
@@ -35,11 +27,7 @@ async function seed() {
       issuesCertificate: true,
       userCourses: {
         create: {
-          user: {
-            connect: {
-              id: user.id,
-            },
-          },
+          userId: clerkUser.data[0].id,
         },
       },
     },

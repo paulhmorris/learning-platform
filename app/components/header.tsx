@@ -19,7 +19,7 @@ export function Header() {
 
   return (
     <>
-      <header className="h-20 w-full border-b border-transparent bg-background px-6 py-4 text-foreground shadow-[0px_6px_39px_0px_#00000014] sm:px-10 sm:py-6">
+      <header className="isolate z-50 h-20 w-full border-b border-transparent bg-background px-6 py-4 text-foreground shadow-[0px_6px_39px_0px_#00000014] sm:px-10 sm:py-6">
         <div className="mx-auto flex w-full items-center justify-between">
           <Link to="/preview" className="block text-foreground">
             {courseTitle ? (

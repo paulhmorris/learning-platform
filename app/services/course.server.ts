@@ -15,6 +15,7 @@ type CourseCMS = StrapiResponse<APIResponseData<"api::course.course">>;
 
 export const CourseService = {
   async getByHost(host: string) {
+    const _TTL = 60 * 60 * 24; // 24 hours
     const cachedCourse = await CacheService.get<Course>(CacheKeys.courseRoot(host));
     if (cachedCourse) {
       logger.debug(`Returning cached course for host ${host}`);
@@ -27,7 +28,7 @@ export const CourseService = {
       return null;
     }
 
-    await CacheService.set(CacheKeys.courseRoot(host), course, { ex: TTL });
+    await CacheService.set(CacheKeys.courseRoot(host), course, { ex: _TTL });
     return course;
   },
 

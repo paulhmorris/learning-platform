@@ -14,16 +14,16 @@ import { SectionLesson } from "~/components/sidebar/section-lesson";
 import { SectionQuiz } from "~/components/sidebar/section-quiz";
 import { Separator } from "~/components/ui/separator";
 import { useProgress } from "~/hooks/useProgress";
-import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
 import { HttpHeaders } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
 import { cn, getCourseLayoutValues, getLessonsInOrder } from "~/lib/utils";
 import { CourseService } from "~/services/course.server";
 import { SessionService } from "~/services/session.server";
+import { UserCourseService } from "~/services/user-course.server";
 
 export async function loader(args: LoaderFunctionArgs) {
-  const userId = await SessionService.requireUserId(args);
+  const user = await SessionService.requireUser(args);
 
   try {
     const { host } = new URL(args.request.url);
@@ -38,7 +38,8 @@ export async function loader(args: LoaderFunctionArgs) {
 
     const [course, userCourses] = await Promise.all([
       CourseService.getFromCMSForCourseLayout(linkedCourse.strapiId),
-      db.userCourse.findMany({ where: { userId }, select: { courseId: true } }),
+      // TODO: Clerk migration
+      UserCourseService.getAllByUserId(user.id),
     ]);
 
     if (!course) {
@@ -61,6 +62,7 @@ export async function loader(args: LoaderFunctionArgs) {
 }
 
 export function headers() {
+  if (process.env.NODE_ENV === "development") return {};
   return {
     [HttpHeaders.CacheControl]: "public, s-maxage=60, max-age=60, stale-while-revalidate=300",
   };

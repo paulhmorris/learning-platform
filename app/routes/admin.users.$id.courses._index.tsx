@@ -11,7 +11,7 @@ import { Sentry } from "~/integrations/sentry";
 import { Responses } from "~/lib/responses.server";
 import { CourseService } from "~/services/course.server";
 import { SessionService } from "~/services/session.server";
-import { UserService } from "~/services/user.server";
+import { UserCourseService } from "~/services/user-course.server";
 
 const logger = createLogger("Routes.AdminUserCourses");
 
@@ -25,14 +25,21 @@ export async function loader(args: LoaderFunctionArgs) {
   }
 
   try {
-    const [user, cmsCourses] = await Promise.all([UserService.getByIdWithCourse(id), CourseService.getAll()]);
+    const [userCourses, cmsCourses] = await Promise.all([UserCourseService.getAllByUserId(id), CourseService.getAll()]);
 
-    if (!user || !cmsCourses.length) {
-      logger.error(`User ${id} or courses not found`);
+    if (!userCourses.length) {
+      logger.error(`No user courses found for user ${id}`);
       throw Responses.notFound();
     }
 
-    const courses = user.courses.map((dbCourse) => {
+    if (!cmsCourses.length) {
+      logger.error("No CMS courses found");
+      throw Responses.serverError();
+    }
+
+    // TODO: Clerk migration
+    // TODO: Maybe do this whole call on its own to reduce data load for all the other places we need userCourses with less data
+    const courses = userCourses.map((dbCourse) => {
       const cmsCourse = cmsCourses.find((course) => course.id === dbCourse.course.strapiId);
       return {
         ...dbCourse,

@@ -73,14 +73,7 @@ export const QuizService = {
 
   async resetProgress(quizId: number, userId: string) {
     try {
-      return db.userQuizProgress.delete({
-        where: {
-          userId_quizId: {
-            quizId,
-            userId,
-          },
-        },
-      });
+      return db.userQuizProgress.delete({ where: { userId_quizId: { quizId, userId } } });
     } catch (error) {
       Sentry.captureException(error);
       logger.error(`Failed to reset quiz ${quizId} progress for user ${userId}`, { error });

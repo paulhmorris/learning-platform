@@ -1,7 +1,7 @@
 import { createLogger } from "~/integrations/logger.server";
 import { Sentry } from "~/integrations/sentry";
 import { stripe } from "~/integrations/stripe.server";
-import { UserService } from "~/services/user.server";
+import { AuthService } from "~/services/auth.server";
 
 const logger = createLogger("IdentityService");
 
@@ -15,7 +15,7 @@ export const IdentityService = {
         provided_details: { email },
         metadata: { user_id: userId },
       });
-      await UserService.update(userId, { stripeVerificationSessionId: verificationSession.id });
+      await AuthService.updatePublicMetadata(userId, { stripeVerificationSessionId: verificationSession.id });
       logger.info(`Created verification session ${verificationSession.id} for user ${userId} (${email})`);
       return verificationSession;
     } catch (error) {

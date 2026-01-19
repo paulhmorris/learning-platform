@@ -1,5 +1,4 @@
 import { SignOutButton, useUser } from "@clerk/react-router";
-import { UserRole } from "@prisma/client";
 import { Link, useMatches } from "react-router";
 
 import { IconAvatar } from "~/components/icons";
@@ -13,6 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
+import { UserRole } from "~/config";
 import { useRootData } from "~/hooks/useRootData";
 import { Sentry } from "~/integrations/sentry";
 

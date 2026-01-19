@@ -1,13 +1,13 @@
 import { ActionFunctionArgs } from "react-router";
 
 import { SERVER_CONFIG } from "~/config.server";
-import { clerkClient } from "~/integrations/clerk.server";
-import { db } from "~/integrations/db.server";
 import { EmailService } from "~/integrations/email.server";
 import { createLogger } from "~/integrations/logger.server";
 import { Sentry } from "~/integrations/sentry";
 import { stripe } from "~/integrations/stripe.server";
 import { Responses } from "~/lib/responses.server";
+import { AuthService } from "~/services/auth.server";
+import { UserService } from "~/services/user.server";
 
 const logger = createLogger("Api.Webhooks.Stripe");
 
@@ -58,10 +58,7 @@ export async function action({ request }: ActionFunctionArgs) {
                 return Responses.badRequest("User ID is required for verification input");
               }
 
-              const user = await db.user.findUnique({
-                where: { id: userId },
-                select: { id: true, clerkId: true },
-              });
+              const user = await UserService.getById(userId);
 
               if (!user) {
                 Sentry.captureMessage(
@@ -81,19 +78,15 @@ export async function action({ request }: ActionFunctionArgs) {
                 }),
               ];
 
-              if (user.clerkId) {
-                const clerkUser = await clerkClient.users.getUser(user.clerkId);
-                const userEmail = clerkUser.primaryEmailAddress?.emailAddress;
-                if (userEmail) {
-                  emailJobs.push(
-                    EmailService.send({
-                      to: userEmail,
-                      from: `Plumb Media & Education <no-reply@${SERVER_CONFIG.emailFromDomain}>`,
-                      subject: "Action Required: Verify Your Identity",
-                      html: `<p>More information is required to verify your identity. Please log in to your account to view next steps.</p>`,
-                    }),
-                  );
-                }
+              if (user.email) {
+                emailJobs.push(
+                  EmailService.send({
+                    to: user.email,
+                    from: `Plumb Media & Education <no-reply@${SERVER_CONFIG.emailFromDomain}>`,
+                    subject: "Action Required: Verify Your Identity",
+                    html: `<p>More information is required to verify your identity. Please log in to your account to view next steps.</p>`,
+                  }),
+                );
               }
 
               await Promise.allSettled(emailJobs);
@@ -111,10 +104,8 @@ export async function action({ request }: ActionFunctionArgs) {
                 return Responses.badRequest("User ID is required for verification input");
               }
 
-              const user = await db.user.findUnique({
-                where: { id: userId },
-                select: { id: true, clerkId: true, isIdentityVerified: true },
-              });
+              const user = await UserService.getById(userId);
+
               if (!user) {
                 Sentry.captureMessage(
                   "Received Stripe identity.verification_session.verified event for unknown user: " + userId,
@@ -124,25 +115,21 @@ export async function action({ request }: ActionFunctionArgs) {
                 return Responses.badRequest("User not found");
               }
 
-              if (!user.isIdentityVerified) {
+              if (!user.publicMetadata.isIdentityVerified) {
                 logger.info(`Verification successful for user ${userId}`);
 
-                if (user.clerkId) {
-                  const clerkUser = await clerkClient.users.getUser(user.clerkId);
-                  const userEmail = clerkUser.primaryEmailAddress?.emailAddress;
-                  if (userEmail) {
-                    await EmailService.send({
-                      to: userEmail,
-                      from: `Plumb Media & Education <no-reply@${SERVER_CONFIG.emailFromDomain}>`,
-                      subject: "Identity Verification Successful!",
-                      html: "<p>Your identity has been successfully verified. You can now claim a certificate from courses that require identity verification.</p>",
-                    });
-                  }
+                if (user.email) {
+                  await EmailService.send({
+                    to: user.email,
+                    from: `Plumb Media & Education <no-reply@${SERVER_CONFIG.emailFromDomain}>`,
+                    subject: "Identity Verification Successful!",
+                    html: "<p>Your identity has been successfully verified. You can now claim a certificate from courses that require identity verification.</p>",
+                  });
                 }
 
-                await db.user.update({
-                  where: { id: userId },
-                  data: { isIdentityVerified: true, stripeVerificationSessionId: null },
+                await AuthService.updatePublicMetadata(user.id, {
+                  isIdentityVerified: true,
+                  stripeVerificationSessionId: null,
                 });
               }
               return Responses.ok("Webhook Success");
@@ -155,10 +142,7 @@ export async function action({ request }: ActionFunctionArgs) {
                 return Responses.badRequest("User ID is required for verification input");
               }
 
-              await db.user.update({
-                where: { id: userId },
-                data: { stripeVerificationSessionId: null },
-              });
+              await AuthService.updatePublicMetadata(userId, { stripeVerificationSessionId: null });
 
               logger.info(`Verification session for user ${userId} ended with status ${event.type}`);
               return Responses.ok("Webhook Success");

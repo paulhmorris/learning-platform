@@ -1,10 +1,10 @@
 import { LoaderFunctionArgs, redirect } from "react-router";
 
-import { db } from "~/integrations/db.server";
 import { stripe } from "~/integrations/stripe.server";
 import { Toasts } from "~/lib/toast.server";
+import { CourseService } from "~/services/course.server";
 import { SessionService } from "~/services/session.server";
-import { UserService } from "~/services/user.server";
+import { UserCourseService } from "~/services/user-course.server";
 
 export async function loader(args: LoaderFunctionArgs) {
   const user = await SessionService.requireUser(args);
@@ -31,7 +31,7 @@ export async function loader(args: LoaderFunctionArgs) {
   }
 
   // Find the course that the user is trying to purchase
-  const linkedCourse = await db.course.findUnique({ where: { host: url.host } });
+  const linkedCourse = await CourseService.getByHost(url.host);
   if (!linkedCourse) {
     return Toasts.redirectWithError("/", {
       message: "Course not found.",
@@ -39,14 +39,8 @@ export async function loader(args: LoaderFunctionArgs) {
     });
   }
 
-  // Add the course to the user's courses
-  await UserService.update(user.id, {
-    courses: {
-      create: {
-        courseId: linkedCourse.id,
-      },
-    },
-  });
+  // Enroll the user in the course
+  await UserCourseService.enrollUser(user.id, linkedCourse.id);
 
   return redirect("/preview?purchase_success=true");
 }

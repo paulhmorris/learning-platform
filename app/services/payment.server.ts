@@ -1,6 +1,7 @@
 import { createLogger } from "~/integrations/logger.server";
 import { Sentry } from "~/integrations/sentry";
 import { stripe } from "~/integrations/stripe.server";
+import { AuthService } from "~/services/auth.server";
 import { UserService } from "~/services/user.server";
 
 const logger = createLogger("PaymentService");
@@ -30,7 +31,7 @@ export const PaymentService = {
         metadata: { ...options.metadata, user_id: userId },
       });
       logger.info(`Created Stripe customer ${stripeCustomer.id} for user ${userId}`);
-      await UserService.update(userId, { stripeId: stripeCustomer.id });
+      await AuthService.updatePublicMetadata(userId, { stripeCustomerId: stripeCustomer.id });
       return { id: stripeCustomer.id };
     } catch (error) {
       Sentry.captureException(error, { extra: { userId, options } });
@@ -45,14 +46,14 @@ export const PaymentService = {
       const cancel_url = new URL("/api/purchase?success=false", baseUrl).toString();
 
       const user = await UserService.getById(userId);
-      let stripeCustomerId = user?.stripeId ?? undefined;
+      let stripeCustomerId = user?.publicMetadata.stripeCustomerId;
 
       if (!user) {
         throw new Error("User not found");
       }
 
-      if (!user.stripeId) {
-        logger.info(`Creating Stripe customer for user ${userId} without stripeId`);
+      if (!stripeCustomerId) {
+        logger.info(`Creating Stripe customer for user ${userId} without stripeCustomerId`);
         const customer = await this.createCustomer(user.id);
         stripeCustomerId = customer.id;
       }

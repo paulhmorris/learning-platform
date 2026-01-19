@@ -40,15 +40,16 @@ export async function loader(args: LoaderFunctionArgs) {
     if (!user) {
       throw new Error("User not found");
     }
-    // TODO: Handle once clerkId is required
-    if (!user.clerkId) {
+
+    if (!user.id) {
       logger.error(`User ${id} found but clerkId is missing`);
       throw Responses.serverError();
     }
 
     let identityVerificationStatus;
-    if (user.stripeVerificationSessionId) {
-      const session = await stripe.identity.verificationSessions.retrieve(user.stripeVerificationSessionId);
+    const sessionId = user.publicMetadata.stripeVerificationSessionId;
+    if (sessionId) {
+      const session = await stripe.identity.verificationSessions.retrieve(sessionId);
       identityVerificationStatus = session.status;
     }
 
@@ -77,9 +78,9 @@ export default function UsersIndex() {
           <IconUserScan strokeWidth={2.5} className="size-3.5" />
           <span className="capitalize">Identity: {identityVerificationStatus?.split("_").join(" ") ?? "Unknown"}</span>
         </Badge>
-        {user.stripeId ? (
+        {user.publicMetadata.stripeCustomerId ? (
           <a
-            href={`https://dashboard.stripe.com/customers/${user.stripeId}`}
+            href={`https://dashboard.stripe.com/customers/${user.publicMetadata.stripeCustomerId}`}
             target="_blank"
             rel="noreferrer"
             className="inline-flex items-center gap-1.5 text-sm font-medium text-[#533AFD] decoration-2 hover:underline"
