@@ -46,6 +46,7 @@ model UserCourse {
   preCertificationFormSubmission PreCertificationFormSubmission?
 
   @@unique([userId, courseId])
+  @@index([userId])
   @@map("UserCourses")
 }
 
@@ -62,6 +63,7 @@ model UserLessonProgress {
   updatedAt DateTime @updatedAt
 
   @@unique([userId, lessonId])
+  @@index([userId])
 }
 
 model UserQuizProgress {
@@ -78,6 +80,7 @@ model UserQuizProgress {
   updatedAt DateTime @updatedAt
 
   @@unique([userId, quizId])
+  @@index([userId])
 }
 
 model Certificate {
