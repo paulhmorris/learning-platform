@@ -12,6 +12,11 @@ import { UserCourseService } from "~/services/user-course.server";
 const logger = createLogger("UserService");
 
 export const UserService = {
+  /**
+   * Gets the full user object from Clerk.
+   * Should be used sparingly due to rate limits.
+   * For most cases use SessionService.getUser().
+   */
   async getById(id: string) {
     try {
       const [backendUser, userCourses] = await Promise.all([

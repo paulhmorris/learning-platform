@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-namespace */
+import { UserRole } from "@prisma/client";
 import { z } from "zod/v4";
 
 const _serverEnvValidation = z.object({
@@ -78,6 +79,7 @@ declare global {
   // 	"eid": "{{user.external_id}}",
   // 	"pem": "{{user.primary_email_address}}",
   // 	"phn": "{{user.primary_phone_number}}",
+  //  "role": "{{user.public_metadata.role}}",
   // 	"strpId": "{{user.public_metadata.stripeCustomerId}}",
   // 	"strpIdV": "{{user.public_metadata.stripeVerificationSessionId}}",
   // 	"idV": "{{user.public_metadata.isIdentityVerified}}",
@@ -99,5 +101,7 @@ declare global {
     strpIdV: string | null;
     /** Is user identity verified */
     idV: boolean | null;
+    /** User role */
+    role: UserRole | null;
   }
 }

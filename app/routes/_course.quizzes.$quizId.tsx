@@ -22,7 +22,7 @@ import { SessionService } from "~/services/session.server";
 const logger = createLogger("Routes.Quiz");
 
 export async function loader(args: LoaderFunctionArgs) {
-  const userId = await SessionService.requireUserId(args);
+  const userId = await SessionService.requireUser(args);
 
   const quizId = args.params.quizId;
   invariant(quizId, "Quiz ID is required");
@@ -49,7 +49,7 @@ export async function loader(args: LoaderFunctionArgs) {
 }
 
 export async function action(args: ActionFunctionArgs) {
-  const userId = await SessionService.requireUserId(args);
+  const userId = await SessionService.requireUser(args);
 
   const quizId = args.params.quizId;
   invariant(quizId, "Quiz ID is required");
