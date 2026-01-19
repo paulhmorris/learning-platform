@@ -11,15 +11,15 @@ import { Sentry } from "~/integrations/sentry";
 import { Toasts } from "~/lib/toast.server";
 import type { loader } from "~/routes/admin.users.$id";
 import { cuid, optionalText, selectEnum } from "~/schemas/fields";
+import { AuthService } from "~/services/auth.server";
 import { SessionService } from "~/services/session.server";
-import { UserService } from "~/services/user.server";
 
 const logger = createLogger("Routes.AdminUserIndex");
 
 const schema = z.object({
   id: cuid,
   role: selectEnum(UserRole),
-  stripeId: optionalText,
+  stripeCustomerId: optionalText,
 });
 
 export async function action(args: ActionFunctionArgs) {
@@ -33,7 +33,7 @@ export async function action(args: ActionFunctionArgs) {
   const { id, ...data } = result.data;
 
   try {
-    const updatedUser = await UserService.update(id, data);
+    const updatedUser = await AuthService.updatePublicMetadata(id, data);
     return Toasts.dataWithSuccess({ updatedUser }, { message: "Success", description: "User updated successfully." });
   } catch (error) {
     Sentry.captureException(error);
@@ -56,14 +56,14 @@ export default function AdminUserIndex() {
     { value: UserRole.ADMIN, label: "Admin" },
   ];
 
-  if (user.role === UserRole.SUPERADMIN) {
+  if (user.publicMetadata.role === UserRole.SUPERADMIN) {
     roleOptions.push({ value: UserRole.SUPERADMIN, label: "Super Admin" });
   }
 
   return (
     <>
       <title>User Profile | Plumb Media & Education</title>
-      <pre className="text-xs text-muted-foreground">{user.clerkId}</pre>
+      <pre className="text-xs text-muted-foreground">{user.id}</pre>
       <div className="mt-2 max-w-md">
         <ValidatedForm
           method="put"
@@ -71,8 +71,8 @@ export default function AdminUserIndex() {
           schema={schema}
           defaultValues={{
             id: user.id,
-            role: user.role,
-            stripeId: user.stripeId ?? "",
+            role: user.publicMetadata.role,
+            stripeCustomerId: user.publicMetadata.stripeCustomerId ?? "",
           }}
         >
           {(form) => (
@@ -87,7 +87,7 @@ export default function AdminUserIndex() {
                   options={roleOptions}
                   scope={form.scope("role")}
                 />
-                <FormField scope={form.scope("stripeId")} name="stripeId" label="Stripe ID" />
+                <FormField scope={form.scope("stripeCustomerId")} name="stripeCustomerId" label="Stripe Customer ID" />
                 <SubmitButton variant="admin" className="sm:w-auto">
                   Save
                 </SubmitButton>

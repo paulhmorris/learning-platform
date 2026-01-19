@@ -17,7 +17,18 @@ class _SessionService {
       throw Responses.redirectToSignIn(args.request.url);
     }
 
-    return auth;
+    return {
+      ...auth,
+      id: auth.userId,
+      email: auth.sessionClaims.pem,
+      firstName: auth.sessionClaims.fn,
+      lastName: auth.sessionClaims.ln,
+      phoneNumber: auth.sessionClaims.phn,
+      role: auth.sessionClaims.role ?? UserRole.USER,
+      isIdentityVerified: auth.sessionClaims.idV ?? false,
+      stripeCustomerId: auth.sessionClaims.strpId,
+      stripeVerificationSessionId: auth.sessionClaims.strpIdV,
+    };
   }
 
   requireUser(args: Args) {

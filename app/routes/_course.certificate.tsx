@@ -58,13 +58,13 @@ export async function loader(args: LoaderFunctionArgs) {
       });
     }
 
-    const userCourse = await UserCourseService.getByUserIdAndCourseIdWithCertificate(user.clerkId!, linkedCourse.id);
+    const userCourse = await UserCourseService.getByUserIdAndCourseIdWithCertificate(user.id, linkedCourse.id);
 
     if (!userCourse) {
-      logger.warn(`User ${user.clerkId} does not have access to course ${linkedCourse.id}`);
+      logger.warn(`User ${user.id} does not have access to course ${linkedCourse.id}`);
       Sentry.captureMessage("User tried to claim certificate without having access to course", {
         extra: {
-          user: { id: user.clerkId, email: user.email },
+          user: { id: user.id, email: user.email },
           course: { id: linkedCourse.id },
         },
         level: "warning",
@@ -83,7 +83,7 @@ export async function loader(args: LoaderFunctionArgs) {
         firstName: (user.firstName as string | null) ?? null,
         lastName: (user.lastName as string | null) ?? null,
         email: user.email,
-        phone: user.phone ?? null,
+        phone: user.phoneNumber ?? null,
       },
     };
   } catch (error) {
@@ -110,7 +110,7 @@ export async function action(args: ActionFunctionArgs) {
     }
 
     // TODO: Clerk migration
-    const userCourses = await UserCourseService.getAllByUserId(user.clerkId!);
+    const userCourses = await UserCourseService.getAllByUserId(user.id);
     const userHasAccess = userCourses.some((c) => c.courseId === linkedCourse.id);
     if (!userHasAccess) {
       logger.warn(`User ${user.id} tried to claim certificate without access to course ${linkedCourse.id}`);
@@ -139,8 +139,8 @@ export async function action(args: ActionFunctionArgs) {
         },
       }),
       // TODO: Clerk migration
-      ProgressService.getAllLesson(user.clerkId!),
-      ProgressService.getAllQuiz(user.clerkId!),
+      ProgressService.getAllLesson(user.id),
+      ProgressService.getAllQuiz(user.id),
     ]);
 
     const allLessonIds = course.data.attributes.sections
@@ -180,7 +180,7 @@ export async function action(args: ActionFunctionArgs) {
         throw validationError(formData.error);
       }
       // TODO: Clerk migration
-      const userCourses = await UserCourseService.getAllByUserId(user.clerkId!);
+      const userCourses = await UserCourseService.getAllByUserId(user.id);
       await db.preCertificationFormSubmission.create({
         data: {
           userCourseId: userCourses.find((c) => c.courseId === linkedCourse.id)!.id,

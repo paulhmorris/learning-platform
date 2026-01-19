@@ -40,7 +40,7 @@ export async function loader(args: LoaderFunctionArgs) {
   }
 
   // Enroll the user in the course
-  await UserCourseService.enrollUser(user.clerkId!, linkedCourse.id);
+  await UserCourseService.enrollUser(user.id, linkedCourse.id);
 
   return redirect("/preview?purchase_success=true");
 }

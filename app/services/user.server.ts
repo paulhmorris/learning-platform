@@ -44,18 +44,20 @@ export const UserService = {
     }
   },
 
-  async create(clerkId: string) {
+  async linkToStripe(userId: string) {
     try {
-      const stripeCustomer = await PaymentService.createCustomer(clerkId);
-      const user = await AuthService.updatePublicMetadata(clerkId, {
+      const stripeCustomer = await PaymentService.createCustomer(userId);
+      const user = await AuthService.updatePublicMetadata(userId, {
         role: UserRole.USER,
         stripeCustomerId: stripeCustomer.id,
+        stripeVerificationSessionId: null,
+        isIdentityVerified: false,
       });
       logger.info(`Metadata saved for user ${user.id}`);
       return user;
     } catch (error) {
       Sentry.captureException(error);
-      logger.error(`Failed to create user with Clerk ID ${clerkId}`, { error });
+      logger.error(`Failed to create user with Clerk ID ${userId}`, { error });
       throw error;
     }
   },

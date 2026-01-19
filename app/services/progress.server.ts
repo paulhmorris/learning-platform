@@ -57,7 +57,10 @@ export const ProgressService = {
       logger.debug(`Returning cached progress for all lessons for user ${userId}`);
       return cachedProgress;
     }
-    const progress = await db.userLessonProgress.findMany({ where: { userId } });
+    const progress = await db.userLessonProgress.findMany({
+      select: { isCompleted: true, durationInSeconds: true, lessonId: true },
+      where: { userId },
+    });
     if (progress.length) {
       await CacheService.set(CacheKeys.lessonProgressAll(userId), progress, { ex: PROGRESS_CACHE_TTL });
     }
@@ -72,7 +75,10 @@ export const ProgressService = {
       logger.debug(`Returning cached quiz progress for all quizzes for user ${userId}`);
       return cachedProgress;
     }
-    const progress = await db.userQuizProgress.findMany({ where: { userId } });
+    const progress = await db.userQuizProgress.findMany({
+      select: { isCompleted: true, score: true, quizId: true },
+      where: { userId },
+    });
     if (progress.length) {
       await CacheService.set(CacheKeys.quizProgressAll(userId), progress, { ex: PROGRESS_CACHE_TTL });
     }

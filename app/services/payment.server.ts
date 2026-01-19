@@ -46,7 +46,7 @@ export const PaymentService = {
       const cancel_url = new URL("/api/purchase?success=false", baseUrl).toString();
 
       const user = await UserService.getById(userId);
-      let stripeCustomerId = user?.publicMetadata.stripeCustomerId as string | undefined;
+      let stripeCustomerId = user?.publicMetadata.stripeCustomerId;
 
       if (!user) {
         throw new Error("User not found");

@@ -49,16 +49,13 @@ const columns: Array<ColumnDef<User>> = [
     accessorFn: (row) => `${row.firstName ?? ""} ${row.lastName ?? ""}`,
     header: ({ column }) => <DataTableColumnHeader column={column} title="Name" />,
     cell: ({ row }) => {
-      if (!row.original.externalId) {
+      if (!row.original.id) {
         return <span className="max-w-[120px] truncate">{row.getValue("name")}</span>;
       }
 
       return (
         <div>
-          <Link
-            to={`/admin/users/${row.original.externalId}`}
-            className="max-w-[120px] truncate font-medium text-primary"
-          >
+          <Link to={`/admin/users/${row.original.id}`} className="max-w-[120px] truncate font-medium text-primary">
             {row.getValue("name")}
           </Link>
         </div>

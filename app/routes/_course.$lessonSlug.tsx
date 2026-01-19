@@ -31,7 +31,7 @@ export function headers() {
 }
 
 export async function loader(args: LoaderFunctionArgs) {
-  const userId = await SessionService.requireUser(args);
+  const { userId } = await SessionService.requireUser(args);
 
   try {
     const lessonSlug = args.params.lessonSlug;

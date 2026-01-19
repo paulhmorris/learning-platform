@@ -85,23 +85,30 @@ declare global {
   // 	"idV": "{{user.public_metadata.isIdentityVerified}}",
   // }
   interface CustomJwtSessionClaims {
-    /** user.primary_email_address */
+    /** Primary email address */
     pem: string;
-    /** user.first_name */
+    /** First name */
     fn: string;
-    /** user.last_name */
+    /** Last name */
     ln: string;
-    /** user.phone_number */
+    /** Phone number */
     phn: string | null;
-    /** user.external_id */
+    /** External ID */
     eid: string | null;
     /** Stripe customer ID */
     strpId: string | null;
     /** Stripe Identity Verification session id */
     strpIdV: string | null;
-    /** Is user identity verified */
+    /** User has had their identity verified */
     idV: boolean | null;
     /** User role */
     role: UserRole | null;
+  }
+
+  interface UserPublicMetadata {
+    role?: UserRole;
+    stripeCustomerId?: string;
+    isIdentityVerified?: boolean;
+    stripeVerificationSessionId?: string | null;
   }
 }

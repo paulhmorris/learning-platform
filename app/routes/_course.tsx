@@ -39,7 +39,7 @@ export async function loader(args: LoaderFunctionArgs) {
     const [course, userCourses] = await Promise.all([
       CourseService.getFromCMSForCourseLayout(linkedCourse.strapiId),
       // TODO: Clerk migration
-      UserCourseService.getAllByUserId(user.clerkId!),
+      UserCourseService.getAllByUserId(user.id),
     ]);
 
     if (!course) {
