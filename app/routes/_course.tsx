@@ -62,7 +62,7 @@ export async function loader(args: LoaderFunctionArgs) {
 }
 
 export function headers() {
-  if (process.env.NODE_ENV === "development") return;
+  if (process.env.NODE_ENV === "development") return {};
   return {
     [HttpHeaders.CacheControl]: "public, s-maxage=60, max-age=60, stale-while-revalidate=300",
   };
