@@ -145,6 +145,7 @@ export const ProgressService = {
       },
     });
     await CacheService.set(CacheKeys.lessonProgress(data.userId, data.lessonId), progress, { ex: PROGRESS_CACHE_TTL });
+    await CacheService.delete(CacheKeys.lessonProgressAll(data.userId));
     logger.info(`Marked lesson ${data.lessonId} as complete for user ${data.userId}`);
     return progress;
   },
