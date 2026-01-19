@@ -27,11 +27,7 @@ export const ProgressService = {
       logger.debug(`Returning cached progress for user ${userId} on lesson ${lessonId}`);
       return cachedProgress;
     }
-    const progress = await db.userLessonProgress.findUnique({
-      where: {
-        userId_lessonId: { lessonId, userId },
-      },
-    });
+    const progress = await db.userLessonProgress.findUnique({ where: { userId_lessonId: { lessonId, userId } } });
     if (progress) {
       await CacheService.set(CacheKeys.lessonProgress(userId, lessonId), progress, { ex: PROGRESS_CACHE_TTL });
     }
@@ -46,11 +42,7 @@ export const ProgressService = {
       logger.debug(`Returning cached quiz progress for user ${userId} on quiz ${quizId}`);
       return cachedProgress;
     }
-    const progress = await db.userQuizProgress.findUnique({
-      where: {
-        userId_quizId: { userId, quizId },
-      },
-    });
+    const progress = await db.userQuizProgress.findUnique({ where: { userId_quizId: { userId, quizId } } });
     if (progress) {
       await CacheService.set(CacheKeys.quizProgress(userId, quizId), progress, { ex: PROGRESS_CACHE_TTL });
     }

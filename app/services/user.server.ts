@@ -19,17 +19,19 @@ export const UserService = {
    */
   async getById(id: string) {
     try {
-      const [backendUser, userCourses] = await Promise.all([
+      const [user, userCourses] = await Promise.all([
         clerkClient.users.getUser(id),
         UserCourseService.getAllByUserId(id),
       ]);
       return {
+        id: user.id,
         courses: userCourses,
-        firstName: backendUser.firstName!,
-        lastName: backendUser.lastName!,
-        email: backendUser.primaryEmailAddress!.emailAddress,
-        phone: backendUser.primaryPhoneNumber?.phoneNumber,
-        isActive: !backendUser.locked,
+        firstName: user.firstName!,
+        lastName: user.lastName!,
+        email: user.primaryEmailAddress!.emailAddress,
+        phone: user.primaryPhoneNumber?.phoneNumber,
+        isActive: !user.locked,
+        publicMetadata: user.publicMetadata,
       };
     } catch (error) {
       if (isClerkAPIResponseError(error) && error.status === 404) {
