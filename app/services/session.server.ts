@@ -1,7 +1,7 @@
 import { getAuth } from "@clerk/react-router/ssr.server";
-import { UserRole } from "@prisma/client";
 import { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 
+import { UserRole } from "~/config";
 import { createLogger } from "~/integrations/logger.server";
 import { Responses } from "~/lib/responses.server";
 

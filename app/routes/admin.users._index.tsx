@@ -1,5 +1,4 @@
 import { useUser } from "@clerk/react-router";
-import { UserRole } from "@prisma/client";
 import { IconExternalLink } from "@tabler/icons-react";
 import { ColumnDef } from "@tanstack/react-table";
 import dayjs from "dayjs";
@@ -9,6 +8,7 @@ import { ErrorComponent } from "~/components/error-component";
 import { Button } from "~/components/ui/button";
 import { DataTable } from "~/components/ui/data-table/data-table";
 import { DataTableColumnHeader } from "~/components/ui/data-table/data-table-column-header";
+import { UserRole } from "~/config";
 import { AuthService } from "~/services/auth.server";
 import { SessionService } from "~/services/session.server";
 

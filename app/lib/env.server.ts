@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace */
-import { UserRole } from "@prisma/client";
 import { z } from "zod/v4";
+
+import { UserRole } from "~/config";
 
 const _serverEnvValidation = z.object({
   // Clerk

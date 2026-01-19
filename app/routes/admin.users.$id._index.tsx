@@ -1,4 +1,3 @@
-import { UserRole } from "@prisma/client";
 import { parseFormData, ValidatedForm, validationError } from "@rvf/react-router";
 import { ActionFunctionArgs, useRouteLoaderData } from "react-router";
 import { z } from "zod/v4";
@@ -6,6 +5,7 @@ import { z } from "zod/v4";
 import { ErrorComponent } from "~/components/error-component";
 import { FormField, FormSelect } from "~/components/ui/form";
 import { SubmitButton } from "~/components/ui/submit-button";
+import { UserRole } from "~/config";
 import { createLogger } from "~/integrations/logger.server";
 import { Sentry } from "~/integrations/sentry";
 import { Toasts } from "~/lib/toast.server";

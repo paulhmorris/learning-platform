@@ -1,6 +1,6 @@
 import { isClerkAPIResponseError } from "@clerk/shared/error";
-import { UserRole } from "@prisma/client";
 
+import { UserRole } from "~/config";
 import { clerkClient } from "~/integrations/clerk.server";
 import { db } from "~/integrations/db.server";
 import { createLogger } from "~/integrations/logger.server";
