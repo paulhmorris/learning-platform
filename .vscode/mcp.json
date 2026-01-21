@@ -1,5 +1,9 @@
 {
   "servers": {
+    "playwright": {
+      "command": "npx",
+      "args": ["@playwright/mcp@latest"]
+    },
     "Clerk": {
       "url": "https://mcp.clerk.dev/mcp",
       "type": "http"
