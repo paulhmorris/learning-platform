@@ -2,7 +2,6 @@ import { parseFormData, validationError } from "@rvf/react-router";
 import { ActionFunctionArgs, LoaderFunctionArgs, ShouldRevalidateFunctionArgs } from "react-router";
 import { z } from "zod/v4";
 
-import { db } from "~/integrations/db.server";
 import { createLogger } from "~/integrations/logger.server";
 import { Sentry } from "~/integrations/sentry";
 import { Toasts } from "~/lib/toast.server";
@@ -28,22 +27,17 @@ export function shouldRevalidate({ formAction }: ShouldRevalidateFunctionArgs) {
 }
 
 export async function loader(args: LoaderFunctionArgs) {
-  const userId = await SessionService.requireUserId(args);
+  const user = await SessionService.requireUser(args);
   try {
-    const [lessonProgress, quizProgress] = await db.$transaction([
-      db.userLessonProgress.findMany({
-        select: { isCompleted: true, durationInSeconds: true, lessonId: true },
-        where: { userId },
-      }),
-      db.userQuizProgress.findMany({
-        select: { isCompleted: true, quizId: true, score: true },
-        where: { userId },
-      }),
+    // TODO: Clerk migration
+    const [lessonProgress, quizProgress] = await Promise.all([
+      ProgressService.getAllLesson(user.id),
+      ProgressService.getAllQuiz(user.id),
     ]);
     return { lessonProgress, quizProgress };
   } catch (error) {
-    logger.error("Error loading lesson progress", { error, userId });
-    Sentry.captureException(error, { extra: { userId } });
+    logger.error(`Error loading lesson progress for user ${user.id}`, { error });
+    Sentry.captureException(error, { extra: { userId: user.id } });
     return Toasts.dataWithError(null, {
       message: "An error occurred trying to load your progress.",
       description: "If the problem persists, please contact support.",
@@ -52,7 +46,8 @@ export async function loader(args: LoaderFunctionArgs) {
 }
 
 export async function action(args: ActionFunctionArgs) {
-  const userId = await SessionService.requireUserId(args);
+  // TODO: Clerk migration
+  const user = await SessionService.requireUser(args);
   const result = await parseFormData(args.request, schema);
   if (result.error) {
     return validationError(result.error);
@@ -65,14 +60,14 @@ export async function action(args: ActionFunctionArgs) {
 
     // Lessons without required durations
     if (intent === "mark-complete" && !duration) {
-      const progress = await ProgressService.markComplete({ userId, lessonId });
+      const progress = await ProgressService.markComplete({ userId: user.id, lessonId });
       return Toasts.dataWithSuccess(
         { progress },
         { message: "Lesson completed!", description: "You may now move on to the next item." },
       );
     }
 
-    const progress = await ProgressService.getByLessonId(userId, lessonId);
+    const progress = await ProgressService.getByLessonId(user.id, lessonId);
     if (!duration) {
       return { progress };
     }
@@ -91,7 +86,7 @@ export async function action(args: ActionFunctionArgs) {
       // Mark lesson complete if we're about to hit the required duration;
       if (progress.durationInSeconds + SUBMIT_INTERVAL_MS / 1_000 >= duration) {
         const completedProgress = await ProgressService.markComplete({
-          userId,
+          userId: user.id,
           lessonId,
           requiredDurationInSeconds: duration,
         });
@@ -103,12 +98,15 @@ export async function action(args: ActionFunctionArgs) {
     }
 
     // Upsert progress
-    const currentProgress = await ProgressService.incrementProgress(userId, lessonId);
+    const currentProgress = await ProgressService.incrementProgress(user.id, lessonId);
 
     return { progress: currentProgress };
   } catch (error) {
-    logger.error("Error processing lesson progress action", { error, userId, lessonId, intent });
-    Sentry.captureException(error, { extra: { userId, lessonId, intent } });
+    logger.error(
+      `Error processing lesson progress action for user ${user.id} on lesson ${lessonId} (intent: ${intent})`,
+      { error },
+    );
+    Sentry.captureException(error, { extra: { userId: user.id, lessonId, intent } });
 
     if (error instanceof Response) {
       throw error;

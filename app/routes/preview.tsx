@@ -22,16 +22,15 @@ import { CourseProgressBar } from "~/components/sidebar/course-progress-bar";
 import { Button } from "~/components/ui/button";
 import { Separator } from "~/components/ui/separator";
 import { useProgress } from "~/hooks/useProgress";
-import { useUser } from "~/hooks/useUser";
-import { getCourse } from "~/integrations/cms.server";
-import { db } from "~/integrations/db.server";
 import { createLogger } from "~/integrations/logger.server";
 import { Sentry } from "~/integrations/sentry";
 import { Responses } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
 import { getLessonsInOrder, getPreviewValues } from "~/lib/utils";
+import { CourseService } from "~/services/course.server";
 import { PaymentService } from "~/services/payment.server";
 import { SessionService } from "~/services/session.server";
+import { UserCourseService } from "~/services/user-course.server";
 
 // eslint-disable-next-line import/no-unresolved
 import { Route } from "../+types/root";
@@ -39,21 +38,31 @@ import { Route } from "../+types/root";
 const logger = createLogger("Routes.Preview");
 
 export async function loader(args: LoaderFunctionArgs) {
-  await SessionService.requireUserId(args);
+  const user = await SessionService.requireUser(args);
 
   const url = new URL(args.request.url);
   try {
-    const linkedCourse = await db.course.findUnique({ where: { host: url.host } });
+    const linkedCourse = await CourseService.getByHost(url.host);
     if (!linkedCourse) {
       throw Responses.notFound();
     }
 
-    const course = await getCourse(linkedCourse.strapiId);
+    const [course, userCourses] = await Promise.all([
+      CourseService.getFromCMSForCourseLayout(linkedCourse.strapiId),
+      // TODO: Clerk migration
+      UserCourseService.getAllByUserId(user.id),
+    ]);
 
-    return { course: course.data, linkedCourse };
+    if (!course) {
+      throw Responses.notFound();
+    }
+
+    const userCourseIds = userCourses.map((c) => c.courseId);
+
+    return { course: course.data, linkedCourse, userCourseIds };
   } catch (error) {
     Sentry.captureException(error);
-    logger.error("Failed to load course", { error, host: url.host });
+    logger.error(`Failed to load course for host ${url.host}`, { error });
     if (error instanceof Response) {
       throw error;
     }
@@ -64,7 +73,7 @@ export async function loader(args: LoaderFunctionArgs) {
 export async function action(args: ActionFunctionArgs) {
   const user = await SessionService.requireUser(args);
   const url = new URL(args.request.url);
-  const course = await db.course.findUnique({ where: { host: url.host } });
+  const course = await CourseService.getByHost(url.host);
 
   if (!course) {
     return Toasts.redirectWithError("/", {
@@ -74,7 +83,7 @@ export async function action(args: ActionFunctionArgs) {
   }
 
   try {
-    if (!user.stripeId) {
+    if (!user.stripeCustomerId) {
       await PaymentService.createCustomer(user.id);
     }
 
@@ -86,7 +95,7 @@ export async function action(args: ActionFunctionArgs) {
     return redirect(session.url ?? "/", { status: 303 });
   } catch (error) {
     Sentry.captureException(error);
-    logger.error("Failed to create checkout session", { error, userId: user.id, courseId: course.id });
+    logger.error(`Failed to create checkout session for user ${user.id} and course ${course.id}`, { error });
     return Toasts.redirectWithError("/", {
       message: "Unable to enroll",
       description: "Please try again later",
@@ -95,18 +104,17 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export default function CoursePreview() {
-  const user = useUser();
   const [searchParams] = useSearchParams();
   const { lessonProgress, quizProgress } = useProgress();
   const [successModalOpen, setSuccessModalOpen] = useState(false);
   const [canceledModalOpen, setCanceledModalOpen] = useState(false);
-  const { course, linkedCourse } = useLoaderData<typeof loader>();
+  const { course, linkedCourse, userCourseIds } = useLoaderData<typeof loader>();
 
   const isSuccessful = searchParams.get("purchase_success") === "true";
   const isCanceled = searchParams.get("purchase_canceled") === "true";
   const lessons = getLessonsInOrder({ course, progress: lessonProgress });
 
-  const userHasAccess = user.courses.some((c) => c.courseId === linkedCourse.id);
+  const userHasAccess = userCourseIds.includes(linkedCourse.id);
 
   // handle success or cancel
   useEffect(() => {

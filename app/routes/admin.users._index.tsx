@@ -1,4 +1,4 @@
-import { UserRole } from "@prisma/client";
+import { useUser } from "@clerk/react-router";
 import { IconExternalLink } from "@tabler/icons-react";
 import { ColumnDef } from "@tanstack/react-table";
 import dayjs from "dayjs";
@@ -8,7 +8,7 @@ import { ErrorComponent } from "~/components/error-component";
 import { Button } from "~/components/ui/button";
 import { DataTable } from "~/components/ui/data-table/data-table";
 import { DataTableColumnHeader } from "~/components/ui/data-table/data-table-column-header";
-import { useUser } from "~/hooks/useUser";
+import { UserRole } from "~/config";
 import { AuthService } from "~/services/auth.server";
 import { SessionService } from "~/services/session.server";
 
@@ -49,16 +49,13 @@ const columns: Array<ColumnDef<User>> = [
     accessorFn: (row) => `${row.firstName ?? ""} ${row.lastName ?? ""}`,
     header: ({ column }) => <DataTableColumnHeader column={column} title="Name" />,
     cell: ({ row }) => {
-      if (!row.original.externalId) {
+      if (!row.original.id) {
         return <span className="max-w-[120px] truncate">{row.getValue("name")}</span>;
       }
 
       return (
         <div>
-          <Link
-            to={`/admin/users/${row.original.externalId}`}
-            className="max-w-[120px] truncate font-medium text-primary"
-          >
+          <Link to={`/admin/users/${row.original.id}`} className="max-w-[120px] truncate font-medium text-primary">
             {row.getValue("name")}
           </Link>
         </div>
@@ -96,10 +93,10 @@ const columns: Array<ColumnDef<User>> = [
     accessorKey: "action",
     header: ({ column }) => <DataTableColumnHeader column={column} title="Action" className="sr-only" />,
     cell: ({ row }) => {
-      const user = useUser();
+      const { user } = useUser();
       const fetcher = useFetcher();
 
-      if (user.role !== UserRole.SUPERADMIN) {
+      if (user?.publicMetadata.role !== UserRole.SUPERADMIN) {
         return null;
       }
 

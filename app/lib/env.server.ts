@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-namespace */
 import { z } from "zod/v4";
 
+import { UserRole } from "~/config";
+
 const _serverEnvValidation = z.object({
   // Clerk
   AUTH_DOMAIN: z.string().min(1),
@@ -72,16 +74,42 @@ declare global {
   }
 
   // Clerk Session Claims
+  // {
+  // 	"fn": "{{user.first_name}}",
+  // 	"ln": "{{user.last_name}}",
+  // 	"eid": "{{user.external_id}}",
+  // 	"pem": "{{user.primary_email_address}}",
+  // 	"phn": "{{user.primary_phone_number}}",
+  //  "role": "{{user.public_metadata.role}}",
+  // 	"strpId": "{{user.public_metadata.stripeCustomerId}}",
+  // 	"strpIdV": "{{user.public_metadata.stripeVerificationSessionId}}",
+  // 	"idV": "{{user.public_metadata.isIdentityVerified}}",
+  // }
   interface CustomJwtSessionClaims {
-    /** user.primary_email_address */
+    /** Primary email address */
     pem: string;
-    /** user.first_name */
+    /** First name */
     fn: string;
-    /** user.last_name */
+    /** Last name */
     ln: string;
-    /** user.phone_number */
+    /** Phone number */
     phn: string | null;
-    /** user.external_id */
+    /** External ID */
     eid: string | null;
+    /** Stripe customer ID */
+    strpId: string | null;
+    /** Stripe Identity Verification session id */
+    strpIdV: string | null;
+    /** User has had their identity verified */
+    idV: boolean | null;
+    /** User role */
+    role: UserRole | null;
+  }
+
+  interface UserPublicMetadata {
+    role?: UserRole;
+    stripeCustomerId?: string;
+    isIdentityVerified?: boolean;
+    stripeVerificationSessionId?: string | null;
   }
 }

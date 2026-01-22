@@ -30,7 +30,7 @@ export async function loader(args: LoaderFunctionArgs) {
   await SessionService.requireAdmin(args);
   const id = args.params.id;
   if (!id) {
-    logger.error("User ID not found", { params: args.params });
+    logger.error("User ID not found in request params");
     throw Responses.notFound();
   }
 
@@ -40,21 +40,22 @@ export async function loader(args: LoaderFunctionArgs) {
     if (!user) {
       throw new Error("User not found");
     }
-    // TODO: Handle once clerkId is required
-    if (!user.clerkId) {
-      logger.error("User found but clerkId is missing", { id });
+
+    if (!user.id) {
+      logger.error(`User ${id} found but clerkId is missing`);
       throw Responses.serverError();
     }
 
     let identityVerificationStatus;
-    if (user.stripeVerificationSessionId) {
-      const session = await stripe.identity.verificationSessions.retrieve(user.stripeVerificationSessionId);
+    const sessionId = user.publicMetadata.stripeVerificationSessionId;
+    if (sessionId) {
+      const session = await stripe.identity.verificationSessions.retrieve(sessionId);
       identityVerificationStatus = session.status;
     }
 
     return { user, identityVerificationStatus };
   } catch (error) {
-    logger.error("Failed to load user data", { error, userId: id });
+    logger.error(`Failed to load user data for user ${id}`, { error });
     Sentry.captureException(error);
     throw Responses.serverError();
   }
@@ -77,9 +78,9 @@ export default function UsersIndex() {
           <IconUserScan strokeWidth={2.5} className="size-3.5" />
           <span className="capitalize">Identity: {identityVerificationStatus?.split("_").join(" ") ?? "Unknown"}</span>
         </Badge>
-        {user.stripeId ? (
+        {user.publicMetadata.stripeCustomerId ? (
           <a
-            href={`https://dashboard.stripe.com/customers/${user.stripeId}`}
+            href={`https://dashboard.stripe.com/customers/${user.publicMetadata.stripeCustomerId}`}
             target="_blank"
             rel="noreferrer"
             className="inline-flex items-center gap-1.5 text-sm font-medium text-[#533AFD] decoration-2 hover:underline"

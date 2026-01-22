@@ -1,6 +1,8 @@
 import { RedirectToSignIn, SignedIn, SignedOut, UserProfile } from "@clerk/react-router";
+import { dark } from "@clerk/themes";
 import { IconCertificate, IconKey } from "@tabler/icons-react";
 import { LoaderFunctionArgs, useLoaderData } from "react-router";
+import { Theme, useTheme } from "remix-themes";
 
 import { AccountCourses } from "~/components/account/courses";
 import { IdentityVerification } from "~/components/account/identity-verification";
@@ -23,6 +25,7 @@ export async function loader(args: LoaderFunctionArgs) {
   try {
     const [userCourses, cmsCourses, session] = await Promise.all([
       db.userCourse.findMany({
+        // TODO: Clerk migration
         where: { userId: user.id },
         orderBy: { createdAt: "desc" },
         select: {
@@ -65,7 +68,7 @@ export async function loader(args: LoaderFunctionArgs) {
       };
     });
 
-    return { courses, userCourses, session };
+    return { courses, userCourses, session, isIdentityVerified: user.isIdentityVerified };
   } catch (error) {
     logger.error("Error in account loader", { error });
     throw Responses.serverError();
@@ -73,7 +76,8 @@ export async function loader(args: LoaderFunctionArgs) {
 }
 
 export default function AccountLayout() {
-  const { courses, userCourses, session } = useLoaderData<typeof loader>();
+  const [theme] = useTheme();
+  const { courses, userCourses, session, isIdentityVerified } = useLoaderData<typeof loader>();
 
   return (
     <>
@@ -84,9 +88,9 @@ export default function AccountLayout() {
         <title>Account</title>
         <div className="flex min-h-[calc(100dvh-80px)] flex-col items-center justify-center md:bg-secondary dark:bg-background">
           <main>
-            <UserProfile>
+            <UserProfile appearance={{ theme: theme === Theme.DARK ? dark : undefined }}>
               <UserProfile.Page label="Identity" labelIcon={<IconKey className="size-4" />} url="/identity">
-                <IdentityVerification session={session} />
+                <IdentityVerification session={session} isIdentityVerified={isIdentityVerified} />
               </UserProfile.Page>
               <UserProfile.Page label="Courses" labelIcon={<IconCertificate className="size-4" />} url="/courses">
                 <AccountCourses courses={courses} userCourses={userCourses} />

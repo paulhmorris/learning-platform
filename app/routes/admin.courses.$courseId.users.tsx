@@ -15,33 +15,26 @@ import { ErrorComponent } from "~/components/error-component";
 import { AdminButton } from "~/components/ui/admin-button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import { db } from "~/integrations/db.server";
 import { Responses } from "~/lib/responses.server";
 import type { loader as adminCourseLoader } from "~/routes/admin.courses.$courseId";
 import { text } from "~/schemas/fields";
 import { AuthService } from "~/services/auth.server";
 import { SessionService } from "~/services/session.server";
+import { UserCourseService } from "~/services/user-course.server";
 
 export async function loader(args: LoaderFunctionArgs) {
   await SessionService.requireAdmin(args);
-  const [backendList, localList] = await Promise.all([
-    AuthService.getUserList(),
-    db.user.findMany({ orderBy: { createdAt: "asc" } }),
-  ]);
+  const backendList = await AuthService.getUserList();
 
   const users = backendList.data
     .map((user) => {
-      const localUser = localList.find((u) => u.clerkId === user.id);
-      if (!localUser) {
-        return undefined;
-      }
       return {
-        id: localUser.id,
+        id: user.id,
         firstName: user.firstName ?? "",
         lastName: user.lastName ?? "",
         email: user.emailAddresses.at(0)?.emailAddress ?? "",
         phone: user.phoneNumbers.at(0)?.phoneNumber ?? undefined,
-        createdAt: localUser.createdAt,
+        createdAt: user.createdAt,
       };
     })
     .filter(Boolean);
@@ -61,12 +54,7 @@ export async function action(args: ActionFunctionArgs) {
     return result.error;
   }
 
-  await db.userCourse.create({
-    data: {
-      courseId,
-      userId: result.data.userId,
-    },
-  });
+  await UserCourseService.enrollUser(result.data.userId, courseId);
 
   return Responses.created();
 }

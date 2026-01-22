@@ -5,11 +5,12 @@ import { hipHopDrivingCertificationSchema } from "~/components/pre-certificate-f
 import { CONFIG } from "~/config";
 import { SERVER_CONFIG } from "~/config.server";
 import { Bucket } from "~/integrations/bucket.server";
-import { clerkClient } from "~/integrations/clerk.server";
 import { db } from "~/integrations/db.server";
 import { EmailService } from "~/integrations/email.server";
 import { Sentry } from "~/integrations/sentry";
 import { CertificateService } from "~/services/certificate.server";
+import { UserCourseService } from "~/services/user-course.server";
+import { UserService } from "~/services/user.server";
 
 // BUSINESS LOGIC
 const certificateMap = [
@@ -25,55 +26,24 @@ const certificateMap = [
 export const claimCertificateJob = task({
   id: "claim-certificate",
   run: async (payload: { userId: string; courseId: string; courseName: string }) => {
-    const _user = await db.user.findUniqueOrThrow({
-      where: { id: payload.userId },
-      select: {
-        id: true,
-        clerkId: true,
-        courses: {
-          where: { courseId: payload.courseId },
-          select: {
-            id: true,
-            courseId: true,
-            certificateClaimed: true,
-            completedAt: true,
-            certificate: {
-              select: {
-                id: true,
-                number: true,
-                s3Key: true,
-              },
-            },
-          },
-        },
-      },
-    });
-
-    if (!_user.clerkId) {
-      logger.error("User missing clerkId", { userId: payload.userId });
-      throw new Error("User identity not available");
+    // TODO: Update when clerkId is required
+    const user = await UserService.getById(payload.userId);
+    if (!user) {
+      logger.error("User not found in Clerk", { userId: payload.userId });
+      throw new Error("User not found in Clerk");
     }
 
-    // TODO: Update when clerkId is required
-    const clerkUser = await clerkClient.users.getUser(_user.clerkId);
-
-    const email = clerkUser.emailAddresses.at(0)?.emailAddress;
+    const email = user.email;
     if (!email) {
-      logger.error("User does not have an email address", _user);
+      logger.error("User does not have an email address", { userId: payload.userId });
       throw new Error("User does not have an email address");
     }
 
-    const user = {
-      ..._user,
-      email,
-      firstName: clerkUser.firstName,
-      lastName: clerkUser.lastName,
-      phoneNumber: clerkUser.phoneNumbers.at(0)?.phoneNumber,
-    };
-
     logger.info("User found", user);
 
-    const thisUserCourse = user.courses.find((c) => c.courseId === payload.courseId);
+    // TODO: Clerk migration
+    const userCourses = await UserCourseService.getAllByUserId(user.id);
+    const thisUserCourse = userCourses.find((c) => c.courseId === payload.courseId);
     if (!thisUserCourse) {
       logger.error("User has not completed this course", user);
       throw new Error("User has not completed this course");

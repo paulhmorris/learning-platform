@@ -10,7 +10,6 @@ import {
 import { SubmitButton } from "~/components/ui/submit-button";
 import { useCourseData } from "~/hooks/useCourseData";
 import { useProgress } from "~/hooks/useProgress";
-import { useUser } from "~/hooks/useUser";
 import { cms } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
 import { createLogger } from "~/integrations/logger.server";
@@ -18,17 +17,25 @@ import { Sentry } from "~/integrations/sentry";
 import { Responses } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
 import { getLessonsInOrder } from "~/lib/utils";
+import { ProgressService } from "~/services/progress.server";
 import { SessionService } from "~/services/session.server";
+import { UserCourseService } from "~/services/user-course.server";
 import { APIResponseData } from "~/types/utils";
 
 import { claimCertificateJob } from "../../jobs/claim-certificate";
 
 // BUSINESS LOGIC
+type UserProfileData = {
+  firstName: string | null;
+  lastName: string | null;
+  phone: string | null;
+};
+
 const courseSpecificForms = [
   {
     // Hiphop Driving
     courseId: 1,
-    component: <HiphopDrivingPreCertificateForm />,
+    render: (userProfile: UserProfileData) => <HiphopDrivingPreCertificateForm userProfile={userProfile} />,
     schema: hipHopDrivingCertificationSchema,
   },
 ];
@@ -44,30 +51,17 @@ export async function loader(args: LoaderFunctionArgs) {
     const linkedCourse = await db.course.findUnique({ where: { host } });
 
     if (!linkedCourse) {
-      logger.error("Course not found", { host });
+      logger.error(`Course not found for host ${host}`);
       throw await Toasts.redirectWithError("/preview", {
         message: "Error claiming certificate",
         description: "Please try again later.",
       });
     }
 
-    const userCourse = await db.userCourse.findUnique({
-      where: { userId_courseId: { userId: user.id, courseId: linkedCourse.id } },
-      select: {
-        certificate: {
-          select: {
-            id: true,
-            issuedAt: true,
-            s3Key: true,
-          },
-        },
-        isCompleted: true,
-        completedAt: true,
-      },
-    });
+    const userCourse = await UserCourseService.getByUserIdAndCourseIdWithCertificate(user.id, linkedCourse.id);
 
     if (!userCourse) {
-      logger.warn("User does not have access to course", { userId: user.id, courseId: linkedCourse.id });
+      logger.warn(`User ${user.id} does not have access to course ${linkedCourse.id}`);
       Sentry.captureMessage("User tried to claim certificate without having access to course", {
         extra: {
           user: { id: user.id, email: user.email },
@@ -81,7 +75,17 @@ export async function loader(args: LoaderFunctionArgs) {
       });
     }
 
-    return { userCourse, course: linkedCourse };
+    return {
+      userCourse,
+      course: linkedCourse,
+      userProfile: {
+        isIdentityVerified: user.isIdentityVerified,
+        firstName: (user.firstName as string | null) ?? null,
+        lastName: (user.lastName as string | null) ?? null,
+        email: user.email,
+        phone: user.phoneNumber ?? null,
+      },
+    };
   } catch (error) {
     console.error(error);
     Sentry.captureException(error);
@@ -98,19 +102,18 @@ export async function action(args: ActionFunctionArgs) {
     const linkedCourse = await db.course.findUnique({ where: { host } });
 
     if (!linkedCourse) {
-      logger.error("Course not found", { host });
+      logger.error(`Course not found for host ${host}`);
       return Toasts.redirectWithError("/preview", {
         message: "Error claiming certificate",
         description: "Please try again later.",
       });
     }
 
-    const userHasAccess = user.courses.some((c) => c.courseId === linkedCourse.id);
+    // TODO: Clerk migration
+    const userCourses = await UserCourseService.getAllByUserId(user.id);
+    const userHasAccess = userCourses.some((c) => c.courseId === linkedCourse.id);
     if (!userHasAccess) {
-      logger.warn("User tried to claim certificate without access to course", {
-        userId: user.id,
-        courseId: linkedCourse.id,
-      });
+      logger.warn(`User ${user.id} tried to claim certificate without access to course ${linkedCourse.id}`);
       return Toasts.redirectWithError("/preview", {
         message: "No access to course",
         description: "Please purchase the course to access it.",
@@ -135,8 +138,9 @@ export async function action(args: ActionFunctionArgs) {
           },
         },
       }),
-      db.userLessonProgress.findMany({ where: { userId: user.id } }),
-      db.userQuizProgress.findMany({ where: { userId: user.id } }),
+      // TODO: Clerk migration
+      ProgressService.getAllLesson(user.id),
+      ProgressService.getAllQuiz(user.id),
     ]);
 
     const allLessonIds = course.data.attributes.sections
@@ -153,10 +157,9 @@ export async function action(args: ActionFunctionArgs) {
     const allQuizzesCompleted = allQuizIds.every((id) => allQuizProgress.includes(id));
 
     if (!allLessonsCompleted || !allQuizzesCompleted) {
-      logger.warn("User tried to claim certificate without completing all lessons and quizzes", {
-        userId: user.id,
-        courseId: linkedCourse.id,
-      });
+      logger.warn(
+        `User ${user.id} tried to claim certificate for course ${linkedCourse.id} without completing all lessons and quizzes`,
+      );
       Sentry.captureMessage("User tried to claim certificate without completing all lessons and quizzes", {
         extra: {
           user: { id: user.id, email: user.email },
@@ -176,9 +179,11 @@ export async function action(args: ActionFunctionArgs) {
       if (formData.error) {
         throw validationError(formData.error);
       }
+      // TODO: Clerk migration
+      const userCourses = await UserCourseService.getAllByUserId(user.id);
       await db.preCertificationFormSubmission.create({
         data: {
-          userCourseId: user.courses.find((c) => c.courseId === linkedCourse.id)!.id,
+          userCourseId: userCourses.find((c) => c.courseId === linkedCourse.id)!.id,
           formData: formData.data,
         },
       });
@@ -191,20 +196,13 @@ export async function action(args: ActionFunctionArgs) {
     });
 
     if (!job.id) {
-      logger.error("Failed to initiate certificate generation job", {
-        userId: user.id,
-        courseId: linkedCourse.id,
-      });
+      logger.error(`Failed to initiate certificate generation job for user ${user.id} and course ${linkedCourse.id}`);
       throw new Error("Failed to initiate certificate generation job.");
     }
 
-    logger.info("Certificate claim job initiated", {
-      userId: user.id,
-      courseId: linkedCourse.id,
-      jobId: job.id,
-    });
+    logger.info(`Certificate claim job ${job.id} initiated for user ${user.id} and course ${linkedCourse.id}`);
 
-    logger.info("Certificate successfully claimed", { userId: user.id, courseId: linkedCourse.id });
+    logger.info(`Certificate successfully claimed for user ${user.id} and course ${linkedCourse.id}`);
     return Toasts.dataWithSuccess(
       { success: true },
       {
@@ -214,7 +212,7 @@ export async function action(args: ActionFunctionArgs) {
       },
     );
   } catch (error) {
-    logger.error("Error claiming certificate", { userId: user.id });
+    logger.error(`Error claiming certificate for user ${user.id}`, { error });
     Sentry.captureException(error);
     return Toasts.dataWithError(null, {
       message: "Error claiming certificate",
@@ -226,10 +224,9 @@ export async function action(args: ActionFunctionArgs) {
 export default function CourseCertificate() {
   const { lessonProgress, quizProgress } = useProgress();
   const { course: cmsCourse } = useCourseData();
-  const { userCourse, course } = useLoaderData<typeof loader>();
+  const { userCourse, course, userProfile } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const data = useCourseData();
-  const user = useUser();
 
   const lessons = getLessonsInOrder({ course: cmsCourse, progress: lessonProgress });
 
@@ -241,7 +238,7 @@ export default function CourseCertificate() {
     </>
   );
 
-  const userHasVerifiedIdentity = course.requiresIdentityVerification ? user.isIdentityVerified : true;
+  const userHasVerifiedIdentity = course.requiresIdentityVerification ? userProfile.isIdentityVerified : true;
 
   const isCourseComplete =
     lessons.every((l) => l.isCompleted) &&
@@ -292,13 +289,13 @@ export default function CourseCertificate() {
     return (
       <Wrapper>
         <SuccessText>
-          Thank you! Your certificate will be emailed to <span className="font-bold">{user.email}</span> shortly.
+          Thank you! Your certificate will be emailed to <span className="font-bold">{userProfile.email}</span> shortly.
         </SuccessText>
       </Wrapper>
     );
   }
 
-  const CourseSpecificForm = courseSpecificForms.find((f) => f.courseId === data.course.id)?.component;
+  const CourseSpecificForm = courseSpecificForms.find((f) => f.courseId === data.course.id)?.render(userProfile);
 
   return (
     <Wrapper>

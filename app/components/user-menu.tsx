@@ -1,5 +1,4 @@
-import { SignOutButton } from "@clerk/react-router";
-import { UserRole } from "@prisma/client";
+import { SignOutButton, useUser } from "@clerk/react-router";
 import { Link, useMatches } from "react-router";
 
 import { IconAvatar } from "~/components/icons";
@@ -13,16 +12,19 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
-import { useOptionalUser } from "~/hooks/useOptionalUser";
+import { UserRole } from "~/config";
 import { useRootData } from "~/hooks/useRootData";
 import { Sentry } from "~/integrations/sentry";
 
 export function UserMenu() {
-  const user = useOptionalUser();
+  const { user } = useUser();
   const rootData = useRootData();
   const matches = useMatches();
   const shouldShowGoToCourse =
     matches.findIndex((m) => m.id.includes("$lessonSlug") || m.id.includes("preview")) === -1;
+
+  const role = user?.publicMetadata.role;
+  const isAdmin = role === UserRole.ADMIN || role === UserRole.SUPERADMIN;
 
   if (!user) {
     return null;
@@ -54,13 +56,15 @@ export function UserMenu() {
                 {user.firstName}
                 {user.lastName ? ` ${user.lastName}` : null}
               </p>
-              <p className="truncate text-sm leading-none text-muted-foreground sm:text-xs">{user.email}</p>
+              <p className="truncate text-sm leading-none text-muted-foreground sm:text-xs">
+                {user.primaryEmailAddress?.emailAddress}
+              </p>
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
             <DropdownMenuItem asChild>
-              <Link className="cursor-pointer sm:hidden" to={user.role === UserRole.USER ? "/" : "/admin"}>
+              <Link className="cursor-pointer sm:hidden" to="/">
                 Home
               </Link>
             </DropdownMenuItem>
@@ -76,7 +80,7 @@ export function UserMenu() {
                 Account
               </Link>
             </DropdownMenuItem>
-            {user.role !== UserRole.USER ? (
+            {isAdmin ? (
               <DropdownMenuItem asChild>
                 <Link className="cursor-pointer" to="/admin">
                   Admin

@@ -14,7 +14,8 @@ type CacheKey =
   | `lesson-duration:${number}`
   | `user-lesson-progress:${string}:${number}`
   | `user-quiz-progress:${string}:${number}`
-  | `user-lesson-progress:${string}:all`;
+  | `user-lesson-progress:${string}:all`
+  | `user-quiz-progress:${string}:all`;
 
 export const CacheKeys = {
   coursesAll: () => `cms:course:all`,
@@ -22,10 +23,12 @@ export const CacheKeys = {
   courseRootCMS: (strapiId: string | number) => `cms:course:root:${strapiId}`,
   courseLayoutCMS: (strapiId: string | number) => `cms:course:layout:${strapiId}`,
   lesson: (slug: string) => `lesson:${slug}`,
+  lessonsAll: () => `lesson:all`,
   lessonDuration: (lessonId: number) => `lesson-duration:${lessonId}`,
-  progressLesson: (userId: string, lessonId: number) => `user-lesson-progress:${userId}:${lessonId}`,
-  progressQuiz: (userId: string, quizId: number) => `user-quiz-progress:${userId}:${quizId}`,
-  progressAll: (userId: string) => `user-lesson-progress:${userId}:all`,
+  lessonProgress: (userId: string, lessonId: number) => `user-lesson-progress:${userId}:${lessonId}`,
+  quizProgress: (userId: string, quizId: number) => `user-quiz-progress:${userId}:${quizId}`,
+  lessonProgressAll: (userId: string) => `user-lesson-progress:${userId}:all`,
+  quizProgressAll: (userId: string) => `user-quiz-progress:${userId}:all`,
 } satisfies Record<string, (...args: any) => CacheKey>;
 
 const logger = createLogger("CacheService");
@@ -39,12 +42,12 @@ export const CacheService = {
     }
 
     try {
-      logger.debug("Getting cache item", { key });
+      logger.debug(`Getting cache item: ${key}`);
       return redis.get<T>(key);
     } catch (error) {
       Sentry.captureException(error);
-      logger.error("Failed to get cache item", { error, key });
-      throw error;
+      logger.error(`Failed to get cache item: ${key}`, { error });
+      return null;
     }
   },
 
@@ -56,12 +59,12 @@ export const CacheService = {
     opts.ex ??= DEFAULT_TTL;
 
     try {
-      logger.debug("Setting cache item", { key, ttl: opts.ex });
+      logger.debug(`Setting cache item: ${key} (TTL: ${opts.ex}s)`);
       await redis.set(key, value, opts);
     } catch (error) {
       Sentry.captureException(error);
-      logger.error("Failed to set cache item", { error, key });
-      throw error;
+      logger.error(`Failed to set cache item: ${key}`, { error });
+      return;
     }
   },
 
@@ -71,12 +74,12 @@ export const CacheService = {
     }
 
     try {
-      logger.debug("Deleting cache item", { key });
+      logger.debug(`Deleting cache item: ${key}`);
       await redis.del(key);
     } catch (error) {
       Sentry.captureException(error);
-      logger.error("Failed to delete cache item", { error, key });
-      throw error;
+      logger.error(`Failed to delete cache item: ${key}`, { error });
+      return;
     }
   },
 };

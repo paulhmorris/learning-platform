@@ -23,7 +23,7 @@ export const QuizService = {
       });
     } catch (error) {
       Sentry.captureException(error);
-      logger.error("Failed to get quiz by ID", { error, quizId });
+      logger.error(`Failed to get quiz by ID ${quizId}`, { error });
       throw error;
     }
   },
@@ -44,7 +44,7 @@ export const QuizService = {
       });
     } catch (error) {
       Sentry.captureException(error);
-      logger.error("Failed to get correct answers for quiz", { error, quizId });
+      logger.error(`Failed to get correct answers for quiz ${quizId}`, { error });
       throw error;
     }
   },
@@ -73,17 +73,10 @@ export const QuizService = {
 
   async resetProgress(quizId: number, userId: string) {
     try {
-      return db.userQuizProgress.delete({
-        where: {
-          userId_quizId: {
-            quizId,
-            userId,
-          },
-        },
-      });
+      return db.userQuizProgress.delete({ where: { userId_quizId: { quizId, userId } } });
     } catch (error) {
       Sentry.captureException(error);
-      logger.error("Failed to reset quiz progress", { error });
+      logger.error(`Failed to reset quiz ${quizId} progress for user ${userId}`, { error });
       throw error;
     }
   },
@@ -125,7 +118,7 @@ export const QuizService = {
       });
     } catch (error) {
       Sentry.captureException(error);
-      logger.error("Failed to mark quiz as passed", { error, quizId, userId });
+      logger.error(`Failed to mark quiz ${quizId} as passed for user ${userId}`, { error });
       throw error;
     }
   },

@@ -5,14 +5,18 @@ import { useRevalidator } from "react-router";
 import { toast } from "sonner";
 
 import { AdminButton } from "~/components/ui/admin-button";
-import { useUser } from "~/hooks/useUser";
 import { Sentry } from "~/integrations/sentry";
 import { VerificationSession } from "~/services/identity.server";
 
 const stripePromise = typeof window !== "undefined" ? loadStripe(window.ENV.STRIPE_PUBLIC_KEY) : null;
 
-export function IdentityVerification({ session }: { session: VerificationSession | null }) {
-  const user = useUser();
+export function IdentityVerification({
+  session,
+  isIdentityVerified,
+}: {
+  session: VerificationSession | null;
+  isIdentityVerified: boolean;
+}) {
   const [submitted, setSubmitted] = useState(false);
   const [stripe, setStripe] = useState<Stripe | null>(null);
   const revalidator = useRevalidator();
@@ -31,10 +35,16 @@ export function IdentityVerification({ session }: { session: VerificationSession
     try {
       const response = await fetch("/api/identity-verification", { method: "POST" });
       if (!response.ok) {
-        return toast.error("A server occurred while trying to verify your identity.");
+        return toast.error("A server error occurred while trying to verify your identity.");
       }
 
-      const { client_secret } = (await response.json()) as { client_secret: string };
+      const json = (await response.json()) as { client_secret: string };
+      const client_secret = json.client_secret;
+      if (!client_secret) {
+        Sentry.captureMessage("No client secret returned from identity verification creation");
+        return toast.error("An error occurred while trying to verify your identity.");
+      }
+
       const { error } = await stripe.verifyIdentity(client_secret);
       if (error) {
         Sentry.captureException(error);
@@ -56,7 +66,7 @@ export function IdentityVerification({ session }: { session: VerificationSession
   const code = session?.last_error?.code;
   const errorReason = session?.last_error?.reason;
 
-  if (user.isIdentityVerified || status === "verified") {
+  if (isIdentityVerified || status === "verified") {
     return (
       <Wrapper>
         <div className="mt-2 flex items-center gap-2">
@@ -106,7 +116,7 @@ export function IdentityVerification({ session }: { session: VerificationSession
           onClick={handleStartVerification}
           disabled={!stripe}
           type="button"
-          className="w-auto bg-muted text-foreground sm:h-8 sm:text-xs"
+          className="w-auto text-foreground sm:h-8 sm:text-xs"
           aria-describedby="verify-btn-description"
         >
           <span>Verify Me</span>
@@ -114,6 +124,7 @@ export function IdentityVerification({ session }: { session: VerificationSession
       </Wrapper>
     );
   }
+  return null;
 }
 
 function Wrapper({ children }: { children: React.ReactNode }) {

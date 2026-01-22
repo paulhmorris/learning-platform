@@ -5,7 +5,6 @@ import { z } from "zod/v4";
 
 import { FormField, FormSelect } from "~/components/ui/form";
 import { SubmitButton } from "~/components/ui/submit-button";
-import { useUser } from "~/hooks/useUser";
 
 export const hipHopDrivingCertificationSchema = z
   .object({
@@ -58,8 +57,14 @@ export const hipHopDrivingCertificationSchema = z
     },
   );
 
-export function HiphopDrivingPreCertificateForm() {
-  const { firstName, lastName, phone } = useUser();
+type UserProfileData = {
+  firstName: string | null;
+  lastName: string | null;
+  phone: string | null;
+};
+
+export function HiphopDrivingPreCertificateForm({ userProfile }: { userProfile: UserProfileData }) {
+  const { firstName, lastName, phone } = userProfile;
 
   return (
     <ValidatedForm
@@ -67,8 +72,8 @@ export function HiphopDrivingPreCertificateForm() {
       method="post"
       schema={hipHopDrivingCertificationSchema}
       defaultValues={{
-        firstName,
-        lastName,
+        firstName: firstName ?? "",
+        lastName: lastName ?? "",
         middleInitial: "",
         street: "",
         city: "",

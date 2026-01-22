@@ -1,14 +1,18 @@
+import { useUser } from "@clerk/react-router";
 import { IconArrowsDiagonal } from "@tabler/icons-react";
 import { useState } from "react";
 
-import { useUser } from "~/hooks/useUser";
 import { cn } from "~/lib/utils";
 
 export function UserDebugTools() {
-  const user = useUser();
+  const { user } = useUser();
   const [userObjectExpanded, setUserObjectExpanded] = useState(false);
 
   if (process.env.NODE_ENV !== "development") {
+    return null;
+  }
+
+  if (!user) {
     return null;
   }
 
