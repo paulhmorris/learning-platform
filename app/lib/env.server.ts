@@ -87,11 +87,11 @@ declare global {
   // }
   interface CustomJwtSessionClaims {
     /** Primary email address */
-    pem: string;
+    pem: string | null;
     /** First name */
-    fn: string;
+    fn: string | null;
     /** Last name */
-    ln: string;
+    ln: string | null;
     /** Phone number */
     phn: string | null;
     /** External ID */

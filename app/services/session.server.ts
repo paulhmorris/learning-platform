@@ -17,12 +17,18 @@ class _SessionService {
       throw Responses.redirectToSignIn(args.request.url);
     }
 
+    // Validate email is present
+    if (!auth.sessionClaims.pem) {
+      logger.error("User session missing primary email address", { userId: auth.userId });
+      throw Responses.badRequest("User email is required");
+    }
+
     return {
       ...auth,
       id: auth.userId,
       email: auth.sessionClaims.pem,
-      firstName: auth.sessionClaims.fn,
-      lastName: auth.sessionClaims.ln,
+      firstName: auth.sessionClaims.fn ?? "",
+      lastName: auth.sessionClaims.ln ?? "",
       phoneNumber: auth.sessionClaims.phn,
       role: auth.sessionClaims.role ?? UserRole.USER,
       isIdentityVerified: auth.sessionClaims.idV ?? false,
