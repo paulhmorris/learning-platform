@@ -46,6 +46,13 @@ export const UserService = {
 
   async linkToStripe(userId: string) {
     try {
+      // Check if user already has a Stripe customer (idempotency check)
+      const existingUser = await this.getById(userId);
+      if (existingUser?.publicMetadata.stripeCustomerId) {
+        logger.info(`User ${userId} already linked to Stripe customer ${existingUser.publicMetadata.stripeCustomerId}`);
+        return await clerkClient.users.getUser(userId);
+      }
+
       const stripeCustomer = await PaymentService.createCustomer(userId);
       const user = await AuthService.updatePublicMetadata(userId, {
         role: UserRole.USER,

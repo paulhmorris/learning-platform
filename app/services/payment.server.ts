@@ -24,6 +24,21 @@ export const PaymentService = {
         throw new Error("User not found");
       }
 
+      // Check if a Stripe customer already exists for this user
+      const existingCustomers = await stripe.customers.search({
+        query: `metadata["user_id"]:"${userId}"`,
+      });
+
+      if (existingCustomers.data.length > 0) {
+        const existingCustomer = existingCustomers.data[0];
+        logger.info(`Found existing Stripe customer ${existingCustomer.id} for user ${userId}`);
+        // Update Clerk metadata if not already set
+        if (!user.publicMetadata.stripeCustomerId) {
+          await AuthService.updatePublicMetadata(userId, { stripeCustomerId: existingCustomer.id });
+        }
+        return { id: existingCustomer.id };
+      }
+
       const stripeCustomer = await stripe.customers.create({
         name: `${user.firstName} ${user.lastName}`,
         email: user.email,
