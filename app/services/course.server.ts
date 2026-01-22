@@ -24,6 +24,16 @@ export const CourseService = {
 
     const course = await db.course.findUnique({ where: { host } });
     if (!course) {
+      const shouldUsePreviewFallback = host.includes("cosmic-labs.vercel.app");
+      if (shouldUsePreviewFallback) {
+        const fallbackCourse = await db.course.findFirst();
+        if (fallbackCourse) {
+          logger.info(`Falling back to course with host ${fallbackCourse.host} for preview host ${host}`);
+          await CacheService.set(CacheKeys.courseRoot(host), fallbackCourse, { ex: _TTL });
+          return fallbackCourse;
+        }
+      }
+
       logger.warn(`No course found for host ${host}`);
       return null;
     }

@@ -52,7 +52,9 @@ export function IdentityVerification({
       }
 
       setSubmitted(true);
-      toast.success("Thanks for submitting your documents.", { description: "We are processing your verification" });
+      toast.success("We are processing your verification.", {
+        description: "You will receive an email when the process is complete.",
+      });
     } catch (error) {
       console.error(error);
       Sentry.captureException(error);
