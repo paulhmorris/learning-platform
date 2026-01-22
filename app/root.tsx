@@ -156,7 +156,7 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   return (
     <main className="grid min-h-full place-items-center px-6 py-24 sm:py-32 lg:px-8">
       <div className="-mb-10">
-        <ErrorComponent error={error} />
+        <ErrorComponent error={error as unknown} />
       </div>
     </main>
   );
