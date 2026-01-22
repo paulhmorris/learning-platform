@@ -38,7 +38,13 @@ export function IdentityVerification({
         return toast.error("A server error occurred while trying to verify your identity.");
       }
 
-      const { client_secret } = (await response.json()) as { client_secret: string };
+      const json = (await response.json()) as { client_secret: string };
+      const client_secret = json.client_secret;
+      if (!client_secret) {
+        Sentry.captureMessage("No client secret returned from identity verification creation");
+        return toast.error("An error occurred while trying to verify your identity.");
+      }
+
       const { error } = await stripe.verifyIdentity(client_secret);
       if (error) {
         Sentry.captureException(error);
