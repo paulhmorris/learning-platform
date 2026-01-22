@@ -18,9 +18,9 @@ class _SessionService {
     }
 
     // Validate email is present
-    if (!auth.sessionClaims.pem) {
+    if (!auth.sessionClaims.pem?.trim()) {
       logger.error("User session missing primary email address", { userId: auth.userId });
-      throw Responses.badRequest("User email is required");
+      throw Responses.badRequest("Primary email address not found in user session");
     }
 
     return {
