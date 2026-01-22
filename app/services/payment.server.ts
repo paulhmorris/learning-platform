@@ -24,6 +24,11 @@ export const PaymentService = {
         throw new Error("User not found");
       }
 
+      // Validate userId format (Clerk user IDs are alphanumeric with underscores)
+      if (!/^[a-zA-Z0-9_]+$/.test(userId)) {
+        throw new Error("Invalid user ID format");
+      }
+
       // Check if a Stripe customer already exists for this user
       const existingCustomers = await stripe.customers.search({
         query: `metadata["user_id"]:"${userId}"`,
@@ -32,6 +37,18 @@ export const PaymentService = {
       if (existingCustomers.data.length > 0) {
         const existingCustomer = existingCustomers.data[0];
         logger.info(`Found existing Stripe customer ${existingCustomer.id} for user ${userId}`);
+        
+        // Log warning if multiple customers found (data inconsistency)
+        if (existingCustomers.data.length > 1) {
+          logger.warn(`Multiple Stripe customers found for user ${userId}`, {
+            customerIds: existingCustomers.data.map(c => c.id),
+          });
+          Sentry.captureMessage(`Multiple Stripe customers found for user ${userId}`, {
+            level: "warning",
+            extra: { userId, customerIds: existingCustomers.data.map(c => c.id) },
+          });
+        }
+        
         // Update Clerk metadata if not already set
         if (!user.publicMetadata.stripeCustomerId) {
           await AuthService.updatePublicMetadata(userId, { stripeCustomerId: existingCustomer.id });

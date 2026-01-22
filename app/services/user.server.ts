@@ -50,6 +50,7 @@ export const UserService = {
       const existingUser = await this.getById(userId);
       if (existingUser?.publicMetadata.stripeCustomerId) {
         logger.info(`User ${userId} already linked to Stripe customer ${existingUser.publicMetadata.stripeCustomerId}`);
+        // Return the Clerk user object by fetching it directly
         return await clerkClient.users.getUser(userId);
       }
 
