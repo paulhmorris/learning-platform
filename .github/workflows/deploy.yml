@@ -120,6 +120,7 @@ jobs:
   trigger:
     name: 🔫 Deploy Trigger
     runs-on: ubuntu-latest
+    if: github.ref_name == 'main'
     needs: [verify, e2e]
     steps:
       - uses: actions/checkout@v6
