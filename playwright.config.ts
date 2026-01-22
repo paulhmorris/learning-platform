@@ -9,6 +9,9 @@ const __dirname = path.dirname(__filename);
 
 dotenv.config({ path: path.resolve(__dirname, ".env") });
 
+const e2eBaseUrl = process.env.E2E_BASE_URL;
+const isLocalBaseUrl = !e2eBaseUrl || e2eBaseUrl.includes("localhost") || e2eBaseUrl.includes("127.0.0.1");
+
 export default defineConfig({
   testDir: "./test/e2e",
   outputDir: "./test-results",
@@ -29,7 +32,7 @@ export default defineConfig({
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: process.env.E2E_BASE_URL ?? "http://localhost:3000",
+    baseURL: e2eBaseUrl ?? "http://localhost:3000",
 
     testIdAttribute: "data-testid",
     actionTimeout: 15_000,
@@ -70,11 +73,13 @@ export default defineConfig({
   ],
 
   /* Run your local dev server before starting the tests */
-  webServer: {
-    command: "npm run dev",
-    url: "http://localhost:3000",
-    reuseExistingServer: !process.env.CI,
-    stdout: "pipe",
-    stderr: "pipe",
-  },
+  webServer: isLocalBaseUrl
+    ? {
+        command: "npm run dev",
+        url: "http://localhost:3000",
+        reuseExistingServer: !process.env.CI,
+        stdout: "pipe",
+        stderr: "pipe",
+      }
+    : undefined,
 });
