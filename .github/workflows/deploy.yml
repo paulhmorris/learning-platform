@@ -93,6 +93,15 @@ jobs:
           E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
           E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
 
+      - name: Upload Playwright Report
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: playwright-report
+          path: |
+            playwright-report
+            test-results
+
   deploy:
     name: 🚀 Deploy
     runs-on: ubuntu-latest
