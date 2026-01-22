@@ -1,4 +1,4 @@
-name: Deploy
+name: 🚧 Deploy Staging
 env:
   VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
   VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
@@ -12,7 +12,6 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - main
       - staging
 
 permissions:
@@ -38,7 +37,7 @@ jobs:
   deploy:
     name: 🚀 Deploy
     runs-on: ubuntu-latest
-    environment: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+    environment: staging
     needs: [verify]
 
     steps:
@@ -48,13 +47,13 @@ jobs:
         run: npm install --global vercel@latest
 
       - name: Pull Vercel Environment Information
-        run: vercel pull --yes --environment=${{ github.ref_name == 'main' && 'production' || 'preview' }} --token=${{ secrets.VERCEL_TOKEN }}
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Build Project Artifacts
-        run: vercel build ${{ github.ref_name == 'main' && '--prod' || '' }} --token=${{ secrets.VERCEL_TOKEN }}
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Deploy to Vercel
-        run: vercel deploy --prebuilt ${{ github.ref_name == 'main' && '--prod' || '' }} --token=${{ secrets.VERCEL_TOKEN }}
+        run: vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Migrate Database
         id: migrate
@@ -72,7 +71,6 @@ jobs:
     name: 🎭 Test e2e
     runs-on: ubuntu-latest
     needs: [deploy]
-    if: github.ref_name == 'staging'
     env:
       E2E_BASE_URL: ${{ secrets.E2E_BASE_URL_STAGING }}
     steps:
@@ -100,7 +98,7 @@ jobs:
         run: npm install --global vercel@latest
 
       - name: Pull Vercel Environment Information
-        run: vercel env pull --environment=${{ github.ref_name == 'main' && 'production' || 'preview' }} --token=${{ secrets.VERCEL_TOKEN }}
+        run: vercel env pull --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Run e2e Tests
         run: npm run test:e2e
@@ -121,7 +119,6 @@ jobs:
     name: 🚢 Promote Staging to Main
     runs-on: ubuntu-latest
     needs: [e2e]
-    if: github.ref_name == 'staging'
     steps:
       - uses: actions/checkout@v6
       - name: Create or update PR
@@ -130,7 +127,7 @@ jobs:
         run: |
           existing_pr_number=$(gh pr list --base main --head staging --state open --json number --jq '.[0].number')
           if [ -z "$existing_pr_number" ]; then
-            gh pr create --base main --head staging --title "Promote staging to main" --body "Automated promotion after staging deploy + E2E."
+            gh pr create --base main --head staging --title "Promote staging to main" --body "Automated promotion after staging deploy and e2e tests."
           fi
 
       - name: Enable auto-merge
@@ -139,24 +136,3 @@ jobs:
         run: |
           pr_number=$(gh pr list --base main --head staging --state open --json number --jq '.[0].number')
           gh pr merge "$pr_number" --auto --merge
-
-  trigger:
-    name: 🔫 Deploy Trigger
-    runs-on: ubuntu-latest
-    if: github.ref_name == 'main'
-    needs: [verify, deploy]
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 22.21.1
-          cache: "npm"
-
-      - name: Install Dependencies
-        run: npm ci --no-audit --no-fund
-
-      - name: Trigger Deploy
-        env:
-          TRIGGER_ACCESS_TOKEN: ${{ secrets.TRIGGER_ACCESS_TOKEN }}
-        run: |
-          npx trigger.dev@4.3.1 deploy
