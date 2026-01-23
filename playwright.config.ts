@@ -37,8 +37,8 @@ export default defineConfig({
     testIdAttribute: "data-testid",
     actionTimeout: 15_000,
     navigationTimeout: 30_000,
-    screenshot: "only-on-failure",
-    video: "retain-on-failure",
+    screenshot: process.env.CI ? "only-on-failure" : "off",
+    video: process.env.CI ? "retain-on-failure" : "off",
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: "on-first-retry",
@@ -47,8 +47,18 @@ export default defineConfig({
   /* Configure projects for major browsers */
   projects: [
     {
+      name: "setup",
+      testMatch: "**/*.setup.ts",
+      teardown: "cleanup",
+    },
+    {
+      name: "cleanup",
+      testMatch: "**/*.teardown.ts",
+    },
+    {
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
+      dependencies: ["setup"],
     },
 
     // {

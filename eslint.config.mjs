@@ -15,13 +15,6 @@ export default tseslint.config(
   tseslint.configs.stylisticTypeChecked,
   prettier,
 
-  // global rules
-  {
-    rules: {
-      "no-console": ["warn", { allow: ["warn", "error", "info", "debug"] }],
-    },
-  },
-
   // global ignores
   {
     ignores: [
@@ -67,6 +60,7 @@ export default tseslint.config(
       },
     },
     rules: {
+      "no-console": ["warn", { allow: ["warn", "error", "info", "debug"] }],
       "no-throw-literal": "off",
       "@typescript-eslint/only-throw-error": "off",
       "@typescript-eslint/no-explicit-any": "off",
@@ -130,7 +124,7 @@ export default tseslint.config(
 
   // Playwright
   {
-    files: ["test/e2e/*.ts"],
+    files: ["test/**/*.ts"],
     ...playwright.configs["flat/recommended"],
     rules: {
       ...playwright.configs["flat/recommended"].rules,
@@ -140,6 +134,7 @@ export default tseslint.config(
           assertFunctionNames: ["expectVisibleNotification"],
         },
       ],
+      "no-console": "off",
     },
   },
 

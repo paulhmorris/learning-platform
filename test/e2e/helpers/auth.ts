@@ -3,6 +3,8 @@ import path from "node:path";
 
 import type { Browser, Page } from "@playwright/test";
 
+import { AuthService } from "~/services/auth.server";
+
 const DEFAULT_BASE_URL = "http://localhost:3000";
 const STORAGE_STATE_PATH = path.join(process.cwd(), "test", "e2e", ".auth", "regular-user.json");
 
@@ -69,4 +71,21 @@ export async function ensureAuthenticatedStorageState(browser: Browser) {
   await page.close();
 
   return STORAGE_STATE_PATH;
+}
+
+export async function getE2EUserId() {
+  const emailAddress = process.env.E2E_USER_EMAIL;
+  const users = await AuthService.getUserList({ emailAddress: [emailAddress] });
+  if (users.data.length === 0) {
+    throw new Error("E2E user not found. Cannot setup database.");
+  }
+  if (users.data.length > 1) {
+    throw new Error("Multiple E2E users found. Cannot setup database.");
+  }
+  const user = users.data.at(0);
+  if (!user) {
+    throw new Error("E2E user not found. Cannot setup database.");
+  }
+  console.log(`E2E user found`);
+  return user.id;
 }

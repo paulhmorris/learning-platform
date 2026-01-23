@@ -43,6 +43,11 @@ const _serverEnvValidation = z.object({
   // Upstash
   UPSTASH_REDIS_REST_URL: z.url(),
   UPSTASH_REDIS_REST_TOKEN: z.string().min(1),
+
+  // Playwright
+  E2E_USER_EMAIL: z.email(),
+  E2E_USER_PASSWORD: z.string(),
+  E2E_BASE_URL: z.string().optional(),
 });
 
 const _clientEnvValidation = z.object({
@@ -108,7 +113,7 @@ declare global {
 
   interface UserPublicMetadata {
     role?: UserRole;
-    stripeCustomerId?: string;
+    stripeCustomerId?: string | null;
     isIdentityVerified?: boolean;
     stripeVerificationSessionId?: string | null;
   }
