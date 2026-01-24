@@ -126,11 +126,11 @@ jobs:
         run: |
           pr_number=$(gh pr list --base main --head staging --state open --json number --jq '.[0].number')
           for i in {1..20}; do
-            mergeable_state=$(gh pr view "$pr_number" --json mergeableState --jq '.mergeableState')
-            if [ "$mergeable_state" = "CLEAN" ] || [ "$mergeable_state" = "MERGEABLE" ]; then
+            merge_state_status=$(gh pr view "$pr_number" --json mergeStateStatus --jq '.mergeStateStatus')
+            if [ "$merge_state_status" = "CLEAN" ]; then
               break
             fi
-            echo "PR not mergeable yet (state: $mergeable_state). Waiting..."
+            echo "PR not mergeable yet (state: $merge_state_status). Waiting..."
             sleep 15
           done
           gh pr merge "$pr_number" --auto --merge
