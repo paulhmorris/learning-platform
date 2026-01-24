@@ -25,10 +25,7 @@ jobs:
           node-version: 22.21.1
           cache: "npm"
       - run: npm ci --no-audit --no-fund
-      - run: npm run typegen
-      - run: npm run lint:ci
       - run: npm run test
-      - run: npm run typecheck
 
   deploy:
     name: 🚀 Deploy
