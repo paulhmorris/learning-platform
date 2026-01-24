@@ -94,6 +94,7 @@ jobs:
           CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
           E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
           E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
+          UPSTASH_REDIS_REST_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
 
       - name: Upload Playwright Report
         if: always()
@@ -124,4 +125,12 @@ jobs:
           GH_TOKEN: ${{ secrets.PROMOTE_TOKEN }}
         run: |
           pr_number=$(gh pr list --base main --head staging --state open --json number --jq '.[0].number')
+          for i in {1..20}; do
+            merge_state_status=$(gh pr view "$pr_number" --json mergeStateStatus --jq '.mergeStateStatus')
+            if [ "$merge_state_status" = "CLEAN" ]; then
+              break
+            fi
+            echo "PR not mergeable yet (state: $merge_state_status). Waiting..."
+            sleep 15
+          done
           gh pr merge "$pr_number" --auto --merge
