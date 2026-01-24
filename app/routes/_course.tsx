@@ -194,12 +194,13 @@ export default function CourseLayout() {
                                 (!isCourseCompleted && lessonIndex > lastCompletedLessonIndex + 1); // Course is not completed and lesson index is greater than last completed lesson index + 1
 
                               return (
-                                <SectionLesson
-                                  key={l.attributes.uuid}
-                                  lesson={l}
-                                  userProgress={lessonProgress.find((lp) => lp.lessonId === l.id) ?? null}
-                                  locked={isLessonLocked}
-                                />
+                                <li data-locked={isLessonLocked} key={`lesson-${l.attributes.uuid}`}>
+                                  <SectionLesson
+                                    lesson={l}
+                                    userProgress={lessonProgress.find((lp) => lp.lessonId === l.id) ?? null}
+                                    locked={isLessonLocked}
+                                  />
+                                </li>
                               );
                             })}
                           {section.quiz?.data && shouldShowQuizInSection ? (
