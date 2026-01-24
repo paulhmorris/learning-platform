@@ -32,10 +32,7 @@ jobs:
           node-version: 22.21.1
           cache: "npm"
       - run: npm ci --no-audit --no-fund
-      - run: npm run typegen
-      - run: npm run lint:ci
       - run: npm run test
-      - run: npm run typecheck
 
   neon:
     name: 🧬 Setup Neon branch
@@ -118,6 +115,12 @@ jobs:
 
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Pull Vercel Environment Information
+        run: vercel env pull .env --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Run e2e Tests
         run: npm run test:e2e

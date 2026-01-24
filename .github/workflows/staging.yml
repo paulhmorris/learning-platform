@@ -95,7 +95,7 @@ jobs:
         run: npm install --global vercel@latest
 
       - name: Pull Vercel Environment Information
-        run: vercel env pull --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+        run: vercel env pull .env --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Run e2e Tests
         run: npm run test:e2e
