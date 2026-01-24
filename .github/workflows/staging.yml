@@ -125,4 +125,12 @@ jobs:
           GH_TOKEN: ${{ secrets.PROMOTE_TOKEN }}
         run: |
           pr_number=$(gh pr list --base main --head staging --state open --json number --jq '.[0].number')
+          for i in {1..20}; do
+            mergeable_state=$(gh pr view "$pr_number" --json mergeableState --jq '.mergeableState')
+            if [ "$mergeable_state" = "CLEAN" ] || [ "$mergeable_state" = "MERGEABLE" ]; then
+              break
+            fi
+            echo "PR not mergeable yet (state: $mergeable_state). Waiting..."
+            sleep 15
+          done
           gh pr merge "$pr_number" --auto --merge
