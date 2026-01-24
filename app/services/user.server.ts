@@ -70,7 +70,6 @@ export const UserService = {
     }
   },
 
-  // TODO: Clerk migration
   async delete(userId: string) {
     try {
       return db.$transaction([

@@ -5,7 +5,7 @@ import { SERVER_CONFIG } from "~/config.server";
 
 // Axiom
 const axiom = new Axiom({ token: process.env.AXIOM_TOKEN });
-const logLevel = SERVER_CONFIG.isDev ? "debug" : "info";
+const logLevel = SERVER_CONFIG.isDev || SERVER_CONFIG.isTest ? "debug" : "info";
 const logger = new Logger({
   logLevel,
   args: { environment: process.env.VERCEL_ENV },

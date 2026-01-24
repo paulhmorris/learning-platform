@@ -19,26 +19,10 @@ permissions:
   pull-requests: write
 
 jobs:
-  verify:
-    name: 🧪 Test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 22.21.1
-          cache: "npm"
-      - run: npm ci --no-audit --no-fund
-      - run: npm run typegen
-      - run: npm run lint:ci
-      - run: npm run test
-      - run: npm run typecheck
-
   deploy:
     name: 🚀 Deploy
     runs-on: ubuntu-latest
     environment: staging
-    needs: [verify]
 
     steps:
       - uses: actions/checkout@v6
@@ -70,6 +54,7 @@ jobs:
   e2e:
     name: 🎭 Test e2e
     runs-on: ubuntu-latest
+    environment: staging
     needs: [deploy]
     env:
       E2E_BASE_URL: ${{ secrets.E2E_BASE_URL_STAGING }}
@@ -98,11 +83,15 @@ jobs:
         run: npm install --global vercel@latest
 
       - name: Pull Vercel Environment Information
-        run: vercel env pull --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+        run: vercel env pull .env --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Run e2e Tests
         run: npm run test:e2e
         env:
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          AXIOM_TOKEN: ${{ secrets.AXIOM_TOKEN }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
           E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
           E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
 

@@ -29,7 +29,7 @@ export async function action(args: ActionFunctionArgs) {
     } catch (error) {
       Sentry.captureException(error, { extra: { eventType, userId: event.data.id } });
       logger.error(`Error creating user in stripe from Clerk webhook event ${eventType}`, { error });
-      
+
       // Check if this is a retriable error or if the user was already processed
       // If the user already has a Stripe customer, consider it successful
       try {
@@ -42,7 +42,7 @@ export async function action(args: ActionFunctionArgs) {
         // If we can't check the user, log but continue with the error response
         logger.warn(`Failed to check if user ${event.data.id} has Stripe customer`, { error: lookupError });
       }
-      
+
       return Responses.serverError();
     }
   }
@@ -63,3 +63,5 @@ export async function action(args: ActionFunctionArgs) {
 
   return Responses.ok();
 }
+
+export const loader = () => Responses.methodNotAllowed();

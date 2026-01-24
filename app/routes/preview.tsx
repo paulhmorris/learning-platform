@@ -238,7 +238,11 @@ export default function CoursePreview() {
 
                         const userLessonProgress = lessonProgress.find((lp) => lp.lessonId === l.id) ?? null;
                         return (
-                          <div key={l.attributes.uuid} className="flex flex-wrap justify-between gap-2">
+                          <li
+                            key={l.attributes.uuid}
+                            data-locked={isLessonLocked}
+                            className="flex flex-wrap justify-between gap-2"
+                          >
                             <div className="grow">
                               <PreviewSectionLesson
                                 lesson={l}
@@ -257,7 +261,7 @@ export default function CoursePreview() {
                                 </Link>
                               </Button>
                             ) : null}
-                          </div>
+                          </li>
                         );
                       })}
                       {section.quiz?.data ? (

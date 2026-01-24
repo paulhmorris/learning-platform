@@ -1,8 +1,12 @@
 {
   "servers": {
     "playwright": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["@playwright/mcp@latest"]
+      "args": ["@playwright/mcp@latest", "--extension"],
+      "env": {
+        "PLAYWRIGHT_MCP_EXTENSION_TOKEN": "is_LEJYgh4TeT9EfrMn9ZqjvnGH3a-wlMr5IbFyYAHE"
+      }
     },
     "Clerk": {
       "url": "https://mcp.clerk.dev/mcp",

@@ -167,3 +167,5 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 }
+
+export const loader = () => Responses.methodNotAllowed();
