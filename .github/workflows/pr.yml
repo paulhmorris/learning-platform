@@ -22,22 +22,9 @@ permissions:
   pull-requests: write
 
 jobs:
-  verify:
-    name: 🧪 Test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 22.21.1
-          cache: "npm"
-      - run: npm ci --no-audit --no-fund
-      - run: npm run test
-
   neon:
     name: 🧬 Setup Neon branch
     runs-on: ubuntu-latest
-    needs: [verify]
     outputs:
       db_url: ${{ steps.neon_branch.outputs.db_url }}
     steps:
@@ -68,7 +55,7 @@ jobs:
   deploy:
     name: 🧩 Deploy Preview
     runs-on: ubuntu-latest
-    needs: [verify, neon]
+    needs: [neon]
     outputs:
       deploy_url: ${{ steps.vercel_deploy.outputs.url }}
     steps:

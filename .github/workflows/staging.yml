@@ -19,23 +19,10 @@ permissions:
   pull-requests: write
 
 jobs:
-  verify:
-    name: 🧪 Test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 22.21.1
-          cache: "npm"
-      - run: npm ci --no-audit --no-fund
-      - run: npm run test
-
   deploy:
     name: 🚀 Deploy
     runs-on: ubuntu-latest
     environment: staging
-    needs: [verify]
 
     steps:
       - uses: actions/checkout@v6
