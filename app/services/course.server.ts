@@ -34,7 +34,9 @@ export const CourseService = {
         }
       }
 
-      logger.warn(`No course found for host ${host}`);
+      if (!host.includes("plumblearning.com")) {
+        logger.info(`No course found for host ${host}`);
+      }
       return null;
     }
 
