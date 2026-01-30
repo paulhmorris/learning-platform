@@ -24,7 +24,8 @@ export const CourseService = {
 
     const course = await db.course.findUnique({ where: { host } });
     if (!course) {
-      const shouldUsePreviewFallback = host.includes("cosmic-labs.vercel.app");
+      const shouldUsePreviewFallback =
+        host.includes("cosmic-labs.vercel.app") || host.includes("localhost") || host.includes("127.0.0.1");
       if (shouldUsePreviewFallback) {
         const fallbackCourse = await db.course.findFirst();
         if (fallbackCourse) {

@@ -3,7 +3,7 @@ import { expect, test } from "./fixtures/authenticated";
 test.use({ colorScheme: "dark" });
 
 test.describe("Smoke Test", () => {
-  test("Authenticated user can access preview page", async ({ page }) => {
+  test("User can access preview page", async ({ page }) => {
     await page.goto("/preview", { waitUntil: "domcontentloaded" });
 
     await expect(page).toHaveURL(/\/preview/);
@@ -11,7 +11,7 @@ test.describe("Smoke Test", () => {
     await expect(page.getByText(/certification upon completion/i)).toBeVisible();
   });
 
-  test("Authenticated user can start a lesson", async ({ page }) => {
+  test("User can start a lesson", async ({ page }) => {
     await page.goto("/preview", { waitUntil: "domcontentloaded" });
 
     const upNextSection = page.getByRole("heading", { name: "Up next:" }).locator("..");
@@ -54,7 +54,7 @@ test.describe("Smoke Test", () => {
     await expect(unlockedLessons).toHaveCount(1);
   });
 
-  test("Authenticated user can access account page", async ({ page }) => {
+  test("User can access account page", async ({ page }) => {
     await page.goto("/preview", { waitUntil: "domcontentloaded" });
     await page.getByRole("button", { name: "Open User Menu" }).click();
     await page.getByRole("menuitem", { name: "Account" }).click();
@@ -63,7 +63,7 @@ test.describe("Smoke Test", () => {
     await expect(page.getByRole("heading", { name: /account/i, level: 1 })).toBeVisible();
   });
 
-  test("Authenticated user can access security page", async ({ page }) => {
+  test("User can access security page", async ({ page }) => {
     await page.goto("/preview", { waitUntil: "domcontentloaded" });
     await page.getByRole("button", { name: "Open User Menu" }).click();
     await page.getByRole("menuitem", { name: "Account" }).click();
@@ -73,7 +73,7 @@ test.describe("Smoke Test", () => {
     await expect(page.getByRole("heading", { name: /security/i, level: 1 })).toBeVisible();
   });
 
-  test("Authenticated user can access identity page", async ({ page }) => {
+  test("User can access identity page", async ({ page }) => {
     await page.goto("/preview", { waitUntil: "domcontentloaded" });
     await page.getByRole("button", { name: "Open User Menu" }).click();
     await page.getByRole("menuitem", { name: "Account" }).click();
@@ -83,7 +83,7 @@ test.describe("Smoke Test", () => {
     await expect(page.getByRole("heading", { name: /identity/i, level: 2 })).toBeVisible();
   });
 
-  test("Authenticated user can access courses page", async ({ page }) => {
+  test("User can access courses page", async ({ page }) => {
     await page.goto("/preview", { waitUntil: "domcontentloaded" });
     await page.getByRole("button", { name: "Open User Menu" }).click();
     await page.getByRole("menuitem", { name: "Account" }).click();
@@ -94,7 +94,7 @@ test.describe("Smoke Test", () => {
     await expect(page.getByText(/incomplete/i)).toBeVisible();
   });
 
-  test("Authenticated user can change color scheme", async ({ page }) => {
+  test("User can change color scheme", async ({ page }) => {
     await page.goto("/preview", { waitUntil: "domcontentloaded" });
     const button = page.getByRole("button", { name: /set visual theme/i });
     const htmlElement = page.locator("html");

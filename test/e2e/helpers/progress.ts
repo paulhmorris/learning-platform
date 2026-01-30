@@ -18,7 +18,10 @@ export async function getCourseLayoutForE2E() {
 }
 
 export async function enrollUserInCourse(userId: string) {
-  const course = await db.course.findFirst();
+  const baseUrl = process.env.E2E_BASE_URL ?? "http://localhost:3000";
+  const host = new URL(baseUrl).host;
+
+  const course = (await db.course.findUnique({ where: { host } })) ?? (await db.course.findFirst());
   if (!course) {
     throw new Error("No course found in database. Cannot enroll user.");
   }
