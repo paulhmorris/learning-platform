@@ -19,19 +19,21 @@ export async function loader(args: LoaderFunctionArgs) {
 
   // If the purchase was not successful
   if (!isSuccessful) {
+    logger.info(`Purchase canceled for user ${user.id}`);
     return redirect("/preview?purchase_canceled=true");
   }
 
   // If it's successful but for some reason there's no session id parameter
   if (!stripeSessionId) {
+    logger.warn(`No Stripe session ID provided for user ${user.id}`);
     return redirect("/preview?purchase_canceled=true");
   }
 
   try {
-    // Retrieve the session from Stripe
     const session = await stripe.checkout.sessions.retrieve(stripeSessionId);
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!session || session.payment_status === "unpaid") {
+      logger.info(`Unpaid or missing Stripe session for user ${user.id}`);
       return redirect("/preview?purchase_canceled=true");
     }
 

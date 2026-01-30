@@ -94,7 +94,7 @@ export async function action(args: ActionFunctionArgs) {
       Sentry.captureException(new Error("Checkout session URL is missing"), {
         extra: { userId: user.id, courseId: course.id, sessionId: session.id },
       });
-      return Toasts.redirectWithError("/", {
+      return Toasts.dataWithError(null, {
         message: "Unable to start checkout",
         description: "Please try again later",
       });
