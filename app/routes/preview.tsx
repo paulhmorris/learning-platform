@@ -109,7 +109,7 @@ export async function action(args: ActionFunctionArgs) {
     Sentry.captureException(error);
     logger.error(`Failed to create checkout session for user ${user.id} and course ${course.id}`, { error });
     return Toasts.redirectWithError("/", {
-      message: "Unable to enroll",
+      message: "Unable to start checkout",
       description: "Please try again later",
     });
   }
