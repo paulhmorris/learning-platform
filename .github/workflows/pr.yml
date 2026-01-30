@@ -25,6 +25,7 @@ jobs:
   neon:
     name: 🧬 Setup Neon branch
     runs-on: ubuntu-latest
+    if: github.event.action != 'closed'
     steps:
       - uses: actions/checkout@v6
       - name: Create Neon branch
@@ -57,6 +58,7 @@ jobs:
   deploy:
     name: 🧩 Deploy Preview
     runs-on: ubuntu-latest
+    if: github.event.action != 'closed'
     outputs:
       deploy_url: ${{ steps.vercel_deploy.outputs.url }}
     steps:
@@ -80,6 +82,7 @@ jobs:
   e2e:
     name: 🎭 Test e2e
     runs-on: ubuntu-latest
+    if: github.event.action != 'closed'
     needs: [neon, deploy]
     env:
       E2E_BASE_URL: ${{ needs.deploy.outputs.deploy_url }}
