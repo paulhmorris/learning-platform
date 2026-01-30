@@ -62,12 +62,13 @@ export const UserCourseService = {
   },
 
   enrollUser: async (userId: string, courseId: string) => {
-    logger.debug(`Creating userCourse for user ${userId} and course ${courseId}`);
     try {
-      return db.userCourse.create({ data: { userId, courseId } });
+      const course = await db.userCourse.create({ data: { userId, courseId } });
+      logger.info(`Successfully enrolled user ${userId} in course ${courseId}`);
+      return course;
     } catch (error) {
       Sentry.captureException(error);
-      logger.error(`Failed to create userCourse for user ${userId} and course ${courseId}`, { error });
+      logger.error(`Failed to enroll user ${userId} in course ${courseId}`, { error });
       throw error;
     }
   },

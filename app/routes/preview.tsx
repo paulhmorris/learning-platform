@@ -88,12 +88,24 @@ export async function action(args: ActionFunctionArgs) {
       stripePriceId: course.stripePriceId,
       baseUrl: url.origin,
     });
-    return redirect(session.url ?? "/", { status: 303 });
+
+    if (!session.url) {
+      logger.error(`Checkout session created but no URL returned for user ${user.id} and course ${course.id}`);
+      Sentry.captureException(new Error("Checkout session URL is missing"), {
+        extra: { userId: user.id, courseId: course.id, sessionId: session.id },
+      });
+      return Toasts.dataWithError(null, {
+        message: "Unable to start checkout",
+        description: "Please try again later",
+      });
+    }
+
+    return redirect(session.url, { status: 303 });
   } catch (error) {
     Sentry.captureException(error);
     logger.error(`Failed to create checkout session for user ${user.id} and course ${course.id}`, { error });
     return Toasts.redirectWithError("/", {
-      message: "Unable to enroll",
+      message: "Unable to start checkout",
       description: "Please try again later",
     });
   }

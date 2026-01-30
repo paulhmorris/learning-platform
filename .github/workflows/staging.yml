@@ -41,7 +41,7 @@ jobs:
 
       - name: Migrate Database
         id: migrate
-        run: npx prisma migrate deploy
+        run: npx prisma@6.12.0 migrate deploy
         continue-on-error: true
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
