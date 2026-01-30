@@ -36,6 +36,8 @@ jobs:
           project_id: ${{ env.NEON_PROJECT_ID }}
           branch_name: pr-${{ github.event.pull_request.number }}
           parent_branch: staging
+          role: learning-platform_owner
+          prisma: true
           api_key: ${{ env.NEON_API_KEY }}
 
       - name: Run Prisma migrations
