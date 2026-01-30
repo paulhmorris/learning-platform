@@ -138,6 +138,7 @@ export default tseslint.config(
         },
       ],
       "no-console": "off",
+      "@typescript-eslint/no-unnecessary-condition": "off",
     },
   },
 

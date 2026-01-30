@@ -4,7 +4,7 @@ export const SERVER_CONFIG = {
   isCI: Boolean(process.env.CI),
   baseUrl: process.env.BASE_URL,
   environment: process.env.VERCEL_ENV || "development",
-  isTest: process.env.NODE_ENV === "test",
+  isTest: process.env.NODE_ENV === "test" || Boolean(process.env.PLAYWRIGHT_TEST),
   isDev: process.env.NODE_ENV === "development",
   isProd: process.env.VERCEL_ENV === "production" && process.env.NODE_ENV === "production",
   isPreview: process.env.VERCEL_ENV === "preview" && process.env.NODE_ENV === "production",
