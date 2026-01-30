@@ -17,7 +17,7 @@ type CreateCourseCheckoutSessionArgs = {
 };
 
 export const PaymentService = {
-  async createCustomer(userId: string, options: CreateCustomerOptions = {}) {
+  async upsertCustomer(userId: string, options: CreateCustomerOptions = {}) {
     try {
       const user = await UserService.getById(userId);
       if (!user) {
@@ -93,7 +93,7 @@ export const PaymentService = {
 
       if (!stripeCustomerId) {
         logger.info(`Creating Stripe customer for user ${userId} without stripeCustomerId`);
-        const customer = await this.createCustomer(user.id);
+        const customer = await this.upsertCustomer(user.id);
         stripeCustomerId = customer.id;
       }
 
