@@ -27,6 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       db_url: ${{ steps.neon_branch.outputs.db_url }}
+      db_url_pooled: ${{ steps.neon_branch.outputs.db_url_pooled }}
     steps:
       - uses: actions/checkout@v6
       - name: Create Neon branch
@@ -40,6 +41,15 @@ jobs:
           database: learning-platform
           prisma: true
           api_key: ${{ env.NEON_API_KEY }}
+
+      - name: Validate Neon connection string
+        run: |
+          if [[ -z "$DB_URL" ]]; then
+            echo "Neon db_url output is empty." >&2
+            exit 1
+          fi
+        env:
+          DB_URL: ${{ steps.neon_branch.outputs.db_url || steps.neon_branch.outputs.db_url_pooled }}
 
       - name: Run Prisma migrations
         run: npx prisma@6.12.0 migrate deploy
@@ -116,7 +126,7 @@ jobs:
         run: npm run test:e2e
         env:
           DIRECT_URL: ${{ needs.neon.outputs.db_url }}
-          DATABASE_URL: ${{ needs.neon.outputs.db_url }}
+          DATABASE_URL: ${{ needs.neon.outputs.db_url_pooled }}
           AXIOM_TOKEN: ${{ secrets.AXIOM_TOKEN }}
           CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
           E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
