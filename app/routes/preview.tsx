@@ -83,10 +83,6 @@ export async function action(args: ActionFunctionArgs) {
   }
 
   try {
-    if (!user.stripeCustomerId) {
-      await PaymentService.createCustomer(user.id);
-    }
-
     const session = await PaymentService.createCourseCheckoutSession({
       userId: user.id,
       stripePriceId: course.stripePriceId,

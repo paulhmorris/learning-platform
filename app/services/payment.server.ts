@@ -37,18 +37,18 @@ export const PaymentService = {
       if (existingCustomers.data.length > 0) {
         const existingCustomer = existingCustomers.data[0];
         logger.info(`Found existing Stripe customer ${existingCustomer.id} for user ${userId}`);
-        
+
         // Log warning if multiple customers found (data inconsistency)
         if (existingCustomers.data.length > 1) {
           logger.warn(`Multiple Stripe customers found for user ${userId}`, {
-            customerIds: existingCustomers.data.map(c => c.id),
+            customerIds: existingCustomers.data.map((c) => c.id),
           });
           Sentry.captureMessage(`Multiple Stripe customers found for user ${userId}`, {
             level: "warning",
-            extra: { userId, customerIds: existingCustomers.data.map(c => c.id) },
+            extra: { userId, customerIds: existingCustomers.data.map((c) => c.id) },
           });
         }
-        
+
         // Update Clerk metadata if not already set
         if (!user.publicMetadata.stripeCustomerId) {
           await AuthService.updatePublicMetadata(userId, { stripeCustomerId: existingCustomer.id });
@@ -56,12 +56,18 @@ export const PaymentService = {
         return { id: existingCustomer.id };
       }
 
-      const stripeCustomer = await stripe.customers.create({
-        name: `${user.firstName} ${user.lastName}`,
-        email: user.email,
-        phone: user.phone,
-        metadata: { ...options.metadata, user_id: userId },
-      });
+      const stripeCustomer = await stripe.customers.create(
+        {
+          name: `${user.firstName} ${user.lastName}`,
+          email: user.email,
+          phone: user.phone,
+          metadata: { ...options.metadata, user_id: userId },
+        },
+        {
+          // Use userId as idempotency key to prevent duplicate customers from race conditions
+          idempotencyKey: `customer_create_${userId}`,
+        },
+      );
       logger.info(`Created Stripe customer ${stripeCustomer.id} for user ${userId}`);
       await AuthService.updatePublicMetadata(userId, { stripeCustomerId: stripeCustomer.id });
       return { id: stripeCustomer.id };
