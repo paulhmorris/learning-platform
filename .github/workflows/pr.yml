@@ -53,6 +53,7 @@ jobs:
           project_id: ${{ env.NEON_PROJECT_ID }}
           compare_branch: pr-${{ github.event.pull_request.number }}
           base_branch: staging
+          database: learning-platform
           api_key: ${{ env.NEON_API_KEY }}
 
   deploy:
