@@ -42,7 +42,7 @@ jobs:
           api_key: ${{ env.NEON_API_KEY }}
 
       - name: Run Prisma migrations
-        run: npx prisma migrate deploy
+        run: npx prisma@6.12.0 migrate deploy
         env:
           DATABASE_URL: ${{ steps.neon_branch.outputs.db_url }}
           DIRECT_URL: ${{ steps.neon_branch.outputs.db_url }}
