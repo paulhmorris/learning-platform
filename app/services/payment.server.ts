@@ -17,7 +17,7 @@ type CreateCourseCheckoutSessionArgs = {
 };
 
 export const PaymentService = {
-  async createCustomer(userId: string, options: CreateCustomerOptions = {}) {
+  async upsertCustomer(userId: string, options: CreateCustomerOptions = {}) {
     try {
       const user = await UserService.getById(userId);
       if (!user) {
@@ -37,18 +37,18 @@ export const PaymentService = {
       if (existingCustomers.data.length > 0) {
         const existingCustomer = existingCustomers.data[0];
         logger.info(`Found existing Stripe customer ${existingCustomer.id} for user ${userId}`);
-        
+
         // Log warning if multiple customers found (data inconsistency)
         if (existingCustomers.data.length > 1) {
           logger.warn(`Multiple Stripe customers found for user ${userId}`, {
-            customerIds: existingCustomers.data.map(c => c.id),
+            customerIds: existingCustomers.data.map((c) => c.id),
           });
           Sentry.captureMessage(`Multiple Stripe customers found for user ${userId}`, {
             level: "warning",
-            extra: { userId, customerIds: existingCustomers.data.map(c => c.id) },
+            extra: { userId, customerIds: existingCustomers.data.map((c) => c.id) },
           });
         }
-        
+
         // Update Clerk metadata if not already set
         if (!user.publicMetadata.stripeCustomerId) {
           await AuthService.updatePublicMetadata(userId, { stripeCustomerId: existingCustomer.id });
@@ -56,12 +56,19 @@ export const PaymentService = {
         return { id: existingCustomer.id };
       }
 
-      const stripeCustomer = await stripe.customers.create({
-        name: `${user.firstName} ${user.lastName}`,
-        email: user.email,
-        phone: user.phone,
-        metadata: { ...options.metadata, user_id: userId },
-      });
+      const stripeCustomer = await stripe.customers.create(
+        {
+          name: `${user.firstName} ${user.lastName}`,
+          email: user.email,
+          phone: user.phone,
+          // Ensure user_id is set last and cannot be overwritten by options.metadata
+          metadata: { ...options.metadata, user_id: userId },
+        },
+        {
+          // Use userId as idempotency key to prevent duplicate customers from race conditions
+          idempotencyKey: `customer_create_${userId}`,
+        },
+      );
       logger.info(`Created Stripe customer ${stripeCustomer.id} for user ${userId}`);
       await AuthService.updatePublicMetadata(userId, { stripeCustomerId: stripeCustomer.id });
       return { id: stripeCustomer.id };
@@ -86,20 +93,28 @@ export const PaymentService = {
 
       if (!stripeCustomerId) {
         logger.info(`Creating Stripe customer for user ${userId} without stripeCustomerId`);
-        const customer = await this.createCustomer(user.id);
+        const customer = await this.upsertCustomer(user.id);
         stripeCustomerId = customer.id;
       }
 
-      const session = await stripe.checkout.sessions.create({
-        customer: stripeCustomerId,
-        mode: "payment",
-        line_items: [{ price: stripePriceId, quantity: 1 }],
-        success_url,
-        cancel_url,
-        metadata: {
-          user_id: user.id,
+      const session = await stripe.checkout.sessions.create(
+        {
+          customer: stripeCustomerId,
+          mode: "payment",
+          line_items: [{ price: stripePriceId, quantity: 1 }],
+          success_url,
+          cancel_url,
+          metadata: {
+            user_id: user.id,
+          },
         },
-      });
+        {
+          // Use deterministic idempotency key based on user and price to prevent duplicate sessions
+          // from double-clicks. Stripe retains idempotency keys for 24 hours, which is sufficient
+          // to prevent accidental duplicates while still allowing intentional re-purchases.
+          idempotencyKey: `checkout_session_${user.id}_${stripePriceId}`,
+        },
+      );
       logger.info(`Created course checkout session ${session.id} for user ${userId} with price ${stripePriceId}`);
       return session;
     } catch (error) {
