@@ -61,6 +61,7 @@ export const PaymentService = {
           name: `${user.firstName} ${user.lastName}`,
           email: user.email,
           phone: user.phone,
+          // Ensure user_id is set last and cannot be overwritten by options.metadata
           metadata: { ...options.metadata, user_id: userId },
         },
         {
@@ -96,16 +97,24 @@ export const PaymentService = {
         stripeCustomerId = customer.id;
       }
 
-      const session = await stripe.checkout.sessions.create({
-        customer: stripeCustomerId,
-        mode: "payment",
-        line_items: [{ price: stripePriceId, quantity: 1 }],
-        success_url,
-        cancel_url,
-        metadata: {
-          user_id: user.id,
+      const session = await stripe.checkout.sessions.create(
+        {
+          customer: stripeCustomerId,
+          mode: "payment",
+          line_items: [{ price: stripePriceId, quantity: 1 }],
+          success_url,
+          cancel_url,
+          metadata: {
+            user_id: user.id,
+          },
         },
-      });
+        {
+          // Use deterministic idempotency key based on user and price to prevent duplicate sessions
+          // from double-clicks. Stripe retains idempotency keys for 24 hours, which is sufficient
+          // to prevent accidental duplicates while still allowing intentional re-purchases.
+          idempotencyKey: `checkout_session_${user.id}_${stripePriceId}`,
+        },
+      );
       logger.info(`Created course checkout session ${session.id} for user ${userId} with price ${stripePriceId}`);
       return session;
     } catch (error) {
