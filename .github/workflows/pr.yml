@@ -37,6 +37,7 @@ jobs:
           branch_name: pr-${{ github.event.pull_request.number }}
           parent_branch: staging
           role: learning-platform_owner
+          database: learning-platform
           prisma: true
           api_key: ${{ env.NEON_API_KEY }}
 
