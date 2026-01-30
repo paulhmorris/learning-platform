@@ -25,9 +25,6 @@ jobs:
   neon:
     name: 🧬 Setup Neon branch
     runs-on: ubuntu-latest
-    outputs:
-      db_url: ${{ steps.neon_branch.outputs.db_url }}
-      db_url_pooled: ${{ steps.neon_branch.outputs.db_url_pooled }}
     steps:
       - uses: actions/checkout@v6
       - name: Create Neon branch
@@ -41,15 +38,6 @@ jobs:
           database: learning-platform
           prisma: true
           api_key: ${{ env.NEON_API_KEY }}
-
-      - name: Validate Neon connection string
-        run: |
-          if [[ -z "$DB_URL" ]]; then
-            echo "Neon db_url output is empty." >&2
-            exit 1
-          fi
-        env:
-          DB_URL: ${{ steps.neon_branch.outputs.db_url || steps.neon_branch.outputs.db_url_pooled }}
 
       - name: Run Prisma migrations
         run: npx prisma@6.12.0 migrate deploy
@@ -122,11 +110,23 @@ jobs:
       - name: Pull Vercel Environment Information
         run: vercel env pull .env --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
 
+      - name: Fetch Neon connection string
+        id: neon_branch_e2e
+        uses: neondatabase/create-branch-action@v6
+        with:
+          project_id: ${{ env.NEON_PROJECT_ID }}
+          branch_name: pr-${{ github.event.pull_request.number }}
+          parent_branch: staging
+          role: learning-platform_owner
+          database: learning-platform
+          prisma: true
+          api_key: ${{ env.NEON_API_KEY }}
+
       - name: Run e2e Tests
         run: npm run test:e2e
         env:
-          DIRECT_URL: ${{ needs.neon.outputs.db_url }}
-          DATABASE_URL: ${{ needs.neon.outputs.db_url_pooled }}
+          DIRECT_URL: ${{ steps.neon_branch_e2e.outputs.db_url }}
+          DATABASE_URL: ${{ steps.neon_branch_e2e.outputs.db_url_pooled || steps.neon_branch_e2e.outputs.db_url }}
           AXIOM_TOKEN: ${{ secrets.AXIOM_TOKEN }}
           CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
           E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
