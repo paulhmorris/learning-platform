@@ -14,6 +14,14 @@ export const handleError: HandleErrorFunction = (error, { request }) => {
   if (request.url.includes(".well-known")) {
     return;
   }
+  const isMissingAssetSourceMap =
+    request.url.includes("/assets/") &&
+    request.url.endsWith(".map") &&
+    error instanceof Error &&
+    error.message.includes("No route matches URL");
+  if (isMissingAssetSourceMap) {
+    return;
+  }
   if (!request.signal.aborted) {
     Sentry.captureException(error);
     logger.error("Request handling error", { error });
