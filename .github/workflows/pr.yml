@@ -124,6 +124,7 @@ jobs:
           DATABASE_URL: ${{ steps.neon_branch_e2e.outputs.db_url_pooled || steps.neon_branch_e2e.outputs.db_url }}
           AXIOM_TOKEN: ${{ secrets.AXIOM_TOKEN }}
           CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+          CLERK_PUBLISHABLE_KEY: ${{ vars.CLERK_PUBLISHABLE_KEY_TEST }}
           E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
           E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
           UPSTASH_REDIS_REST_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
