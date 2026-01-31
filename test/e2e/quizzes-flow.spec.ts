@@ -34,33 +34,17 @@ test.describe("Quiz flow", () => {
     expect(quizId).toBeTruthy();
     await markQuizPassedForUser(userId, quizId!, 100);
 
-    await page.reload();
-
     const sectionHeading = page.getByRole("heading", { name: sectionWithQuiz.title, level: 2 });
     const sectionItem = sectionHeading.locator("xpath=ancestor::li[1]");
-    await expect
-      .poll(
-        async () => {
-          await page.reload();
-          return sectionItem.locator(`a[href="/quizzes/${quizId}"]`).isVisible();
-        },
-        { timeout: 20000, intervals: [500, 1000, 1500] },
-      )
-      .toBe(true);
+    await expect(sectionItem.locator(`a[href="/quizzes/${quizId}"]`)).toBeVisible();
+
+    await page.reload();
 
     const nextLesson = nextSection?.lessons?.data?.[0];
     expect(nextLesson).toBeTruthy();
     const nextLessonItem = page
       .getByRole("heading", { name: nextLesson!.attributes.title, level: 3 })
       .locator("xpath=ancestor::li[1]");
-    await expect
-      .poll(
-        async () => {
-          await page.reload();
-          return nextLessonItem.getByRole("link", { name: "Start" }).isVisible();
-        },
-        { timeout: 20000, intervals: [500, 1000, 1500] },
-      )
-      .toBe(true);
+    await expect(nextLessonItem.getByRole("link", { name: "Start" })).toBeVisible();
   });
 });
