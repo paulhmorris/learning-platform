@@ -19,10 +19,30 @@ permissions:
   pull-requests: write
 
 jobs:
+  changes:
+    name: 🔍 Detect app changes
+    runs-on: ubuntu-latest
+    outputs:
+      app_changes: ${{ steps.filter.outputs.app_changes }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Filter paths
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            app_changes:
+              - 'app/**'
+              - 'jobs/**'
+              - 'prisma/**'
+              - 'public/**'
+
   deploy:
     name: 🚀 Deploy
     runs-on: ubuntu-latest
     environment: staging
+    if: needs.changes.outputs.app_changes == 'true'
+    needs: [changes]
 
     steps:
       - uses: actions/checkout@v6
@@ -55,7 +75,8 @@ jobs:
     name: 🎭 Test e2e
     runs-on: ubuntu-latest
     environment: staging
-    needs: [deploy]
+    needs: [changes, deploy]
+    if: ${{ always() && (needs.deploy.result == 'success' || needs.deploy.result == 'skipped') }}
     env:
       E2E_BASE_URL: ${{ secrets.E2E_BASE_URL_STAGING }}
     steps:
@@ -115,9 +136,9 @@ jobs:
             gh pr create --base main --head staging --title "Promote staging to main" --body "Automated promotion after staging deploy and e2e tests."
           fi
 
-      - name: Enable auto-merge
-        env:
-          GH_TOKEN: ${{ secrets.PROMOTE_TOKEN }}
-        run: |
-          pr_number=$(gh pr list --base main --head staging --state open --json number --jq '.[0].number')
-          gh pr merge "$pr_number" --auto --merge
+      # - name: Enable auto-merge
+      #   env:
+      #     GH_TOKEN: ${{ secrets.PROMOTE_TOKEN }}
+      #   run: |
+      #     pr_number=$(gh pr list --base main --head staging --state open --json number --jq '.[0].number')
+      #     gh pr merge "$pr_number" --auto --merge
