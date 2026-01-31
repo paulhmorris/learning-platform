@@ -22,6 +22,10 @@ const devLogger = new Logger({
 });
 
 export function createLogger(module: string) {
+  if (SERVER_CONFIG.isTest) {
+    return new Logger({ logLevel: "off", transports: [new ConsoleTransport({ logLevel: "off" })] });
+  }
+
   if (SERVER_CONFIG.isDev) {
     return devLogger.with({ module });
   }

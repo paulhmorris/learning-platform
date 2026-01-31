@@ -1,91 +1,94 @@
+import { randomUUID } from "node:crypto";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 
+import { clerk } from "@clerk/testing/playwright";
 import type { Browser, Page } from "@playwright/test";
 
 import { AuthService } from "~/services/auth.server";
 
 const DEFAULT_BASE_URL = "http://localhost:3000";
-const STORAGE_STATE_PATH = path.join(process.cwd(), "test", "e2e", ".auth", "regular-user.json");
 
 type Credentials = {
   email: string;
   password: string;
 };
 
-function getE2ECredentials(): Credentials {
-  const email = process.env.E2E_USER_EMAIL;
-  const password = process.env.E2E_USER_PASSWORD;
-
-  if (!email || !password) {
-    throw new Error("Missing E2E_USER_EMAIL or E2E_USER_PASSWORD env vars for authenticated tests.");
-  }
-
-  return { email, password };
-}
+export type TestUser = Credentials & {
+  id: string;
+};
 
 function getBaseUrl() {
   return process.env.E2E_BASE_URL ?? DEFAULT_BASE_URL;
 }
 
-export async function loginAsRegularUser(page: Page) {
-  const { email, password } = getE2ECredentials();
+export async function loginAsRegularUser(page: Page, credentials: Credentials) {
+  const { email, password } = credentials;
   const signInUrl = new URL("/sign-in", getBaseUrl()).toString();
 
   await page.goto(signInUrl, { waitUntil: "domcontentloaded" });
 
-  const emailInput = page.getByLabel(/email/i);
-  if (await emailInput.isVisible()) {
-    await emailInput.fill(email);
-  } else {
-    await page.getByPlaceholder(/email/i).fill(email);
-  }
+  await clerk.signIn({
+    page,
+    signInParams: {
+      strategy: "password",
+      identifier: email,
+      password,
+    },
+  });
 
-  const continueButton = page.getByRole("button", { name: /continue/i });
-  if (await continueButton.isVisible()) {
-    await continueButton.click();
-  }
-
-  const passwordInput = page.getByLabel("Password", { exact: true });
-  await passwordInput.fill(password);
-
-  const signInButton = page.getByRole("button", { name: /continue/i });
-  await signInButton.click();
-
-  await page.waitForURL(/^(?!.*\/sign-in).*$/);
+  await page.goto(new URL("/preview", getBaseUrl()).toString());
 }
 
-export async function ensureAuthenticatedStorageState(browser: Browser) {
+export async function ensureAuthenticatedStorageState(browser: Browser, credentials: Credentials, workerIndex = 0) {
+  const storageStatePath = path.join(process.cwd(), "test", "e2e", ".auth", `regular-user-worker-${workerIndex}.json`);
+
+  await fs.mkdir(path.dirname(storageStatePath), { recursive: true });
+
+  const refreshStorageState = async () => {
+    const page = await browser.newPage();
+    await loginAsRegularUser(page, credentials);
+    await page.context().storageState({ path: storageStatePath });
+    await page.close();
+    return storageStatePath;
+  };
+
   try {
-    await fs.access(STORAGE_STATE_PATH);
-    return STORAGE_STATE_PATH;
+    await fs.access(storageStatePath);
   } catch {
-    // continue
+    return refreshStorageState();
   }
 
-  await fs.mkdir(path.dirname(STORAGE_STATE_PATH), { recursive: true });
+  const context = await browser.newContext({ storageState: storageStatePath });
+  const page = await context.newPage();
+  const previewUrl = new URL("/preview", getBaseUrl()).toString();
+  await page.goto(previewUrl, { waitUntil: "domcontentloaded" });
 
-  const page = await browser.newPage();
-  await loginAsRegularUser(page);
-  await page.context().storageState({ path: STORAGE_STATE_PATH });
+  if (page.url().includes("/sign-in")) {
+    await page.close();
+    await context.close();
+    return refreshStorageState();
+  }
+
   await page.close();
-
-  return STORAGE_STATE_PATH;
+  await context.close();
+  return storageStatePath;
 }
 
-export async function getE2EUserId() {
-  const emailAddress = process.env.E2E_USER_EMAIL;
-  const users = await AuthService.getUserList({ emailAddress: [emailAddress] });
-  if (users.data.length === 0) {
-    throw new Error("E2E user not found. Cannot setup database.");
-  }
-  if (users.data.length > 1) {
-    throw new Error("Multiple E2E users found. Cannot setup database.");
-  }
-  const user = users.data.at(0);
-  if (!user) {
-    throw new Error("E2E user not found. Cannot setup database.");
-  }
-  console.log(`E2E user found`);
-  return user.id;
+export async function createE2ETestUser(workerIndex: number): Promise<TestUser> {
+  const email = `e2e-${workerIndex}+clerk_test@example.com`;
+  const password = `TestPassword!${randomUUID()}`;
+
+  const user = await AuthService.createUser({
+    firstName: "E2E",
+    lastName: "Test User" + workerIndex,
+    emailAddress: [email],
+    password,
+  });
+
+  return { id: user.id, email, password };
+}
+
+export async function deleteE2ETestUser(userId: string) {
+  await AuthService.deleteUser(userId);
 }

@@ -3,7 +3,7 @@ import { expect, test } from "./fixtures/authenticated";
 test.use({ colorScheme: "dark" });
 
 test.describe("Smoke Test", () => {
-  test("Authenticated user can access preview page", async ({ page }) => {
+  test("User can access preview page", async ({ page }) => {
     await page.goto("/preview", { waitUntil: "domcontentloaded" });
 
     await expect(page).toHaveURL(/\/preview/);
@@ -11,15 +11,37 @@ test.describe("Smoke Test", () => {
     await expect(page.getByText(/certification upon completion/i)).toBeVisible();
   });
 
-  test("Authenticated user can start a lesson", async ({ page }) => {
+  test("User can start a lesson", async ({ page }) => {
     await page.goto("/preview", { waitUntil: "domcontentloaded" });
 
     const upNextSection = page.getByRole("heading", { name: "Up next:" }).locator("..");
-    const lessonName = await upNextSection.getByRole("heading", { level: 3 }).first().textContent();
-    await upNextSection.getByRole("link", { name: "Start" }).click();
+    const upNextTitle = upNextSection.getByRole("heading", { level: 3 }).first();
+    const upNextStart = upNextSection.getByRole("link", { name: "Start" });
 
-    await expect(page).not.toHaveURL(/\/preview/);
-    await expect(page.getByRole("heading", { name: lessonName?.trim(), level: 1 })).toBeVisible();
+    const firstLessonStart = page.getByRole("link", { name: "Start" }).nth(1);
+    const firstLessonTitle = firstLessonStart.locator("xpath=preceding::h3[1]");
+
+    const upNextTitleText = (await upNextTitle.textContent())?.trim() ?? "";
+    const firstLessonTitleText = (await firstLessonTitle.textContent())?.trim() ?? "";
+
+    expect(upNextTitleText).toBeTruthy();
+    expect(firstLessonTitleText).toBeTruthy();
+    expect(upNextTitleText).toBe(firstLessonTitleText);
+
+    const upNextHref = await upNextStart.getAttribute("href");
+    await upNextStart.click();
+    await expect(page).toHaveURL(new RegExp(`${upNextHref ?? ""}$`));
+    await expect(page.getByRole("heading", { name: upNextTitleText, level: 1 })).toBeVisible();
+
+    await page.goto("/preview");
+
+    const listStartLink = page.getByRole("link", { name: "Start" }).nth(1);
+    const listStartTitle = listStartLink.locator("xpath=preceding::h3[1]");
+    const listStartTitleText = (await listStartTitle.textContent())?.trim() ?? "";
+    const firstLessonHref = await listStartLink.getAttribute("href");
+    await listStartLink.click();
+    await expect(page).toHaveURL(new RegExp(`${firstLessonHref ?? ""}$`));
+    await expect(page.getByRole("heading", { name: listStartTitleText, level: 1 })).toBeVisible();
   });
 
   test("All lessons after the first one are locked", async ({ page }) => {
@@ -32,7 +54,7 @@ test.describe("Smoke Test", () => {
     await expect(unlockedLessons).toHaveCount(1);
   });
 
-  test("Authenticated user can access account page", async ({ page }) => {
+  test("User can access account page", async ({ page }) => {
     await page.goto("/preview", { waitUntil: "domcontentloaded" });
     await page.getByRole("button", { name: "Open User Menu" }).click();
     await page.getByRole("menuitem", { name: "Account" }).click();
@@ -41,7 +63,7 @@ test.describe("Smoke Test", () => {
     await expect(page.getByRole("heading", { name: /account/i, level: 1 })).toBeVisible();
   });
 
-  test("Authenticated user can access security page", async ({ page }) => {
+  test("User can access security page", async ({ page }) => {
     await page.goto("/preview", { waitUntil: "domcontentloaded" });
     await page.getByRole("button", { name: "Open User Menu" }).click();
     await page.getByRole("menuitem", { name: "Account" }).click();
@@ -51,7 +73,7 @@ test.describe("Smoke Test", () => {
     await expect(page.getByRole("heading", { name: /security/i, level: 1 })).toBeVisible();
   });
 
-  test("Authenticated user can access identity page", async ({ page }) => {
+  test("User can access identity page", async ({ page }) => {
     await page.goto("/preview", { waitUntil: "domcontentloaded" });
     await page.getByRole("button", { name: "Open User Menu" }).click();
     await page.getByRole("menuitem", { name: "Account" }).click();
@@ -61,7 +83,7 @@ test.describe("Smoke Test", () => {
     await expect(page.getByRole("heading", { name: /identity/i, level: 2 })).toBeVisible();
   });
 
-  test("Authenticated user can access courses page", async ({ page }) => {
+  test("User can access courses page", async ({ page }) => {
     await page.goto("/preview", { waitUntil: "domcontentloaded" });
     await page.getByRole("button", { name: "Open User Menu" }).click();
     await page.getByRole("menuitem", { name: "Account" }).click();
@@ -72,7 +94,7 @@ test.describe("Smoke Test", () => {
     await expect(page.getByText(/incomplete/i)).toBeVisible();
   });
 
-  test("Authenticated user can change color scheme", async ({ page }) => {
+  test("User can change color scheme", async ({ page }) => {
     await page.goto("/preview", { waitUntil: "domcontentloaded" });
     const button = page.getByRole("button", { name: /set visual theme/i });
     const htmlElement = page.locator("html");

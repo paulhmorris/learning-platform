@@ -1,5 +1,6 @@
 import { UserLessonProgress, UserQuizProgress } from "@prisma/client";
 
+import { SERVER_CONFIG } from "~/config.server";
 import { db } from "~/integrations/db.server";
 import { createLogger } from "~/integrations/logger.server";
 import { SUBMIT_INTERVAL_MS } from "~/routes/api.progress";
@@ -7,7 +8,7 @@ import { CacheKeys, CacheService } from "~/services/cache.server";
 
 const logger = createLogger("ProgressService");
 
-const PROGRESS_CACHE_TTL = 22; // 22 seconds
+const PROGRESS_CACHE_TTL = SERVER_CONFIG.isTest ? 0 : 22; // 22 seconds
 
 export const ProgressService = {
   async incrementProgress(userId: string, lessonId: number) {

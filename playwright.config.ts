@@ -1,13 +1,11 @@
 import path from "path";
+import { loadEnvFile } from "process";
 import { fileURLToPath } from "url";
 
 import { defineConfig, devices } from "@playwright/test";
-import dotenv from "dotenv";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-dotenv.config({ path: path.resolve(__dirname, ".env") });
+// Load environment variables from .env file if it exists
+loadEnvFile(path.join(path.dirname(fileURLToPath(import.meta.url)), ".env"));
 
 const e2eBaseUrl = process.env.E2E_BASE_URL;
 const isLocalBaseUrl = !e2eBaseUrl || e2eBaseUrl.includes("localhost") || e2eBaseUrl.includes("127.0.0.1");
@@ -16,9 +14,7 @@ export default defineConfig({
   testDir: "./test/e2e",
   outputDir: "./test-results",
   timeout: 60_000,
-  expect: {
-    timeout: 10_000,
-  },
+  expect: { timeout: 10_000 },
   /* Run tests in files in parallel */
   fullyParallel: true,
   /* Fail the build on CI if you accidentally left test.only in the source code. */
@@ -49,11 +45,6 @@ export default defineConfig({
     {
       name: "setup",
       testMatch: "**/*.setup.ts",
-      teardown: "cleanup",
-    },
-    {
-      name: "cleanup",
-      testMatch: "**/*.teardown.ts",
     },
     {
       name: "chromium",
@@ -82,13 +73,12 @@ export default defineConfig({
     // },
   ],
 
-  /* Run your local dev server before starting the tests */
   webServer: isLocalBaseUrl
     ? {
         command: "npm run dev",
         url: "http://localhost:3000",
         reuseExistingServer: !process.env.CI,
-        stdout: "pipe",
+        stdout: "ignore",
         stderr: "pipe",
       }
     : undefined,

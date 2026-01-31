@@ -17,6 +17,7 @@ import { Sentry } from "~/integrations/sentry";
 import { Responses } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
 import { getLessonsInOrder } from "~/lib/utils";
+import { CourseService } from "~/services/course.server";
 import { ProgressService } from "~/services/progress.server";
 import { SessionService } from "~/services/session.server";
 import { UserCourseService } from "~/services/user-course.server";
@@ -48,7 +49,7 @@ export async function loader(args: LoaderFunctionArgs) {
   const { host } = new URL(args.request.url);
 
   try {
-    const linkedCourse = await db.course.findUnique({ where: { host } });
+    const linkedCourse = await CourseService.getByHost(host);
 
     if (!linkedCourse) {
       logger.error(`Course not found for host ${host}`);
@@ -99,7 +100,7 @@ export async function action(args: ActionFunctionArgs) {
   try {
     // Verify user has access to the course
     const { host } = new URL(args.request.url);
-    const linkedCourse = await db.course.findUnique({ where: { host } });
+    const linkedCourse = await CourseService.getByHost(host);
 
     if (!linkedCourse) {
       logger.error(`Course not found for host ${host}`);

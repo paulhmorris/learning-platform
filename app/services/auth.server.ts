@@ -5,6 +5,25 @@ import { Sentry } from "~/integrations/sentry";
 const logger = createLogger("AuthService");
 
 export const AuthService = {
+  async createUser(args: Parameters<typeof client.users.createUser>[0]) {
+    try {
+      return await client.users.createUser(args);
+    } catch (error) {
+      Sentry.captureException(error);
+      logger.error("Failed to create user", { error });
+      throw error;
+    }
+  },
+
+  async deleteUser(userId: string) {
+    try {
+      return await client.users.deleteUser(userId);
+    } catch (error) {
+      Sentry.captureException(error);
+      logger.error(`Failed to delete user ${userId}`, { error });
+      throw error;
+    }
+  },
   async getUserList(args: Parameters<typeof client.users.getUserList>[0] = {}) {
     try {
       return await client.users.getUserList(args);
