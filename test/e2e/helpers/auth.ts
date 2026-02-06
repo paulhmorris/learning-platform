@@ -76,8 +76,9 @@ export async function ensureAuthenticatedStorageState(browser: Browser, credenti
 }
 
 export async function createE2ETestUser(workerIndex: number): Promise<TestUser> {
-  const email = `e2e-${workerIndex}+clerk_test@example.com`;
-  const password = `TestPassword!${randomUUID()}`;
+  const uniqueId = randomUUID();
+  const email = `e2e-${workerIndex}-${uniqueId}+clerk_test@example.com`;
+  const password = `TestPassword!${uniqueId}`;
 
   const user = await AuthService.createUser({
     firstName: "E2E",
