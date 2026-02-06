@@ -1,16 +1,17 @@
 import { useUser } from "@clerk/react-router";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useLocation } from "react-router";
 
 import { Analytics } from "~/integrations/mixpanel.client";
 import { AUTH_PAGE_KEY } from "~/lib/constants";
+
+const isPreProd = typeof window !== "undefined" && window.ENV.VERCEL_ENV !== "production";
 
 export function useAnalytics() {
   const location = useLocation();
   const { user } = useUser();
   const initialized = useRef(false);
   const lastUserIdRef = useRef<string | null>(null);
-  const isPreProd = useMemo(() => window.ENV.VERCEL_ENV !== "production", []);
 
   useEffect(() => {
     if (isPreProd) {
@@ -24,7 +25,7 @@ export function useAnalytics() {
 
     const pageUrl = `${location.pathname}${location.search}${location.hash}`;
     Analytics.trackPageView(pageUrl);
-  }, [location, isPreProd]);
+  }, [location]);
 
   useEffect(() => {
     if (isPreProd) {
@@ -45,6 +46,7 @@ export function useAnalytics() {
 
       if (!lastUserIdRef.current) {
         const authPage = sessionStorage.getItem(AUTH_PAGE_KEY);
+        // sessionStorage can only hold one value, so these conditions are mutually exclusive
         if (authPage === "/sign-in") {
           Analytics.trackEvent("sign_in_completed");
           sessionStorage.removeItem(AUTH_PAGE_KEY);
@@ -59,7 +61,7 @@ export function useAnalytics() {
       Analytics.clearUser();
       lastUserIdRef.current = null;
     }
-  }, [user, isPreProd]);
+  }, [user]);
 
   return null;
 }
