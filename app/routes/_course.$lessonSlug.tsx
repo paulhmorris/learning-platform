@@ -63,7 +63,7 @@ export default function Course() {
   useEffect(() => {
     if (trackedStartRef.current) return;
     trackedStartRef.current = true;
-    Analytics.trackEvent("lesson_started", {
+    void Analytics.trackEvent("lesson_started", {
       lesson_id: lesson.id,
       lesson_slug: lesson.attributes.slug,
       lesson_title: lesson.attributes.title,
@@ -75,7 +75,7 @@ export default function Course() {
   useEffect(() => {
     if (trackedCompleteRef.current || !progress?.isCompleted) return;
     trackedCompleteRef.current = true;
-    Analytics.trackEvent("lesson_completed", {
+    void Analytics.trackEvent("lesson_completed", {
       lesson_id: lesson.id,
       lesson_slug: lesson.attributes.slug,
       lesson_title: lesson.attributes.title,

@@ -131,17 +131,23 @@ export default function CoursePreview() {
   useEffect(() => {
     if (isSuccessful) {
       setSuccessModalOpen(true);
-      Analytics.trackEvent("purchase_success", { course_id: linkedCourse.id, course_title: course.attributes.title });
+      void Analytics.trackEvent("purchase_success", {
+        course_id: linkedCourse.id,
+        course_title: course.attributes.title,
+      });
     } else if (isCanceled) {
       setCanceledModalOpen(true);
-      Analytics.trackEvent("purchase_canceled", { course_id: linkedCourse.id, course_title: course.attributes.title });
+      void Analytics.trackEvent("purchase_canceled", {
+        course_id: linkedCourse.id,
+        course_title: course.attributes.title,
+      });
     }
   }, [isSuccessful, isCanceled]);
 
   useEffect(() => {
     if (trackedPreviewRef.current) return;
     trackedPreviewRef.current = true;
-    Analytics.trackEvent("preview_viewed", {
+    void Analytics.trackEvent("preview_viewed", {
       course_id: linkedCourse.id,
       course_title: course.attributes.title,
       host: linkedCourse.host,
@@ -162,7 +168,7 @@ export default function CoursePreview() {
   useEffect(() => {
     if (trackedCompletionRef.current || !isCourseCompleted || !userHasAccess) return;
     trackedCompletionRef.current = true;
-    Analytics.trackEvent("course_completed", {
+    void Analytics.trackEvent("course_completed", {
       course_id: linkedCourse.id,
       course_title: course.attributes.title,
     });

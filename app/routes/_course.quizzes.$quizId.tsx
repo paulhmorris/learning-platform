@@ -169,7 +169,7 @@ export default function Quiz() {
   useEffect(() => {
     if (trackedStartRef.current || isQuizLocked) return;
     trackedStartRef.current = true;
-    Analytics.trackEvent("quiz_started", {
+    void Analytics.trackEvent("quiz_started", {
       quiz_id: quiz.id,
       quiz_title: quiz.attributes.title,
       course_id: course.id,
@@ -181,7 +181,7 @@ export default function Quiz() {
     if (trackedCompleteRef.current || !actionData) return;
     if (typeof actionData.score === "undefined") return;
     trackedCompleteRef.current = true;
-    Analytics.trackEvent("quiz_completed", {
+    void Analytics.trackEvent("quiz_completed", {
       quiz_id: quiz.id,
       quiz_title: quiz.attributes.title,
       course_id: course.id,
@@ -190,7 +190,7 @@ export default function Quiz() {
       passed: actionData.passed,
     });
 
-    Analytics.trackEvent(actionData.passed ? "quiz_passed" : "quiz_failed", {
+    void Analytics.trackEvent(actionData.passed ? "quiz_passed" : "quiz_failed", {
       quiz_id: quiz.id,
       quiz_title: quiz.attributes.title,
       course_id: course.id,

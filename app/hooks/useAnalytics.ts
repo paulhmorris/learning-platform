@@ -23,12 +23,14 @@ export function useAnalytics() {
     }
 
     if (!initialized.current) {
-      Analytics.init();
+      // Fire and forget - init is async but we don't need to wait for it
+      void Analytics.init();
       initialized.current = true;
     }
 
     const pageUrl = `${location.pathname}${location.search}${location.hash}`;
-    Analytics.trackPageView(pageUrl);
+    // Fire and forget - trackPageView is async but we don't need to wait for it
+    void Analytics.trackPageView(pageUrl);
   }, [location]);
 
   useEffect(() => {
@@ -38,7 +40,7 @@ export function useAnalytics() {
     }
 
     // Skip analytics in non-production environments
-    if (window.ENV.VERCEL_ENV !== "production) {
+    if (window.ENV.VERCEL_ENV !== "production") {
       return;
     }
 
@@ -47,7 +49,8 @@ export function useAnalytics() {
     }
 
     if (user) {
-      Analytics.identifyUser({
+      // Fire and forget - identifyUser is async but we don't need to wait for it
+      void Analytics.identifyUser({
         id: user.id,
         email: user.primaryEmailAddress?.emailAddress ?? null,
         firstName: user.firstName ?? null,
@@ -58,17 +61,18 @@ export function useAnalytics() {
         const authPage = sessionStorage.getItem(AUTH_PAGE_KEY);
         // sessionStorage can only hold one value, so these conditions are mutually exclusive
         if (authPage === "/sign-in") {
-          Analytics.trackEvent("sign_in_completed");
+          void Analytics.trackEvent("sign_in_completed");
           sessionStorage.removeItem(AUTH_PAGE_KEY);
         } else if (authPage === "/sign-up") {
-          Analytics.trackEvent("sign_up_completed");
+          void Analytics.trackEvent("sign_up_completed");
           sessionStorage.removeItem(AUTH_PAGE_KEY);
         }
       }
 
       lastUserIdRef.current = user.id;
     } else {
-      Analytics.clearUser();
+      // Fire and forget - clearUser is async but we don't need to wait for it
+      void Analytics.clearUser();
       lastUserIdRef.current = null;
     }
   }, [user]);
