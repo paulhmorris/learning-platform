@@ -3,8 +3,11 @@ import { useEffect } from "react";
 
 import { Analytics } from "~/integrations/mixpanel.client";
 
+const AUTH_PAGE_KEY = "mixpanel_auth_page";
+
 export default function SignInPage() {
   useEffect(() => {
+    sessionStorage.setItem(AUTH_PAGE_KEY, "/sign-in");
     Analytics.trackEvent("sign_in_started");
   }, []);
 
