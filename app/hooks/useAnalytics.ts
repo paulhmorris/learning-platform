@@ -1,5 +1,5 @@
 import { useUser } from "@clerk/react-router";
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useLocation } from "react-router";
 
 import { Analytics } from "~/integrations/mixpanel.client";
@@ -10,7 +10,7 @@ export function useAnalytics() {
   const { user } = useUser();
   const initialized = useRef(false);
   const lastUserIdRef = useRef<string | null>(null);
-  const isPreProd = window.ENV.VERCEL_ENV !== "production";
+  const isPreProd = useMemo(() => window.ENV.VERCEL_ENV !== "production", []);
 
   useEffect(() => {
     if (isPreProd) {
@@ -47,10 +47,11 @@ export function useAnalytics() {
         const authPage = sessionStorage.getItem(AUTH_PAGE_KEY);
         if (authPage === "/sign-in") {
           Analytics.trackEvent("sign_in_completed");
+          sessionStorage.removeItem(AUTH_PAGE_KEY);
         } else if (authPage === "/sign-up") {
           Analytics.trackEvent("sign_up_completed");
+          sessionStorage.removeItem(AUTH_PAGE_KEY);
         }
-        sessionStorage.removeItem(AUTH_PAGE_KEY);
       }
 
       lastUserIdRef.current = user.id;
