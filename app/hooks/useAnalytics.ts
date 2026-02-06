@@ -12,8 +12,13 @@ export function useAnalytics() {
   const lastUserIdRef = useRef<string | null>(null);
 
   useEffect(() => {
+    // Skip analytics on the server
+    if (typeof window === "undefined") {
+      return;
+    }
+
     // Skip analytics in non-production environments
-    if (typeof window === "undefined" || window.ENV.VERCEL_ENV !== "production") {
+    if (window.ENV.VERCEL_ENV !== "production") {
       return;
     }
 
@@ -27,8 +32,13 @@ export function useAnalytics() {
   }, [location]);
 
   useEffect(() => {
+    // Skip analytics on the server
+    if (typeof window === "undefined") {
+      return;
+    }
+
     // Skip analytics in non-production environments
-    if (typeof window === "undefined" || window.ENV.VERCEL_ENV !== "production") {
+    if (window.ENV.VERCEL_ENV !== "production) {
       return;
     }
 
