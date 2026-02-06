@@ -7,7 +7,7 @@ if (!MIXPANEL_TOKEN) {
 }
 
 const initOptions: Partial<Config> = {
-  debug: true,
+  debug: process.env.NODE_ENV === "development",
   autocapture: {
     pageview: false,
   },
