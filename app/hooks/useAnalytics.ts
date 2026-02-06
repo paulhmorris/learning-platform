@@ -11,7 +11,7 @@ export function useAnalytics() {
   const lastPathRef = useRef<string | null>(null);
   const lastUserIdRef = useRef<string | null>(null);
 
-  // Early return for SSR - make this hook a no-op on the server
+  // Early return for SSR - make this hook a no-op on the server to prevent window access errors
   if (typeof window === "undefined") {
     return null;
   }
