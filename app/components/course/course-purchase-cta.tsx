@@ -1,4 +1,5 @@
 import { Button } from "~/components/ui/button";
+import { Analytics } from "~/integrations/mixpanel.client";
 
 export function CoursePurchaseCTA() {
   return (
@@ -8,7 +9,11 @@ export function CoursePurchaseCTA() {
           <h3 className="text-pretty text-2xl">Enroll in this course to begin.</h3>
         </div>
         <form method="post">
-          <Button className="sm:ml-auto sm:max-w-60" variant="primary">
+          <Button
+            className="sm:ml-auto sm:max-w-60"
+            variant="primary"
+            onClick={() => Analytics.trackEvent("purchase_cta_clicked")}
+          >
             Enroll
           </Button>
         </form>

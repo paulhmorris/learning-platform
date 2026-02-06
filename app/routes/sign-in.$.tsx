@@ -1,6 +1,13 @@
 import { SignIn } from "@clerk/react-router";
+import { useEffect } from "react";
+
+import { Analytics } from "~/integrations/mixpanel.client";
 
 export default function SignInPage() {
+  useEffect(() => {
+    Analytics.trackEvent("sign_in_started");
+  }, []);
+
   return (
     <>
       <title>Sign In | Plumb Media & Education</title>

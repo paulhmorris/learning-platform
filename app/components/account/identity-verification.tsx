@@ -1,10 +1,11 @@
 import { loadStripe, Stripe } from "@stripe/stripe-js";
 import { IconCircleCheckFilled, IconExclamationCircle, IconFileSearch } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRevalidator } from "react-router";
 import { toast } from "sonner";
 
 import { AdminButton } from "~/components/ui/admin-button";
+import { Analytics } from "~/integrations/mixpanel.client";
 import { Sentry } from "~/integrations/sentry";
 import { VerificationSession } from "~/services/identity.server";
 
@@ -20,6 +21,7 @@ export function IdentityVerification({
   const [submitted, setSubmitted] = useState(false);
   const [stripe, setStripe] = useState<Stripe | null>(null);
   const revalidator = useRevalidator();
+  const trackedStatusRef = useRef<{ success?: boolean; failed?: boolean }>({});
 
   useEffect(() => {
     if (!stripePromise) return;
@@ -31,6 +33,8 @@ export function IdentityVerification({
 
   async function handleStartVerification() {
     if (!stripe) return;
+
+    Analytics.trackEvent("id_verification_started");
 
     try {
       const response = await fetch("/api/identity-verification", { method: "POST" });
@@ -67,6 +71,18 @@ export function IdentityVerification({
   const status = session?.status;
   const code = session?.last_error?.code;
   const errorReason = session?.last_error?.reason;
+
+  useEffect(() => {
+    if ((isIdentityVerified || status === "verified") && !trackedStatusRef.current.success) {
+      trackedStatusRef.current.success = true;
+      Analytics.trackEvent("id_verification_success");
+    }
+
+    if (status === "requires_input" && errorReason && !trackedStatusRef.current.failed) {
+      trackedStatusRef.current.failed = true;
+      Analytics.trackEvent("id_verification_failed", { reason: errorReason, code });
+    }
+  }, [code, errorReason, isIdentityVerified, status]);
 
   if (isIdentityVerified || status === "verified") {
     return (
