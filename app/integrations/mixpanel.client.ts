@@ -1,4 +1,4 @@
-import mixpanel, { Config } from "mixpanel-browser";
+import type { Config, Mixpanel } from "mixpanel-browser";
 
 const MIXPANEL_TOKEN = import.meta.env.VITE_MIXPANEL_TOKEN;
 
@@ -17,13 +17,32 @@ const initOptions: Partial<Config> = {
   record_mask_all_text: false,
 };
 
+let mixpanelInstance: Mixpanel | null = null;
+let mixpanelLoadPromise: Promise<Mixpanel> | null = null;
 let isInitialized = false;
 
 function shouldSkipTracking(): boolean {
   return !isInitialized || !MIXPANEL_TOKEN || window.ENV.VERCEL_ENV !== "production";
 }
 
-function init() {
+async function loadMixpanel(): Promise<Mixpanel> {
+  if (mixpanelInstance) {
+    return mixpanelInstance;
+  }
+
+  if (mixpanelLoadPromise) {
+    return mixpanelLoadPromise;
+  }
+
+  mixpanelLoadPromise = import("mixpanel-browser").then((module) => {
+    mixpanelInstance = module.default;
+    return module.default;
+  });
+
+  return mixpanelLoadPromise;
+}
+
+async function init() {
   if (window.ENV.VERCEL_ENV !== "production") {
     console.info("Mixpanel analytics is disabled in non-production environments.");
     return;
@@ -31,21 +50,25 @@ function init() {
   if (isInitialized) {
     return;
   }
+
+  const mixpanel = await loadMixpanel();
   mixpanel.init(MIXPANEL_TOKEN, initOptions);
   isInitialized = true;
 }
 
-function trackEvent(eventName: string, properties?: Record<string, unknown>) {
+async function trackEvent(eventName: string, properties?: Record<string, unknown>) {
   if (shouldSkipTracking()) {
     return;
   }
+  const mixpanel = await loadMixpanel();
   mixpanel.track(eventName, properties);
 }
 
-function trackPageView(url: string) {
+async function trackPageView(url: string) {
   if (shouldSkipTracking()) {
     return;
   }
+  const mixpanel = await loadMixpanel();
   const parsed = new URL(url, window.location.origin);
   mixpanel.track_pageview({
     url: parsed.href,
@@ -62,10 +85,11 @@ type AnalyticsUser = {
   lastName?: string | null;
 };
 
-function identifyUser(user: AnalyticsUser) {
+async function identifyUser(user: AnalyticsUser) {
   if (shouldSkipTracking()) {
     return;
   }
+  const mixpanel = await loadMixpanel();
   mixpanel.identify(user.id);
   mixpanel.people.set({
     $email: user.email ?? undefined,
@@ -74,10 +98,11 @@ function identifyUser(user: AnalyticsUser) {
   });
 }
 
-function clearUser() {
+async function clearUser() {
   if (shouldSkipTracking()) {
     return;
   }
+  const mixpanel = await loadMixpanel();
   mixpanel.reset();
 }
 export const Analytics = {
