@@ -1,7 +1,7 @@
 import { test as base, expect } from "@playwright/test";
 
 import { createE2ETestUser, deleteE2ETestUser, ensureAuthenticatedStorageState, TestUser } from "../helpers/auth";
-import { cleanupUserCourseData, enrollUserInCourse } from "../helpers/progress";
+import { cleanupUserCourseData } from "../helpers/progress";
 
 type AuthFixtures = {
   storageState: string;
@@ -16,7 +16,6 @@ export const test = base.extend<AuthFixtures, AuthWorkerFixtures>({
   testUser: [
     async ({}, use, workerInfo) => {
       const testUser = await createE2ETestUser(workerInfo.workerIndex);
-      await enrollUserInCourse(testUser.id);
       await use(testUser);
       await cleanupUserCourseData(testUser.id);
       await deleteE2ETestUser(testUser.id, testUser.stripeCustomerId);

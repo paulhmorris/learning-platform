@@ -5,7 +5,9 @@ import path from "node:path";
 import { clerk } from "@clerk/testing/playwright";
 import type { Browser, Page } from "@playwright/test";
 
+import { stripe } from "~/integrations/stripe.server";
 import { AuthService } from "~/services/auth.server";
+import { PaymentService } from "~/services/payment.server";
 
 const DEFAULT_BASE_URL = "http://localhost:3000";
 
@@ -16,6 +18,7 @@ type Credentials = {
 
 export type TestUser = Credentials & {
   id: string;
+  stripeCustomerId?: string;
 };
 
 function getBaseUrl() {
@@ -40,8 +43,20 @@ export async function loginAsRegularUser(page: Page, credentials: Credentials) {
   await page.goto(new URL("/preview", getBaseUrl()).toString());
 }
 
-export async function ensureAuthenticatedStorageState(browser: Browser, credentials: Credentials, workerIndex = 0) {
-  const storageStatePath = path.join(process.cwd(), "test", "e2e", ".auth", `regular-user-worker-${workerIndex}.json`);
+export async function ensureAuthenticatedStorageState(
+  browser: Browser,
+  credentials: Credentials,
+  workerIndex = 0,
+  storageKey?: string,
+) {
+  const safeKey = storageKey ? storageKey.replace(/[^a-zA-Z0-9_-]/g, "_") : undefined;
+  const storageStatePath = path.join(
+    process.cwd(),
+    "test",
+    "e2e",
+    ".auth",
+    `regular-user-worker-${workerIndex}${safeKey ? `-${safeKey}` : ""}.json`,
+  );
 
   await fs.mkdir(path.dirname(storageStatePath), { recursive: true });
 
@@ -86,9 +101,22 @@ export async function createE2ETestUser(workerIndex: number): Promise<TestUser> 
     password,
   });
 
-  return { id: user.id, email, password };
+  const stripeCustomer = await PaymentService.upsertCustomer(user.id, {
+    metadata: {
+      source: "e2e",
+    },
+  });
+
+  return { id: user.id, email, password, stripeCustomerId: stripeCustomer.id };
 }
 
-export async function deleteE2ETestUser(userId: string) {
+export async function deleteE2ETestUser(userId: string, stripeCustomerId?: string) {
+  if (stripeCustomerId) {
+    try {
+      await stripe.customers.del(stripeCustomerId);
+    } catch {
+      // Ignore Stripe cleanup failures in tests.
+    }
+  }
   await AuthService.deleteUser(userId);
 }
