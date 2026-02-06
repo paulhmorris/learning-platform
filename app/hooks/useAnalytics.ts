@@ -3,8 +3,7 @@ import { useEffect, useRef } from "react";
 import { useLocation } from "react-router";
 
 import { Analytics } from "~/integrations/mixpanel.client";
-
-const AUTH_PAGE_KEY = "mixpanel_auth_page";
+import { AUTH_PAGE_KEY } from "~/lib/constants";
 
 export function useAnalytics() {
   const location = useLocation();

@@ -2,8 +2,7 @@ import { SignIn } from "@clerk/react-router";
 import { useEffect } from "react";
 
 import { Analytics } from "~/integrations/mixpanel.client";
-
-const AUTH_PAGE_KEY = "mixpanel_auth_page";
+import { AUTH_PAGE_KEY } from "~/lib/constants";
 
 export default function SignInPage() {
   useEffect(() => {
