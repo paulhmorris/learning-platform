@@ -5,9 +5,11 @@ import path from "node:path";
 import { clerk } from "@clerk/testing/playwright";
 import type { Browser, Page } from "@playwright/test";
 
+import { createLogger } from "~/integrations/logger.server";
 import { AuthService } from "~/services/auth.server";
 
 const DEFAULT_BASE_URL = "http://localhost:3000";
+const logger = createLogger("E2E.AuthHelpers");
 
 type Credentials = {
   email: string;
@@ -26,6 +28,7 @@ export async function loginAsRegularUser(page: Page, credentials: Credentials) {
   const { email, password } = credentials;
   const signInUrl = new URL("/sign-in", getBaseUrl()).toString();
 
+  logger.info("Logging in test user", { email });
   await page.goto(signInUrl, { waitUntil: "domcontentloaded" });
 
   await clerk.signIn({
@@ -43,9 +46,11 @@ export async function loginAsRegularUser(page: Page, credentials: Credentials) {
 export async function ensureAuthenticatedStorageState(browser: Browser, credentials: Credentials, workerIndex = 0) {
   const storageStatePath = path.join(process.cwd(), "test", "e2e", ".auth", `regular-user-worker-${workerIndex}.json`);
 
+  logger.debug("Ensuring authenticated storage state", { workerIndex, storageStatePath });
   await fs.mkdir(path.dirname(storageStatePath), { recursive: true });
 
   const refreshStorageState = async () => {
+    logger.info("Refreshing authenticated storage state", { workerIndex, storageStatePath });
     const page = await browser.newPage();
     await loginAsRegularUser(page, credentials);
     await page.context().storageState({ path: storageStatePath });
@@ -65,6 +70,7 @@ export async function ensureAuthenticatedStorageState(browser: Browser, credenti
   await page.goto(previewUrl, { waitUntil: "domcontentloaded" });
 
   if (page.url().includes("/sign-in")) {
+    logger.warn("Storage state invalid; reauth required", { workerIndex, storageStatePath });
     await page.close();
     await context.close();
     return refreshStorageState();
@@ -80,6 +86,7 @@ export async function createE2ETestUser(workerIndex: number): Promise<TestUser> 
   const email = `e2e-${workerIndex}-${uniqueId}+clerk_test@example.com`;
   const password = `TestPassword!${uniqueId}`;
 
+  logger.info("Creating E2E test user", { workerIndex, email });
   const user = await AuthService.createUser({
     firstName: "E2E",
     lastName: "Test User" + workerIndex,
@@ -87,9 +94,12 @@ export async function createE2ETestUser(workerIndex: number): Promise<TestUser> 
     password,
   });
 
+  console.log(`Created test user with email: ${email} and password: ${password}`);
+
   return { id: user.id, email, password };
 }
 
 export async function deleteE2ETestUser(userId: string) {
+  logger.info("Deleting E2E test user", { userId });
   await AuthService.deleteUser(userId);
 }
