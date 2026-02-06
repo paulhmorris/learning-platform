@@ -5,8 +5,6 @@ import { useLocation } from "react-router";
 import { Analytics } from "~/integrations/mixpanel.client";
 import { AUTH_PAGE_KEY } from "~/lib/constants";
 
-const isPreProd = typeof window !== "undefined" && window.ENV.VERCEL_ENV !== "production";
-
 export function useAnalytics() {
   const location = useLocation();
   const { user } = useUser();
@@ -14,7 +12,8 @@ export function useAnalytics() {
   const lastUserIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (isPreProd) {
+    // Skip analytics in non-production environments
+    if (typeof window === "undefined" || window.ENV.VERCEL_ENV !== "production") {
       return;
     }
 
@@ -28,7 +27,8 @@ export function useAnalytics() {
   }, [location]);
 
   useEffect(() => {
-    if (isPreProd) {
+    // Skip analytics in non-production environments
+    if (typeof window === "undefined" || window.ENV.VERCEL_ENV !== "production") {
       return;
     }
 
