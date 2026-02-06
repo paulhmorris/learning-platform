@@ -32,10 +32,16 @@ function init() {
 }
 
 function trackEvent(eventName: string, properties?: Record<string, unknown>) {
+  if (!isInitialized || !MIXPANEL_TOKEN || window.ENV.VERCEL_ENV !== "production") {
+    return;
+  }
   mixpanel.track(eventName, properties);
 }
 
 function trackPageView(url: string) {
+  if (!isInitialized || !MIXPANEL_TOKEN || window.ENV.VERCEL_ENV !== "production") {
+    return;
+  }
   const parsed = new URL(url, window.location.origin);
   mixpanel.track_pageview({
     url: parsed.href,
@@ -53,6 +59,9 @@ type AnalyticsUser = {
 };
 
 function identifyUser(user: AnalyticsUser) {
+  if (!isInitialized || !MIXPANEL_TOKEN || window.ENV.VERCEL_ENV !== "production") {
+    return;
+  }
   mixpanel.identify(user.id);
   mixpanel.people.set({
     $email: user.email ?? undefined,
@@ -62,6 +71,9 @@ function identifyUser(user: AnalyticsUser) {
 }
 
 function clearUser() {
+  if (!isInitialized || !MIXPANEL_TOKEN || window.ENV.VERCEL_ENV !== "production") {
+    return;
+  }
   mixpanel.reset();
 }
 export const Analytics = {
