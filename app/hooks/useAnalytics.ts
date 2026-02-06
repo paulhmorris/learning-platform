@@ -10,6 +10,12 @@ export function useAnalytics() {
   const initialized = useRef(false);
   const lastPathRef = useRef<string | null>(null);
   const lastUserIdRef = useRef<string | null>(null);
+
+  // Early return for SSR - make this hook a no-op on the server
+  if (typeof window === "undefined") {
+    return null;
+  }
+
   const isPreProd = window.ENV.VERCEL_ENV !== "production";
 
   useEffect(() => {
@@ -25,7 +31,7 @@ export function useAnalytics() {
     const pageUrl = `${location.pathname}${location.search}${location.hash}`;
     Analytics.trackPageView(pageUrl);
     lastPathRef.current = location.pathname;
-  }, [location]);
+  }, [location, isPreProd]);
 
   useEffect(() => {
     if (isPreProd) {
@@ -58,7 +64,7 @@ export function useAnalytics() {
       Analytics.clearUser();
       lastUserIdRef.current = null;
     }
-  }, [user]);
+  }, [user, isPreProd]);
 
   return null;
 }
