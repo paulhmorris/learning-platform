@@ -25,7 +25,7 @@ export async function enrollUserInCourse(userId: string) {
   const baseUrl = process.env.E2E_BASE_URL ?? "http://localhost:3000";
   const host = new URL(baseUrl).host;
 
-  logger.info("Enrolling user in course", { userId, host });
+  logger.info(`Enrolling user ${userId} in course for host ${host}`);
   let course = await db.course.findUnique({ where: { host } });
   if (!course) {
     course = await db.course.findFirst();
@@ -52,7 +52,7 @@ export async function enrollUserInCourse(userId: string) {
 }
 
 export async function cleanupUserCourseData(userId: string) {
-  logger.info("Cleaning up user course data", { userId });
+  logger.info(`Cleaning up user course data for user ${userId}`);
   await Promise.all([
     ProgressService.resetAllLesson(userId),
     QuizService.resetAllProgress(userId),
@@ -61,7 +61,7 @@ export async function cleanupUserCourseData(userId: string) {
 }
 
 export async function resetProgressForUser(userId: string) {
-  logger.info("Resetting user progress", { userId });
+  logger.info(`Resetting progress for user ${userId}`);
   await Promise.all([ProgressService.resetAllLesson(userId), QuizService.resetAllProgress(userId)]);
 }
 
@@ -69,7 +69,7 @@ export async function markLessonCompleteForUser(
   userId: string,
   lesson: { id: number; attributes: { required_duration_in_seconds?: number | null } },
 ) {
-  logger.debug("Marking lesson complete for user", { userId, lessonId: lesson.id });
+  logger.debug(`Marking lesson ${lesson.id} complete for user ${userId}`);
   return ProgressService.markComplete({
     userId,
     lessonId: lesson.id,
@@ -78,6 +78,6 @@ export async function markLessonCompleteForUser(
 }
 
 export async function markQuizPassedForUser(userId: string, quizId: number, score = 100) {
-  logger.debug("Marking quiz passed for user", { userId, quizId, score });
+  logger.debug(`Marking quiz ${quizId} passed for user ${userId} with score ${score}`);
   return QuizService.markAsPassed(quizId, userId, score);
 }
