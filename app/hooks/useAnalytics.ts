@@ -3,12 +3,12 @@ import { useEffect, useRef } from "react";
 import { useLocation } from "react-router";
 
 import { Analytics } from "~/integrations/mixpanel.client";
+import { AUTH_PAGE_KEY } from "~/lib/constants";
 
 export function useAnalytics() {
   const location = useLocation();
   const { user } = useUser();
   const initialized = useRef(false);
-  const lastPathRef = useRef<string | null>(null);
   const lastUserIdRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -17,8 +17,8 @@ export function useAnalytics() {
       return;
     }
 
-    const isPreProd = window.ENV.VERCEL_ENV !== "production";
-    if (isPreProd) {
+    // Skip analytics in non-production environments
+    if (window.ENV.VERCEL_ENV !== "production") {
       return;
     }
 
@@ -29,7 +29,6 @@ export function useAnalytics() {
 
     const pageUrl = `${location.pathname}${location.search}${location.hash}`;
     Analytics.trackPageView(pageUrl);
-    lastPathRef.current = location.pathname;
   }, [location]);
 
   useEffect(() => {
@@ -38,8 +37,8 @@ export function useAnalytics() {
       return;
     }
 
-    const isPreProd = window.ENV.VERCEL_ENV !== "production";
-    if (isPreProd) {
+    // Skip analytics in non-production environments
+    if (window.ENV.VERCEL_ENV !== "production) {
       return;
     }
 
@@ -56,11 +55,14 @@ export function useAnalytics() {
       });
 
       if (!lastUserIdRef.current) {
-        if (lastPathRef.current === "/sign-in") {
+        const authPage = sessionStorage.getItem(AUTH_PAGE_KEY);
+        // sessionStorage can only hold one value, so these conditions are mutually exclusive
+        if (authPage === "/sign-in") {
           Analytics.trackEvent("sign_in_completed");
-        }
-        if (lastPathRef.current === "/sign-up") {
+          sessionStorage.removeItem(AUTH_PAGE_KEY);
+        } else if (authPage === "/sign-up") {
           Analytics.trackEvent("sign_up_completed");
+          sessionStorage.removeItem(AUTH_PAGE_KEY);
         }
       }
 
