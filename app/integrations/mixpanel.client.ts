@@ -19,6 +19,10 @@ const initOptions: Partial<Config> = {
 
 let isInitialized = false;
 
+function shouldSkipTracking(): boolean {
+  return !isInitialized || !MIXPANEL_TOKEN || window.ENV.VERCEL_ENV !== "production";
+}
+
 function init() {
   if (window.ENV.VERCEL_ENV !== "production") {
     console.info("Mixpanel analytics is disabled in non-production environments.");
@@ -32,14 +36,14 @@ function init() {
 }
 
 function trackEvent(eventName: string, properties?: Record<string, unknown>) {
-  if (!isInitialized || !MIXPANEL_TOKEN || window.ENV.VERCEL_ENV !== "production") {
+  if (shouldSkipTracking()) {
     return;
   }
   mixpanel.track(eventName, properties);
 }
 
 function trackPageView(url: string) {
-  if (!isInitialized || !MIXPANEL_TOKEN || window.ENV.VERCEL_ENV !== "production") {
+  if (shouldSkipTracking()) {
     return;
   }
   const parsed = new URL(url, window.location.origin);
@@ -59,7 +63,7 @@ type AnalyticsUser = {
 };
 
 function identifyUser(user: AnalyticsUser) {
-  if (!isInitialized || !MIXPANEL_TOKEN || window.ENV.VERCEL_ENV !== "production") {
+  if (shouldSkipTracking()) {
     return;
   }
   mixpanel.identify(user.id);
@@ -71,7 +75,7 @@ function identifyUser(user: AnalyticsUser) {
 }
 
 function clearUser() {
-  if (!isInitialized || !MIXPANEL_TOKEN || window.ENV.VERCEL_ENV !== "production") {
+  if (shouldSkipTracking()) {
     return;
   }
   mixpanel.reset();
