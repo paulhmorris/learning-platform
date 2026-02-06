@@ -255,7 +255,7 @@ export default function CourseCertificate() {
     if (trackedBlockedRef.current) return;
     if (!isCourseComplete) {
       trackedBlockedRef.current = true;
-      Analytics.trackEvent("certificate_claim_blocked", {
+      void Analytics.trackEvent("certificate_claim_blocked", {
         course_id: course.id,
         course_title: cmsCourse.attributes.title,
         reason: "incomplete_course",
@@ -265,7 +265,7 @@ export default function CourseCertificate() {
 
     if (!userHasVerifiedIdentity) {
       trackedBlockedRef.current = true;
-      Analytics.trackEvent("certificate_claim_blocked", {
+      void Analytics.trackEvent("certificate_claim_blocked", {
         course_id: course.id,
         course_title: cmsCourse.attributes.title,
         reason: "identity_verification_required",
@@ -277,7 +277,7 @@ export default function CourseCertificate() {
     if (trackedClaimedRef.current) return;
     if (userCourse.certificate || actionData?.success) {
       trackedClaimedRef.current = true;
-      Analytics.trackEvent("certificate_claim_success", {
+      void Analytics.trackEvent("certificate_claim_success", {
         course_id: course.id,
         course_title: cmsCourse.attributes.title,
       });
@@ -345,7 +345,7 @@ export default function CourseCertificate() {
           <form
             method="post"
             onSubmit={() =>
-              Analytics.trackEvent("certificate_claim_started", {
+              void Analytics.trackEvent("certificate_claim_started", {
                 course_id: course.id,
                 course_title: cmsCourse.attributes.title,
               })
