@@ -19,6 +19,10 @@ const initOptions: Partial<Config> = {
 
 let isInitialized = false;
 
+function shouldSkipTracking(): boolean {
+  return !isInitialized || !MIXPANEL_TOKEN || window.ENV.VERCEL_ENV !== "production";
+}
+
 function init() {
   if (window.ENV.VERCEL_ENV !== "production") {
     console.info("Mixpanel analytics is disabled in non-production environments.");
@@ -32,10 +36,16 @@ function init() {
 }
 
 function trackEvent(eventName: string, properties?: Record<string, unknown>) {
+  if (shouldSkipTracking()) {
+    return;
+  }
   mixpanel.track(eventName, properties);
 }
 
 function trackPageView(url: string) {
+  if (shouldSkipTracking()) {
+    return;
+  }
   const parsed = new URL(url, window.location.origin);
   mixpanel.track_pageview({
     url: parsed.href,
@@ -53,6 +63,9 @@ type AnalyticsUser = {
 };
 
 function identifyUser(user: AnalyticsUser) {
+  if (shouldSkipTracking()) {
+    return;
+  }
   mixpanel.identify(user.id);
   mixpanel.people.set({
     $email: user.email ?? undefined,
@@ -62,6 +75,9 @@ function identifyUser(user: AnalyticsUser) {
 }
 
 function clearUser() {
+  if (shouldSkipTracking()) {
+    return;
+  }
   mixpanel.reset();
 }
 export const Analytics = {
