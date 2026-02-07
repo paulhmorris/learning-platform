@@ -21,6 +21,7 @@ import { Section, SectionHeader } from "~/components/section";
 import { CourseProgressBar } from "~/components/sidebar/course-progress-bar";
 import { Button } from "~/components/ui/button";
 import { Separator } from "~/components/ui/separator";
+import { Skeleton } from "~/components/ui/skeleton";
 import { useProgress } from "~/hooks/useProgress";
 import { createLogger } from "~/integrations/logger.server";
 import { Analytics } from "~/integrations/mixpanel.client";
@@ -114,7 +115,7 @@ export async function action(args: ActionFunctionArgs) {
 
 export default function CoursePreview() {
   const [searchParams] = useSearchParams();
-  const { lessonProgress, quizProgress } = useProgress();
+  const { lessonProgress, quizProgress, isLoading: progressLoading } = useProgress();
   const [successModalOpen, setSuccessModalOpen] = useState(false);
   const [canceledModalOpen, setCanceledModalOpen] = useState(false);
   const { course, linkedCourse, userCourseIds } = useLoaderData<typeof loader>();
@@ -213,7 +214,9 @@ export default function CoursePreview() {
               duration={totalDurationInSeconds}
               isTimed={courseIsTimed}
             />
-            {!userHasAccess ? (
+            {progressLoading ? (
+              <Skeleton className="h-[118px] w-full rounded-md" />
+            ) : !userHasAccess ? (
               <CoursePurchaseCTA />
             ) : isCourseCompleted ? (
               <div className="text-center">
