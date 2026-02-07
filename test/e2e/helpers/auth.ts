@@ -10,6 +10,7 @@ import { AuthService } from "~/services/auth.server";
 import { PaymentService } from "~/services/payment.server";
 
 const DEFAULT_BASE_URL = "http://localhost:3000";
+const logger = createLogger("E2E.AuthHelpers");
 
 type Credentials = {
   email: string;
@@ -29,6 +30,7 @@ export async function loginAsRegularUser(page: Page, credentials: Credentials) {
   const { email, password } = credentials;
   const signInUrl = new URL("/sign-in", getBaseUrl()).toString();
 
+  logger.info(`Logging in test user ${email}`);
   await page.goto(signInUrl, { waitUntil: "domcontentloaded" });
 
   await clerk.signIn({
@@ -58,9 +60,11 @@ export async function ensureAuthenticatedStorageState(
     `regular-user-worker-${workerIndex}${safeKey ? `-${safeKey}` : ""}.json`,
   );
 
+  logger.debug(`Ensuring authenticated storage state for worker ${workerIndex} at ${storageStatePath}`);
   await fs.mkdir(path.dirname(storageStatePath), { recursive: true });
 
   const refreshStorageState = async () => {
+    logger.info(`Refreshing authenticated storage state for worker ${workerIndex} at ${storageStatePath}`);
     const page = await browser.newPage();
     await loginAsRegularUser(page, credentials);
     await page.context().storageState({ path: storageStatePath });
@@ -80,6 +84,7 @@ export async function ensureAuthenticatedStorageState(
   await page.goto(previewUrl, { waitUntil: "domcontentloaded" });
 
   if (page.url().includes("/sign-in")) {
+    logger.warn(`Storage state invalid; reauth required for worker ${workerIndex}`);
     await page.close();
     await context.close();
     return refreshStorageState();
@@ -91,9 +96,11 @@ export async function ensureAuthenticatedStorageState(
 }
 
 export async function createE2ETestUser(workerIndex: number): Promise<TestUser> {
-  const email = `e2e-${workerIndex}+clerk_test@example.com`;
-  const password = `TestPassword!${randomUUID()}`;
+  const uniqueId = randomUUID();
+  const email = `e2e-${workerIndex}-${uniqueId}+clerk_test@example.com`;
+  const password = `TestPassword!${uniqueId}`;
 
+  logger.info(`Creating E2E test user ${email}`);
   const user = await AuthService.createUser({
     firstName: "E2E",
     lastName: "Test User" + workerIndex,

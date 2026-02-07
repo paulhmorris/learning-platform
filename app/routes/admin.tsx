@@ -3,7 +3,6 @@ import { IconCertificate, IconUsersGroup } from "@tabler/icons-react";
 import { CSSProperties } from "react";
 import { LoaderFunctionArgs, NavLink, Outlet } from "react-router";
 
-import { UserDebugTools } from "~/components/debug/user-debug-tools";
 import { ErrorComponent } from "~/components/error-component";
 import { Responses } from "~/lib/responses.server";
 import { cn } from "~/lib/utils";
@@ -63,7 +62,6 @@ export default function AdminLayout() {
               </div>
             </div>
           </div>
-          <UserDebugTools />
         </div>
       </SignedIn>
     </>
