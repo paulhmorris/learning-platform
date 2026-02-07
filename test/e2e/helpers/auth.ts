@@ -5,6 +5,7 @@ import path from "node:path";
 import { clerk } from "@clerk/testing/playwright";
 import type { Browser, Page } from "@playwright/test";
 
+import { createLogger } from "~/integrations/logger.server";
 import { stripe } from "~/integrations/stripe.server";
 import { AuthService } from "~/services/auth.server";
 import { PaymentService } from "~/services/payment.server";
