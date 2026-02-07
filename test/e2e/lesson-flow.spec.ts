@@ -34,6 +34,7 @@ test.describe("Lesson flow", () => {
     await markLessonCompleteForUser(userId, activeLesson!);
 
     await page.reload();
+    await page.waitForLoadState("networkidle");
     const activeLessonItem = page
       .getByRole("heading", { name: activeLesson?.attributes.title, level: 3 })
       .locator("xpath=ancestor::li[1]");

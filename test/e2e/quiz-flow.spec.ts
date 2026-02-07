@@ -29,16 +29,18 @@ test.describe("Quiz flow", () => {
     }
 
     await page.goto("/preview");
+    await page.waitForLoadState("networkidle");
 
     const quizId = sectionWithQuiz.quiz?.data?.id;
     expect(quizId).toBeTruthy();
     await markQuizPassedForUser(userId, quizId!, 100);
 
+    await page.reload();
+    await page.waitForLoadState("networkidle");
+
     const sectionHeading = page.getByRole("heading", { name: sectionWithQuiz.title, level: 2 });
     const sectionItem = sectionHeading.locator("xpath=ancestor::li[1]");
     await expect(sectionItem.locator(`a[href="/quizzes/${quizId}"]`)).toBeVisible();
-
-    await page.reload();
 
     const nextLesson = nextSection?.lessons?.data?.[0];
     expect(nextLesson).toBeTruthy();
