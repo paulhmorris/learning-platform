@@ -13,10 +13,9 @@ export function useProgress() {
     }
   }, [location.pathname, fetcher]);
 
-  return (
-    fetcher.data ?? {
-      lessonProgress: [],
-      quizProgress: [],
-    }
-  );
+  return {
+    lessonProgress: fetcher.data?.lessonProgress ?? [],
+    quizProgress: fetcher.data?.quizProgress ?? [],
+    isLoading: fetcher.state === "loading",
+  };
 }

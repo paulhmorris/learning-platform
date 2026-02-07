@@ -225,7 +225,7 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export default function CourseCertificate() {
-  const { lessonProgress, quizProgress } = useProgress();
+  const { lessonProgress, quizProgress, isLoading } = useProgress();
   const { course: cmsCourse } = useCourseData();
   const { userCourse, course, userProfile } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
@@ -283,6 +283,10 @@ export default function CourseCertificate() {
       });
     }
   }, [actionData?.success, course.id, cmsCourse.attributes.title, userCourse.certificate]);
+
+  if (isLoading) {
+    return null;
+  }
 
   if (!isCourseComplete) {
     return (
