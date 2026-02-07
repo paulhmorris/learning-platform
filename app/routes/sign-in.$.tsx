@@ -1,6 +1,15 @@
 import { SignIn } from "@clerk/react-router";
+import { useEffect } from "react";
+
+import { Analytics } from "~/integrations/mixpanel.client";
+import { AUTH_PAGE_KEY } from "~/lib/constants";
 
 export default function SignInPage() {
+  useEffect(() => {
+    sessionStorage.setItem(AUTH_PAGE_KEY, "/sign-in");
+    void Analytics.trackEvent("sign_in_started");
+  }, []);
+
   return (
     <>
       <title>Sign In | Plumb Media & Education</title>
