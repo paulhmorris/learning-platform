@@ -85,15 +85,15 @@ jobs:
 
       - name: Build Project Artifacts
         run: vercel build --token=${{ secrets.VERCEL_TOKEN }} \
-          --build-env DATABASE_URL=${{ steps.neon_branch_deploy.outputs.db_url_pooled || steps.neon_branch_deploy.outputs.db_url }} \
-          --build-env DIRECT_URL=${{ steps.neon_branch_deploy.outputs.db_url }}
+          --build-env DATABASE_URL='${{ steps.neon_branch_deploy.outputs.db_url_pooled || steps.neon_branch_deploy.outputs.db_url }}' \
+          --build-env DIRECT_URL='${{ steps.neon_branch_deploy.outputs.db_url }}'
 
       - name: Deploy to Vercel
         id: vercel_deploy
         run: |
           DEPLOY_URL=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }} --yes \
-            --env DATABASE_URL=${{ steps.neon_branch_deploy.outputs.db_url_pooled || steps.neon_branch_deploy.outputs.db_url }} \
-            --env DIRECT_URL=${{ steps.neon_branch_deploy.outputs.db_url }} \
+            --env DATABASE_URL='${{ steps.neon_branch_deploy.outputs.db_url_pooled || steps.neon_branch_deploy.outputs.db_url }}' \
+            --env DIRECT_URL='${{ steps.neon_branch_deploy.outputs.db_url }}' \
             | tail -n 1)
           echo "url=${DEPLOY_URL}" >> "$GITHUB_OUTPUT"
 
