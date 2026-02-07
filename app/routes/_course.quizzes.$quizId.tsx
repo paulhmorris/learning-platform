@@ -11,6 +11,7 @@ import { Button } from "~/components/ui/button";
 import { useCourseData } from "~/hooks/useCourseData";
 import { useProgress } from "~/hooks/useProgress";
 import { createLogger } from "~/integrations/logger.server";
+import { Analytics } from "~/integrations/mixpanel.client";
 import { Sentry } from "~/integrations/sentry";
 import { Responses } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
@@ -130,6 +131,8 @@ export default function Quiz() {
   const { lessonProgress } = useProgress();
   const actionData = useActionData<typeof action>();
   const resultsRef = useRef<HTMLDivElement>(null);
+  const trackedStartRef = useRef(false);
+  const trackedCompleteRef = useRef(false);
 
   const lessons = getLessonsInOrder({ course, progress: lessonProgress });
 
@@ -162,6 +165,40 @@ export default function Quiz() {
   const quizSection = course.attributes.sections.find((s) => s.quiz?.data?.id === quiz.id);
   // Quiz is locked if any lesson in the quiz section is not completed
   const isQuizLocked = lessons.filter((l) => l.sectionId === quizSection?.id).some((l) => !l.isCompleted);
+
+  useEffect(() => {
+    if (trackedStartRef.current || isQuizLocked) return;
+    trackedStartRef.current = true;
+    void Analytics.trackEvent("quiz_started", {
+      quiz_id: quiz.id,
+      quiz_title: quiz.attributes.title,
+      course_id: course.id,
+      course_title: course.attributes.title,
+    });
+  }, [course.attributes.title, course.id, isQuizLocked, quiz.attributes.title, quiz.id]);
+
+  useEffect(() => {
+    if (trackedCompleteRef.current || !actionData) return;
+    if (typeof actionData.score === "undefined") return;
+    trackedCompleteRef.current = true;
+    void Analytics.trackEvent("quiz_completed", {
+      quiz_id: quiz.id,
+      quiz_title: quiz.attributes.title,
+      course_id: course.id,
+      course_title: course.attributes.title,
+      score: actionData.score,
+      passed: actionData.passed,
+    });
+
+    void Analytics.trackEvent(actionData.passed ? "quiz_passed" : "quiz_failed", {
+      quiz_id: quiz.id,
+      quiz_title: quiz.attributes.title,
+      course_id: course.id,
+      course_title: course.attributes.title,
+      score: actionData.score,
+      passed: actionData.passed,
+    });
+  }, [actionData, course.attributes.title, course.id, quiz.attributes.title, quiz.id]);
   if (isQuizLocked) {
     return (
       <Wrapper>

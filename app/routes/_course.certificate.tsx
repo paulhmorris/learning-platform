@@ -1,4 +1,5 @@
 import { parseFormData, validationError } from "@rvf/react-router";
+import { useEffect, useRef } from "react";
 import { ActionFunctionArgs, Link, LoaderFunctionArgs, useActionData, useLoaderData } from "react-router";
 
 import { PageTitle } from "~/components/common/page-title";
@@ -13,6 +14,7 @@ import { useProgress } from "~/hooks/useProgress";
 import { cms } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
 import { createLogger } from "~/integrations/logger.server";
+import { Analytics } from "~/integrations/mixpanel.client";
 import { Sentry } from "~/integrations/sentry";
 import { Responses } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
@@ -223,11 +225,13 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export default function CourseCertificate() {
-  const { lessonProgress, quizProgress } = useProgress();
+  const { lessonProgress, quizProgress, isLoading } = useProgress();
   const { course: cmsCourse } = useCourseData();
   const { userCourse, course, userProfile } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const data = useCourseData();
+  const trackedBlockedRef = useRef(false);
+  const trackedClaimedRef = useRef(false);
 
   const lessons = getLessonsInOrder({ course: cmsCourse, progress: lessonProgress });
 
@@ -246,6 +250,43 @@ export default function CourseCertificate() {
     cmsCourse.attributes.sections.every((s) => {
       return !s.quiz?.data || quizProgress.find((p) => p.quizId === s.quiz?.data.id)?.isCompleted;
     });
+
+  useEffect(() => {
+    if (trackedBlockedRef.current) return;
+    if (!isCourseComplete) {
+      trackedBlockedRef.current = true;
+      void Analytics.trackEvent("certificate_claim_blocked", {
+        course_id: course.id,
+        course_title: cmsCourse.attributes.title,
+        reason: "incomplete_course",
+      });
+      return;
+    }
+
+    if (!userHasVerifiedIdentity) {
+      trackedBlockedRef.current = true;
+      void Analytics.trackEvent("certificate_claim_blocked", {
+        course_id: course.id,
+        course_title: cmsCourse.attributes.title,
+        reason: "identity_verification_required",
+      });
+    }
+  }, [course.id, cmsCourse.attributes.title, isCourseComplete, userHasVerifiedIdentity]);
+
+  useEffect(() => {
+    if (trackedClaimedRef.current) return;
+    if (userCourse.certificate || actionData?.success) {
+      trackedClaimedRef.current = true;
+      void Analytics.trackEvent("certificate_claim_success", {
+        course_id: course.id,
+        course_title: cmsCourse.attributes.title,
+      });
+    }
+  }, [actionData?.success, course.id, cmsCourse.attributes.title, userCourse.certificate]);
+
+  if (isLoading) {
+    return null;
+  }
 
   if (!isCourseComplete) {
     return (
@@ -305,7 +346,15 @@ export default function CourseCertificate() {
       </SuccessText>
       <div className="mt-8">
         {CourseSpecificForm ?? (
-          <form method="post">
+          <form
+            method="post"
+            onSubmit={() =>
+              void Analytics.trackEvent("certificate_claim_started", {
+                course_id: course.id,
+                course_title: cmsCourse.attributes.title,
+              })
+            }
+          >
             <SubmitButton className="sm:w-auto">Claim Certificate</SubmitButton>
           </form>
         )}

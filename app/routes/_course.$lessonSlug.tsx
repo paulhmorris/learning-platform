@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { LoaderFunctionArgs, ShouldRevalidateFunction, useLoaderData } from "react-router";
 import invariant from "tiny-invariant";
 
@@ -10,6 +10,7 @@ import { MarkCompleteButton } from "~/components/lesson/mark-complete-button";
 import { useCourseData } from "~/hooks/useCourseData";
 import { useProgress } from "~/hooks/useProgress";
 import { createLogger } from "~/integrations/logger.server";
+import { Analytics } from "~/integrations/mixpanel.client";
 import { Sentry } from "~/integrations/sentry";
 import { HttpHeaders, Responses } from "~/lib/responses.server";
 import { LessonService } from "~/services/lesson.server";
@@ -50,12 +51,45 @@ export default function Course() {
   const { lessonProgress } = useProgress();
   const { course } = useCourseData();
   const { lesson } = useLoaderData<typeof loader>();
+  const trackedStartRef = useRef(false);
+  const trackedCompleteRef = useRef(false);
 
   const progress = useMemo(() => {
     return lessonProgress.find((p) => p.lessonId === lesson.id) ?? null;
   }, [lesson.id, lessonProgress]);
 
   const isTimed = Boolean(lesson.attributes.required_duration_in_seconds);
+
+  useEffect(() => {
+    if (trackedStartRef.current) return;
+    trackedStartRef.current = true;
+    void Analytics.trackEvent("lesson_started", {
+      lesson_id: lesson.id,
+      lesson_slug: lesson.attributes.slug,
+      lesson_title: lesson.attributes.title,
+      course_id: course.id,
+      course_title: course.attributes.title,
+    });
+  }, [course.attributes.title, course.id, lesson.attributes.slug, lesson.attributes.title, lesson.id]);
+
+  useEffect(() => {
+    if (trackedCompleteRef.current || !progress?.isCompleted) return;
+    trackedCompleteRef.current = true;
+    void Analytics.trackEvent("lesson_completed", {
+      lesson_id: lesson.id,
+      lesson_slug: lesson.attributes.slug,
+      lesson_title: lesson.attributes.title,
+      course_id: course.id,
+      course_title: course.attributes.title,
+    });
+  }, [
+    course.attributes.title,
+    course.id,
+    lesson.attributes.slug,
+    lesson.attributes.title,
+    lesson.id,
+    progress?.isCompleted,
+  ]);
 
   return (
     <>

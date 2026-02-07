@@ -71,6 +71,7 @@ declare global {
 
   // Vite
   interface ImportMetaEnv {
+    readonly VITE_MIXPANEL_TOKEN: string;
     readonly VITE_CLERK_PUBLISHABLE_KEY: string;
   }
 

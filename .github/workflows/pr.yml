@@ -59,6 +59,7 @@ jobs:
     name: 🧩 Deploy Preview
     runs-on: ubuntu-latest
     if: github.event.action != 'closed'
+    needs: [neon]
     outputs:
       deploy_url: ${{ steps.vercel_deploy.outputs.url }}
     steps:
@@ -70,13 +71,30 @@ jobs:
       - name: Pull Vercel Environment Information
         run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
 
+      - name: Fetch Neon connection string
+        id: neon_branch_deploy
+        uses: neondatabase/create-branch-action@v6
+        with:
+          project_id: ${{ env.NEON_PROJECT_ID }}
+          branch_name: pr-${{ github.event.pull_request.number }}
+          parent_branch: staging
+          role: learning-platform_owner
+          database: learning-platform
+          prisma: true
+          api_key: ${{ env.NEON_API_KEY }}
+
       - name: Build Project Artifacts
-        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }} \
+          --build-env DATABASE_URL='${{ steps.neon_branch_deploy.outputs.db_url_pooled || steps.neon_branch_deploy.outputs.db_url }}' \
+          --build-env DIRECT_URL='${{ steps.neon_branch_deploy.outputs.db_url }}'
 
       - name: Deploy to Vercel
         id: vercel_deploy
         run: |
-          DEPLOY_URL=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }} --yes | tail -n 1)
+          DEPLOY_URL=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }} --yes \
+            --env DATABASE_URL='${{ steps.neon_branch_deploy.outputs.db_url_pooled || steps.neon_branch_deploy.outputs.db_url }}' \
+            --env DIRECT_URL='${{ steps.neon_branch_deploy.outputs.db_url }}' \
+            | tail -n 1)
           echo "url=${DEPLOY_URL}" >> "$GITHUB_OUTPUT"
 
   e2e:

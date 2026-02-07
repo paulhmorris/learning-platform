@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ActionFunctionArgs,
   isRouteErrorResponse,
@@ -21,8 +21,10 @@ import { Section, SectionHeader } from "~/components/section";
 import { CourseProgressBar } from "~/components/sidebar/course-progress-bar";
 import { Button } from "~/components/ui/button";
 import { Separator } from "~/components/ui/separator";
+import { Skeleton } from "~/components/ui/skeleton";
 import { useProgress } from "~/hooks/useProgress";
 import { createLogger } from "~/integrations/logger.server";
+import { Analytics } from "~/integrations/mixpanel.client";
 import { Sentry } from "~/integrations/sentry";
 import { Responses } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
@@ -113,10 +115,12 @@ export async function action(args: ActionFunctionArgs) {
 
 export default function CoursePreview() {
   const [searchParams] = useSearchParams();
-  const { lessonProgress, quizProgress } = useProgress();
+  const { lessonProgress, quizProgress, isLoading: progressLoading } = useProgress();
   const [successModalOpen, setSuccessModalOpen] = useState(false);
   const [canceledModalOpen, setCanceledModalOpen] = useState(false);
   const { course, linkedCourse, userCourseIds } = useLoaderData<typeof loader>();
+  const trackedPreviewRef = useRef(false);
+  const trackedCompletionRef = useRef(false);
 
   const isSuccessful = searchParams.get("purchase_success") === "true";
   const isCanceled = searchParams.get("purchase_canceled") === "true";
@@ -128,10 +132,29 @@ export default function CoursePreview() {
   useEffect(() => {
     if (isSuccessful) {
       setSuccessModalOpen(true);
+      void Analytics.trackEvent("purchase_success", {
+        course_id: linkedCourse.id,
+        course_title: course.attributes.title,
+      });
     } else if (isCanceled) {
       setCanceledModalOpen(true);
+      void Analytics.trackEvent("purchase_canceled", {
+        course_id: linkedCourse.id,
+        course_title: course.attributes.title,
+      });
     }
   }, [isSuccessful, isCanceled]);
+
+  useEffect(() => {
+    if (trackedPreviewRef.current) return;
+    trackedPreviewRef.current = true;
+    void Analytics.trackEvent("preview_viewed", {
+      course_id: linkedCourse.id,
+      course_title: course.attributes.title,
+      host: linkedCourse.host,
+      has_access: userHasAccess,
+    });
+  }, [linkedCourse.id, linkedCourse.host, course.attributes.title, userHasAccess]);
 
   const {
     nextQuiz,
@@ -142,6 +165,15 @@ export default function CoursePreview() {
     totalDurationInSeconds,
     lastCompletedLessonIndex,
   } = getPreviewValues({ lessons, course, quizProgress, lessonProgress });
+
+  useEffect(() => {
+    if (trackedCompletionRef.current || !isCourseCompleted || !userHasAccess) return;
+    trackedCompletionRef.current = true;
+    void Analytics.trackEvent("course_completed", {
+      course_id: linkedCourse.id,
+      course_title: course.attributes.title,
+    });
+  }, [course.attributes.title, isCourseCompleted, linkedCourse.id, userHasAccess]);
 
   // Timed Courses
   return (
@@ -182,7 +214,9 @@ export default function CoursePreview() {
               duration={totalDurationInSeconds}
               isTimed={courseIsTimed}
             />
-            {!userHasAccess ? (
+            {progressLoading ? (
+              <Skeleton className="h-[118px] w-full rounded-md" />
+            ) : !userHasAccess ? (
               <CoursePurchaseCTA />
             ) : isCourseCompleted ? (
               <div className="text-center">
