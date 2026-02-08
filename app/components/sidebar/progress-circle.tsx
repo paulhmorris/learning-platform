@@ -1,6 +1,8 @@
 import React from "react";
 
 import { IconCheck } from "~/components/icons";
+import { Skeleton } from "~/components/ui/skeleton";
+import { useProgress } from "~/hooks/useProgress";
 import { cn } from "~/lib/utils";
 
 type Attributes = Omit<React.HTMLAttributes<HTMLDivElement>, "role" | "aria-valuenow">;
@@ -17,6 +19,11 @@ type Props =
 export function ProgressCircle({ percentage, className, ...props }: Props) {
   const isComplete = percentage === 100;
   const normalizedValue = Math.max(Math.min(Math.ceil(Number(percentage)), 100), 0);
+  const { isLoading: progressLoading } = useProgress();
+
+  if (progressLoading) {
+    return <Skeleton className="size-10 rounded-full" />;
+  }
 
   return (
     <div

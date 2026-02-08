@@ -48,4 +48,24 @@ test.describe("Lesson flow", () => {
       .locator("xpath=ancestor::li[1]");
     await expect(nextLessonItem.getByRole("link", { name: "Start" })).toBeVisible();
   });
+
+  test("Up next reflects the correct resume point after completing a lesson", async ({ page, userId }) => {
+    await resetProgressForUser(userId);
+
+    const courseLayout = await getCourseLayoutForE2E();
+    const allLessons = courseLayout.attributes.sections.flatMap((section) => section.lessons?.data ?? []);
+    const firstLesson = allLessons[0];
+    const secondLesson = allLessons[1];
+
+    // Mark the first lesson complete so the resume point advances.
+    await markLessonCompleteForUser(userId, firstLesson);
+
+    await page.goto("/preview");
+
+    // The "Up next" card should now show the second lesson.
+    const upNextSection = page.getByRole("heading", { name: "Up next:" }).locator("..");
+    const upNextTitle = upNextSection.getByRole("heading", { level: 3 }).first();
+
+    await expect(upNextTitle).toHaveText(secondLesson.attributes.title);
+  });
 });

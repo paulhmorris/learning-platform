@@ -1,8 +1,13 @@
 import { expect, test } from "./fixtures/authenticated";
+import { resetProgressForUser } from "./helpers/progress";
 
-test.use({ colorScheme: "dark" });
+test.use({ colorScheme: "light" });
 
 test.describe("Smoke Test", () => {
+  test.beforeEach(async ({ userId }) => {
+    await resetProgressForUser(userId);
+  });
+
   test("User can access preview page", async ({ page }) => {
     await page.goto("/preview", { waitUntil: "domcontentloaded" });
 
@@ -113,6 +118,36 @@ test.describe("Smoke Test", () => {
     // System
     await button.click();
     await page.getByRole("menuitem", { name: "System" }).click();
-    await expect(htmlElement).toHaveAttribute("data-theme", "dark");
+    await expect(htmlElement).toHaveAttribute("data-theme", "light");
+  });
+
+  test("Theme persists across page reload", async ({ page }) => {
+    await page.goto("/preview", { waitUntil: "domcontentloaded" });
+    const button = page.getByRole("button", { name: /set visual theme/i });
+    const htmlElement = page.locator("html");
+
+    // Switch to light theme.
+    await button.click();
+    await page.getByRole("menuitem", { name: "Light" }).click();
+    await expect(htmlElement).toHaveAttribute("data-theme", "light");
+
+    // Reload the page and verify theme is still light.
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await expect(htmlElement).toHaveAttribute("data-theme", "light");
+
+    // Reset to system for other tests.
+    await button.click();
+    await page.getByRole("menuitem", { name: "System" }).click();
+    await expect(htmlElement).toHaveAttribute("data-theme", "light");
+  });
+
+  test("User can sign out and is redirected to sign in", async ({ page }) => {
+    await page.goto("/preview", { waitUntil: "domcontentloaded" });
+    await page.getByRole("button", { name: "Open User Menu" }).click();
+    await page.getByRole("menuitem", { name: /log out/i }).click();
+
+    // After sign-out, navigating to a protected route should redirect to sign-in.
+    await page.goto("/preview");
+    await expect(page).toHaveURL(/\/sign-in/);
   });
 });

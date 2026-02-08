@@ -21,7 +21,7 @@ export function PurchaseCanceledModal(props: Props) {
           <DialogTitle>Something went wrong!</DialogTitle>
           <DialogDescription>
             It looks like you weren&apos;t able to purchase the course for some reason. If you&apos;d like to continue,
-            try pressing Enroll Now again.
+            try pressing "Try again".
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>

@@ -5,9 +5,13 @@ import path from "node:path";
 import { clerk } from "@clerk/testing/playwright";
 import type { Browser, Page } from "@playwright/test";
 
+import { createLogger } from "~/integrations/logger.server";
+import { stripe } from "~/integrations/stripe.server";
 import { AuthService } from "~/services/auth.server";
+import { PaymentService } from "~/services/payment.server";
 
 const DEFAULT_BASE_URL = "http://localhost:3000";
+const logger = createLogger("E2E.AuthHelpers");
 
 type Credentials = {
   email: string;
@@ -16,6 +20,7 @@ type Credentials = {
 
 export type TestUser = Credentials & {
   id: string;
+  stripeCustomerId?: string;
 };
 
 function getBaseUrl() {
@@ -26,6 +31,7 @@ export async function loginAsRegularUser(page: Page, credentials: Credentials) {
   const { email, password } = credentials;
   const signInUrl = new URL("/sign-in", getBaseUrl()).toString();
 
+  logger.debug(`Logging in test user ${email}`);
   await page.goto(signInUrl, { waitUntil: "domcontentloaded" });
 
   await clerk.signIn({
@@ -40,12 +46,26 @@ export async function loginAsRegularUser(page: Page, credentials: Credentials) {
   await page.goto(new URL("/preview", getBaseUrl()).toString());
 }
 
-export async function ensureAuthenticatedStorageState(browser: Browser, credentials: Credentials, workerIndex = 0) {
-  const storageStatePath = path.join(process.cwd(), "test", "e2e", ".auth", `regular-user-worker-${workerIndex}.json`);
+export async function ensureAuthenticatedStorageState(
+  browser: Browser,
+  credentials: Credentials,
+  workerIndex = 0,
+  storageKey?: string,
+) {
+  const safeKey = storageKey ? storageKey.replace(/[^a-zA-Z0-9_-]/g, "_") : undefined;
+  const storageStatePath = path.join(
+    process.cwd(),
+    "test",
+    "e2e",
+    ".auth",
+    `regular-user-worker-${workerIndex}${safeKey ? `-${safeKey}` : ""}.json`,
+  );
 
+  logger.debug(`Ensuring auth state for worker ${workerIndex}`);
   await fs.mkdir(path.dirname(storageStatePath), { recursive: true });
 
   const refreshStorageState = async () => {
+    logger.debug(`Refreshing auth state for worker ${workerIndex}`);
     const page = await browser.newPage();
     await loginAsRegularUser(page, credentials);
     await page.context().storageState({ path: storageStatePath });
@@ -65,6 +85,7 @@ export async function ensureAuthenticatedStorageState(browser: Browser, credenti
   await page.goto(previewUrl, { waitUntil: "domcontentloaded" });
 
   if (page.url().includes("/sign-in")) {
+    logger.warn(`Storage state invalid; reauth required for worker ${workerIndex}`);
     await page.close();
     await context.close();
     return refreshStorageState();
@@ -76,9 +97,11 @@ export async function ensureAuthenticatedStorageState(browser: Browser, credenti
 }
 
 export async function createE2ETestUser(workerIndex: number): Promise<TestUser> {
-  const email = `e2e-${workerIndex}+clerk_test@example.com`;
-  const password = `TestPassword!${randomUUID()}`;
+  const uniqueId = randomUUID();
+  const email = `e2e-${workerIndex}-${uniqueId}+clerk_test@example.com`;
+  const password = `TestPassword!${uniqueId}`;
 
+  logger.debug(`Creating E2E test user ${email}`);
   const user = await AuthService.createUser({
     firstName: "E2E",
     lastName: "Test User" + workerIndex,
@@ -86,9 +109,19 @@ export async function createE2ETestUser(workerIndex: number): Promise<TestUser> 
     password,
   });
 
-  return { id: user.id, email, password };
+  const stripeCustomer = await PaymentService.upsertCustomer(user.id, { metadata: { source: "e2e" } });
+
+  return { id: user.id, email, password, stripeCustomerId: stripeCustomer.id };
 }
 
-export async function deleteE2ETestUser(userId: string) {
+export async function deleteE2ETestUser(userId: string, stripeCustomerId?: string) {
+  if (stripeCustomerId) {
+    try {
+      logger.debug(`Deleting Stripe customer ${stripeCustomerId}`);
+      await stripe.customers.del(stripeCustomerId);
+    } catch {
+      // Ignore Stripe cleanup failures in tests.
+    }
+  }
   await AuthService.deleteUser(userId);
 }

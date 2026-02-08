@@ -1,43 +1,37 @@
 import { Axiom } from "@axiomhq/js";
-import { AxiomJSTransport, ConsoleTransport, Logger } from "@axiomhq/logging";
+import { AxiomJSTransport, ConsoleTransport, Logger, Transport } from "@axiomhq/logging";
 
 import { SERVER_CONFIG } from "~/config.server";
 
-// Axiom
+const isCI = SERVER_CONFIG.isCI;
 const axiom = new Axiom({ token: process.env.AXIOM_TOKEN });
-const logLevel = SERVER_CONFIG.isDev || SERVER_CONFIG.isTest ? "debug" : "info";
-const logger = new Logger({
-  logLevel,
-  args: { environment: process.env.VERCEL_ENV },
-  transports: [
-    new AxiomJSTransport({ axiom, logLevel, dataset: "server" }),
-    new ConsoleTransport({ logLevel, prettyPrint: true }),
-  ],
-});
+const commonArgs = { environment: SERVER_CONFIG.environment };
 
-const devLogger = new Logger({
+function buildTransports(dataset: string, level: "debug" | "info") {
+  const transports: [Transport, ...Array<Transport>] = [new ConsoleTransport({ logLevel: level, prettyPrint: true })];
+
+  // Axiom in production, or in test when running in CI
+  if (SERVER_CONFIG.isProd || (SERVER_CONFIG.isTest && isCI)) {
+    transports.push(new AxiomJSTransport({ axiom, logLevel: level, dataset }));
+  }
+
+  return transports;
+}
+
+const logLevel = SERVER_CONFIG.isDev ? "debug" : "info";
+
+const serverLogger = new Logger({
   logLevel,
-  args: { environment: process.env.VERCEL_ENV },
-  transports: [new ConsoleTransport({ logLevel, prettyPrint: true })],
+  args: commonArgs,
+  transports: buildTransports("server", logLevel),
 });
 
 export function createLogger(module: string) {
-  if (SERVER_CONFIG.isTest) {
-    return new Logger({ logLevel: "off", transports: [new ConsoleTransport({ logLevel: "off" })] });
-  }
-
-  if (SERVER_CONFIG.isDev) {
-    return devLogger.with({ module });
-  }
-
-  return logger.with({ module });
+  return serverLogger.with({ module });
 }
 
 export const httpLogger = new Logger({
   logLevel,
-  args: { environment: process.env.VERCEL_ENV },
-  transports: [
-    new AxiomJSTransport({ axiom, logLevel, dataset: "http" }),
-    new ConsoleTransport({ logLevel, prettyPrint: true }),
-  ],
+  args: commonArgs,
+  transports: buildTransports("http", logLevel),
 });

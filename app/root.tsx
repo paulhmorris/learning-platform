@@ -12,6 +12,7 @@ import { ErrorComponent } from "~/components/error-component";
 import { Header } from "~/components/header";
 import { Notifications } from "~/components/notifications";
 import { SERVER_CONFIG } from "~/config.server";
+import { useAnalytics } from "~/hooks/useAnalytics";
 import { Sentry } from "~/integrations/sentry";
 import { HttpHeaders, Responses } from "~/lib/responses.server";
 import { cn, hexToPartialHSL } from "~/lib/utils";
@@ -94,6 +95,7 @@ function InnerLayout({ ssrTheme, children }: { ssrTheme: boolean; children: Reac
   const data = useRouteLoaderData<typeof loader>("root");
   const { user } = useUser();
   const [theme] = useTheme();
+  useAnalytics();
 
   useEffect(() => {
     if (user) {

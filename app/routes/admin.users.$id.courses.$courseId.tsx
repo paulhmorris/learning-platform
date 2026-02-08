@@ -3,6 +3,7 @@ import { IconCircleCheckFilled, IconCircleDashed, IconCircleDashedCheck, IconCir
 import { ActionFunctionArgs, LoaderFunctionArgs, useLoaderData } from "react-router";
 import { z } from "zod/v4";
 
+import { CompleteCourseDialog } from "~/components/admin/courses/complete-course-dialog";
 import { LessonCompleteForm } from "~/components/admin/courses/lesson-complete-form";
 import { LessonProgressHeader } from "~/components/admin/courses/lesson-progress-header";
 import { LessonResetForm } from "~/components/admin/courses/lesson-reset-form";
@@ -24,6 +25,7 @@ import { SessionService } from "~/services/session.server";
 const schema = z.object({
   _action: z.enum([
     "reset-all-progress",
+    "complete-course",
     "reset-lesson",
     "complete-lesson",
     "update-lesson",
@@ -78,6 +80,33 @@ export async function action(args: ActionFunctionArgs) {
       await ProgressService.resetAllLesson(userId);
       await QuizService.resetAllProgress(userId);
       return Toasts.dataWithSuccess({ ok: true }, { message: "Success", description: "All progress has been reset." });
+    }
+
+    case "complete-course": {
+      const [lessons, quizzes] = await Promise.all([LessonService.getAllFromCMS(), QuizService.getAll()]);
+
+      await Promise.all([
+        ...lessons.data.map((lesson) =>
+          ProgressService.markComplete({
+            userId,
+            lessonId: lesson.id,
+            requiredDurationInSeconds: lesson.attributes.required_duration_in_seconds ?? 0,
+          }),
+        ),
+        ...quizzes.data.map((quiz) =>
+          QuizService.updateProgress({
+            userId,
+            quizId: quiz.id,
+            score: quiz.attributes.passing_score,
+            passingScore: quiz.attributes.passing_score,
+          }),
+        ),
+      ]);
+
+      return Toasts.dataWithSuccess(
+        { ok: true },
+        { message: "Success", description: "Course lessons and quizzes have been completed." },
+      );
     }
 
     case "reset-lesson": {
@@ -178,7 +207,7 @@ export default function AdminUserCourse() {
       <title>User Course Progress</title>
       <div className="mb-4 flex gap-1.5">
         <ResetAllProgressDialog />
-        {/* <CompleteCourseDialog /> */}
+        <CompleteCourseDialog />
       </div>
 
       <p className="mb-4 max-w-screen-lg text-sm font-normal">
