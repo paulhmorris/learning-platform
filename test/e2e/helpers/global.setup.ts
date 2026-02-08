@@ -9,7 +9,7 @@ const logger = createLogger("E2E.GlobalSetup");
 setup.describe.configure({ mode: "serial" });
 
 setup("global setup", async ({}) => {
-  logger.info("Starting global setup");
+  logger.debug("Starting global setup");
   await clerkSetup();
-  logger.info("Completed global setup");
+  logger.debug("Completed global setup");
 });

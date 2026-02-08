@@ -2,6 +2,7 @@ import { cms } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
 import { createLogger } from "~/integrations/logger.server";
 import { Sentry } from "~/integrations/sentry";
+import { CacheKeys, CacheService } from "~/services/cache.server";
 import { APIResponseCollection, APIResponseData } from "~/types/utils";
 
 const logger = createLogger("QuizService");
@@ -63,7 +64,10 @@ export const QuizService = {
 
   async resetAllProgress(userId: string) {
     try {
-      return await db.userQuizProgress.deleteMany({ where: { userId } });
+      return await Promise.all([
+        CacheService.delete(CacheKeys.quizProgressAll(userId)),
+        db.userQuizProgress.deleteMany({ where: { userId } }),
+      ]);
     } catch (error) {
       Sentry.captureException(error);
       logger.error("Failed to reset all quiz progress", { error });
@@ -73,7 +77,10 @@ export const QuizService = {
 
   async resetProgress(quizId: number, userId: string) {
     try {
-      return db.userQuizProgress.delete({ where: { userId_quizId: { quizId, userId } } });
+      return await Promise.all([
+        CacheService.delete(CacheKeys.quizProgress(userId, quizId)),
+        db.userQuizProgress.delete({ where: { userId_quizId: { quizId, userId } } }),
+      ]);
     } catch (error) {
       Sentry.captureException(error);
       logger.error(`Failed to reset quiz ${quizId} progress for user ${userId}`, { error });

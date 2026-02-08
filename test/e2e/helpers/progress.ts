@@ -25,7 +25,7 @@ export async function enrollUserInCourse(userId: string) {
   const baseUrl = process.env.E2E_BASE_URL ?? "http://localhost:3000";
   const host = new URL(baseUrl).host;
 
-  logger.info(`Enrolling user ${userId} in course for host ${host}`);
+  logger.debug(`Enrolling user ${userId} in course for host ${host}`);
   let course = await db.course.findUnique({ where: { host } });
   if (!course) {
     course = await db.course.findFirst();
@@ -52,7 +52,7 @@ export async function enrollUserInCourse(userId: string) {
 }
 
 export async function cleanupUserCourseData(userId: string) {
-  logger.info(`Cleaning up user course data for user ${userId}`);
+  logger.debug(`Cleaning up user course data for user ${userId}`);
   await Promise.all([
     ProgressService.resetAllLesson(userId),
     QuizService.resetAllProgress(userId),
@@ -61,7 +61,7 @@ export async function cleanupUserCourseData(userId: string) {
 }
 
 export async function resetProgressForUser(userId: string) {
-  logger.info(`Resetting progress for user ${userId}`);
+  logger.debug(`Resetting progress for user ${userId}`);
   await Promise.all([ProgressService.resetAllLesson(userId), QuizService.resetAllProgress(userId)]);
 }
 
