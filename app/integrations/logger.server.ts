@@ -18,7 +18,7 @@ function buildTransports(dataset: string, level: "debug" | "info") {
   return transports;
 }
 
-const logLevel = SERVER_CONFIG.isProd ? "info" : "debug";
+const logLevel = SERVER_CONFIG.isDev ? "debug" : "info";
 
 const serverLogger = new Logger({
   logLevel,

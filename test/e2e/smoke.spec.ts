@@ -1,8 +1,13 @@
 import { expect, test } from "./fixtures/authenticated";
+import { resetProgressForUser } from "./helpers/progress";
 
-test.use({ colorScheme: "dark" });
+test.use({ colorScheme: "light" });
 
 test.describe("Smoke Test", () => {
+  test.beforeEach(async ({ userId }) => {
+    await resetProgressForUser(userId);
+  });
+
   test("User can access preview page", async ({ page }) => {
     await page.goto("/preview", { waitUntil: "domcontentloaded" });
 
@@ -113,7 +118,7 @@ test.describe("Smoke Test", () => {
     // System
     await button.click();
     await page.getByRole("menuitem", { name: "System" }).click();
-    await expect(htmlElement).toHaveAttribute("data-theme", "dark");
+    await expect(htmlElement).toHaveAttribute("data-theme", "light");
   });
 
   test("Theme persists across page reload", async ({ page }) => {
@@ -133,7 +138,7 @@ test.describe("Smoke Test", () => {
     // Reset to system for other tests.
     await button.click();
     await page.getByRole("menuitem", { name: "System" }).click();
-    await expect(htmlElement).toHaveAttribute("data-theme", "dark");
+    await expect(htmlElement).toHaveAttribute("data-theme", "light");
   });
 
   test("User can sign out and is redirected to sign in", async ({ page }) => {

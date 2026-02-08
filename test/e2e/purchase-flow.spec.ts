@@ -2,6 +2,8 @@ import type { Page } from "@playwright/test";
 
 import { expect, test } from "./fixtures/authenticated-unenrolled";
 
+test.describe.configure({ mode: "serial" });
+
 test.describe("Purchase flow", () => {
   async function completeStripeCheckout(page: Page) {
     await expect(page).toHaveURL(/checkout\.stripe\.com/);

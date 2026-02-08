@@ -31,7 +31,7 @@ export async function loginAsRegularUser(page: Page, credentials: Credentials) {
   const { email, password } = credentials;
   const signInUrl = new URL("/sign-in", getBaseUrl()).toString();
 
-  logger.info(`Logging in test user ${email}`);
+  logger.debug(`Logging in test user ${email}`);
   await page.goto(signInUrl, { waitUntil: "domcontentloaded" });
 
   await clerk.signIn({
@@ -61,11 +61,11 @@ export async function ensureAuthenticatedStorageState(
     `regular-user-worker-${workerIndex}${safeKey ? `-${safeKey}` : ""}.json`,
   );
 
-  logger.debug(`Ensuring authenticated storage state for worker ${workerIndex} at ${storageStatePath}`);
+  logger.debug(`Ensuring auth state for worker ${workerIndex}`);
   await fs.mkdir(path.dirname(storageStatePath), { recursive: true });
 
   const refreshStorageState = async () => {
-    logger.info(`Refreshing authenticated storage state for worker ${workerIndex} at ${storageStatePath}`);
+    logger.debug(`Refreshing auth state for worker ${workerIndex}`);
     const page = await browser.newPage();
     await loginAsRegularUser(page, credentials);
     await page.context().storageState({ path: storageStatePath });
@@ -101,7 +101,7 @@ export async function createE2ETestUser(workerIndex: number): Promise<TestUser> 
   const email = `e2e-${workerIndex}-${uniqueId}+clerk_test@example.com`;
   const password = `TestPassword!${uniqueId}`;
 
-  logger.info(`Creating E2E test user ${email}`);
+  logger.debug(`Creating E2E test user ${email}`);
   const user = await AuthService.createUser({
     firstName: "E2E",
     lastName: "Test User" + workerIndex,
@@ -109,11 +109,7 @@ export async function createE2ETestUser(workerIndex: number): Promise<TestUser> 
     password,
   });
 
-  const stripeCustomer = await PaymentService.upsertCustomer(user.id, {
-    metadata: {
-      source: "e2e",
-    },
-  });
+  const stripeCustomer = await PaymentService.upsertCustomer(user.id, { metadata: { source: "e2e" } });
 
   return { id: user.id, email, password, stripeCustomerId: stripeCustomer.id };
 }
@@ -121,6 +117,7 @@ export async function createE2ETestUser(workerIndex: number): Promise<TestUser> 
 export async function deleteE2ETestUser(userId: string, stripeCustomerId?: string) {
   if (stripeCustomerId) {
     try {
+      logger.debug(`Deleting Stripe customer ${stripeCustomerId}`);
       await stripe.customers.del(stripeCustomerId);
     } catch {
       // Ignore Stripe cleanup failures in tests.
