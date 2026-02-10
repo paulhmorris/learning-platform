@@ -61,10 +61,10 @@ export function useAnalytics() {
         const authPage = sessionStorage.getItem(AUTH_PAGE_KEY);
         // sessionStorage can only hold one value, so these conditions are mutually exclusive
         if (authPage === "/sign-in") {
-          void Analytics.trackEvent("sign_in_completed");
+          void Analytics.trackEvent("Sign In Completed");
           sessionStorage.removeItem(AUTH_PAGE_KEY);
         } else if (authPage === "/sign-up") {
-          void Analytics.trackEvent("sign_up_completed");
+          void Analytics.trackEvent("Sign Up Completed");
           sessionStorage.removeItem(AUTH_PAGE_KEY);
         }
       }
