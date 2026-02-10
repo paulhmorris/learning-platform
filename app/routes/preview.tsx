@@ -51,7 +51,6 @@ export async function loader(args: LoaderFunctionArgs) {
 
     const [course, userCourses] = await Promise.all([
       CourseService.getFromCMSForCourseLayout(linkedCourse.strapiId),
-      // TODO: Clerk migration
       UserCourseService.getAllByUserId(user.id),
     ]);
 
@@ -66,6 +65,9 @@ export async function loader(args: LoaderFunctionArgs) {
     Sentry.captureException(error);
     logger.error(`Failed to load course for host ${url.host}`, { error });
     if (error instanceof Response) {
+      if (error.status === 404) {
+        return redirect("/account/courses");
+      }
       throw error;
     }
     throw Responses.serverError();
