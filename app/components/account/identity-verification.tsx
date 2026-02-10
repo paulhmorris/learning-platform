@@ -42,8 +42,9 @@ export function IdentityVerification({
         return toast.error("A server error occurred while trying to verify your identity.");
       }
 
-      const json = (await response.json()) as { client_secret: string };
-      const client_secret = json.client_secret;
+      const json = (await response.json()) as { client_secret?: string };
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      const client_secret = json?.client_secret;
       if (!client_secret) {
         Sentry.captureMessage("No client secret returned from identity verification creation");
         return toast.error("An error occurred while trying to verify your identity.");
