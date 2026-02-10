@@ -49,7 +49,6 @@ export default defineConfig((config) => ({
   },
   test: {
     exclude: [...defaultExclude, "**/*.config.*", "**/playwright/**", "test/e2e/**"],
-    environment: "jsdom",
     globals: true,
     setupFiles: "./test/setup.ts",
     coverage: {
