@@ -148,6 +148,7 @@ export default tseslint.config(
     ...vitest.configs.recommended,
     rules: {
       ...vitest.configs.recommended.rules,
+      "import/order": "off",
       "@typescript-eslint/no-unsafe-call": "off",
       "@typescript-eslint/no-unsafe-assignment": "off",
       "@typescript-eslint/no-unsafe-member-access": "off",

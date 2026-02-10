@@ -1,9 +1,9 @@
-import type { Config, Mixpanel } from "mixpanel-browser";
+import mixpanel, { type Config } from "mixpanel-browser";
 
 const MIXPANEL_TOKEN = import.meta.env.VITE_MIXPANEL_TOKEN;
 
 if (!MIXPANEL_TOKEN) {
-  console.warn("Mixpanel token is not set. Analytics will be disabled.");
+  console.warn("[Analytics] Mixpanel token is not set. Analytics will be disabled.");
 }
 
 const initOptions: Partial<Config> = {
@@ -17,58 +17,41 @@ const initOptions: Partial<Config> = {
   record_mask_all_text: false,
 };
 
-let mixpanelInstance: Mixpanel | null = null;
-let mixpanelLoadPromise: Promise<Mixpanel> | null = null;
 let isInitialized = false;
 
+function isProdEnvironment(): boolean {
+  return window.ENV.VERCEL_ENV === "production";
+}
+
 function shouldSkipTracking(): boolean {
-  return !isInitialized || !MIXPANEL_TOKEN || window.ENV.VERCEL_ENV !== "production";
+  return !isInitialized || !MIXPANEL_TOKEN || !isProdEnvironment();
 }
 
-async function loadMixpanel(): Promise<Mixpanel> {
-  if (mixpanelInstance) {
-    return mixpanelInstance;
+function init() {
+  if (!isProdEnvironment()) {
+    console.info("[Analytics] Skipping init: non-production environment", { vercelEnv: window.ENV.VERCEL_ENV });
+    return;
   }
-
-  if (mixpanelLoadPromise) {
-    return mixpanelLoadPromise;
-  }
-
-  mixpanelLoadPromise = import("mixpanel-browser").then((module) => {
-    mixpanelInstance = module.default;
-    return module.default;
-  });
-
-  return mixpanelLoadPromise;
-}
-
-async function init() {
-  if (window.ENV.VERCEL_ENV !== "production") {
-    console.info("Mixpanel analytics is disabled in non-production environments.");
+  if (!MIXPANEL_TOKEN) {
+    console.info("[Analytics] Skipping init: missing Mixpanel token");
     return;
   }
   if (isInitialized) {
     return;
   }
 
-  const mixpanel = await loadMixpanel();
   mixpanel.init(MIXPANEL_TOKEN, initOptions);
   isInitialized = true;
+  console.info("[Analytics] Mixpanel initialized", { vercelEnv: window.ENV.VERCEL_ENV });
 }
 
-async function trackEvent(eventName: string, properties?: Record<string, unknown>) {
-  if (shouldSkipTracking()) {
-    return;
-  }
-  const mixpanel = await loadMixpanel();
+function trackEvent(eventName: string, properties?: Record<string, unknown>) {
+  if (shouldSkipTracking()) return;
   mixpanel.track(eventName, properties);
 }
 
-async function trackPageView(url: string) {
-  if (shouldSkipTracking()) {
-    return;
-  }
-  const mixpanel = await loadMixpanel();
+function trackPageView(url: string) {
+  if (shouldSkipTracking()) return;
   const parsed = new URL(url, window.location.origin);
   mixpanel.track_pageview({
     url: parsed.href,
@@ -85,11 +68,8 @@ type AnalyticsUser = {
   lastName?: string | null;
 };
 
-async function identifyUser(user: AnalyticsUser) {
-  if (shouldSkipTracking()) {
-    return;
-  }
-  const mixpanel = await loadMixpanel();
+function identifyUser(user: AnalyticsUser) {
+  if (shouldSkipTracking()) return;
   mixpanel.identify(user.id);
   mixpanel.people.set({
     $email: user.email ?? undefined,
@@ -98,11 +78,8 @@ async function identifyUser(user: AnalyticsUser) {
   });
 }
 
-async function clearUser() {
-  if (shouldSkipTracking()) {
-    return;
-  }
-  const mixpanel = await loadMixpanel();
+function clearUser() {
+  if (shouldSkipTracking()) return;
   mixpanel.reset();
 }
 export const Analytics = {
