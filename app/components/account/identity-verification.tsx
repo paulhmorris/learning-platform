@@ -34,7 +34,7 @@ export function IdentityVerification({
   async function handleStartVerification() {
     if (!stripe) return;
 
-    void Analytics.trackEvent("id_verification_started");
+    void Analytics.trackEvent("ID Verification Started");
 
     try {
       const response = await fetch("/api/identity-verification", { method: "POST" });
@@ -76,12 +76,12 @@ export function IdentityVerification({
   useEffect(() => {
     if ((isIdentityVerified || status === "verified") && !trackedStatusRef.current.success) {
       trackedStatusRef.current.success = true;
-      void Analytics.trackEvent("id_verification_success");
+      void Analytics.trackEvent("ID Verification Success");
     }
 
     if (status === "requires_input" && errorReason && !trackedStatusRef.current.failed) {
       trackedStatusRef.current.failed = true;
-      void Analytics.trackEvent("id_verification_failed", { reason: errorReason, code });
+      void Analytics.trackEvent("ID Verification Failed", { reason: errorReason, code });
     }
   }, [code, errorReason, isIdentityVerified, status]);
 
