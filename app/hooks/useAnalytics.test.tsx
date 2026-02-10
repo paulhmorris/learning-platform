@@ -138,7 +138,7 @@ describe("useAnalytics", () => {
     render(<TestComponent />);
 
     await waitFor(() => {
-      expect(analyticsMock.trackEvent).toHaveBeenCalledWith("sign_in_completed");
+      expect(analyticsMock.trackEvent).toHaveBeenCalledWith("Sign In Completed");
       expect(sessionStorage.getItem(AUTH_PAGE_KEY)).toBeNull();
     });
   });
