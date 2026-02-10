@@ -7,7 +7,7 @@ import { AUTH_PAGE_KEY } from "~/lib/constants";
 export default function SignUpPage() {
   useEffect(() => {
     sessionStorage.setItem(AUTH_PAGE_KEY, "/sign-up");
-    void Analytics.trackEvent("sign_up_started");
+    void Analytics.trackEvent("Sign Up Started");
   }, []);
 
   return (

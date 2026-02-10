@@ -12,7 +12,7 @@ export function CoursePurchaseCTA() {
           <Button
             className="sm:ml-auto sm:max-w-60"
             variant="primary"
-            onClick={() => void Analytics.trackEvent("purchase_cta_clicked")}
+            onClick={() => void Analytics.trackEvent("Purchase CTA Clicked")}
           >
             Enroll
           </Button>
