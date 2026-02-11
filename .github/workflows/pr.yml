@@ -1,4 +1,4 @@
-name: 🚀 PR Pipeline
+name: 🧪 PR to Staging
 
 env:
   VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -15,37 +15,17 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, closed]
     branches:
-      - main
+      - staging
 
 permissions:
-  contents: write
+  contents: read
   pull-requests: write
 
 jobs:
-  changes:
-    name: 🔍 Detect Changes
+  neon:
+    name: 🧬 Setup Neon branch
     runs-on: ubuntu-latest
     if: github.event.action != 'closed'
-    outputs:
-      app_changes: ${{ steps.filter.outputs.app_changes }}
-    steps:
-      - uses: actions/checkout@v6
-      - name: Filter paths
-        id: filter
-        uses: dorny/paths-filter@v3
-        with:
-          filters: |
-            app_changes:
-              - 'app/**'
-              - 'jobs/**'
-              - 'prisma/**'
-              - 'public/**'
-
-  neon:
-    name: 🧬 Provision Database Branch
-    runs-on: ubuntu-latest
-    if: github.event.action != 'closed' && needs.changes.outputs.app_changes == 'true'
-    needs: [changes]
     steps:
       - uses: actions/checkout@v6
       - name: Create Neon branch
@@ -54,7 +34,7 @@ jobs:
         with:
           project_id: ${{ env.NEON_PROJECT_ID }}
           branch_name: pr-${{ github.event.pull_request.number }}
-          parent_branch: main
+          parent_branch: staging
           role: learning-platform_owner
           database: learning-platform
           prisma: true
@@ -71,22 +51,19 @@ jobs:
         with:
           project_id: ${{ env.NEON_PROJECT_ID }}
           compare_branch: pr-${{ github.event.pull_request.number }}
-          base_branch: main
+          base_branch: staging
           database: learning-platform
           api_key: ${{ env.NEON_API_KEY }}
 
   deploy:
     name: 🧩 Deploy Preview
     runs-on: ubuntu-latest
-    if: github.event.action != 'closed' && needs.changes.outputs.app_changes == 'true'
-    needs: [changes, neon]
+    if: github.event.action != 'closed'
+    needs: [neon]
     outputs:
       deploy_url: ${{ steps.vercel_deploy.outputs.url }}
     steps:
       - uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          fetch-depth: 0
 
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
@@ -100,7 +77,7 @@ jobs:
         with:
           project_id: ${{ env.NEON_PROJECT_ID }}
           branch_name: pr-${{ github.event.pull_request.number }}
-          parent_branch: main
+          parent_branch: staging
           role: learning-platform_owner
           database: learning-platform
           prisma: true
@@ -121,10 +98,10 @@ jobs:
           echo "url=${DEPLOY_URL}" >> "$GITHUB_OUTPUT"
 
   e2e:
-    name: 🎭 Run E2E Tests
+    name: 🎭 Test e2e
     runs-on: ubuntu-latest
-    if: ${{ github.event.action != 'closed' && needs.changes.outputs.app_changes == 'true' }}
-    needs: [changes, neon, deploy]
+    if: github.event.action != 'closed'
+    needs: [neon, deploy]
     env:
       E2E_BASE_URL: ${{ needs.deploy.outputs.deploy_url }}
     steps:
@@ -152,7 +129,7 @@ jobs:
         with:
           project_id: ${{ env.NEON_PROJECT_ID }}
           branch_name: pr-${{ github.event.pull_request.number }}
-          parent_branch: main
+          parent_branch: staging
           role: learning-platform_owner
           database: learning-platform
           prisma: true
@@ -181,75 +158,8 @@ jobs:
             playwright-report
             test-results
 
-  promote:
-    name: 🚢 Promote to Production
-    runs-on: ubuntu-latest
-    if: github.event.action != 'closed' && needs.e2e.result == 'success'
-    needs: [e2e]
-    environment: production
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-
-      - name: Migrate Production Database
-        run: npx prisma@6.12.0 migrate deploy
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          DIRECT_URL: ${{ secrets.DIRECT_URL }}
-
-      - name: Install Vercel CLI
-        run: npm install --global vercel@latest
-
-      - name: Pull Vercel Environment Information
-        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
-
-      - name: Build Project Artifacts
-        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
-
-      - name: Deploy to Vercel (Production)
-        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
-
-      - name: Tag release
-        id: tag_release
-        run: |
-          VERSION="v$(date +%Y.%m.%d)-${{ github.run_number }}-${{ github.event.pull_request.number }}"
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git tag "$VERSION" ${{ github.event.pull_request.head.sha }}
-          git push origin "$VERSION"
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ steps.tag_release.outputs.version }}
-          name: Release ${{ steps.tag_release.outputs.version }}
-          generate_release_notes: true
-
-  trigger:
-    name: ⚡ Deploy Background Jobs
-    runs-on: ubuntu-latest
-    if: github.event.action != 'closed' && needs.promote.result == 'success'
-    needs: [promote]
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 22.21.1
-          cache: "npm"
-
-      - name: Install Dependencies
-        run: npm ci --no-audit --no-fund
-
-      - name: Trigger Deploy
-        env:
-          TRIGGER_ACCESS_TOKEN: ${{ secrets.TRIGGER_ACCESS_TOKEN }}
-        run: |
-          npx trigger.dev@4.3.1 deploy
-
   cleanup:
-    name: 🧹 Cleanup Database Branch
+    name: 🧹 Delete Neon Branch
     runs-on: ubuntu-latest
     if: github.event.action == 'closed'
     steps:
