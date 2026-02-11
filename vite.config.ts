@@ -50,6 +50,7 @@ export default defineConfig((config) => ({
   test: {
     exclude: [...defaultExclude, "**/*.config.*", "**/playwright/**", "test/e2e/**"],
     globals: true,
+    pool: "threads",
     environment: "jsdom",
     setupFiles: "./test/setup.ts",
     coverage: {

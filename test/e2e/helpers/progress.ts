@@ -1,13 +1,9 @@
 import { db } from "~/integrations/db.server";
-import { createLogger } from "~/integrations/logger.server";
 import { CourseService } from "~/services/course.server";
 import { ProgressService } from "~/services/progress.server";
 import { QuizService } from "~/services/quiz.server";
 
-const logger = createLogger("E2E.ProgressHelpers");
-
 export async function getCourseLayoutForE2E() {
-  logger.debug("Loading course layout for E2E");
   const course = await db.course.findFirst();
   if (!course) {
     throw new Error("No course found in database. Cannot load course layout.");
@@ -25,7 +21,6 @@ export async function enrollUserInCourse(userId: string) {
   const baseUrl = process.env.E2E_BASE_URL ?? "http://localhost:3000";
   const host = new URL(baseUrl).host;
 
-  logger.debug(`Enrolling user ${userId} in course for host ${host}`);
   let course = await db.course.findUnique({ where: { host } });
   if (!course) {
     course = await db.course.findFirst();
@@ -52,7 +47,6 @@ export async function enrollUserInCourse(userId: string) {
 }
 
 export async function cleanupUserCourseData(userId: string) {
-  logger.debug(`Cleaning up user course data for user ${userId}`);
   await Promise.all([
     ProgressService.resetAllLesson(userId),
     QuizService.resetAllProgress(userId),
@@ -61,7 +55,6 @@ export async function cleanupUserCourseData(userId: string) {
 }
 
 export async function resetProgressForUser(userId: string) {
-  logger.debug(`Resetting progress for user ${userId}`);
   await Promise.all([ProgressService.resetAllLesson(userId), QuizService.resetAllProgress(userId)]);
 }
 
@@ -69,7 +62,6 @@ export async function markLessonCompleteForUser(
   userId: string,
   lesson: { id: number; attributes: { required_duration_in_seconds?: number | null } },
 ) {
-  logger.debug(`Marking lesson ${lesson.id} complete for user ${userId}`);
   return ProgressService.markComplete({
     userId,
     lessonId: lesson.id,
@@ -78,6 +70,5 @@ export async function markLessonCompleteForUser(
 }
 
 export async function markQuizPassedForUser(userId: string, quizId: number, score = 100) {
-  logger.debug(`Marking quiz ${quizId} passed for user ${userId} with score ${score}`);
   return QuizService.markAsPassed(quizId, userId, score);
 }
