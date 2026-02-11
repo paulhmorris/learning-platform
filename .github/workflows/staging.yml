@@ -120,3 +120,17 @@ jobs:
           path: |
             playwright-report
             test-results
+
+  promote:
+    name: 🚢 Promote Staging to Main
+    runs-on: ubuntu-latest
+    needs: [e2e]
+    steps:
+      - uses: actions/checkout@v6
+      - name: Create or update PR
+        env:
+          GH_TOKEN: ${{ secrets.PROMOTE_TOKEN }}
+        run: |
+          existing_pr_number=$(gh pr list --base main --head staging --state open --json number --jq '.[0].number')
+          if [ -z "$existing_pr_number" ]; then
+            gh pr create --base main --head staging --title "Promote staging to main" --body "Automated promotion after staging deploy and e2e tests."
