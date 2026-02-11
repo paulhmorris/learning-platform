@@ -10,9 +10,6 @@ concurrency:
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - staging
 
 permissions:
   contents: write
