@@ -1,0 +1,122 @@
+name: 🚧 Deploy Staging
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+  SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - staging
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  changes:
+    name: 🔍 Detect app changes
+    runs-on: ubuntu-latest
+    outputs:
+      app_changes: ${{ steps.filter.outputs.app_changes }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Filter paths
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            app_changes:
+              - 'app/**'
+              - 'jobs/**'
+              - 'prisma/**'
+              - 'public/**'
+
+  deploy:
+    name: 🚀 Deploy
+    runs-on: ubuntu-latest
+    environment: staging
+    if: needs.changes.outputs.app_changes == 'true'
+    needs: [changes]
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Pull Vercel Environment Information
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build Project Artifacts
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy to Vercel
+        run: vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Migrate Database
+        id: migrate
+        run: npx prisma@6.12.0 migrate deploy
+        continue-on-error: true
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+
+      - name: Rollback Deployment
+        if: steps.migrate.outcome == 'failure'
+        run: vercel rollback --token=${{ secrets.VERCEL_TOKEN }} && exit 1
+
+  e2e:
+    name: 🎭 Test e2e
+    runs-on: ubuntu-latest
+    environment: staging
+    needs: [changes, deploy]
+    if: ${{ always() && (needs.deploy.result == 'success' || needs.deploy.result == 'skipped') }}
+    env:
+      E2E_BASE_URL: ${{ secrets.E2E_BASE_URL_STAGING }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22.21.1
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Pull Vercel Environment Information
+        run: vercel env pull .env --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Run e2e Tests
+        run: npm run test:e2e
+        env:
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          AXIOM_TOKEN: ${{ secrets.AXIOM_TOKEN }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+          CLERK_PUBLISHABLE_KEY: ${{ vars.CLERK_PUBLISHABLE_KEY_TEST }}
+          E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
+          E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
+          UPSTASH_REDIS_REST_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
+          STRAPI_URL: ${{ vars.STRAPI_URL }}
+          STRAPI_TOKEN: ${{ secrets.STRAPI_TOKEN }}
+
+      - name: Upload Playwright Report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v6
+        with:
+          name: playwright-report
+          path: |
+            playwright-report
+            test-results
