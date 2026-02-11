@@ -80,7 +80,6 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event.action != 'closed' && needs.changes.outputs.app_changes == 'true'
     needs: [changes, neon]
-    environment: staging
     outputs:
       deploy_url: ${{ steps.vercel_deploy.outputs.url }}
     steps:
