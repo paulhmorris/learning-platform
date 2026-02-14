@@ -89,12 +89,12 @@ export default function CourseLayout() {
 
   // Auto-scroll to active section when collapsed on mobile
   useEffect(() => {
-    if (isCollapsed && activeSectionRef.current) {
-      activeSectionRef.current.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
-    }
+    if (!isCollapsed || !activeSectionRef.current) return;
+
+    activeSectionRef.current.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
   }, [isCollapsed, params.lessonSlug]);
 
   function toggleShowMore() {
@@ -231,11 +231,11 @@ export default function CourseLayout() {
                     </li>
                   );
                 })}
-              {!isCollapsed ? (
+              {!isCollapsed && (
                 <li key="section-certificate">
                   <SectionCertificate isCourseCompleted={isCourseCompleted} />
                 </li>
-              ) : null}
+              )}
               {!isLargeScreen ? (
                 <button
                   className={cn(
