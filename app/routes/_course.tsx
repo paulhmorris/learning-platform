@@ -232,11 +232,11 @@ export default function CourseLayout() {
                     </li>
                   );
                 })}
-              {!isCollapsed && (
+              {!isCollapsed ? (
                 <li key="section-certificate">
                   <SectionCertificate isCourseCompleted={isCourseCompleted} />
                 </li>
-              )}
+              ) : null}
               {!isLargeScreen ? (
                 <button
                   className={cn(
