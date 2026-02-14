@@ -94,6 +94,7 @@ export default function CourseLayout() {
     activeSectionRef.current.scrollIntoView({
       behavior: "smooth",
       block: "start",
+      inline: "nearest",
     });
   }, [isCollapsed, params.lessonSlug]);
 
