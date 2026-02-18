@@ -225,6 +225,12 @@ async function generateHipHopCertificate(args: HipHopCertificateArgs): Promise<C
     return null;
   }
 
+  logger.info("Generating certificate with the following data", {
+    certificateNumber: args.certificateNumber,
+    completionDate: args.completionDate,
+    formData: parsedAnswers.data,
+  });
+
   const canvas = createCanvas(1650, 1275);
   const ctx = canvas.getContext("2d");
   const certImage = await loadImage(CERT_IMAGE_URL).catch((err) => {

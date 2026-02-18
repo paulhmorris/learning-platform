@@ -16,7 +16,9 @@ export const ProgressService = {
       create: { userId, lessonId, durationInSeconds: SUBMIT_INTERVAL_MS / 1_000 },
       update: { durationInSeconds: { increment: SUBMIT_INTERVAL_MS / 1_000 } },
     });
-    logger.info(`Incremented progress for user ${userId} on lesson ${lessonId}`);
+    logger.info(
+      `Incremented progress to ${progress.durationInSeconds} seconds for user ${userId} on lesson ${lessonId}`,
+    );
     await CacheService.set(CacheKeys.lessonProgress(userId, lessonId), progress, { ex: PROGRESS_CACHE_TTL });
     return progress;
   },
