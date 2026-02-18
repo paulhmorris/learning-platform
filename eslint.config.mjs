@@ -144,7 +144,7 @@ export default tseslint.config(
 
   // Vitest
   {
-    files: ["app/**/*.test.{ts,tsx}"],
+    files: ["app/**/*.test.{ts,tsx}", "jobs/**/*.test.ts"],
     ...vitest.configs.recommended,
     rules: {
       ...vitest.configs.recommended.rules,
