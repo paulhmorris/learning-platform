@@ -52,7 +52,7 @@ export function IdentityVerification({
 
       const { error } = await stripe.verifyIdentity(client_secret);
       if (error) {
-        Sentry.captureException(error);
+        Sentry.captureMessage(error.message ?? "Unknown Stripe Identity Verification error", { level: "error" });
         return toast.error("An error occurred while trying to verify your identity.");
       }
 
