@@ -134,3 +134,4 @@ jobs:
           existing_pr_number=$(gh pr list --base main --head staging --state open --json number --jq '.[0].number')
           if [ -z "$existing_pr_number" ]; then
             gh pr create --base main --head staging --title "Promote staging to main" --body "Automated promotion after staging deploy and e2e tests."
+          fi
