@@ -1,4 +1,4 @@
-import { Canvas, createCanvas, loadImage } from "@napi-rs/canvas";
+import { Canvas, createCanvas, GlobalFonts, loadImage } from "@napi-rs/canvas";
 import { logger, task } from "@trigger.dev/sdk/v3";
 
 import { hipHopDrivingCertificationSchema } from "~/components/pre-certificate-forms/hiphopdriving";
@@ -14,6 +14,22 @@ import { UserService } from "~/services/user.server";
 
 const ASSET_BASE_URL = "https://assets.hiphopdriving.com";
 const CERT_IMAGE_URL = `${ASSET_BASE_URL}/certificate_f2ffea5abd.png`;
+const FONT_URL = "https://cdn.jsdelivr.net/fontsource/fonts/inter@latest/latin-400-normal.woff2";
+
+let fontRegistered = false;
+async function ensureFontRegistered() {
+  if (fontRegistered || GlobalFonts.has("Inter")) {
+    return;
+  }
+  const res = await fetch(FONT_URL);
+  if (!res.ok) {
+    throw new Error(`Failed to fetch font: ${res.status} ${res.statusText}`);
+  }
+  const buffer = Buffer.from(await res.arrayBuffer());
+  GlobalFonts.register(buffer, "Inter");
+  fontRegistered = true;
+  logger.info("Registered font: Inter");
+}
 
 // BUSINESS LOGIC
 const certificateMap = [
@@ -241,6 +257,9 @@ async function generateHipHopCertificate(args: HipHopCertificateArgs): Promise<C
   if (!certImage) {
     return null;
   }
+
+  await ensureFontRegistered();
+
   const date = new Date().toLocaleDateString("en-US");
 
   const firstRowY = 790;
@@ -254,7 +273,7 @@ async function generateHipHopCertificate(args: HipHopCertificateArgs): Promise<C
 
   ctx.drawImage(certImage, 0, 0, 1650, 1275);
   ctx.textAlign = "left";
-  ctx.font = "24px Arial";
+  ctx.font = "24px Inter";
 
   // Row 1
   ctx.fillText(args.certificateNumber, firstColX, firstRowY);
