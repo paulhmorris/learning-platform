@@ -240,8 +240,8 @@ export default function CourseLayout() {
               {!isLargeScreen ? (
                 <button
                   className={cn(
-                    "absolute left-1/2 -translate-x-1/2 self-center rounded text-center text-base font-light ring-offset-background transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                    !isCollapsed ? "-bottom-12" : "bottom-6",
+                    "absolute left-1/2 -translate-x-1/2 self-center rounded border border-white px-3 py-1 text-center text-base font-light ring-offset-background transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                    !isCollapsed ? "-bottom-12" : "bottom-4",
                   )}
                   onClick={toggleShowMore}
                 >
