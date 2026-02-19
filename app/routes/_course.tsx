@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import { RedirectToSignIn, SignedIn, SignedOut } from "@clerk/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { LoaderFunctionArgs, Outlet, useLoaderData, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 import { useIsClient, useMediaQuery } from "usehooks-ts";
@@ -78,6 +78,7 @@ export default function CourseLayout() {
   const { lessonProgress, quizProgress } = useProgress();
   const isCollapsed = !isShowingMore && !isLargeScreen;
   const hasAccess = userCourseIds.includes(linkedCourse.id);
+  const activeSectionRef = useRef<HTMLLIElement>(null);
 
   useEffect(() => {
     if (!hasAccess) {
@@ -85,6 +86,17 @@ export default function CourseLayout() {
       void navigate("/preview");
     }
   }, [hasAccess, linkedCourse.id]);
+
+  // Auto-scroll to active section when collapsed on mobile
+  useEffect(() => {
+    if (!isCollapsed || !activeSectionRef.current) return;
+
+    activeSectionRef.current.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+      inline: "nearest",
+    });
+  }, [isCollapsed, params.lessonSlug]);
 
   function toggleShowMore() {
     setIsShowingMore((prev) => !prev);
@@ -153,9 +165,14 @@ export default function CourseLayout() {
 
                   const isQuizLocked = lessons.filter((l) => l.sectionId === section.id).some((l) => !l.isCompleted);
                   const shouldShowQuizInSection = isCollapsed ? isQuizActive || !isQuizLocked : true;
+                  const isActiveSection = section.id === activeSection?.id;
 
                   return (
-                    <li key={`section-${section.id}`} data-sectionid={section.id}>
+                    <li
+                      key={`section-${section.id}`}
+                      data-sectionid={section.id}
+                      ref={isActiveSection ? activeSectionRef : null}
+                    >
                       <Section className={cn(isCollapsed && "pb-16")}>
                         <SectionHeader sectionTitle={section.title} durationInMinutes={(durationInSeconds ?? 0) / 60} />
                         <Separator className={cn(isCollapsed ? "my-2 bg-transparent" : "my-4")} />
@@ -215,14 +232,16 @@ export default function CourseLayout() {
                     </li>
                   );
                 })}
-              <li key="section-certificate">
-                <SectionCertificate isCourseCompleted={isCourseCompleted} />
-              </li>
+              {!isCollapsed ? (
+                <li key="section-certificate">
+                  <SectionCertificate isCourseCompleted={isCourseCompleted} />
+                </li>
+              ) : null}
               {!isLargeScreen ? (
                 <button
                   className={cn(
-                    "absolute left-1/2 -translate-x-1/2 self-center rounded text-center text-base font-light ring-offset-background transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                    !isCollapsed ? "-bottom-12" : "bottom-6",
+                    "absolute left-1/2 -translate-x-1/2 self-center rounded border border-white px-3 py-1 text-center text-base font-light ring-offset-background transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                    !isCollapsed ? "-bottom-12" : "bottom-4",
                   )}
                   onClick={toggleShowMore}
                 >
