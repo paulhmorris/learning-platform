@@ -1,5 +1,8 @@
 import { LoaderFunctionArgs, redirect } from "react-router";
 
+import { SERVER_CONFIG } from "~/config.server";
+import PurchaseConfirmationEmail from "~/emails/purchase-confirmation";
+import { EmailService } from "~/integrations/email.server";
 import { createLogger } from "~/integrations/logger.server";
 import { Sentry } from "~/integrations/sentry";
 import { stripe } from "~/integrations/stripe.server";
@@ -48,6 +51,22 @@ export async function loader(args: LoaderFunctionArgs) {
 
     // Enroll the user in the course
     await UserCourseService.enrollUser(user.id, linkedCourse.id);
+
+    if (user.email) {
+      const courseUrl = `https://${linkedCourse.host}/preview`;
+      await EmailService.send({
+        to: user.email,
+        from: `Plumb Media & Education <no-reply@${SERVER_CONFIG.emailFromDomain}>`,
+        subject: `You're enrolled in ${linkedCourse.name}!`,
+        react: PurchaseConfirmationEmail({
+          firstName: user.firstName || "there",
+          courseName: linkedCourse.name,
+          courseUrl,
+        }),
+      }).catch((error) => {
+        logger.warn("Failed to send purchase confirmation email", { error, userId: user.id });
+      });
+    }
 
     return redirect("/preview?purchase_success=true");
   } catch (error) {
