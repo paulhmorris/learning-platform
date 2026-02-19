@@ -76,7 +76,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: staging
     needs: [changes, deploy]
-    if: ${{ always() && (needs.deploy.result == 'success' || needs.deploy.result == 'skipped') }}
+    if: ${{ needs.changes.outputs.app_changes == 'true' && needs.deploy.result == 'success' }}
     env:
       E2E_BASE_URL: ${{ secrets.E2E_BASE_URL_STAGING }}
     steps:
