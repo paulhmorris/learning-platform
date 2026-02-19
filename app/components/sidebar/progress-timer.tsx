@@ -1,5 +1,4 @@
 import { UserLessonProgress } from "@prisma/client";
-import { IconPlayerPauseFilled, IconPlayerPlayFilled } from "@tabler/icons-react";
 import { useEffect } from "react";
 import { useFetcher } from "react-router";
 import { useCountdown } from "react-timing-hooks";
@@ -19,7 +18,7 @@ export function ProgressTimer({ lesson, progress, setClientProgressPercentage }:
   const duration = lesson.attributes.required_duration_in_seconds ?? 0;
   const fetcher = useFetcher();
   const countdownStart = duration - (progress?.durationInSeconds ?? 0);
-  const [countdownValue, { stop, isStopped, start }] = useCountdown(countdownStart, 0, {
+  const [countdownValue, { stop, start }] = useCountdown(countdownStart, 0, {
     startOnMount: true,
   });
 
@@ -73,15 +72,6 @@ export function ProgressTimer({ lesson, progress, setClientProgressPercentage }:
       >
         {formatSeconds(countdownValue)} remaining
       </span>
-      {process.env.NODE_ENV === "development" && typeof document !== "undefined" ? (
-        <button
-          type="button"
-          className="fixed bottom-8 left-8 rounded bg-primary p-3 font-bold text-black shadow-xl hover:bg-primary/90"
-          onClick={isStopped ? start : stop}
-        >
-          {isStopped ? <IconPlayerPlayFilled /> : <IconPlayerPauseFilled />}
-        </button>
-      ) : null}
     </>
   );
 }
