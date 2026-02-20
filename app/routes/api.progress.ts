@@ -1,5 +1,5 @@
 import { parseFormData, validationError } from "@rvf/react-router";
-import { ActionFunctionArgs, LoaderFunctionArgs, ShouldRevalidateFunctionArgs } from "react-router";
+import { ActionFunctionArgs, data, LoaderFunctionArgs, ShouldRevalidateFunctionArgs } from "react-router";
 import { z } from "zod/v4";
 
 import { createLogger } from "~/integrations/logger.server";
@@ -61,10 +61,14 @@ export async function action(args: ActionFunctionArgs) {
     // Lessons without required durations
     if (intent === "mark-complete" && !duration) {
       const progress = await ProgressService.markComplete({ userId: user.id, lessonId });
-      return Toasts.dataWithSuccess(
-        { progress },
-        { message: "Lesson completed!", description: "You may now move on to the next item." },
-      );
+      return data({
+        progress,
+        toast: {
+          type: "success" as const,
+          message: "Lesson completed!",
+          description: "You may now move on to the next item.",
+        },
+      });
     }
 
     const progress = await ProgressService.getByLessonId(user.id, lessonId);
@@ -75,9 +79,13 @@ export async function action(args: ActionFunctionArgs) {
     // Completion flow
     if (progress && progress.durationInSeconds !== null) {
       if (progress.isCompleted) {
-        return Toasts.dataWithInfo(null, {
-          message: "Lesson already completed",
-          description: "You can continue to the next item.",
+        return data({
+          progress: null,
+          toast: {
+            type: "info" as const,
+            message: "Lesson already completed",
+            description: "You can continue to the next item.",
+          },
         });
       }
 
@@ -90,10 +98,14 @@ export async function action(args: ActionFunctionArgs) {
           lessonId,
           requiredDurationInSeconds: duration,
         });
-        return Toasts.dataWithSuccess(
-          { progress: completedProgress },
-          { message: "Lesson completed!", description: "You may now move on to the next item." },
-        );
+        return data({
+          progress: completedProgress,
+          toast: {
+            type: "success" as const,
+            message: "Lesson completed!",
+            description: "You may now move on to the next item.",
+          },
+        });
       }
     }
 
@@ -112,9 +124,13 @@ export async function action(args: ActionFunctionArgs) {
       throw error;
     }
 
-    return Toasts.dataWithError(null, {
-      message: "An error occurred trying to save your progress.",
-      description: "If the problem persists, please contact support.",
+    return data({
+      progress: null,
+      toast: {
+        type: "error" as const,
+        message: "An error occurred trying to save your progress.",
+        description: "If the problem persists, please contact support.",
+      },
     });
   }
 }
