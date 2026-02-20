@@ -1,5 +1,7 @@
-import { IconLoader } from "@tabler/icons-react";
+import { IconAlertCircleFilled, IconCircleCheckFilled, IconInfoCircleFilled, IconLoader } from "@tabler/icons-react";
+import { useEffect } from "react";
 import { useFetcher } from "react-router";
+import { toast } from "sonner";
 
 import { Button } from "~/components/ui/button";
 
@@ -11,6 +13,24 @@ type Props = {
 export function MarkCompleteButton({ lessonId, isCompleted }: Props) {
   const fetcher = useFetcher();
   const isSubmitting = fetcher.state === "submitting" || fetcher.state === "loading";
+
+  useEffect(() => {
+    const fetcherToast = (fetcher.data as { toast?: { type: string; message: string; description?: string } } | null)
+      ?.toast;
+    if (!fetcherToast) return;
+    const { type, message, description } = fetcherToast;
+    switch (type) {
+      case "success":
+        toast.success(message, { description, icon: <IconCircleCheckFilled className="size-5" /> });
+        break;
+      case "info":
+        toast.info(message, { description, icon: <IconInfoCircleFilled className="size-5" /> });
+        break;
+      case "error":
+        toast.error(message, { description, icon: <IconAlertCircleFilled className="size-5" />, duration: Infinity });
+        break;
+    }
+  }, [fetcher.data]);
 
   return (
     <fetcher.Form method="POST" action="/api/progress">

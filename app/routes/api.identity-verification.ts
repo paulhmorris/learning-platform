@@ -13,14 +13,15 @@ export async function action(args: ActionFunctionArgs) {
   const user = await SessionService.requireUser(args);
 
   if (user.isIdentityVerified) {
-    logger.info(`User ${user.id} is already identity verified`);
+    logger.info("User is already identity verified", { userId: user.id });
     return Responses.conflict();
   }
 
   if (user.stripeVerificationSessionId) {
     const session = await IdentityService.retrieveVerificationSession(user.stripeVerificationSessionId);
     logger.info(
-      `Retrieved existing identity verification session for user ${user.id} status=${session.status} id=${session.id} lastErrorCode=${session.last_error?.code}`,
+      `Retrieved existing identity verification session status=${session.status} id=${session.id} lastErrorCode=${session.last_error?.code}`,
+      { userId: user.id },
     );
 
     if (session.status === "verified") {
@@ -38,9 +39,9 @@ export async function action(args: ActionFunctionArgs) {
   }
 
   try {
-    logger.info(`Creating new identity verification session for user ${user.id}`);
+    logger.info("Creating new identity verification session", { userId: user.id });
     const _session = await IdentityService.createVerificationSession(user.id, user.email);
-    logger.info(`Created identity verification session for user ${user.id} with id ${_session.id}`);
+    logger.info(`Created identity verification session with id ${_session.id}`, { userId: user.id });
     return Responses.ok({ client_secret: _session.client_secret });
   } catch (error) {
     logger.error(error instanceof Error ? error.message : "Unknown error");

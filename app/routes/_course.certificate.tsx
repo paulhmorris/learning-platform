@@ -64,7 +64,7 @@ export async function loader(args: LoaderFunctionArgs) {
     const userCourse = await UserCourseService.getByUserIdAndCourseIdWithCertificate(user.id, linkedCourse.id);
 
     if (!userCourse) {
-      logger.warn(`User ${user.id} does not have access to course ${linkedCourse.id}`);
+      logger.warn(`User does not have access to course ${linkedCourse.id}`, { userId: user.id });
       Sentry.captureMessage("User tried to claim certificate without having access to course", {
         extra: {
           user: { id: user.id, email: user.email },
@@ -116,7 +116,7 @@ export async function action(args: ActionFunctionArgs) {
     const userCourses = await UserCourseService.getAllByUserId(user.id);
     const userHasAccess = userCourses.some((c) => c.courseId === linkedCourse.id);
     if (!userHasAccess) {
-      logger.warn(`User ${user.id} tried to claim certificate without access to course ${linkedCourse.id}`);
+      logger.warn(`User tried to claim certificate without access to course ${linkedCourse.id}`, { userId: user.id });
       return Toasts.redirectWithError("/preview", {
         message: "No access to course",
         description: "Please purchase the course to access it.",
