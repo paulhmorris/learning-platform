@@ -94,7 +94,7 @@ export async function action(args: ActionFunctionArgs) {
     });
 
     if (!session.url) {
-      logger.error(`Checkout session created but no URL returned for user ${user.id} and course ${course.id}`);
+      logger.error(`Checkout session created but no URL returned for course ${course.id}`, { userId: user.id });
       Sentry.captureException(new Error("Checkout session URL is missing"), {
         extra: { userId: user.id, courseId: course.id, sessionId: session.id },
       });
@@ -107,7 +107,7 @@ export async function action(args: ActionFunctionArgs) {
     return redirect(session.url, { status: 303 });
   } catch (error) {
     Sentry.captureException(error);
-    logger.error(`Failed to create checkout session for user ${user.id} and course ${course.id}`, { error });
+    logger.error(`Failed to create checkout session for course ${course.id}`, { error, userId: user.id });
     return Toasts.redirectWithError("/", {
       message: "Unable to start checkout",
       description: "Please try again later",

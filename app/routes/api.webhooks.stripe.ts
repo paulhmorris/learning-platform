@@ -47,14 +47,14 @@ export async function action({ request }: ActionFunctionArgs) {
             case "identity.verification_session.requires_input": {
               const userId = event.data.object.metadata.user_id;
               const errorReason = event.data.object.last_error?.reason;
-              logger.info(`Verification check failed for user ${userId} (reason: ${errorReason ?? "unknown"})`);
+              logger.info(`Verification check failed (reason: ${errorReason ?? "unknown"})`, { userId });
 
               if (!userId) {
                 Sentry.captureMessage(
                   "Received Stripe identity.verification_session.requires_input event without user ID",
                   { level: "error" },
                 );
-                logger.error(`User ID ${userId} not found in metadata`);
+                logger.error("User ID not found in metadata", { userId });
                 return Responses.badRequest("User ID is required for verification input");
               }
 
@@ -65,7 +65,7 @@ export async function action({ request }: ActionFunctionArgs) {
                   "Received Stripe identity.verification_session.requires_input event for unknown user: " + userId,
                   { level: "error" },
                 );
-                logger.error(`User ${userId} not found`);
+                logger.error("User not found", { userId });
                 return Responses.badRequest("User not found");
               }
 
@@ -100,7 +100,7 @@ export async function action({ request }: ActionFunctionArgs) {
                 Sentry.captureMessage("Received Stripe identity.verification_session.verified event without user ID", {
                   level: "error",
                 });
-                logger.error(`User ID ${userId} not found in metadata`, { metadata: event.data.object.metadata });
+                logger.error("User ID not found in metadata", { userId, metadata: event.data.object.metadata });
                 return Responses.badRequest("User ID is required for verification input");
               }
 
@@ -111,12 +111,12 @@ export async function action({ request }: ActionFunctionArgs) {
                   "Received Stripe identity.verification_session.verified event for unknown user: " + userId,
                   { level: "error" },
                 );
-                logger.error(`User ${userId} not found`);
+                logger.error("User not found", { userId });
                 return Responses.badRequest("User not found");
               }
 
               if (!user.publicMetadata.isIdentityVerified) {
-                logger.info(`Verification successful for user ${userId}`);
+                logger.info("Verification successful", { userId });
 
                 if (user.email) {
                   await EmailService.send({
@@ -138,13 +138,13 @@ export async function action({ request }: ActionFunctionArgs) {
             case "identity.verification_session.canceled": {
               const userId = event.data.object.metadata.user_id;
               if (!userId) {
-                logger.error(`User ID ${userId} not found in metadata`, { metadata: event.data.object.metadata });
+                logger.error("User ID not found in metadata", { userId, metadata: event.data.object.metadata });
                 return Responses.badRequest("User ID is required for verification input");
               }
 
               await AuthService.updatePublicMetadata(userId, { stripeVerificationSessionId: null });
 
-              logger.info(`Verification session for user ${userId} ended with status ${event.type}`);
+              logger.info(`Verification session ended with status ${event.type}`, { userId });
               return Responses.ok("Webhook Success");
             }
 

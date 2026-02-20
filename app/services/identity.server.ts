@@ -16,11 +16,11 @@ export const IdentityService = {
         metadata: { user_id: userId },
       });
       await AuthService.updatePublicMetadata(userId, { stripeVerificationSessionId: verificationSession.id });
-      logger.info(`Created verification session ${verificationSession.id} for user ${userId} (${email})`);
+      logger.info(`Created verification session ${verificationSession.id} (${email})`, { userId });
       return verificationSession;
     } catch (error) {
       Sentry.captureException(error, { extra: { userId, email } });
-      logger.error(`Failed to create verification session for user ${userId} (${email})`, { error });
+      logger.error(`Failed to create verification session (${email})`, { error, userId });
       throw error;
     }
   },
