@@ -55,6 +55,7 @@ vi.mock("~/integrations/sentry", () => ({
 vi.mock("~/services/certificate.server", () => ({
   CertificateService: {
     getNextAllocationForCourse: vi.fn(),
+    getRemainingAllocationsCount: vi.fn(),
     createAndUpdateCourse: vi.fn(),
   },
 }));

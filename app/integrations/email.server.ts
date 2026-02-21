@@ -59,7 +59,7 @@ async function _sendSESEmail(props: SendEmailInput) {
     },
   };
 
-  if (SERVER_CONFIG.isProd || SERVER_CONFIG.isPreview) {
+  if (SERVER_CONFIG.isProd) {
     try {
       const command = new SendEmailCommand(input);
       const response = await sesClient.send(command);
@@ -76,14 +76,14 @@ async function _sendSESEmail(props: SendEmailInput) {
     }
   }
 
-  logger.debug(
+  logger.info(
     `Email sent to ${Array.isArray(props.to) ? props.to.join(", ") : props.to} (Subject: "${props.subject}")`,
   );
   return { messageId: "test", $metadata: {} };
 }
 
 async function sendResendEmail(props: SendEmailInput) {
-  if (SERVER_CONFIG.isProd || SERVER_CONFIG.isPreview) {
+  if (SERVER_CONFIG.isProd) {
     const response = await resend.emails.send({
       from: props.from ?? `Plumb Media & Education <no-reply@${SERVER_CONFIG.emailFromDomain}>`,
       to: props.to,
@@ -100,7 +100,7 @@ async function sendResendEmail(props: SendEmailInput) {
     return { messageId: response.data?.id };
   }
 
-  logger.debug(
+  logger.info(
     `Email sent to ${Array.isArray(props.to) ? props.to.join(", ") : props.to} (Subject: "${props.subject}")`,
   );
   return { messageId: "test" };
