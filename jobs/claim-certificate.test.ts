@@ -391,10 +391,12 @@ describe("claimCertificateJob", () => {
         createdAt: new Date(),
         updatedAt: new Date(),
       });
+      mockCertificateService.getRemainingAllocationsCount.mockResolvedValue(100);
       mockCertificateService.createAndUpdateCourse.mockResolvedValue({
         id: 1,
         certificate: { number: "CERT-001" },
       });
+      mockEmailService.send.mockResolvedValue({ messageId: "msg-1" });
     }
 
     it("returns early when no canvas function exists for the course", async () => {
@@ -549,7 +551,9 @@ describe("claimCertificateJob", () => {
       await runJob(defaultPayload);
 
       expect(mockSentry.captureException).toHaveBeenCalledWith(error);
-      expect(mockEmailService.send).not.toHaveBeenCalled();
+      expect(mockEmailService.send).not.toHaveBeenCalledWith(
+        expect.objectContaining({ subject: "Your certificate is ready!" }),
+      );
     });
   });
 });
