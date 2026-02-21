@@ -1,10 +1,10 @@
 import { Section, Text } from "@react-email/components";
 
-import { EmailLayout } from "~/emails/components/email-layout";
+import Layout from "./components/email-layout";
 
 export default function VerificationSuccessEmail() {
   return (
-    <EmailLayout preview="Your identity has been successfully verified">
+    <Layout preview="Your identity has been successfully verified">
       <Section>
         <Text className="m-0 text-center text-4xl">✅</Text>
         <Text className="mb-0 mt-4 text-center text-lg font-semibold text-[#18181b]">
@@ -21,6 +21,6 @@ export default function VerificationSuccessEmail() {
           You&apos;re all set — no further action is needed.
         </Text>
       </Section>
-    </EmailLayout>
+    </Layout>
   );
 }

@@ -1,6 +1,6 @@
 import { Section, Text } from "@react-email/components";
 
-import { EmailLayout } from "~/emails/components/email-layout";
+import Layout from "./components/email-layout";
 
 type CertificateGenerationFailureInternalEmailProps = {
   userId: string;
@@ -16,7 +16,7 @@ export default function CertificateGenerationFailureInternalEmail({
   reason,
 }: CertificateGenerationFailureInternalEmailProps) {
   return (
-    <EmailLayout preview={`Certificate generation failed for user ${userId}`}>
+    <Layout preview={`Certificate generation failed for user ${userId}`}>
       <Section>
         <Text className="m-0 text-center text-4xl">🚨</Text>
         <Text className="mb-0 mt-4 text-center text-lg font-semibold text-[#18181b]">
@@ -45,6 +45,6 @@ export default function CertificateGenerationFailureInternalEmail({
       <Text className="mt-4 text-sm leading-6 text-[#52525b]">
         Please check Sentry for more details and take corrective action.
       </Text>
-    </EmailLayout>
+    </Layout>
   );
 }

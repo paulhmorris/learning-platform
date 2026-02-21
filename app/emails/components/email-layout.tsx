@@ -8,7 +8,7 @@ type EmailLayoutProps = {
   children: React.ReactNode;
 };
 
-export function EmailLayout({ preview, children }: EmailLayoutProps) {
+export default function EmailLayout({ preview, children }: EmailLayoutProps) {
   return (
     <Html>
       <Head />

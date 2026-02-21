@@ -1,6 +1,6 @@
 import { Section, Text } from "@react-email/components";
 
-import { EmailLayout } from "~/emails/components/email-layout";
+import Layout from "./components/email-layout";
 
 type AllocationsLowInternalEmailProps = {
   courseName: string;
@@ -16,7 +16,7 @@ export default function AllocationsLowInternalEmail({
   const isExhausted = remaining === 0;
 
   return (
-    <EmailLayout
+    <Layout
       preview={
         isExhausted
           ? `Certificate allocations exhausted for ${courseName}`
@@ -47,6 +47,6 @@ export default function AllocationsLowInternalEmail({
           <span className={isExhausted ? "font-bold text-[#dc2626]" : "font-bold text-[#d97706]"}>{remaining}</span>
         </Text>
       </Section>
-    </EmailLayout>
+    </Layout>
   );
 }

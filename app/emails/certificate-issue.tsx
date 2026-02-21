@@ -1,7 +1,8 @@
 import { Section, Text } from "@react-email/components";
 
 import { CONFIG } from "~/config";
-import { EmailLayout } from "~/emails/components/email-layout";
+
+import Layout from "./components/email-layout";
 
 type CertificateIssueEmailProps = {
   firstName: string;
@@ -10,7 +11,7 @@ type CertificateIssueEmailProps = {
 
 export default function CertificateIssueEmail({ firstName, courseName }: CertificateIssueEmailProps) {
   return (
-    <EmailLayout preview={`There was an issue creating your ${courseName} certificate`}>
+    <Layout preview={`There was an issue creating your ${courseName} certificate`}>
       <Section>
         <Text className="m-0 text-center text-4xl">⚠️</Text>
         <Text className="mb-0 mt-4 text-center text-lg font-semibold text-[#18181b]">We Hit a Snag, {firstName}</Text>
@@ -34,6 +35,6 @@ export default function CertificateIssueEmail({ firstName, courseName }: Certifi
         </a>{" "}
         if you need further assistance.
       </Text>
-    </EmailLayout>
+    </Layout>
   );
 }

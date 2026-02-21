@@ -1,6 +1,6 @@
 import { Button, Section, Text } from "@react-email/components";
 
-import { EmailLayout } from "~/emails/components/email-layout";
+import Layout from "./components/email-layout";
 
 type CourseEnrollmentEmailProps = {
   firstName: string;
@@ -10,7 +10,7 @@ type CourseEnrollmentEmailProps = {
 
 export default function CourseEnrollmentEmail({ firstName, courseName, courseUrl }: CourseEnrollmentEmailProps) {
   return (
-    <EmailLayout preview={`You've been enrolled in ${courseName}`}>
+    <Layout preview={`You've been enrolled in ${courseName}`}>
       <Section>
         <Text className="m-0 text-center text-4xl">📚</Text>
         <Text className="mb-0 mt-4 text-center text-lg font-semibold text-[#18181b]">
@@ -29,6 +29,6 @@ export default function CourseEnrollmentEmail({ firstName, courseName, courseUrl
           Go to Course
         </Button>
       </Section>
-    </EmailLayout>
+    </Layout>
   );
 }

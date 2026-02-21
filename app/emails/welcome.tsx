@@ -1,6 +1,6 @@
 import { Section, Text } from "@react-email/components";
 
-import { EmailLayout } from "~/emails/components/email-layout";
+import Layout from "./components/email-layout";
 
 type WelcomeEmailProps = {
   firstName: string;
@@ -8,11 +8,11 @@ type WelcomeEmailProps = {
 
 export default function WelcomeEmail({ firstName }: WelcomeEmailProps) {
   return (
-    <EmailLayout preview="Welcome to Plumb Media & Education — let's get started">
+    <Layout preview="Welcome to Plumb Media & Education — let's get started">
       <Section>
         <Text className="m-0 text-center text-4xl">👋</Text>
         <Text className="mb-0 mt-4 text-center text-lg font-semibold text-[#18181b]">Welcome, {firstName}!</Text>
-        <Text className="mt-2 text-center text-sm leading-6 text-[#52525b]">
+        <Text className="mt-2 text-balance text-center text-sm leading-6 text-[#52525b]">
           Your account has been created! We look forward to supporting you on your learning journey.
         </Text>
       </Section>
@@ -22,6 +22,6 @@ export default function WelcomeEmail({ firstName }: WelcomeEmailProps) {
           If you didn&apos;t create this account, you can safely ignore this email.
         </Text>
       </Section>
-    </EmailLayout>
+    </Layout>
   );
 }
