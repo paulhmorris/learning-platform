@@ -76,7 +76,7 @@ export async function action({ request }: ActionFunctionArgs) {
                   to: user.email,
                   from: `Plumb Media & Education <no-reply@${SERVER_CONFIG.emailFromDomain}>`,
                   subject: "Action Required: Verify Your Identity",
-                  react: VerificationRequiresInputEmail({ baseUrl: SERVER_CONFIG.baseUrl ?? "" }),
+                  react: VerificationRequiresInputEmail({ baseUrl: SERVER_CONFIG.baseUrl }),
                 });
               }
 
