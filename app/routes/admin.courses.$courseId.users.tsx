@@ -64,26 +64,6 @@ export async function action(args: ActionFunctionArgs) {
     return Responses.serverError("Failed to enroll user in course");
   }
 
-  // Send enrollment notification email
-  //   const [enrolledUser, course] = await Promise.all([
-  //     UserService.getById(result.data.userId),
-  //     CourseService.getById(courseId),
-  //   ]);
-  //   if (enrolledUser?.email && course) {
-  //     const courseUrl = `https://${course.host}/preview`;
-  //     await EmailService.send({
-  //       to: enrolledUser.email,
-  //       from: `Plumb Media & Education <no-reply@${SERVER_CONFIG.emailFromDomain}>`,
-  //       subject: `You've been enrolled in ${course.name}!`,
-  //       react: CourseEnrollmentEmail({
-  //         firstName: enrolledUser.firstName || "there",
-  //         courseName: course.name,
-  //         courseUrl,
-  //       }),
-  //     });
-  //   }
-  // }
-
   return Responses.created();
 }
 
