@@ -33,12 +33,20 @@ export async function action(args: ActionFunctionArgs) {
       const email = event.data.email_addresses.at(0)?.email_address;
       const firstName = event.data.first_name;
       if (email) {
-        await EmailService.send({
-          to: email,
-          from: `Plumb Media & Education <no-reply@${SERVER_CONFIG.emailFromDomain}>`,
-          subject: "Welcome to Plumb Media & Education!",
-          react: WelcomeEmail({ firstName: firstName ?? "new user" }),
-        });
+        try {
+          await EmailService.send({
+            to: email,
+            from: `Plumb Media & Education <no-reply@${SERVER_CONFIG.emailFromDomain}>`,
+            subject: "Welcome to Plumb Media & Education!",
+            react: WelcomeEmail({ firstName: firstName ?? "new user" }),
+          });
+        } catch (error) {
+          Sentry.captureException(error, { extra: { eventType, userId: event.data.id } });
+          logger.error(
+            `Error sending welcome email to ${email} for user ${event.data.id} from Clerk webhook event ${eventType}`,
+            { error },
+          );
+        }
       }
     } catch (error) {
       Sentry.captureException(error, { extra: { eventType, userId: event.data.id } });
