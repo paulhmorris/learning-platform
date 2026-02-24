@@ -111,7 +111,7 @@ export async function action(args: ActionFunctionArgs) {
   score = Math.ceil((score / correctQuizAnswers.length) * 100);
   const passed = score >= quiz.data.attributes.passing_score;
 
-  logger.info(`Quiz ${quizId} submitted by user ${user.id} (score: ${score}, passed: ${passed})`);
+  logger.info(`Quiz ${quizId} submitted (score: ${score}, passed: ${passed})`, { userId: user.id });
 
   if (passed) {
     await QuizService.markAsPassed(parseInt(quizId), user.id, score);

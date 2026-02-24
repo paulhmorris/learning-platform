@@ -83,7 +83,7 @@ export const QuizService = {
       ]);
     } catch (error) {
       Sentry.captureException(error);
-      logger.error(`Failed to reset quiz ${quizId} progress for user ${userId}`, { error });
+      logger.error(`Failed to reset quiz ${quizId} progress`, { error, userId });
       throw error;
     }
   },
@@ -125,7 +125,7 @@ export const QuizService = {
       });
     } catch (error) {
       Sentry.captureException(error);
-      logger.error(`Failed to mark quiz ${quizId} as passed for user ${userId}`, { error });
+      logger.error(`Failed to mark quiz ${quizId} as passed`, { error, userId });
       throw error;
     }
   },

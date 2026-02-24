@@ -22,13 +22,13 @@ export async function loader(args: LoaderFunctionArgs) {
 
   // If the purchase was not successful
   if (!isSuccessful) {
-    logger.info(`Purchase canceled`, { userId: user.id });
+    logger.info("Purchase canceled", { userId: user.id });
     return redirect("/preview?purchase_canceled=true");
   }
 
   // If it's successful but for some reason there's no session id parameter
   if (!stripeSessionId) {
-    logger.warn(`No Stripe session ID provided`, { userId: user.id });
+    logger.warn("No Stripe session ID provided", { userId: user.id });
     return redirect("/preview?purchase_canceled=true");
   }
 
@@ -36,7 +36,7 @@ export async function loader(args: LoaderFunctionArgs) {
     const session = await stripe.checkout.sessions.retrieve(stripeSessionId);
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!session || session.payment_status === "unpaid") {
-      logger.info(`Unpaid or missing Stripe session`, { userId: user.id });
+      logger.info("Unpaid or missing Stripe session", { userId: user.id });
       return redirect("/preview?purchase_canceled=true");
     }
 
@@ -79,7 +79,7 @@ export async function loader(args: LoaderFunctionArgs) {
     return redirect("/preview?purchase_success=true");
   } catch (error) {
     Sentry.captureException(error);
-    logger.error(`Failed to complete purchase`, { error, userId: user.id });
+    logger.error("Failed to complete purchase", { error, userId: user.id });
     return Toasts.redirectWithError("/", {
       message: "Unable to complete enrollment",
       description: "Please contact support if the issue persists",

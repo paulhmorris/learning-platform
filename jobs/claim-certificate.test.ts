@@ -18,6 +18,10 @@ vi.mock("@napi-rs/canvas", () => {
     createCanvas: vi.fn(() => mockCanvas),
     loadImage: vi.fn(() => Promise.resolve({ width: 1650, height: 1275 })),
     Canvas: vi.fn(),
+    GlobalFonts: {
+      has: vi.fn(() => false),
+      register: vi.fn(),
+    },
   };
 });
 
@@ -97,7 +101,7 @@ vi.mock("~/components/pre-certificate-forms/hiphopdriving", () => ({
 
 // ─── Imports (after mocks) ───────────────────────────────────────────────────
 
-import { loadImage } from "@napi-rs/canvas";
+import { GlobalFonts, loadImage } from "@napi-rs/canvas";
 
 import { Bucket } from "~/integrations/bucket.server";
 import { db } from "~/integrations/db.server";
@@ -119,6 +123,7 @@ const mockBucket = vi.mocked(Bucket);
 const mockDb = vi.mocked(db, true);
 const mockSentry = vi.mocked(Sentry);
 const mockLoadImage = vi.mocked(loadImage);
+const mockGlobalFonts = vi.mocked(GlobalFonts);
 
 // task() mock returns the raw options object, so we cast to access .run
 const runJob = (
@@ -204,6 +209,17 @@ beforeEach(() => {
   vi.restoreAllMocks();
   // Re-apply default mock implementations after restoreAllMocks
   mockLoadImage.mockResolvedValue({ width: 1650, height: 1275 } as never);
+  mockGlobalFonts.has.mockReturnValue(false);
+  vi.unstubAllGlobals();
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(() => ({
+      ok: true,
+      status: 200,
+      statusText: "OK",
+      arrayBuffer: () => new ArrayBuffer(8),
+    })),
+  );
 });
 
 describe("claimCertificateJob", () => {

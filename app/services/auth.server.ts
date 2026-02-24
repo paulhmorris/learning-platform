@@ -20,7 +20,7 @@ export const AuthService = {
       return await client.users.deleteUser(userId);
     } catch (error) {
       Sentry.captureException(error);
-      logger.error(`Failed to delete user ${userId}`, { error });
+      logger.error("Failed to delete user", { error, userId });
       throw error;
     }
   },

@@ -36,11 +36,12 @@ export const PaymentService = {
 
       if (existingCustomers.data.length > 0) {
         const existingCustomer = existingCustomers.data[0];
-        logger.info(`Found existing Stripe customer ${existingCustomer.id} for user ${userId}`);
+        logger.info(`Found existing Stripe customer ${existingCustomer.id}`, { userId });
 
         // Log warning if multiple customers found (data inconsistency)
         if (existingCustomers.data.length > 1) {
-          logger.warn(`Multiple Stripe customers found for user ${userId}`, {
+          logger.warn("Multiple Stripe customers found", {
+            userId,
             customerIds: existingCustomers.data.map((c) => c.id),
           });
           Sentry.captureMessage(`Multiple Stripe customers found for user ${userId}`, {
@@ -69,12 +70,12 @@ export const PaymentService = {
           idempotencyKey: `customer_create_${userId}`,
         },
       );
-      logger.info(`Created Stripe customer ${stripeCustomer.id} for user ${userId}`);
+      logger.info(`Created Stripe customer ${stripeCustomer.id}`, { userId });
       await AuthService.updatePublicMetadata(userId, { stripeCustomerId: stripeCustomer.id });
       return { id: stripeCustomer.id };
     } catch (error) {
       Sentry.captureException(error, { extra: { userId, options } });
-      logger.error(`Failed to create Stripe customer for user ${userId}`, { error });
+      logger.error("Failed to create Stripe customer", { error, userId });
       throw error;
     }
   },
@@ -92,7 +93,7 @@ export const PaymentService = {
       }
 
       if (!stripeCustomerId) {
-        logger.info(`Creating Stripe customer for user ${userId} without stripeCustomerId`);
+        logger.info("Creating Stripe customer without stripeCustomerId", { userId });
         const customer = await this.upsertCustomer(user.id);
         stripeCustomerId = customer.id;
       }
@@ -115,7 +116,7 @@ export const PaymentService = {
           idempotencyKey: `checkout_session_${user.id}_${stripePriceId}`,
         },
       );
-      logger.info(`Created course checkout session ${session.id} for user ${userId} with price ${stripePriceId}`);
+      logger.info(`Created course checkout session ${session.id} with price ${stripePriceId}`, { userId });
       return session;
     } catch (error) {
       Sentry.captureException(error, { extra: { userId, stripePriceId } });

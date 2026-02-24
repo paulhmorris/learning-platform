@@ -1,7 +1,9 @@
 import { UserLessonProgress } from "@prisma/client";
+import { IconAlertCircleFilled, IconCircleCheckFilled, IconInfoCircleFilled } from "@tabler/icons-react";
 import { useEffect } from "react";
 import { useFetcher } from "react-router";
 import { useCountdown } from "react-timing-hooks";
+import { toast } from "sonner";
 
 import { cn, formatSeconds } from "~/lib/utils";
 import { SUBMIT_INTERVAL_MS } from "~/routes/api.progress";
@@ -44,6 +46,25 @@ export function ProgressTimer({ lesson, progress, setClientProgressPercentage }:
       );
     }
   }, [shouldSubmit]);
+
+  // Fire toast immediately when the action returns a toast in its response data
+  useEffect(() => {
+    const fetcherToast = (fetcher.data as { toast?: { type: string; message: string; description?: string } } | null)
+      ?.toast;
+    if (!fetcherToast) return;
+    const { type, message, description } = fetcherToast;
+    switch (type) {
+      case "success":
+        toast.success(message, { description, icon: <IconCircleCheckFilled className="size-5" /> });
+        break;
+      case "info":
+        toast.info(message, { description, icon: <IconInfoCircleFilled className="size-5" /> });
+        break;
+      case "error":
+        toast.error(message, { description, icon: <IconAlertCircleFilled className="size-5" />, duration: Infinity });
+        break;
+    }
+  }, [fetcher.data]);
 
   // Pause the timer when the tab is not visible
   const handleVisibilityChange = () => (document.hidden ? stop() : start());

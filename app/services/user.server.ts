@@ -57,7 +57,7 @@ export const UserService = {
       return user;
     } catch (error) {
       Sentry.captureException(error);
-      logger.error(`Failed to create user with Clerk ID ${userId}`, { error });
+      logger.error("Failed to create Stripe user", { error, userId });
       throw error;
     }
   },
@@ -71,7 +71,7 @@ export const UserService = {
       ]);
     } catch (error) {
       Sentry.captureException(error);
-      logger.error(`Failed to delete data for user ${userId}`, { error });
+      logger.error("Failed to delete user data", { error, userId });
       throw error;
     }
   },
