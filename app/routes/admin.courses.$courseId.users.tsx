@@ -15,12 +15,15 @@ import { ErrorComponent } from "~/components/error-component";
 import { AdminButton } from "~/components/ui/admin-button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { createLogger } from "~/integrations/logger.server";
 import { Responses } from "~/lib/responses.server";
 import type { loader as adminCourseLoader } from "~/routes/admin.courses.$courseId";
 import { text } from "~/schemas/fields";
 import { AuthService } from "~/services/auth.server";
 import { SessionService } from "~/services/session.server";
 import { UserCourseService } from "~/services/user-course.server";
+
+const logger = createLogger("Admin.Courses.Users");
 
 export async function loader(args: LoaderFunctionArgs) {
   await SessionService.requireAdmin(args);
@@ -54,7 +57,12 @@ export async function action(args: ActionFunctionArgs) {
     return result.error;
   }
 
-  await UserCourseService.enrollUser(result.data.userId, courseId);
+  try {
+    await UserCourseService.enrollUser(result.data.userId, courseId);
+  } catch (error) {
+    logger.error(`Error enrolling user ${result.data.userId} in course ${courseId}`, { error });
+    return Responses.serverError("Failed to enroll user in course");
+  }
 
   return Responses.created();
 }

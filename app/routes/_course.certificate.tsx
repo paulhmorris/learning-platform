@@ -184,11 +184,15 @@ export async function action(args: ActionFunctionArgs) {
       }
       // TODO: Clerk migration
       const userCourses = await UserCourseService.getAllByUserId(user.id);
-      await db.preCertificationFormSubmission.create({
-        data: {
-          userCourseId: userCourses.find((c) => c.courseId === linkedCourse.id)!.id,
-          formData: formData.data,
-        },
+      const userCourseId = userCourses.find((c) => c.courseId === linkedCourse.id)?.id;
+      if (!userCourseId) {
+        logger.error(`User course not found for user ${user.id} and course ${linkedCourse.id}`);
+        throw new Error("User course not found.");
+      }
+      await db.preCertificationFormSubmission.upsert({
+        where: { userCourseId },
+        update: { formData: formData.data },
+        create: { userCourseId, formData: formData.data },
       });
     }
 
