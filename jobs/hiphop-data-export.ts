@@ -1,4 +1,5 @@
 import { logger, schedules } from "@trigger.dev/sdk/v3";
+import { z } from "zod";
 
 import { hipHopDrivingCertificationSchema } from "~/components/pre-certificate-forms/hiphopdriving";
 import { SERVER_CONFIG } from "~/config.server";
@@ -57,7 +58,7 @@ export function buildExportRows(certificates: Array<UnexportedCertificate>): Bui
         certNumber: cert.number,
         userCourseId: cert.userCourseId,
         issueDate: formatDate(cert.issuedAt),
-        reason: `Validation failed: ${parsed.error.message}`,
+        reason: `Validation failed: ${z.prettifyError(parsed.error)}`,
         rawFormData: JSON.stringify(formSubmission.formData),
       });
       continue;
