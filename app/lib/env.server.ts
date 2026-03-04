@@ -4,6 +4,7 @@ import * as z from "zod";
 import { UserRole } from "~/config";
 
 const _serverEnvValidation = z.object({
+  LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).optional(),
   BASE_URL: z.string().min(1),
 
   // Clerk

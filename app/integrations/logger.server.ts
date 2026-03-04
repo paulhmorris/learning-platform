@@ -7,7 +7,7 @@ const isCI = SERVER_CONFIG.isCI;
 const axiom = new Axiom({ token: process.env.AXIOM_TOKEN });
 const commonArgs = { environment: SERVER_CONFIG.environment };
 
-function buildTransports(dataset: string, level: "debug" | "info") {
+function buildTransports(dataset: string, level: "debug" | "info" | "warn" | "error") {
   const transports: [Transport, ...Array<Transport>] = [new ConsoleTransport({ logLevel: level, prettyPrint: true })];
 
   // Axiom in production, or in test when running in CI
@@ -18,7 +18,7 @@ function buildTransports(dataset: string, level: "debug" | "info") {
   return transports;
 }
 
-const logLevel = SERVER_CONFIG.isDev ? "debug" : "info";
+const logLevel = SERVER_CONFIG.isDev ? "debug" : (process.env.LOG_LEVEL ?? "info");
 
 const serverLogger = new Logger({
   logLevel,

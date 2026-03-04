@@ -138,6 +138,7 @@ jobs:
       - name: Run e2e Tests
         run: npm run test:e2e
         env:
+          LOG_LEVEL: "error"
           DIRECT_URL: ${{ steps.neon_branch_e2e.outputs.db_url }}
           DATABASE_URL: ${{ steps.neon_branch_e2e.outputs.db_url_pooled || steps.neon_branch_e2e.outputs.db_url }}
           AXIOM_TOKEN: ${{ secrets.AXIOM_TOKEN }}
