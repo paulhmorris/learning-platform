@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { hipHopDrivingCertificationSchema } from "~/components/pre-certificate-forms/hiphopdriving";
 import { SERVER_CONFIG } from "~/config.server";
+import HiphopExportFailureInternalEmail from "~/emails/hiphop-export-failure-internal";
 import { Bucket } from "~/integrations/bucket.server";
 import { EmailService } from "~/integrations/email.server";
 import { Sentry } from "~/integrations/sentry";
@@ -278,11 +279,7 @@ async function sendFailureEmail(detail: string) {
       from: `Plumb Media & Education <no-reply@${SERVER_CONFIG.emailFromDomain}>`,
       to: REPORT_RECIPIENTS,
       subject: "Hip Hop Driving Certificate Export Failed",
-      html: `
-        <p>The daily Hip Hop Driving certificate export job failed.</p>
-        <p><strong>Details:</strong> ${detail}</p>
-        <p>Please check the logs in Trigger.dev for more information.</p>
-      `,
+      react: <HiphopExportFailureInternalEmail detail={detail} />,
     });
   } catch (emailError) {
     Sentry.captureException(emailError);

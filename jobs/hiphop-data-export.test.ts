@@ -60,6 +60,10 @@ vi.mock("~/services/certificate.server", () => ({
   },
 }));
 
+vi.mock("~/emails/hiphop-export-failure-internal", () => ({
+  default: vi.fn(() => null),
+}));
+
 vi.mock("~/components/pre-certificate-forms/hiphopdriving", () => ({
   hipHopDrivingCertificationSchema: z.object({
     firstName: z.string(),
@@ -240,7 +244,7 @@ describe("hiphopDataExport", () => {
       expect(mockEmailService.send).toHaveBeenCalledWith(
         expect.objectContaining({
           subject: "Hip Hop Driving Certificate Export Failed",
-          html: expect.stringContaining("Failed to generate the Excel spreadsheet"),
+          react: expect.anything(),
         }),
       );
     });
@@ -290,7 +294,8 @@ describe("hiphopDataExport", () => {
       expect(mockEmailService.send).toHaveBeenCalledTimes(2);
       expect(mockEmailService.send).toHaveBeenLastCalledWith(
         expect.objectContaining({
-          html: expect.stringContaining("duplicate exports"),
+          subject: "Hip Hop Driving Certificate Export Failed",
+          react: expect.anything(),
         }),
       );
     });
