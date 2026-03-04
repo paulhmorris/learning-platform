@@ -1,4 +1,4 @@
-import type { Schema, Attribute } from "@strapi/strapi";
+import type { Attribute, Schema } from "@strapi/strapi";
 
 export interface AdminPermission extends Schema.CollectionType {
   collectionName: "admin_permissions";
@@ -820,7 +820,7 @@ export interface ApiTermsAndConditionsTermsAndConditions extends Schema.SingleTy
 }
 
 declare module "@strapi/types" {
-  export module Shared {
+  export namespace Shared {
     export interface ContentTypes {
       "admin::permission": AdminPermission;
       "admin::user": AdminUser;
