@@ -124,27 +124,13 @@ function makeCertificate(overrides?: Partial<UnexportedCertificate>): Unexported
   return {
     id: 1,
     number: "CERT-001",
-    s3Key: "certs/test.png",
     issuedAt: new Date("2026-03-03T12:00:00Z"),
-    isExported: null,
     userCourseId: 1,
-    createdAt: new Date(),
-    updatedAt: new Date(),
     userCourse: {
       id: 1,
-      userId: "user_123",
-      courseId: "course_1",
-      isCompleted: true,
       completedAt: new Date("2026-03-02T12:00:00Z"),
-      certificateClaimed: true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
       preCertificationFormSubmission: {
-        id: 1,
         formData: validFormData,
-        userCourseId: 1,
-        createdAt: new Date(),
-        updatedAt: new Date(),
       },
     },
     ...overrides,
@@ -201,13 +187,7 @@ describe("hiphopDataExport", () => {
       const certWithNoForm = makeCertificate({
         userCourse: {
           id: 1,
-          userId: "user_123",
-          courseId: "course_1",
-          isCompleted: true,
           completedAt: new Date(),
-          certificateClaimed: true,
-          createdAt: new Date(),
-          updatedAt: new Date(),
           preCertificationFormSubmission: null,
         },
       });
@@ -411,19 +391,9 @@ describe("hiphopDataExport", () => {
         number: "CERT-002",
         userCourse: {
           id: 2,
-          userId: "user_456",
-          courseId: "course_1",
-          isCompleted: true,
           completedAt: new Date(),
-          certificateClaimed: true,
-          createdAt: new Date(),
-          updatedAt: new Date(),
           preCertificationFormSubmission: {
-            id: 2,
             formData: { invalid: "data" },
-            userCourseId: 2,
-            createdAt: new Date(),
-            updatedAt: new Date(),
           },
         },
       });
@@ -522,11 +492,7 @@ describe("buildExportRows", () => {
       userCourse: {
         ...makeCertificate().userCourse,
         preCertificationFormSubmission: {
-          id: 1,
           formData: { invalid: "data" },
-          userCourseId: 1,
-          createdAt: new Date(),
-          updatedAt: new Date(),
         },
       },
     });
@@ -569,11 +535,7 @@ describe("buildExportRows", () => {
       userCourse: {
         ...makeCertificate().userCourse,
         preCertificationFormSubmission: {
-          id: 1,
           formData: formDataWithoutCourt,
-          userCourseId: 1,
-          createdAt: new Date(),
-          updatedAt: new Date(),
         },
       },
     });
