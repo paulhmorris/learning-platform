@@ -1,6 +1,6 @@
 import { parseFormData, ValidatedForm, validationError } from "@rvf/react-router";
 import { ActionFunctionArgs, useRouteLoaderData } from "react-router";
-import { z } from "zod/v4";
+import * as z from "zod";
 
 import { ErrorComponent } from "~/components/error-component";
 import { FormField, FormSelect } from "~/components/ui/form";

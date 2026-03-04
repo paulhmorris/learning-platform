@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-namespace */
-import { z } from "zod/v4";
+import * as z from "zod";
 
 import { UserRole } from "~/config";
 
@@ -60,7 +60,7 @@ const _clientEnvValidation = z.object({
 declare global {
   // Server side
   namespace NodeJS {
-    // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+    // eslint-disable-next-line @typescript-eslint/no-empty-object-type, import/namespace
     interface ProcessEnv extends z.infer<typeof _serverEnvValidation & typeof _clientEnvValidation> {}
   }
 
