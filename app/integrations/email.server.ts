@@ -97,6 +97,7 @@ async function sendResendEmail(props: SendEmailInput) {
       subject: props.subject,
       html: props.html ?? undefined,
       react: props.react ?? undefined,
+      attachments: props.attachments,
     });
 
     if (response.error) {
