@@ -9,7 +9,7 @@ import {
   useRouteLoaderData,
 } from "react-router";
 import invariant from "tiny-invariant";
-import { z } from "zod/v4";
+import * as z from "zod";
 
 import { ErrorComponent } from "~/components/error-component";
 import { AdminButton } from "~/components/ui/admin-button";

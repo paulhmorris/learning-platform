@@ -177,7 +177,7 @@ export interface PageContentText extends Schema.Component {
 }
 
 declare module "@strapi/types" {
-  export module Shared {
+  export namespace Shared {
     export interface Components {
       "blocks.audio": BlocksAudio;
       "blocks.image": BlocksImage;

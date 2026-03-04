@@ -8,4 +8,5 @@ export const SERVER_CONFIG = {
   isDev: process.env.NODE_ENV === "development",
   isProd: process.env.VERCEL_ENV === "production" && process.env.NODE_ENV === "production",
   isPreview: process.env.VERCEL_ENV === "preview" && process.env.NODE_ENV === "production",
+  reportRecipients: ["paulh.morris@gmail.com", "jaredn7@gmail.com"] as Array<string>,
 } as const;

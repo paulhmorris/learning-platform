@@ -1,6 +1,6 @@
 import { parseFormData, validationError } from "@rvf/react-router";
 import { ActionFunctionArgs, data, LoaderFunctionArgs, ShouldRevalidateFunctionArgs } from "react-router";
-import { z } from "zod/v4";
+import * as z from "zod";
 
 import { createLogger } from "~/integrations/logger.server";
 import { Sentry } from "~/integrations/sentry";

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { z } from "zod";
+import * as z from "zod";
 
 // ─── Mocks ───────────────────────────────────────────────────────────────────
 
@@ -276,8 +276,7 @@ describe("claimCertificateJob", () => {
 
       await runJob(defaultPayload);
 
-      expect(mockEmailService.send).toHaveBeenCalledOnce();
-      expect(mockEmailService.send).toHaveBeenCalledWith(
+      expect(mockEmailService.send).toHaveBeenCalledExactlyOnceWith(
         expect.objectContaining({
           subject: "View Your Certificate!",
           to: "john@example.com",
@@ -518,8 +517,7 @@ describe("claimCertificateJob", () => {
 
       await runJob(defaultPayload);
 
-      expect(mockBucket.uploadFile).toHaveBeenCalledOnce();
-      expect(mockBucket.uploadFile).toHaveBeenCalledWith(
+      expect(mockBucket.uploadFile).toHaveBeenCalledExactlyOnceWith(
         expect.objectContaining({
           key: expect.stringContaining("certificates/hip-hop-driving/"),
           file: expect.any(Buffer),

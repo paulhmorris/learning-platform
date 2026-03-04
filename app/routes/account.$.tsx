@@ -51,7 +51,7 @@ export async function loader(args: LoaderFunctionArgs) {
       }),
       CourseService.getAll(),
       user.stripeVerificationSessionId
-        ? await IdentityService.retrieveVerificationSession(user.stripeVerificationSessionId)
+        ? IdentityService.retrieveVerificationSession(user.stripeVerificationSessionId)
         : null,
     ]);
 

@@ -84,10 +84,11 @@ model UserQuizProgress {
 }
 
 model Certificate {
-  id       Int      @id @default(autoincrement())
-  number   String   @unique
-  s3Key    String?
-  issuedAt DateTime @default(now())
+  id         Int       @id @default(autoincrement())
+  number     String    @unique
+  s3Key      String?
+  issuedAt   DateTime  @default(now())
+  isExported DateTime?
 
   userCourse   UserCourse @relation(fields: [userCourseId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   userCourseId Int        @unique

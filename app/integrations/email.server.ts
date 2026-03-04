@@ -3,7 +3,7 @@ import { SESv2Client, SendEmailCommand } from "@aws-sdk/client-sesv2";
 import { render } from "@react-email/render";
 import { nanoid } from "nanoid";
 import React from "react";
-import { Resend } from "resend";
+import { CreateEmailOptions, Resend } from "resend";
 
 import { SERVER_CONFIG } from "~/config.server";
 import { createLogger } from "~/integrations/logger.server";
@@ -14,10 +14,17 @@ const logger = createLogger("EmailService");
 const resend = new Resend(process.env.RESEND_API_KEY);
 const sesClient = new SESv2Client({ region: "us-east-1" });
 
+export type EmailAttachment = {
+  content: Buffer;
+  filename: string;
+  contentType?: string;
+};
+
 export type SendEmailInput = {
   to: string | Array<string>;
   subject: string;
   from?: string;
+  attachments?: CreateEmailOptions["attachments"];
 } & ({ html: string; react?: never } | { react: React.ReactNode; html?: never });
 
 async function resolveHtml(props: SendEmailInput): Promise<string> {
@@ -90,6 +97,7 @@ async function sendResendEmail(props: SendEmailInput) {
       subject: props.subject,
       html: props.html ?? undefined,
       react: props.react ?? undefined,
+      attachments: props.attachments,
     });
 
     if (response.error) {

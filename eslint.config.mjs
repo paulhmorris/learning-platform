@@ -128,6 +128,7 @@ export default tseslint.config(
   // Playwright
   {
     files: ["test/**/*.ts"],
+    ignores: ["test/e2e/**/*.setup.ts"],
     ...playwright.configs["flat/recommended"],
     rules: {
       ...playwright.configs["flat/recommended"].rules,

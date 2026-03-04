@@ -1,7 +1,7 @@
 // This form is displayed at the end of Hip Hop Driving course before claiming a certificate.
 
 import { ValidatedForm } from "@rvf/react-router";
-import { z } from "zod/v4";
+import * as z from "zod";
 
 import { FormField, FormSelect } from "~/components/ui/form";
 import { SubmitButton } from "~/components/ui/submit-button";
