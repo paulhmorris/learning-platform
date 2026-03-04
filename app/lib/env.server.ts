@@ -4,8 +4,9 @@ import { z } from "zod/v4";
 import { UserRole } from "~/config";
 
 const _serverEnvValidation = z.object({
+  BASE_URL: z.string().min(1),
+
   // Clerk
-  AUTH_DOMAIN: z.string().min(1),
   CLERK_SECRET_KEY: z.string().min(1),
   CLERK_WEBHOOK_SIGNING_SECRET: z.string().min(1),
 
