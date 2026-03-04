@@ -1,7 +1,7 @@
 import { parseFormData } from "@rvf/react-router";
 import { IconCircleCheckFilled, IconCircleDashed, IconCircleDashedCheck, IconCircleXFilled } from "@tabler/icons-react";
 import { ActionFunctionArgs, LoaderFunctionArgs, useLoaderData } from "react-router";
-import { z } from "zod/v4";
+import * as z from "zod";
 
 import { CompleteCourseDialog } from "~/components/admin/courses/complete-course-dialog";
 import { LessonCompleteForm } from "~/components/admin/courses/lesson-complete-form";

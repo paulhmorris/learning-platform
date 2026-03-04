@@ -1,5 +1,4 @@
-import { EnumLike } from "zod";
-import { z } from "zod/v4";
+import * as z from "zod";
 
 const _text = z.string().max(255, "Must be 255 characters or less");
 export const text = _text.min(1, "Required");
@@ -35,7 +34,7 @@ export const optionalCheckboxGroup = checkboxGroup.optional();
 export const _select = z.coerce.string().max(255, { error: "Must be 255 characters or less" }).trim();
 export const select = _select.min(1, { error: "Required" });
 export const optionalSelect = _select.optional().transform((v) => (v === "" ? undefined : v));
-export const selectEnum = <T extends EnumLike>(enumValue: T) => {
+export const selectEnum = <T extends Readonly<Record<string, string>>>(enumValue: T) => {
   return z.enum(enumValue, { error: (e) => (!e.input ? "Required" : "Invalid option") });
 };
 

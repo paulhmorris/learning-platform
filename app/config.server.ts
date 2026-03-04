@@ -8,6 +8,5 @@ export const SERVER_CONFIG = {
   isDev: process.env.NODE_ENV === "development",
   isProd: process.env.VERCEL_ENV === "production" && process.env.NODE_ENV === "production",
   isPreview: process.env.VERCEL_ENV === "preview" && process.env.NODE_ENV === "production",
-  signInUrl: new URL("/sign-in", process.env.AUTH_DOMAIN),
-  signUpUrl: new URL("/sign-up", process.env.AUTH_DOMAIN),
+  reportRecipients: ["paulh.morris@gmail.com", "jaredn7@gmail.com"] as Array<string>,
 } as const;

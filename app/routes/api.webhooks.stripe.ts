@@ -1,6 +1,8 @@
 import { ActionFunctionArgs } from "react-router";
 
 import { SERVER_CONFIG } from "~/config.server";
+import VerificationRequiresInputEmail from "~/emails/verification-requires-input";
+import VerificationSuccessEmail from "~/emails/verification-success";
 import { EmailService } from "~/integrations/email.server";
 import { createLogger } from "~/integrations/logger.server";
 import { Sentry } from "~/integrations/sentry";
@@ -69,27 +71,14 @@ export async function action({ request }: ActionFunctionArgs) {
                 return Responses.badRequest("User not found");
               }
 
-              const emailJobs = [
-                EmailService.send({
-                  to: `events@${SERVER_CONFIG.emailFromDomain}`,
-                  from: `Plumb Media & Education <no-reply@${SERVER_CONFIG.emailFromDomain}>`,
-                  subject: "Identity Verification Requires Input",
-                  html: `<p>Identity verification requires input for user ${user.id}.</p>`,
-                }),
-              ];
-
               if (user.email) {
-                emailJobs.push(
-                  EmailService.send({
-                    to: user.email,
-                    from: `Plumb Media & Education <no-reply@${SERVER_CONFIG.emailFromDomain}>`,
-                    subject: "Action Required: Verify Your Identity",
-                    html: `<p>More information is required to verify your identity. Please log in to your account to view next steps.</p>`,
-                  }),
-                );
+                await EmailService.send({
+                  to: user.email,
+                  from: `Plumb Media & Education <no-reply@${SERVER_CONFIG.emailFromDomain}>`,
+                  subject: "Action Required: Verify Your Identity",
+                  react: VerificationRequiresInputEmail({ baseUrl: SERVER_CONFIG.baseUrl }),
+                });
               }
-
-              await Promise.allSettled(emailJobs);
 
               return Responses.ok();
             }
@@ -123,7 +112,7 @@ export async function action({ request }: ActionFunctionArgs) {
                     to: user.email,
                     from: `Plumb Media & Education <no-reply@${SERVER_CONFIG.emailFromDomain}>`,
                     subject: "Identity Verification Successful!",
-                    html: "<p>Your identity has been successfully verified. You can now claim a certificate from courses that require identity verification.</p>",
+                    react: VerificationSuccessEmail(),
                   });
                 }
 

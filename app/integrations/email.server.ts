@@ -1,7 +1,9 @@
 import type { SendEmailCommandInput } from "@aws-sdk/client-sesv2";
 import { SESv2Client, SendEmailCommand } from "@aws-sdk/client-sesv2";
+import { render } from "@react-email/render";
 import { nanoid } from "nanoid";
-import { Resend } from "resend";
+import React from "react";
+import { CreateEmailOptions, Resend } from "resend";
 
 import { SERVER_CONFIG } from "~/config.server";
 import { createLogger } from "~/integrations/logger.server";
@@ -12,14 +14,31 @@ const logger = createLogger("EmailService");
 const resend = new Resend(process.env.RESEND_API_KEY);
 const sesClient = new SESv2Client({ region: "us-east-1" });
 
+export type EmailAttachment = {
+  content: Buffer;
+  filename: string;
+  contentType?: string;
+};
+
 export type SendEmailInput = {
   to: string | Array<string>;
   subject: string;
-  html: string;
   from?: string;
-};
+  attachments?: CreateEmailOptions["attachments"];
+} & ({ html: string; react?: never } | { react: React.ReactNode; html?: never });
+
+async function resolveHtml(props: SendEmailInput): Promise<string> {
+  if (props.react) {
+    return await render(props.react);
+  }
+  if (props.html) {
+    return props.html;
+  }
+  throw new Error("No content provided for email");
+}
 
 async function _sendSESEmail(props: SendEmailInput) {
+  const html = await resolveHtml(props);
   const input: SendEmailCommandInput = {
     FromEmailAddress: props.from ?? `Plumb Media & Education <no-reply@${SERVER_CONFIG.emailFromDomain}`,
     Destination: {
@@ -34,7 +53,7 @@ async function _sendSESEmail(props: SendEmailInput) {
         Body: {
           Html: {
             Charset: "UTF-8",
-            Data: props.html,
+            Data: html,
           },
         },
         Headers: [
@@ -47,7 +66,7 @@ async function _sendSESEmail(props: SendEmailInput) {
     },
   };
 
-  if (SERVER_CONFIG.isProd || SERVER_CONFIG.isPreview) {
+  if (SERVER_CONFIG.isProd) {
     try {
       const command = new SendEmailCommand(input);
       const response = await sesClient.send(command);
@@ -64,19 +83,21 @@ async function _sendSESEmail(props: SendEmailInput) {
     }
   }
 
-  logger.debug(
+  logger.info(
     `Email sent to ${Array.isArray(props.to) ? props.to.join(", ") : props.to} (Subject: "${props.subject}")`,
   );
   return { messageId: "test", $metadata: {} };
 }
 
 async function sendResendEmail(props: SendEmailInput) {
-  if (SERVER_CONFIG.isProd || SERVER_CONFIG.isPreview) {
+  if (SERVER_CONFIG.isProd) {
     const response = await resend.emails.send({
       from: props.from ?? `Plumb Media & Education <no-reply@${SERVER_CONFIG.emailFromDomain}>`,
       to: props.to,
       subject: props.subject,
-      html: props.html,
+      html: props.html ?? undefined,
+      react: props.react ?? undefined,
+      attachments: props.attachments,
     });
 
     if (response.error) {
@@ -87,7 +108,7 @@ async function sendResendEmail(props: SendEmailInput) {
     return { messageId: response.data?.id };
   }
 
-  logger.debug(
+  logger.info(
     `Email sent to ${Array.isArray(props.to) ? props.to.join(", ") : props.to} (Subject: "${props.subject}")`,
   );
   return { messageId: "test" };

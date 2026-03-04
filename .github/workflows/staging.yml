@@ -101,6 +101,7 @@ jobs:
       - name: Run e2e Tests
         run: npm run test:e2e
         env:
+          LOG_LEVEL: "error"
           DIRECT_URL: ${{ secrets.DIRECT_URL }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           AXIOM_TOKEN: ${{ secrets.AXIOM_TOKEN }}

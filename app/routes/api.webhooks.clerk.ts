@@ -1,6 +1,9 @@
 import { verifyWebhook } from "@clerk/backend/webhooks";
 import { ActionFunctionArgs } from "react-router";
 
+import { SERVER_CONFIG } from "~/config.server";
+import WelcomeEmail from "~/emails/welcome";
+import { EmailService } from "~/integrations/email.server";
 import { createLogger } from "~/integrations/logger.server";
 import { Sentry } from "~/integrations/sentry";
 import { Responses } from "~/lib/responses.server";
@@ -26,6 +29,25 @@ export async function action(args: ActionFunctionArgs) {
   if (eventType === "user.created") {
     try {
       await UserService.linkToStripe(event.data.id);
+
+      const email = event.data.email_addresses.at(0)?.email_address;
+      const firstName = event.data.first_name;
+      if (email) {
+        try {
+          await EmailService.send({
+            to: email,
+            from: `Plumb Media & Education <no-reply@${SERVER_CONFIG.emailFromDomain}>`,
+            subject: "Welcome to Plumb Media & Education!",
+            react: WelcomeEmail({ firstName: firstName ?? "new user" }),
+          });
+        } catch (error) {
+          Sentry.captureException(error, { extra: { eventType, userId: event.data.id } });
+          logger.error(
+            `Error sending welcome email to ${email} for user ${event.data.id} from Clerk webhook event ${eventType}`,
+            { error },
+          );
+        }
+      }
     } catch (error) {
       Sentry.captureException(error, { extra: { eventType, userId: event.data.id } });
       logger.error(`Error creating user in stripe from Clerk webhook event ${eventType}`, { error });
