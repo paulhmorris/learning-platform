@@ -11,6 +11,26 @@ type CertificateCreateArgs = {
 };
 
 export const CertificateService = {
+  async getUnexported() {
+    return db.certificate.findMany({
+      where: { isExported: null },
+      include: {
+        userCourse: {
+          include: {
+            preCertificationFormSubmission: true,
+          },
+        },
+      },
+    });
+  },
+
+  async markExported(certificateIds: Array<number>) {
+    await db.certificate.updateMany({
+      where: { id: { in: certificateIds } },
+      data: { isExported: new Date() },
+    });
+  },
+
   // TODO: possible race conditions here if two people hit this at the same time?
   async getNextAllocationForCourse(courseId: string) {
     try {

@@ -1,7 +1,7 @@
 import type { SendEmailCommandInput } from "@aws-sdk/client-sesv2";
 import { SESv2Client, SendEmailCommand } from "@aws-sdk/client-sesv2";
 import { nanoid } from "nanoid";
-import { Resend } from "resend";
+import { CreateEmailOptions, Resend } from "resend";
 
 import { SERVER_CONFIG } from "~/config.server";
 import { createLogger } from "~/integrations/logger.server";
@@ -12,11 +12,18 @@ const logger = createLogger("EmailService");
 const resend = new Resend(process.env.RESEND_API_KEY);
 const sesClient = new SESv2Client({ region: "us-east-1" });
 
+export type EmailAttachment = {
+  content: Buffer;
+  filename: string;
+  contentType?: string;
+};
+
 export type SendEmailInput = {
   to: string | Array<string>;
   subject: string;
   html: string;
   from?: string;
+  attachments?: CreateEmailOptions["attachments"];
 };
 
 async function _sendSESEmail(props: SendEmailInput) {
