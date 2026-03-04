@@ -12,7 +12,6 @@ import { CertificateService } from "~/services/certificate.server";
 const CP_LICENSE_NUMBER = "CP1198";
 const DELIVERY_METHOD = "A";
 const VOICE_CODE = "O";
-const REPORT_RECIPIENTS = ["paulh.morris@gmail.com"];
 
 export type UnexportedCertificate = Awaited<ReturnType<typeof CertificateService.getUnexported>>[number];
 
@@ -233,7 +232,7 @@ export const hiphopDataExport = schedules.task({
     try {
       await EmailService.send({
         from: `Plumb Media & Education <no-reply@${SERVER_CONFIG.emailFromDomain}>`,
-        to: REPORT_RECIPIENTS,
+        to: SERVER_CONFIG.reportRecipients,
         subject: `Hip Hop Driving Certificate Export - ${dateStr}`,
         html: `
           <p>Attached is the daily Hip Hop Driving certificate export containing ${rows.length} valid certificate(s).</p>
@@ -277,7 +276,7 @@ async function sendFailureEmail(detail: string) {
   try {
     await EmailService.send({
       from: `Plumb Media & Education <no-reply@${SERVER_CONFIG.emailFromDomain}>`,
-      to: REPORT_RECIPIENTS,
+      to: SERVER_CONFIG.reportRecipients,
       subject: "Hip Hop Driving Certificate Export Failed",
       react: <HiphopExportFailureInternalEmail detail={detail} />,
     });
