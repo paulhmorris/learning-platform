@@ -2,8 +2,11 @@ import { Canvas, createCanvas, GlobalFonts, loadImage } from "@napi-rs/canvas";
 import { logger, task } from "@trigger.dev/sdk/v3";
 
 import { hipHopDrivingCertificationSchema } from "~/components/pre-certificate-forms/hiphopdriving";
-import { CONFIG } from "~/config";
 import { SERVER_CONFIG } from "~/config.server";
+import AllocationsLowInternalEmail from "~/emails/allocations-low-internal";
+import CertificateGenerationFailureInternalEmail from "~/emails/certificate-generation-failure-internal";
+import CertificateIssueEmail from "~/emails/certificate-issue";
+import CertificateReadyEmail from "~/emails/certificate-ready";
 import { Bucket } from "~/integrations/bucket.server";
 import { db } from "~/integrations/db.server";
 import { EmailService } from "~/integrations/email.server";
@@ -14,6 +17,8 @@ import { UserService } from "~/services/user.server";
 
 const ASSET_BASE_URL = "https://assets.hiphopdriving.com";
 const CERT_IMAGE_URL = `${ASSET_BASE_URL}/certificate_f2ffea5abd.png`;
+const INTERNAL_EMAIL = `events@${SERVER_CONFIG.emailFromDomain}`;
+const ALLOCATION_LOW_THRESHOLD = 10;
 const FONT_URL = "https://cdn.jsdelivr.net/fontsource/fonts/inter@latest/latin-400-normal.woff2";
 
 let fontRegistered = false;
@@ -81,11 +86,11 @@ export const claimCertificateJob = task({
         from: `Plumb Media & Education <no-reply@${SERVER_CONFIG.emailFromDomain}>`,
         to: user.email,
         subject: "View Your Certificate!",
-        html: `
-          <p>Hi ${user.firstName},</p>
-          <p>Congratulations on completing the ${payload.courseName} course! Your certificate is ready to download.</p>
-          <p><a href="${ASSET_BASE_URL}/${thisUserCourse.certificate.s3Key}" target="_blank">Download Certificate</a></p>
-        `,
+        react: CertificateReadyEmail({
+          firstName: user.firstName,
+          courseName: payload.courseName,
+          downloadUrl: `${ASSET_BASE_URL}/${thisUserCourse.certificate.s3Key}`,
+        }),
       });
       logger.info(`Certificate resend email sent with message ID ${messageId}`);
       return;
@@ -114,17 +119,34 @@ export const claimCertificateJob = task({
         from: `${payload.courseName} <no-reply@${SERVER_CONFIG.emailFromDomain}>`,
         to: user.email,
         subject: "There was an issue creating your certificate!",
-        html: `
-        <p>Hi ${user.firstName},</p>
-        <p>Congratulations on completing the ${payload.courseName} course! However, there was an issue on our end creating your certificate.</p>
-        <p>Our team has been notified, but feel free to reach out to support at ${CONFIG.supportEmail} for more help. Rest assured, <b>your course is completed and your progress has been saved</b>.</p>
-      `,
+        react: CertificateIssueEmail({
+          firstName: user.firstName,
+          courseName: payload.courseName,
+        }),
       });
       logger.warn(`Certificate issue email sent with message ID ${messageId}`);
       return;
     }
 
     logger.info(`Found available allocation with id ${allocation.id} and number ${allocation.number}`);
+
+    // Check remaining allocations and alert if running low
+    const remaining = await CertificateService.getRemainingAllocationsCount(payload.courseId);
+    if (remaining <= ALLOCATION_LOW_THRESHOLD) {
+      await EmailService.send({
+        to: INTERNAL_EMAIL,
+        from: `Plumb Media & Education <no-reply@${SERVER_CONFIG.emailFromDomain}>`,
+        subject:
+          remaining === 0
+            ? `🚨 Certificate allocations exhausted for ${payload.courseName}`
+            : `⚠️ Certificate allocations low for ${payload.courseName} (${remaining} remaining)`,
+        react: AllocationsLowInternalEmail({
+          courseName: payload.courseName,
+          courseId: payload.courseId,
+          remaining,
+        }),
+      }).catch((err) => logger.warn("Failed to send allocations low email", { error: err }));
+    }
 
     const dateForKey = new Date();
     const year = dateForKey.getFullYear();
@@ -182,6 +204,17 @@ export const claimCertificateJob = task({
         extra: { userCourseId: thisUserCourse.id, allocationId: allocation.id },
       });
       logger.error("Certificate generation failed", { userCourseId: thisUserCourse.id });
+      await EmailService.send({
+        to: INTERNAL_EMAIL,
+        from: `Plumb Media & Education <no-reply@${SERVER_CONFIG.emailFromDomain}>`,
+        subject: `🚨 Certificate generation failed for ${payload.courseName}`,
+        react: CertificateGenerationFailureInternalEmail({
+          userId: user.id,
+          userCourseId: thisUserCourse.id,
+          courseName: payload.courseName,
+          reason: "Canvas generation returned null after allocation was consumed",
+        }),
+      }).catch((err) => logger.warn("Failed to send generation failure email", { error: err }));
       return;
     }
 
@@ -194,11 +227,11 @@ export const claimCertificateJob = task({
         from: `${payload.courseName} <no-reply@${SERVER_CONFIG.emailFromDomain}>`,
         to: user.email,
         subject: "Your certificate is ready!",
-        html: `
-          <p>Hi ${user.firstName},</p>
-          <p>Congratulations on completing the ${payload.courseName} course! Your certificate is ready to download.</p>
-          <p><a href="${ASSET_BASE_URL}/${key}" target="_blank">Download Certificate</a></p>
-        `,
+        react: CertificateReadyEmail({
+          firstName: user.firstName,
+          courseName: payload.courseName,
+          downloadUrl: `${ASSET_BASE_URL}/${key}`,
+        }),
       });
       logger.info(`Certificate success email sent with message ID ${messageId}`);
     } catch (error) {
@@ -207,6 +240,17 @@ export const claimCertificateJob = task({
         error,
         userCourseId: thisUserCourse.id,
       });
+      await EmailService.send({
+        to: INTERNAL_EMAIL,
+        from: `Plumb Media & Education <no-reply@${SERVER_CONFIG.emailFromDomain}>`,
+        subject: `🚨 Certificate upload failed for ${payload.courseName}`,
+        react: CertificateGenerationFailureInternalEmail({
+          userId: user.id,
+          userCourseId: thisUserCourse.id,
+          courseName: payload.courseName,
+          reason: error instanceof Error ? error.message : "Failed to upload certificate to S3",
+        }),
+      }).catch((err) => logger.warn("Failed to send upload failure email", { error: err }));
     }
   },
 });
