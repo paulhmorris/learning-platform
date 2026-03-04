@@ -13,14 +13,24 @@ type CertificateCreateArgs = {
 export const CertificateService = {
   async getUnexported() {
     return db.certificate.findMany({
-      where: { isExported: null },
-      include: {
+      select: {
+        id: true,
+        number: true,
+        userCourseId: true,
+        issuedAt: true,
         userCourse: {
-          include: {
-            preCertificationFormSubmission: true,
+          select: {
+            id: true,
+            completedAt: true,
+            preCertificationFormSubmission: {
+              select: {
+                formData: true,
+              },
+            },
           },
         },
       },
+      where: { isExported: null },
     });
   },
 
