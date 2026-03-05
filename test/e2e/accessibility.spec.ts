@@ -1,12 +1,12 @@
 import { AxeBuilder } from "@axe-core/playwright";
 import { test as base } from "@playwright/test";
 
-import { expect, test } from "./fixtures/accessibility";
+import { expect, test, WCAG_TAGS } from "./fixtures/accessibility";
 
 base.describe("Sign-in page", () => {
   base("has no accessibility violations", async ({ page }) => {
     await page.goto("/sign-in", { waitUntil: "domcontentloaded" });
-    const results = await new AxeBuilder({ page }).analyze();
+    const results = await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze();
     expect(results.violations).toEqual([]);
   });
 });
@@ -14,7 +14,7 @@ base.describe("Sign-in page", () => {
 base.describe("Sign-up page", () => {
   base("has no accessibility violations", async ({ page }) => {
     await page.goto("/sign-up", { waitUntil: "domcontentloaded" });
-    const results = await new AxeBuilder({ page }).analyze();
+    const results = await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze();
     expect(results.violations).toEqual([]);
   });
 });
@@ -24,6 +24,22 @@ test.describe("Preview page", () => {
 
   test("has no accessibility violations", async ({ page, makeAxeBuilder }) => {
     await page.goto("/preview", { waitUntil: "domcontentloaded" });
+    const results = await makeAxeBuilder().analyze();
+    expect(results.violations).toEqual([]);
+  });
+
+  test("user menu has no accessibility violations when open", async ({ page, makeAxeBuilder }) => {
+    await page.goto("/preview", { waitUntil: "domcontentloaded" });
+    await page.getByRole("button", { name: "Open User Menu" }).click();
+    await page.getByRole("menu").waitFor({ state: "visible" });
+    const results = await makeAxeBuilder().analyze();
+    expect(results.violations).toEqual([]);
+  });
+
+  test("theme switcher menu has no accessibility violations when open", async ({ page, makeAxeBuilder }) => {
+    await page.goto("/preview", { waitUntil: "domcontentloaded" });
+    await page.getByRole("button", { name: /set visual theme/i }).click();
+    await page.getByRole("menu").waitFor({ state: "visible" });
     const results = await makeAxeBuilder().analyze();
     expect(results.violations).toEqual([]);
   });

@@ -6,9 +6,11 @@ type A11yFixtures = {
   makeAxeBuilder: () => AxeBuilder;
 };
 
+export const WCAG_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"];
+
 export const test = authenticatedTest.extend<A11yFixtures>({
   makeAxeBuilder: async ({ page }, use) => {
-    const makeAxeBuilder = () => new AxeBuilder({ page });
+    const makeAxeBuilder = () => new AxeBuilder({ page }).withTags(WCAG_TAGS);
     await use(makeAxeBuilder);
   },
 });
