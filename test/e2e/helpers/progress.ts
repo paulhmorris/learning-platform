@@ -1,7 +1,19 @@
 import { db } from "~/integrations/db.server";
+import { redis } from "~/integrations/redis.server";
+import { CacheKeys } from "~/services/cache.server";
 import { CourseService } from "~/services/course.server";
 import { ProgressService } from "~/services/progress.server";
 import { QuizService } from "~/services/quiz.server";
+
+/**
+ * Deletes user progress cache keys directly from Redis.
+ * CacheService operations are no-ops in the test process (NODE_ENV=test),
+ * but the Vercel preview server reads from Redis. Without this, stale cached
+ * progress from previous page loads causes flaky test failures.
+ */
+async function invalidateProgressCache(userId: string) {
+  await redis.del(CacheKeys.lessonProgressAll(userId), CacheKeys.quizProgressAll(userId));
+}
 
 export async function getCourseLayoutForE2E() {
   const course = await db.course.findFirst();
@@ -52,10 +64,12 @@ export async function cleanupUserCourseData(userId: string) {
     QuizService.resetAllProgress(userId),
     db.userCourse.deleteMany({ where: { userId } }),
   ]);
+  await invalidateProgressCache(userId);
 }
 
 export async function resetProgressForUser(userId: string) {
   await Promise.all([ProgressService.resetAllLesson(userId), QuizService.resetAllProgress(userId)]);
+  await invalidateProgressCache(userId);
 }
 
 export async function markLessonCompleteForUser(
