@@ -14,7 +14,7 @@ export default defineConfig({
         schema: "prisma/schema.prisma",
       }),
     ],
-    external: ["@napi-rs/canvas", "fsevents", "resend"],
+    external: ["@napi-rs/canvas", "fsevents", "resend", "@react-email/render", "@react-email/components"],
   },
   // eslint-disable-next-line @typescript-eslint/require-await
   onFailure: async ({ error }) => {
