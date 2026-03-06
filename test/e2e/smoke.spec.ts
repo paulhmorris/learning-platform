@@ -103,21 +103,28 @@ test.describe("Smoke Test", () => {
     await page.goto("/preview", { waitUntil: "domcontentloaded" });
     const button = page.getByRole("button", { name: /set visual theme/i });
     const htmlElement = page.locator("html");
+    const menu = page.getByRole("menu");
+
+    const selectTheme = async (name: "Dark" | "Light" | "System") => {
+      // eslint-disable-next-line playwright/no-conditional-in-test
+      if (!(await menu.isVisible().catch(() => false))) {
+        await button.click();
+      }
+      await page.getByRole("menuitem", { name }).click();
+    };
+
     await expect(button).toBeVisible();
 
     // Dark
-    await button.click();
-    await page.getByRole("menuitem", { name: "Dark" }).click();
+    await selectTheme("Dark");
     await expect(htmlElement).toHaveAttribute("data-theme", "dark");
 
     // Light
-    await button.click();
-    await page.getByRole("menuitem", { name: "Light" }).click();
+    await selectTheme("Light");
     await expect(htmlElement).toHaveAttribute("data-theme", "light");
 
     // System
-    await button.click();
-    await page.getByRole("menuitem", { name: "System" }).click();
+    await selectTheme("System");
     await expect(htmlElement).toHaveAttribute("data-theme", "light");
   });
 
