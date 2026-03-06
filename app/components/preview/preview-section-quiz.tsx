@@ -23,7 +23,7 @@ export function PreviewSectionQuiz(props: SectionQuizProps) {
   // Locked state
   if (locked) {
     return (
-      <li
+      <div
         className={cn("-my-1 block rounded-lg py-1")}
         aria-label="This quiz is locked until all section lessons are completed."
       >
@@ -50,7 +50,7 @@ export function PreviewSectionQuiz(props: SectionQuizProps) {
             </SectionItemDescription>
           </div>
         </SectionItemContainer>
-      </li>
+      </div>
     );
   }
 

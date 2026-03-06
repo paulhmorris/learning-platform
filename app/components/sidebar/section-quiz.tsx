@@ -58,6 +58,43 @@ export function SectionQuiz(props: SectionQuizProps) {
   // Unlocked state
   if (!userProgress?.isCompleted) {
     return (
+      <li>
+        <NavLink
+          to={`/quizzes/${quiz.id}`}
+          className={({ isActive }) =>
+            cn(
+              "block rounded-lg py-1 hover:ring hover:ring-[#e4e4e4] focus:outline-none focus:ring focus:ring-ring motion-safe:transition-all",
+              isActive ? "border border-[#e4e4e4] bg-muted p-2.5" : "-my-1",
+            )
+          }
+        >
+          {({ isActive }) => (
+            <SectionItemContainer>
+              <ProgressCircle
+                className={cn(isActive && "border-success")}
+                aria-label="Lesson progress"
+                percentage={0}
+              />
+              <SectionItemIconContainer>
+                <IconDocument className={cn(isActive ? "text-success" : "text-foreground")} />
+              </SectionItemIconContainer>
+              <div className="flex flex-col justify-center">
+                <SectionItemTitle>Quiz</SectionItemTitle>
+                <SectionItemDescription>
+                  {/* @ts-expect-error see query in _course */}
+                  {quiz.attributes.questions?.count} question{quiz.attributes.questions?.count === 1 ? "" : "s"}
+                </SectionItemDescription>
+              </div>
+            </SectionItemContainer>
+          )}
+        </NavLink>
+      </li>
+    );
+  }
+
+  // Completed state
+  return (
+    <li>
       <NavLink
         to={`/quizzes/${quiz.id}`}
         className={({ isActive }) =>
@@ -69,46 +106,21 @@ export function SectionQuiz(props: SectionQuizProps) {
       >
         {({ isActive }) => (
           <SectionItemContainer>
-            <ProgressCircle className={cn(isActive && "border-success")} aria-label="Lesson progress" percentage={0} />
+            <ProgressCircle
+              className={cn(isActive && "border-success")}
+              aria-label="Lesson progress"
+              percentage={100}
+            />
             <SectionItemIconContainer>
               <IconDocument className={cn(isActive ? "text-success" : "text-foreground")} />
             </SectionItemIconContainer>
             <div className="flex flex-col justify-center">
               <SectionItemTitle>Quiz</SectionItemTitle>
-              <SectionItemDescription>
-                {/* @ts-expect-error see query in _course */}
-                {quiz.attributes.questions?.count} question{quiz.attributes.questions?.count === 1 ? "" : "s"}
-              </SectionItemDescription>
+              <SectionItemDescription>Passed</SectionItemDescription>
             </div>
           </SectionItemContainer>
         )}
       </NavLink>
-    );
-  }
-
-  // Completed state
-  return (
-    <NavLink
-      to={`/quizzes/${quiz.id}`}
-      className={({ isActive }) =>
-        cn(
-          "block rounded-lg py-1 hover:ring hover:ring-[#e4e4e4] focus:outline-none focus:ring focus:ring-ring motion-safe:transition-all",
-          isActive ? "border border-[#e4e4e4] bg-muted p-2.5" : "-my-1",
-        )
-      }
-    >
-      {({ isActive }) => (
-        <SectionItemContainer>
-          <ProgressCircle className={cn(isActive && "border-success")} aria-label="Lesson progress" percentage={100} />
-          <SectionItemIconContainer>
-            <IconDocument className={cn(isActive ? "text-success" : "text-foreground")} />
-          </SectionItemIconContainer>
-          <div className="flex flex-col justify-center">
-            <SectionItemTitle>Quiz</SectionItemTitle>
-            <SectionItemDescription>Passed</SectionItemDescription>
-          </div>
-        </SectionItemContainer>
-      )}
-    </NavLink>
+    </li>
   );
 }
