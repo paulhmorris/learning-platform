@@ -309,7 +309,7 @@ export default function CoursePreview() {
                         );
                       })}
                       {section.quiz?.data ? (
-                        <div
+                        <li
                           // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
                           key={`quiz-${section.quiz.data?.id}`}
                           className="flex flex-wrap items-center justify-between gap-2"
@@ -327,7 +327,7 @@ export default function CoursePreview() {
                               </Link>
                             </Button>
                           ) : null}
-                        </div>
+                        </li>
                       ) : null}
                     </ul>
                   </Section>

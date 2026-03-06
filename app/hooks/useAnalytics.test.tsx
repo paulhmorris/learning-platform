@@ -72,6 +72,7 @@ describe("useAnalytics", () => {
       hash: "#top",
       state: null,
       key: "default",
+      unstable_mask: undefined,
     };
     mockUseLocation.mockReturnValue(location);
   });
