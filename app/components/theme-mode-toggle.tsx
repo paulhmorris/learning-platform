@@ -17,7 +17,7 @@ export function ThemeModeToggle() {
   const isDark = definedBy === "USER" && theme === Theme.DARK;
 
   return (
-    <DropdownMenu>
+    <DropdownMenu modal={false}>
       <ClientOnly fallback={null}>
         {() => (
           <DropdownMenuTrigger asChild>

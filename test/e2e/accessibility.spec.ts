@@ -3,6 +3,9 @@ import { test as base } from "@playwright/test";
 
 import { expect, test, WCAG_TAGS } from "./fixtures/accessibility";
 
+base.describe.configure({ retries: 0 });
+test.describe.configure({ retries: 0 });
+
 base.describe("Sign-in page", () => {
   base("has no accessibility violations", async ({ page }) => {
     await page.goto("/sign-in", { waitUntil: "domcontentloaded" });
