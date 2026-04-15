@@ -1,14 +1,12 @@
-import { useUser } from "@clerk/react-router";
 import { IconExternalLink } from "@tabler/icons-react";
 import { ColumnDef } from "@tanstack/react-table";
 import dayjs from "dayjs";
-import { Link, LoaderFunctionArgs, useFetcher, useLoaderData } from "react-router";
+import { Link, LoaderFunctionArgs, useLoaderData } from "react-router";
 
 import { ErrorComponent } from "~/components/error-component";
 import { Button } from "~/components/ui/button";
 import { DataTable } from "~/components/ui/data-table/data-table";
 import { DataTableColumnHeader } from "~/components/ui/data-table/data-table-column-header";
-import { UserRole } from "~/config";
 import { AuthService } from "~/services/auth.server";
 import { SessionService } from "~/services/session.server";
 
@@ -85,32 +83,6 @@ const columns: Array<ColumnDef<User>> = [
         <div className="max-w-[100px]">
           <span className="max-w-[500px] truncate font-medium">{row.getValue("createdAt")}</span>
         </div>
-      );
-    },
-    enableColumnFilter: false,
-  },
-  {
-    accessorKey: "action",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Action" className="sr-only" />,
-    cell: ({ row }) => {
-      const { user } = useUser();
-      const fetcher = useFetcher();
-
-      if (user?.publicMetadata.role !== UserRole.SUPERADMIN) {
-        return null;
-      }
-
-      if (row.original.externalId) {
-        return null;
-      }
-
-      return (
-        <fetcher.Form className="max-w-[120px]" method="POST" action="/api/users/link-to-clerk">
-          <input type="hidden" name="clerkId" value={row.original.id} />
-          <button disabled={fetcher.state !== "idle"} type="submit" className="text-xs text-primary">
-            {fetcher.state !== "idle" ? "Linking..." : "Attempt Clerk Link"}
-          </button>
-        </fetcher.Form>
       );
     },
     enableColumnFilter: false,
