@@ -27,17 +27,15 @@ export async function loader(args: LoaderFunctionArgs) {
   try {
     const [userCourses, cmsCourses] = await Promise.all([UserCourseService.getAllByUserId(id), CourseService.getAll()]);
 
-    if (!userCourses.length) {
-      logger.error(`No user courses found for user ${id}`);
-      throw Responses.notFound();
-    }
-
     if (!cmsCourses.length) {
       logger.error("No CMS courses found");
       throw Responses.serverError();
     }
 
-    // TODO: Clerk migration
+    if (!userCourses.length) {
+      return { courses: [] };
+    }
+
     // TODO: Maybe do this whole call on its own to reduce data load for all the other places we need userCourses with less data
     const courses = userCourses.map((dbCourse) => {
       const cmsCourse = cmsCourses.find((course) => course.id === dbCourse.course.strapiId);
