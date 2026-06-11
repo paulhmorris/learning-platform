@@ -9,13 +9,12 @@ import { APIResponseCollection, APIResponseData } from "~/types/utils";
 
 const logger = createLogger("CourseService");
 
-const TTL = 60 * 5; // 5 minutes
+const TTL = 60 * 60 * 24; // 24 hours
 type AllCoursesCMS = APIResponseCollection<"api::course.course">["data"];
 type CourseCMS = StrapiResponse<APIResponseData<"api::course.course">>;
 
 export const CourseService = {
   async getByHost(host: string) {
-    const _TTL = 60 * 60 * 24; // 24 hours
     const cachedCourse = await CacheService.get<Course>(CacheKeys.courseRoot(host));
     if (cachedCourse) {
       logger.debug(`Returning cached course for host ${host}`);
@@ -30,7 +29,7 @@ export const CourseService = {
         const fallbackCourse = await db.course.findFirst();
         if (fallbackCourse) {
           logger.info(`Falling back to course with host ${fallbackCourse.host} for preview host ${host}`);
-          await CacheService.set(CacheKeys.courseRoot(host), fallbackCourse, { ex: _TTL });
+          await CacheService.set(CacheKeys.courseRoot(host), fallbackCourse, { ex: TTL });
           return fallbackCourse;
         }
       }
@@ -41,7 +40,7 @@ export const CourseService = {
       return null;
     }
 
-    await CacheService.set(CacheKeys.courseRoot(host), course, { ex: _TTL });
+    await CacheService.set(CacheKeys.courseRoot(host), course, { ex: TTL });
     return course;
   },
 
