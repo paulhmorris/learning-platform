@@ -1,4 +1,4 @@
-import { Canvas, createCanvas, GlobalFonts, loadImage } from "@napi-rs/canvas";
+import { Canvas, createCanvas, loadImage } from "@napi-rs/canvas";
 import { logger, task } from "@trigger.dev/sdk/v3";
 
 import { hipHopDrivingCertificationSchema } from "~/components/pre-certificate-forms/hiphopdriving";
@@ -12,35 +12,19 @@ import { db } from "~/integrations/db.server";
 import { EmailService } from "~/integrations/email.server";
 import { Sentry } from "~/integrations/sentry";
 import { CertificateService } from "~/services/certificate.server";
+import { CourseService } from "~/services/course.server";
 import { UserCourseService } from "~/services/user-course.server";
 import { UserService } from "~/services/user.server";
 
 const ASSET_BASE_URL = "https://assets.hiphopdriving.com";
-const CERT_IMAGE_URL = `${ASSET_BASE_URL}/certificate_f2ffea5abd.png`;
 const INTERNAL_EMAIL = `events@${SERVER_CONFIG.emailFromDomain}`;
 const ALLOCATION_LOW_THRESHOLD = 10;
-const FONT_URL = "https://cdn.jsdelivr.net/fontsource/fonts/inter@latest/latin-400-normal.woff2";
-
-let fontRegistered = false;
-async function ensureFontRegistered() {
-  if (fontRegistered || GlobalFonts.has("Inter")) {
-    return;
-  }
-  const res = await fetch(FONT_URL);
-  if (!res.ok) {
-    throw new Error(`Failed to fetch font: ${res.status} ${res.statusText}`);
-  }
-  const buffer = Buffer.from(await res.arrayBuffer());
-  GlobalFonts.register(buffer, "Inter");
-  fontRegistered = true;
-  logger.info("Registered font: Inter");
-}
 
 // BUSINESS LOGIC
 const certificateMap = [
   {
     // Dev, staging, and prod Ids
-    courseIds: ["cmj3fal250001sbom8cjbvh8y", "cm3kbh75c0002qls5gvtkh6ev"],
+    courseIds: ["cmlijsv9e0000sbxgcesrdbeh", "cmj3fal250001sbom8cjbvh8y", "cm3kbh75c0002qls5gvtkh6ev"],
     businessChecksFunction: runHipHopBusinessChecks,
     canvasFunction: generateHipHopCertificate,
   },
@@ -71,6 +55,14 @@ export const claimCertificateJob = task({
     }
 
     logger.info("User found", user);
+
+    try {
+      await CourseService.getById(payload.courseId);
+    } catch (error) {
+      Sentry.captureException(error, { extra: { courseId: payload.courseId } });
+      logger.error("Course not found for certificate claim", { error, courseId: payload.courseId });
+      throw new Error("Course not found for certificate claim");
+    }
 
     const userCourses = await UserCourseService.getAllByUserId(user.id);
     const thisUserCourse = userCourses.find((c) => c.courseId === payload.courseId);
@@ -175,6 +167,7 @@ export const claimCertificateJob = task({
         error,
         userCourseId: thisUserCourse.id,
       });
+      await CertificateService.releaseAllocation(allocation.id);
       return;
     }
 
@@ -183,12 +176,14 @@ export const claimCertificateJob = task({
       const err = new Error("Certificate record created but number is missing");
       Sentry.captureException(err);
       logger.error(err.message, { userCourseId: thisUserCourse.id });
+      await CertificateService.rollbackClaim({ userCourseId: thisUserCourse.id, allocationId: allocation.id });
       return;
     }
 
     // Generate certificate image
     if (!courseConfig?.canvasFunction) {
       logger.error("No certificate generation function found for course", { courseId: payload.courseId });
+      await CertificateService.rollbackClaim({ userCourseId: thisUserCourse.id, allocationId: allocation.id });
       return;
     }
 
@@ -215,14 +210,41 @@ export const claimCertificateJob = task({
           reason: "Canvas generation returned null after allocation was consumed",
         }),
       }).catch((err) => logger.warn("Failed to send generation failure email", { error: err }));
+      await CertificateService.rollbackClaim({ userCourseId: thisUserCourse.id, allocationId: allocation.id });
       return;
     }
 
     // Upload certificate to S3
     try {
       const upload = await Bucket.uploadFile({ key, file: canvas.toBuffer("image/png") });
-      logger.info(`Certificate uploaded with status code ${upload.$metadata.httpStatusCode}`);
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      if (upload) {
+        logger.info(`Certificate uploaded with status code ${upload.$metadata.httpStatusCode}`);
+        logger.info(`Certificate url: ${ASSET_BASE_URL}/${key}`);
+      }
+    } catch (error) {
+      Sentry.captureException(error);
+      logger.error(error instanceof Error ? error.message : "Failed to upload certificate", {
+        error,
+        userCourseId: thisUserCourse.id,
+      });
+      await CertificateService.rollbackClaim({ userCourseId: thisUserCourse.id, allocationId: allocation.id });
+      await EmailService.send({
+        to: INTERNAL_EMAIL,
+        from: `Plumb Media & Education <no-reply@${SERVER_CONFIG.emailFromDomain}>`,
+        subject: `🚨 Certificate upload failed for ${payload.courseName}`,
+        react: CertificateGenerationFailureInternalEmail({
+          userId: user.id,
+          userCourseId: thisUserCourse.id,
+          courseName: payload.courseName,
+          reason: error instanceof Error ? error.message : "Failed to upload certificate to S3",
+        }),
+      }).catch((err) => logger.warn("Failed to send upload failure email", { error: err }));
+      return;
+    }
 
+    // Upload succeeded; the certificate is valid regardless of whether this notification email succeeds
+    try {
       const { messageId } = await EmailService.send({
         from: `${payload.courseName} <no-reply@${SERVER_CONFIG.emailFromDomain}>`,
         to: user.email,
@@ -236,21 +258,10 @@ export const claimCertificateJob = task({
       logger.info(`Certificate success email sent with message ID ${messageId}`);
     } catch (error) {
       Sentry.captureException(error);
-      logger.error(error instanceof Error ? error.message : "Failed to upload certificate", {
+      logger.error(error instanceof Error ? error.message : "Failed to send certificate ready email", {
         error,
         userCourseId: thisUserCourse.id,
       });
-      await EmailService.send({
-        to: INTERNAL_EMAIL,
-        from: `Plumb Media & Education <no-reply@${SERVER_CONFIG.emailFromDomain}>`,
-        subject: `🚨 Certificate upload failed for ${payload.courseName}`,
-        react: CertificateGenerationFailureInternalEmail({
-          userId: user.id,
-          userCourseId: thisUserCourse.id,
-          courseName: payload.courseName,
-          reason: error instanceof Error ? error.message : "Failed to upload certificate to S3",
-        }),
-      }).catch((err) => logger.warn("Failed to send upload failure email", { error: err }));
     }
   },
 });
@@ -271,6 +282,13 @@ type HipHopCertificateArgs = {
   completionDate: string;
 };
 async function generateHipHopCertificate(args: HipHopCertificateArgs): Promise<Canvas | null> {
+  const CERT_FONT_FAMILY = "Arial, sans-serif";
+  const REASON_CODE_COPY_LABEL: Record<"T" | "I" | "E", string> = {
+    I: "Insurance Copy",
+    T: "Court Copy",
+    E: "Student Copy",
+  };
+
   const answers = await db.preCertificationFormSubmission.findFirst({ where: { userCourseId: args.userCourseId } });
   if (!answers) {
     logger.error("No precertification form submission found for user course", { userCourseId: args.userCourseId });
@@ -291,9 +309,9 @@ async function generateHipHopCertificate(args: HipHopCertificateArgs): Promise<C
     formData: parsedAnswers.data,
   });
 
-  const canvas = createCanvas(1650, 1275);
+  const canvas = createCanvas(1710, 2284);
   const ctx = canvas.getContext("2d");
-  const certImage = await loadImage(CERT_IMAGE_URL).catch((err) => {
+  const certImage = await loadImage(`${ASSET_BASE_URL}/hiphop_driving_certificate_template.png`).catch((err) => {
     logger.error("Failed to load certificate base image", { error: err });
     return null;
   });
@@ -302,38 +320,69 @@ async function generateHipHopCertificate(args: HipHopCertificateArgs): Promise<C
     return null;
   }
 
-  await ensureFontRegistered();
+  const issueDate = new Date().toLocaleDateString("en-US");
+  const {
+    firstName,
+    lastName,
+    driversLicenseNumber,
+    dateOfBirth,
+    reasonCode,
+    courtName,
+    street,
+    city,
+    state,
+    zipCode,
+  } = parsedAnswers.data;
+  const fullName = `${firstName} ${lastName}`;
+  const cityStateZip = `${city}, ${state} ${zipCode}`;
+  const copyLabel = REASON_CODE_COPY_LABEL[reasonCode];
 
-  const date = new Date().toLocaleDateString("en-US");
-
-  const firstRowY = 790;
-  const secondRowY = 865;
-  const thirdRowY = 935;
-
-  const firstColX = 316;
-  const secondColX = 736;
-  const thirdColX = 1_130;
-  const fourthColX = 1_455;
-
-  ctx.drawImage(certImage, 0, 0, 1650, 1275);
+  ctx.drawImage(certImage, 0, 0, 1710, 2284);
+  ctx.fillStyle = "#000000";
   ctx.textAlign = "left";
-  ctx.font = "24px Inter";
+  ctx.font = `28px ${CERT_FONT_FAMILY}`;
 
-  // Row 1
-  ctx.fillText(args.certificateNumber, firstColX, firstRowY);
-  ctx.fillText(`${parsedAnswers.data.firstName} ${parsedAnswers.data.lastName}`, secondColX, firstRowY);
-  ctx.fillText(parsedAnswers.data.driversLicenseNumber, thirdColX, firstRowY);
-  ctx.fillText(parsedAnswers.data.dateOfBirth, fourthColX, firstRowY);
+  // Right-column field values, shared between the office copy (offsetY 0) and student copy (offsetY 1206)
+  const drawFieldColumn = (offsetY: number, includeCourtInfo: boolean) => {
+    ctx.fillText(args.certificateNumber, 1465, 60 + offsetY);
+    ctx.fillText(fullName, 1265, 228 + offsetY);
+    ctx.fillText(driversLicenseNumber, 1265, 358 + offsetY);
+    ctx.fillText(dateOfBirth, 1265, 489 + offsetY);
+    ctx.fillText(args.completionDate, 1265, 762 + offsetY);
+    ctx.fillText(issueDate, 1265, 853 + offsetY);
+    ctx.fillText(reasonCode, 1265, 943 + offsetY);
+    if (includeCourtInfo) {
+      ctx.fillText(courtName ?? "N/A", 1265, 1031 + offsetY);
+    }
+  };
 
-  // Row 2
-  ctx.fillText(args.completionDate, firstColX, secondRowY);
-  ctx.fillText(date, secondColX, secondRowY);
-  ctx.fillText(parsedAnswers.data.reasonCode, thirdColX, secondRowY);
-  ctx.fillText(parsedAnswers.data.courtName ?? "N/A", fourthColX, secondRowY);
+  // Left-column "Student Name and Mailing Address" block, shared between both copies
+  const drawAddressBlock = (offsetY: number) => {
+    ctx.fillText(fullName, 140, 842 + offsetY);
+    ctx.fillText(street, 140, 882 + offsetY);
+    ctx.fillText(cityStateZip, 140, 921 + offsetY);
+  };
 
-  // Row 3
-  const { street, city, state, zipCode } = parsedAnswers.data;
-  ctx.fillText(`${street}, ${city}, ${state} ${zipCode}`, firstColX, thirdRowY);
+  // Office copy (top half); only this copy has a "Court Information" field
+  drawFieldColumn(0, true);
+  drawAddressBlock(0);
+
+  ctx.save();
+  ctx.font = `bold 40px ${CERT_FONT_FAMILY}`;
+  ctx.textAlign = "center";
+  ctx.letterSpacing = "2px";
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = "#000000";
+  ctx.fillStyle = "#ffffff";
+  const watermarkX = 670;
+  const watermarkY = 165;
+  ctx.strokeText(copyLabel.toUpperCase(), watermarkX, watermarkY);
+  ctx.fillText(copyLabel.toUpperCase(), watermarkX, watermarkY);
+  ctx.restore();
+
+  // Student copy (bottom half)
+  drawFieldColumn(1206, false);
+  drawAddressBlock(1206);
 
   logger.info("Certificate generated");
   return canvas;
