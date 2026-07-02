@@ -1,5 +1,5 @@
 import { Body, Container, Head, Hr, Html, Preview, Section, Text } from "@react-email/components";
-import { Tailwind } from "@react-email/tailwind";
+import { Tailwind, pixelBasedPreset } from "@react-email/tailwind";
 
 import { CONFIG } from "~/config";
 
@@ -13,7 +13,7 @@ export default function EmailLayout({ preview, children }: EmailLayoutProps) {
     <Html>
       <Head />
       <Preview>{preview}</Preview>
-      <Tailwind>
+      <Tailwind config={{ presets: [pixelBasedPreset] }}>
         <Body className="mx-auto my-auto bg-[#f4f4f5] font-sans">
           <Container className="mx-auto my-10 max-w-[520px] rounded-xl bg-white p-8 shadow-sm">
             <Section>
