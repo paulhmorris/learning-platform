@@ -23,7 +23,7 @@ vi.mock("@napi-rs/canvas", () => {
     Canvas: vi.fn(),
     GlobalFonts: {
       has: vi.fn(() => false),
-      register: vi.fn(),
+      registerFromPath: vi.fn(() => true),
     },
   };
 });
