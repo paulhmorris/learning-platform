@@ -6,6 +6,7 @@ import { CacheKeys, CacheService } from "~/services/cache.server";
 import { APIResponseCollection, APIResponseData } from "~/types/utils";
 
 const logger = createLogger("QuizService");
+const PROGRESS_CACHE_TTL = 22; // 22 seconds
 
 export const QuizService = {
   async getById(quizId: string | number) {
@@ -118,11 +119,14 @@ export const QuizService = {
 
   async markAsPassed(quizId: number, userId: string, score: number) {
     try {
-      return db.userQuizProgress.upsert({
+      const progress = await db.userQuizProgress.upsert({
         where: { userId_quizId: { quizId, userId } },
         create: { quizId, userId, score, isCompleted: true },
         update: { score, isCompleted: true },
       });
+      await CacheService.set(CacheKeys.quizProgress(userId, quizId), progress, { ex: PROGRESS_CACHE_TTL });
+      await CacheService.delete(CacheKeys.quizProgressAll(userId));
+      return progress;
     } catch (error) {
       Sentry.captureException(error);
       logger.error(`Failed to mark quiz ${quizId} as passed`, { error, userId });
