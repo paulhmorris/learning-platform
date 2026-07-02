@@ -1,4 +1,6 @@
-import { Canvas, createCanvas, loadImage } from "@napi-rs/canvas";
+import { createRequire } from "node:module";
+
+import { Canvas, createCanvas, GlobalFonts, loadImage } from "@napi-rs/canvas";
 import { logger, task } from "@trigger.dev/sdk/v3";
 
 import { hipHopDrivingCertificationSchema } from "~/components/pre-certificate-forms/hiphopdriving";
@@ -19,6 +21,21 @@ import { UserService } from "~/services/user.server";
 const ASSET_BASE_URL = "https://assets.hiphopdriving.com";
 const INTERNAL_EMAIL = `events@${SERVER_CONFIG.emailFromDomain}`;
 const ALLOCATION_LOW_THRESHOLD = 10;
+const CERT_FONT_FAMILY = "Inter Certificate";
+
+// The @napi-rs/canvas runtime has no system fonts available (e.g. Arial), so
+// text draws as blank glyphs unless we register a font file ourselves.
+function ensureFontRegistered() {
+  if (GlobalFonts.has(CERT_FONT_FAMILY)) {
+    return;
+  }
+  const require = createRequire(import.meta.url);
+  const fontPath = require.resolve("@fontsource-variable/inter/files/inter-latin-wght-normal.woff2");
+  const registered = GlobalFonts.registerFromPath(fontPath, CERT_FONT_FAMILY);
+  if (!registered) {
+    logger.error("Failed to register certificate font", { fontPath });
+  }
+}
 
 // BUSINESS LOGIC
 const certificateMap = [
@@ -282,7 +299,6 @@ type HipHopCertificateArgs = {
   completionDate: string;
 };
 async function generateHipHopCertificate(args: HipHopCertificateArgs): Promise<Canvas | null> {
-  const CERT_FONT_FAMILY = "Arial, sans-serif";
   const REASON_CODE_COPY_LABEL: Record<"T" | "I" | "E", string> = {
     I: "Insurance Copy",
     T: "Court Copy",
@@ -319,6 +335,8 @@ async function generateHipHopCertificate(args: HipHopCertificateArgs): Promise<C
   if (!certImage) {
     return null;
   }
+
+  ensureFontRegistered();
 
   const issueDate = new Date().toLocaleDateString("en-US");
   const {
