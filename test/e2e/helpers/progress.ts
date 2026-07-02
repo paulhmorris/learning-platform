@@ -76,13 +76,19 @@ export async function markLessonCompleteForUser(
   userId: string,
   lesson: { id: number; attributes: { required_duration_in_seconds?: number | null } },
 ) {
-  return ProgressService.markComplete({
+  const progress = await ProgressService.markComplete({
     userId,
     lessonId: lesson.id,
     requiredDurationInSeconds: lesson.attributes.required_duration_in_seconds ?? undefined,
   });
+  // ProgressService's own cache invalidation is a no-op in the test process (NODE_ENV=test),
+  // so the deployed preview server's Redis cache must be cleared directly here too.
+  await invalidateProgressCache(userId);
+  return progress;
 }
 
 export async function markQuizPassedForUser(userId: string, quizId: number, score = 100) {
-  return QuizService.markAsPassed(quizId, userId, score);
+  const progress = await QuizService.markAsPassed(quizId, userId, score);
+  await invalidateProgressCache(userId);
+  return progress;
 }
