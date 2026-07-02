@@ -4,6 +4,10 @@ vi.mock("~/integrations/db.server", () => ({
   db: {
     certificateNumberAllocation: {
       count: vi.fn(),
+      update: vi.fn(),
+    },
+    certificate: {
+      delete: vi.fn(),
     },
     userCourse: {
       update: vi.fn(),
@@ -113,6 +117,53 @@ describe("CertificateService", () => {
         CertificateService.createAndUpdateCourse({ number: "X", userCourseId: 1, s3Key: "k" }),
       ).rejects.toThrow("DB error");
       expect(vi.mocked(Sentry.captureException)).toHaveBeenCalledWith(error);
+    });
+  });
+
+  describe("rollbackClaim", () => {
+    it("deletes the certificate and frees the allocation via a transaction", async () => {
+      mockDb.$transaction.mockResolvedValue([{}, {}]);
+
+      await CertificateService.rollbackClaim({ userCourseId: 1, allocationId: 2 });
+
+      expect(mockDb.$transaction).toHaveBeenCalledWith(expect.arrayContaining([]));
+      expect(vi.mocked(mockDb.$transaction).mock.calls[0][0]).toHaveLength(2);
+      expect(mockDb.certificate.delete).toHaveBeenCalledWith({ where: { userCourseId: 1 } });
+      expect(mockDb.certificateNumberAllocation.update).toHaveBeenCalledWith({
+        where: { id: 2 },
+        data: { isUsed: false },
+      });
+    });
+
+    it("logs and captures the exception instead of throwing when the transaction fails", async () => {
+      const error = new Error("Transaction error");
+      mockDb.$transaction.mockRejectedValue(error);
+
+      await expect(CertificateService.rollbackClaim({ userCourseId: 1, allocationId: 2 })).resolves.toBeUndefined();
+      expect(vi.mocked(Sentry.captureException)).toHaveBeenCalledWith(error, {
+        extra: { userCourseId: 1, allocationId: 2 },
+      });
+    });
+  });
+
+  describe("releaseAllocation", () => {
+    it("marks the allocation as unused", async () => {
+      mockDb.certificateNumberAllocation.update.mockResolvedValue({} as never);
+
+      await CertificateService.releaseAllocation(2);
+
+      expect(mockDb.certificateNumberAllocation.update).toHaveBeenCalledWith({
+        where: { id: 2 },
+        data: { isUsed: false },
+      });
+    });
+
+    it("logs and captures the exception instead of throwing when the update fails", async () => {
+      const error = new Error("Update error");
+      mockDb.certificateNumberAllocation.update.mockRejectedValue(error);
+
+      await expect(CertificateService.releaseAllocation(2)).resolves.toBeUndefined();
+      expect(vi.mocked(Sentry.captureException)).toHaveBeenCalledWith(error, { extra: { allocationId: 2 } });
     });
   });
 });
