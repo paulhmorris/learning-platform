@@ -24,7 +24,7 @@ export const AuthService = {
       throw error;
     }
   },
-  async getUserList(args: Parameters<typeof client.users.getUserList>[0] = {}) {
+  async getUserList(args: Parameters<typeof client.users.getUserList>[0] = { limit: 500 }) {
     try {
       return await client.users.getUserList(args);
     } catch (error) {

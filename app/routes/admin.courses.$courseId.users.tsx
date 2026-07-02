@@ -28,19 +28,17 @@ const logger = createLogger("Admin.Courses.Users");
 export async function loader(args: LoaderFunctionArgs) {
   await SessionService.requireAdmin(args);
   const backendList = await AuthService.getUserList();
-
-  const users = backendList.data
-    .map((user) => {
-      return {
-        id: user.id,
-        firstName: user.firstName ?? "",
-        lastName: user.lastName ?? "",
-        email: user.emailAddresses.at(0)?.emailAddress ?? "",
-        phone: user.phoneNumbers.at(0)?.phoneNumber ?? undefined,
-        createdAt: user.createdAt,
-      };
-    })
-    .filter(Boolean);
+  const users = backendList.data.map((user) => {
+    return {
+      id: user.id,
+      firstName: user.firstName ?? "",
+      lastName: user.lastName ?? "",
+      email: user.emailAddresses.at(0)?.emailAddress ?? "",
+      phone: user.phoneNumbers.at(0)?.phoneNumber ?? undefined,
+      createdAt: user.createdAt,
+    };
+  });
+  // .filter(Boolean);
   return { users };
 }
 
@@ -108,13 +106,16 @@ export default function AdminEditCourse() {
       <ul className="mt-4 divide-y divide-border/75">
         {filteredUsers.map((u) => {
           return (
-            <li key={u.id} className="grid w-full max-w-lg grid-cols-2 items-center gap-8 py-3 md:py-2">
-              <Link
-                to={`/admin/users/${u.id}/courses/${data.course.id}`}
-                className="col-span-1 truncate text-sm hover:text-primary"
-              >
-                {u.firstName} {u.lastName}
-              </Link>
+            <li key={u.id} className="grid w-full max-w-2xl grid-cols-4 items-center gap-8 py-3 md:py-2">
+              <div className="col-span-3 flex flex-col gap-y-1">
+                <Link
+                  to={`/admin/users/${u.id}/courses/${data.course.id}`}
+                  className="truncate text-sm hover:text-primary"
+                >
+                  {u.firstName} {u.lastName}
+                </Link>
+                <span className="text-xs text-muted-foreground">{u.email}</span>
+              </div>
               {!data.course.userCourses.some((uc) => uc.userId === u.id) ? (
                 <fetcher.Form method="put" className="col-span-1">
                   <input type="hidden" name="userId" value={u.id} />

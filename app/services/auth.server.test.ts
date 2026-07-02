@@ -83,7 +83,7 @@ describe("AuthService", () => {
       mockClerk.users.getUserList.mockResolvedValue({ data: [] } as never);
 
       await AuthService.getUserList();
-      expect(mockClerk.users.getUserList).toHaveBeenCalledWith({});
+      expect(mockClerk.users.getUserList).toHaveBeenCalledWith({ limit: 500 });
     });
   });
 
