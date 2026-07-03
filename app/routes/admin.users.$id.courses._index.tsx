@@ -73,8 +73,10 @@ export default function AdminUserCourses() {
                 <CardHeader>
                   <CardTitle>{course.title}</CardTitle>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {course.isCompleted ? "Complete" : "In Progress"} • Purchased{" "}
-                    {new Date(course.createdAt).toLocaleDateString()}
+                    {course.isCompleted
+                      ? `Completed ${new Date(course.completedAt!).toLocaleDateString()}`
+                      : "In Progress"}{" "}
+                    • Purchased {new Date(course.createdAt).toLocaleDateString()}
                   </p>
                 </CardHeader>
                 <CardFooter>
