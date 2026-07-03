@@ -1,7 +1,9 @@
 {
   "name": "learning-platform",
   "private": true,
-  "sideEffects": false,
+  "sideEffects": [
+    "./instrument.server.mjs"
+  ],
   "type": "module",
   "packageManager": "npm@10.9.2",
   "scripts": {
@@ -164,12 +166,16 @@
     "*": "prettier --write --ignore-unknown"
   },
   "engines": {
-    "node": "22.x"
+    "node": "24.x"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
   },
   "volta": {
-    "node": "22.22.1"
+    "node": "24.18.0"
+  },
+  "allowScripts": {
+    "@prisma/client@6.12.0": true,
+    "@prisma/engines@6.12.0": true
   }
 }

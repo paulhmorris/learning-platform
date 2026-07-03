@@ -106,4 +106,36 @@ export const CertificateService = {
       throw error;
     }
   },
+
+  // Undo createAndUpdateCourse + getNextAllocationForCourse when a later step (image generation,
+  // upload) fails, so the allocation and certificate slot are freed up for a retry.
+  async rollbackClaim(data: { userCourseId: number; allocationId: number }) {
+    try {
+      await db.$transaction([
+        db.certificate.delete({ where: { userCourseId: data.userCourseId } }),
+        db.certificateNumberAllocation.update({ where: { id: data.allocationId }, data: { isUsed: false } }),
+      ]);
+      logger.info("Rolled back certificate claim", data);
+    } catch (error) {
+      Sentry.captureException(error, { extra: data });
+      logger.error(error instanceof Error ? error.message : "Failed to roll back certificate claim", {
+        error,
+        ...data,
+      });
+    }
+  },
+
+  // Same as rollbackClaim, but for when the certificate record was never created
+  async releaseAllocation(allocationId: number) {
+    try {
+      await db.certificateNumberAllocation.update({ where: { id: allocationId }, data: { isUsed: false } });
+      logger.info("Released certificate allocation", { allocationId });
+    } catch (error) {
+      Sentry.captureException(error, { extra: { allocationId } });
+      logger.error(error instanceof Error ? error.message : "Failed to release certificate allocation", {
+        error,
+        allocationId,
+      });
+    }
+  },
 };

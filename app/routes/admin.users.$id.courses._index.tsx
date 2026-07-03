@@ -27,17 +27,15 @@ export async function loader(args: LoaderFunctionArgs) {
   try {
     const [userCourses, cmsCourses] = await Promise.all([UserCourseService.getAllByUserId(id), CourseService.getAll()]);
 
-    if (!userCourses.length) {
-      logger.error(`No user courses found for user ${id}`);
-      throw Responses.notFound();
-    }
-
     if (!cmsCourses.length) {
       logger.error("No CMS courses found");
       throw Responses.serverError();
     }
 
-    // TODO: Clerk migration
+    if (!userCourses.length) {
+      return { courses: [] };
+    }
+
     // TODO: Maybe do this whole call on its own to reduce data load for all the other places we need userCourses with less data
     const courses = userCourses.map((dbCourse) => {
       const cmsCourse = cmsCourses.find((course) => course.id === dbCourse.course.strapiId);
@@ -75,8 +73,10 @@ export default function AdminUserCourses() {
                 <CardHeader>
                   <CardTitle>{course.title}</CardTitle>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {course.isCompleted ? "Complete" : "In Progress"} • Purchased{" "}
-                    {new Date(course.createdAt).toLocaleDateString()}
+                    {course.isCompleted
+                      ? `Completed ${new Date(course.completedAt!).toLocaleDateString()}`
+                      : "In Progress"}{" "}
+                    • Purchased {new Date(course.createdAt).toLocaleDateString()}
                   </p>
                 </CardHeader>
                 <CardFooter>
@@ -93,7 +93,7 @@ export default function AdminUserCourses() {
                         className="flex items-center gap-2"
                       >
                         <IconCertificate className="size-4" />
-                        <span>Download Certificate</span>
+                        <span>View Certificate</span>
                       </a>
                     </AdminButton>
                   ) : null}

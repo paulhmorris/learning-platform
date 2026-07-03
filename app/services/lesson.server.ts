@@ -9,7 +9,7 @@ type Lesson = APIResponseCollection<"api::lesson.lesson">["data"][0];
 
 const logger = createLogger("LessonService");
 
-const TTL = 120; // 2 minutes
+const TTL = 60 * 60 * 24; // 24 hours
 
 export const LessonService = {
   async getAllFromCMS() {
@@ -87,9 +87,7 @@ export const LessonService = {
         await CacheService.set(
           CacheKeys.lessonDuration(lessonId),
           lesson.data.attributes.required_duration_in_seconds,
-          {
-            ex: 60,
-          },
+          { ex: TTL },
         );
       }
       logger.debug(`Fetched lesson duration from CMS for lesson ${lessonId}`);

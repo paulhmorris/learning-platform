@@ -200,6 +200,7 @@ export async function action(args: ActionFunctionArgs) {
       userId: user.id,
       courseId: linkedCourse.id,
       courseName: course.data.attributes.title,
+      issuedDate: new Date().toLocaleDateString("en-US"),
     });
 
     if (!job.id) {

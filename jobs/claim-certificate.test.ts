@@ -9,6 +9,9 @@ vi.mock("@napi-rs/canvas", () => {
     fillText: vi.fn(),
     textAlign: "",
     font: "",
+    save: vi.fn(),
+    strokeText: vi.fn(),
+    restore: vi.fn(),
   };
   const mockCanvas = {
     getContext: vi.fn(() => mockCtx),
@@ -61,7 +64,13 @@ vi.mock("~/services/certificate.server", () => ({
     getNextAllocationForCourse: vi.fn(),
     getRemainingAllocationsCount: vi.fn(),
     createAndUpdateCourse: vi.fn(),
+    rollbackClaim: vi.fn(),
+    releaseAllocation: vi.fn(),
   },
+}));
+
+vi.mock("~/services/course.server", () => ({
+  CourseService: { getById: vi.fn() },
 }));
 
 vi.mock("~/services/user-course.server", () => ({
@@ -108,6 +117,7 @@ import { db } from "~/integrations/db.server";
 import { EmailService } from "~/integrations/email.server";
 import { Sentry } from "~/integrations/sentry";
 import { CertificateService } from "~/services/certificate.server";
+import { CourseService } from "~/services/course.server";
 import { UserCourseService } from "~/services/user-course.server";
 import { UserService } from "~/services/user.server";
 
@@ -116,6 +126,7 @@ import { claimCertificateJob } from "./claim-certificate";
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 const mockUserService = vi.mocked(UserService);
+const mockCourseService = vi.mocked(CourseService);
 const mockUserCourseService = vi.mocked(UserCourseService);
 const mockCertificateService = vi.mocked(CertificateService);
 const mockEmailService = vi.mocked(EmailService);
@@ -210,6 +221,7 @@ beforeEach(() => {
   // Re-apply default mock implementations after restoreAllMocks
   mockLoadImage.mockResolvedValue({ width: 1650, height: 1275 } as never);
   mockGlobalFonts.has.mockReturnValue(false);
+  mockCourseService.getById.mockResolvedValue({ id: KNOWN_COURSE_ID } as never);
   vi.unstubAllGlobals();
   vi.stubGlobal(
     "fetch",
@@ -246,6 +258,14 @@ describe("claimCertificateJob", () => {
   // ── Course validation ────────────────────────────────────────────────────
 
   describe("course validation", () => {
+    it("throws when the course does not exist", async () => {
+      mockUserService.getById.mockResolvedValue(makeUser());
+      mockCourseService.getById.mockRejectedValue(new Error("Course not found"));
+
+      await expect(runJob(defaultPayload)).rejects.toThrow("Course not found for certificate claim");
+      expect(mockUserCourseService.getAllByUserId).not.toHaveBeenCalled();
+    });
+
     it("throws when user is not enrolled in the course", async () => {
       mockUserService.getById.mockResolvedValue(makeUser());
       mockUserCourseService.getAllByUserId.mockResolvedValue([]);
@@ -363,6 +383,9 @@ describe("claimCertificateJob", () => {
 
       expect(mockSentry.captureException).toHaveBeenCalledWith(error);
       expect(mockBucket.uploadFile).not.toHaveBeenCalled();
+      // Certificate was never created, so only the allocation needs to be freed
+      expect(mockCertificateService.releaseAllocation).toHaveBeenCalledWith(1);
+      expect(mockCertificateService.rollbackClaim).not.toHaveBeenCalled();
     });
 
     it("returns early and reports to Sentry when certificate number is missing from response", async () => {
@@ -388,6 +411,7 @@ describe("claimCertificateJob", () => {
         expect.objectContaining({ message: "Certificate record created but number is missing" }),
       );
       expect(mockBucket.uploadFile).not.toHaveBeenCalled();
+      expect(mockCertificateService.rollbackClaim).toHaveBeenCalledWith({ userCourseId: 1, allocationId: 1 });
     });
   });
 
@@ -435,6 +459,7 @@ describe("claimCertificateJob", () => {
       await runJob(payload);
 
       expect(mockBucket.uploadFile).not.toHaveBeenCalled();
+      expect(mockCertificateService.rollbackClaim).toHaveBeenCalledWith({ userCourseId: 1, allocationId: 1 });
     });
 
     it("returns early and reports to Sentry when form submission is missing", async () => {
@@ -448,6 +473,7 @@ describe("claimCertificateJob", () => {
         expect.objectContaining({ extra: expect.objectContaining({ userCourseId: 1 }) }),
       );
       expect(mockBucket.uploadFile).not.toHaveBeenCalled();
+      expect(mockCertificateService.rollbackClaim).toHaveBeenCalledWith({ userCourseId: 1, allocationId: 1 });
     });
 
     it("returns early when form data fails validation", async () => {
@@ -568,6 +594,17 @@ describe("claimCertificateJob", () => {
       expect(mockEmailService.send).not.toHaveBeenCalledWith(
         expect.objectContaining({ subject: "Your certificate is ready!" }),
       );
+      expect(mockCertificateService.rollbackClaim).toHaveBeenCalledWith({ userCourseId: 1, allocationId: 1 });
+    });
+
+    it("does not roll back when upload succeeds but the success email fails", async () => {
+      setupFullHappyPath();
+      mockEmailService.send.mockRejectedValue(new Error("Email provider down"));
+
+      await runJob(defaultPayload);
+
+      expect(mockCertificateService.rollbackClaim).not.toHaveBeenCalled();
+      expect(mockCertificateService.releaseAllocation).not.toHaveBeenCalled();
     });
   });
 });

@@ -12,8 +12,9 @@ export const hipHopDrivingCertificationSchema = z
     lastName: z.string().min(1, "Please enter your last name.").max(50, "Last name must be 50 characters or less."),
     middleInitial: z
       .string()
-      .min(1, "Please enter up to two characters for your middle initial.")
-      .max(2, "Please enter up to two characters for your middle initial."),
+      .max(2, "Please enter up to two characters for your middle initial.")
+      .optional()
+      .or(z.literal("")),
     street: z
       .string()
       .min(1, "Please enter your street address.")
@@ -100,8 +101,8 @@ export function HiphopDrivingPreCertificateForm({ userProfile }: { userProfile: 
               scope={form.scope("middleInitial")}
               label="Middle Initial"
               placeholder="e.g. A"
-              required
               autoComplete="additional-name"
+              description="Required if you have a middle name"
             />
             <FormField scope={form.scope("lastName")} label="Last Name" required autoComplete="family-name" />
             <div className="col-span-2">

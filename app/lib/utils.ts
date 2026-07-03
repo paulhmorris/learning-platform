@@ -190,9 +190,15 @@ export function getPreviewValues(data: GetPreviewValueArgs): GetPreviewValuesRet
     return acc + quizDuration;
   }, 0);
 
+  const completedQuizDurationInSeconds = course.attributes.sections.reduce((acc, curr) => {
+    const quiz = curr.quiz?.data;
+    if (!quiz || !quizProgress.some((p) => p.quizId === quiz.id && p.isCompleted)) return acc;
+    return acc + (quiz.attributes.required_duration_in_seconds ?? 0);
+  }, 0);
+
   const courseIsTimed = lessons.some((l) => l.isTimed);
   const totalProgressInSeconds = courseIsTimed
-    ? lessonProgress.reduce((acc, curr) => acc + (curr.durationInSeconds ?? 0), 0)
+    ? lessonProgress.reduce((acc, curr) => acc + (curr.durationInSeconds ?? 0), 0) + completedQuizDurationInSeconds
     : completedLessonCount + completedQuizCount;
   const totalLessonDurationInSeconds = courseIsTimed
     ? lessons.reduce((acc, curr) => acc + (curr.requiredDurationInSeconds ?? 0), 0)
@@ -273,8 +279,14 @@ export function getCourseLayoutValues(data: GetCourseLayoutValueArgs): GetCourse
     return acc + quizDuration;
   }, 0);
 
+  const completedQuizDurationInSeconds = course.attributes.sections.reduce((acc, curr) => {
+    const quiz = curr.quiz?.data;
+    if (!quiz || !quizProgress.some((p) => p.quizId === quiz.id && p.isCompleted)) return acc;
+    return acc + (quiz.attributes.required_duration_in_seconds ?? 0);
+  }, 0);
+
   const totalProgressInSeconds = courseIsTimed
-    ? lessonProgress.reduce((acc, curr) => acc + (curr.durationInSeconds ?? 0), 0)
+    ? lessonProgress.reduce((acc, curr) => acc + (curr.durationInSeconds ?? 0), 0) + completedQuizDurationInSeconds
     : completedLessonCount + completedQuizCount;
   const totalLessonDurationInSeconds = courseIsTimed
     ? lessons.reduce((acc, curr) => acc + (curr.requiredDurationInSeconds ?? 0), 0)
