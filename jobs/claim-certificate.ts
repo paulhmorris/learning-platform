@@ -50,10 +50,16 @@ const certificateMap = [
 ];
 // END BUSINESS LOGIC
 
+type JobPayload = {
+  userId: string;
+  courseId: string;
+  courseName: string;
+  issuedDate: string;
+};
+
 export const claimCertificateJob = task({
   id: "claim-certificate",
-  run: async (payload: { userId: string; courseId: string; courseName: string }) => {
-    // TODO: Update when clerkId is required
+  run: async (payload: JobPayload) => {
     let user;
     try {
       user = await UserService.getById(payload.userId);
@@ -211,6 +217,7 @@ export const claimCertificateJob = task({
       userCourseId: thisUserCourse.id,
       certificateNumber,
       completionDate: thisUserCourse.completedAt?.toLocaleDateString("en-US") ?? new Date().toLocaleDateString("en-US"),
+      issuedDate: payload.issuedDate,
     });
 
     if (!canvas) {
@@ -298,8 +305,10 @@ async function runHipHopBusinessChecks(userCourseId: number) {
 type HipHopCertificateArgs = {
   userCourseId: number;
   certificateNumber: string;
+  issuedDate: string;
   completionDate: string;
 };
+
 async function generateHipHopCertificate(args: HipHopCertificateArgs): Promise<Canvas | null> {
   const REASON_CODE_COPY_LABEL: Record<"T" | "I" | "E", string> = {
     I: "Insurance Copy",
@@ -340,7 +349,6 @@ async function generateHipHopCertificate(args: HipHopCertificateArgs): Promise<C
 
   await ensureFontRegistered();
 
-  const issueDate = new Date().toLocaleDateString("en-US");
   const {
     firstName,
     lastName,
@@ -369,7 +377,7 @@ async function generateHipHopCertificate(args: HipHopCertificateArgs): Promise<C
     ctx.fillText(driversLicenseNumber, 1265, 358 + offsetY);
     ctx.fillText(dateOfBirth, 1265, 489 + offsetY);
     ctx.fillText(args.completionDate, 1265, 762 + offsetY);
-    ctx.fillText(issueDate, 1265, 853 + offsetY);
+    ctx.fillText(args.issuedDate, 1265, 853 + offsetY);
     ctx.fillText(reasonCode, 1265, 943 + offsetY);
     if (includeCourtInfo) {
       ctx.fillText(courtName ?? "N/A", 1265, 1031 + offsetY);
