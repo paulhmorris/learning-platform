@@ -72,7 +72,7 @@ export function buildExportRows(certificates: Array<UnexportedCertificate>): Bui
       deliveryMethod: DELIVERY_METHOD,
       studentLastName: formData.lastName,
       studentFirstName: formData.firstName,
-      studentMiddleInitial: formData.middleInitial,
+      studentMiddleInitial: formData.middleInitial ?? "",
       studentAddress: formData.street,
       studentCity: formData.city,
       studentState: formData.state,
