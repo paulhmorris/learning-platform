@@ -93,7 +93,7 @@ export default function AdminUserCourses() {
                         className="flex items-center gap-2"
                       >
                         <IconCertificate className="size-4" />
-                        <span>Download Certificate</span>
+                        <span>View Certificate</span>
                       </a>
                     </AdminButton>
                   ) : null}
