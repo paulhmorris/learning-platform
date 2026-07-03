@@ -1,7 +1,9 @@
 {
   "name": "learning-platform",
   "private": true,
-  "sideEffects": false,
+  "sideEffects": [
+    "./instrument.server.mjs"
+  ],
   "type": "module",
   "packageManager": "npm@10.9.2",
   "scripts": {
