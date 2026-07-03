@@ -238,7 +238,7 @@ export default function Quiz() {
 
   return (
     <Wrapper>
-      <QuizResults isPassed={isPassed} score={progress?.score ?? actionData?.score ?? 100} />
+      <QuizResults ref={resultsRef} isPassed={isPassed} score={progress?.score ?? actionData?.score ?? 100} />
       <PassingInfo />
       <TimeInfo />
       {isFailed ? <FailedView /> : <QuizQuestions progress={progress} quiz={quiz} />}
