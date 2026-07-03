@@ -1,5 +1,3 @@
-import { createRequire } from "node:module";
-
 import { Canvas, createCanvas, GlobalFonts, loadImage } from "@napi-rs/canvas";
 import { logger, task } from "@trigger.dev/sdk/v3";
 
@@ -21,20 +19,24 @@ import { UserService } from "~/services/user.server";
 const ASSET_BASE_URL = "https://assets.hiphopdriving.com";
 const INTERNAL_EMAIL = `events@${SERVER_CONFIG.emailFromDomain}`;
 const ALLOCATION_LOW_THRESHOLD = 10;
-const CERT_FONT_FAMILY = "Inter Certificate";
+const CERT_FONT_FAMILY = "Inter";
+const FONT_URL = "https://cdn.jsdelivr.net/fontsource/fonts/inter@latest/latin-400-normal.woff2";
 
 // The @napi-rs/canvas runtime has no system fonts available (e.g. Arial), so
 // text draws as blank glyphs unless we register a font file ourselves.
-function ensureFontRegistered() {
-  if (GlobalFonts.has(CERT_FONT_FAMILY)) {
+let fontRegistered = false;
+async function ensureFontRegistered() {
+  if (fontRegistered || GlobalFonts.has(CERT_FONT_FAMILY)) {
     return;
   }
-  const require = createRequire(import.meta.url);
-  const fontPath = require.resolve("@fontsource-variable/inter/files/inter-latin-wght-normal.woff2");
-  const registered = GlobalFonts.registerFromPath(fontPath, CERT_FONT_FAMILY);
-  if (!registered) {
-    logger.error("Failed to register certificate font", { fontPath });
+  const res = await fetch(FONT_URL);
+  if (!res.ok) {
+    throw new Error(`Failed to fetch font: ${res.status} ${res.statusText}`);
   }
+  const buffer = Buffer.from(await res.arrayBuffer());
+  GlobalFonts.register(buffer, CERT_FONT_FAMILY);
+  fontRegistered = true;
+  logger.info(`Registered font: ${CERT_FONT_FAMILY}`);
 }
 
 // BUSINESS LOGIC
@@ -336,7 +338,7 @@ async function generateHipHopCertificate(args: HipHopCertificateArgs): Promise<C
     return null;
   }
 
-  ensureFontRegistered();
+  await ensureFontRegistered();
 
   const issueDate = new Date().toLocaleDateString("en-US");
   const {
