@@ -13,7 +13,7 @@ Sentry.init({
   sampleRate: 1.0,
   tracesSampleRate: 1.0,
   profilesSampleRate: 1.0,
-  replaysSessionSampleRate: 1.0,
+  replaysSessionSampleRate: 0,
   replaysOnErrorSampleRate: 1,
   sendDefaultPii: true,
 

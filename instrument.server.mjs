@@ -17,4 +17,21 @@ Sentry.init({
 
   sendDefaultPii: true,
   integrations: [nodeProfilingIntegration(), Sentry.prismaIntegration()],
+
+  // Stale, content-hashed asset requests (e.g. /assets/index-XLjWcFRZ.js.map)
+  // hit the server after a deploy when a client is still running old code. React
+  // Router turns them into an internal 404 ("No route matches URL") that Sentry's
+  // request instrumentation captures on its own path — before React Router's
+  // `handleError` hook (see app/entry.server.ts) can suppress them. Drop them here
+  // so they never reach Sentry regardless of capture path.
+  beforeSend(event, hint) {
+    const message =
+      (hint?.originalException instanceof Error && hint.originalException.message) ||
+      event.exception?.values?.[0]?.value ||
+      "";
+    if (/No route matches URL "\/assets\/.*"/.test(message)) {
+      return null;
+    }
+    return event;
+  },
 });
