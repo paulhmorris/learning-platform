@@ -32,7 +32,7 @@ export const UserCourseService = {
       });
     } catch (error) {
       Sentry.captureException(error);
-      logger.error("Failed to fetch user courses", { error, userId });
+      logger.error("Failed to fetch user courses", { userId });
       throw error;
     }
   },
@@ -56,7 +56,7 @@ export const UserCourseService = {
       });
     } catch (error) {
       Sentry.captureException(error);
-      logger.error(`Failed to fetch course ${courseId}`, { error, userId });
+      logger.error(`Failed to fetch course ${courseId}`, { userId, courseId });
       throw error;
     }
   },
@@ -68,7 +68,7 @@ export const UserCourseService = {
       return course;
     } catch (error) {
       Sentry.captureException(error);
-      logger.error(`Failed to enroll in course ${courseId}`, { error, userId });
+      logger.error(`Failed to enroll in course ${courseId}`, { userId, courseId });
       throw error;
     }
   },

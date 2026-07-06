@@ -176,7 +176,7 @@ describe("CourseService", () => {
     it("fetches from CMS and caches when no cache hit", async () => {
       const data = [{ id: 1 }, { id: 2 }];
       mockCache.get.mockResolvedValue(null);
-      mockCms.find.mockResolvedValue({ data, meta: {} } as never);
+      mockCms.find.mockResolvedValue({ data, meta: {} });
 
       const result = await CourseService.getAll();
       expect(result).toEqual(data);
@@ -185,7 +185,7 @@ describe("CourseService", () => {
 
     it("returns empty array when no courses found", async () => {
       mockCache.get.mockResolvedValue(null);
-      mockCms.find.mockResolvedValue({ data: [], meta: {} } as never);
+      mockCms.find.mockResolvedValue({ data: [], meta: {} });
 
       const result = await CourseService.getAll();
       expect(result).toEqual([]);

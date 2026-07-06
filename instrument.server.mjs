@@ -4,15 +4,15 @@ import * as Sentry from "@sentry/react-router";
 // const isProd = process.env.VERCEL_ENV === "production";
 
 Sentry.init({
-  dsn: "https://3093e529a633d80d697b26390e53886d@o4505496663359488.ingest.us.sentry.io/4506584484151296",
   enabled: process.env.NODE_ENV === "production",
+  dsn: "https://3093e529a633d80d697b26390e53886d@o4505496663359488.ingest.us.sentry.io/4506584484151296",
+  enableLogs: true,
+  sendDefaultPii: true,
   environment: process.env.VERCEL_ENV,
+  integrations: [Sentry.prismaIntegration()],
 
   sampleRate: 1.0,
   tracesSampleRate: 1.0,
-
-  sendDefaultPii: true,
-  integrations: [Sentry.prismaIntegration()],
 
   // Stale, content-hashed asset requests (e.g. /assets/index-XLjWcFRZ.js.map)
   // hit the server after a deploy when a client is still running old code. React

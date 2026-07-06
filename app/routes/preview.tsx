@@ -63,7 +63,7 @@ export async function loader(args: LoaderFunctionArgs) {
     return { course: course.data, linkedCourse, userCourseIds };
   } catch (error) {
     Sentry.captureException(error);
-    logger.error(`Failed to load course for host ${url.host}`, { error });
+    logger.error(`Failed to load course for host ${url.host}`, { host: url.host });
     if (error instanceof Response) {
       if (error.status === 404) {
         return redirect("/account/courses");
@@ -107,7 +107,7 @@ export async function action(args: ActionFunctionArgs) {
     return redirect(session.url, { status: 303 });
   } catch (error) {
     Sentry.captureException(error);
-    logger.error(`Failed to create checkout session for course ${course.id}`, { error, userId: user.id });
+    logger.error(`Failed to create checkout session for course ${course.id}`, { userId: user.id, courseId: course.id });
     return Toasts.redirectWithError("/", {
       message: "Unable to start checkout",
       description: "Please try again later",

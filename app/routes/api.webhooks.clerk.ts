@@ -18,13 +18,13 @@ export async function action(args: ActionFunctionArgs) {
     event = await verifyWebhook(args.request);
   } catch (error) {
     Sentry.captureException(error, { extra: { info: "Error verifying Clerk webhook" } });
-    logger.error("Error verifying Clerk webhook", { error });
+    logger.error("Error verifying Clerk webhook");
     return Responses.badRequest("Invalid webhook");
   }
 
   const eventType = event.type;
 
-  logger.info(`Received Clerk webhook event: ${eventType}`);
+  logger.info(`Received Clerk webhook event: ${eventType}`, { eventType });
 
   if (eventType === "user.created") {
     try {
@@ -44,25 +44,30 @@ export async function action(args: ActionFunctionArgs) {
           Sentry.captureException(error, { extra: { eventType, userId: event.data.id } });
           logger.error(
             `Error sending welcome email to ${email} for user ${event.data.id} from Clerk webhook event ${eventType}`,
-            { error },
+            { email, userId: event.data.id, eventType },
           );
         }
       }
     } catch (error) {
       Sentry.captureException(error, { extra: { eventType, userId: event.data.id } });
-      logger.error(`Error creating user in stripe from Clerk webhook event ${eventType}`, { error });
+      logger.error(`Error creating user in stripe from Clerk webhook event ${eventType}`, { eventType });
 
       // Check if this is a retriable error or if the user was already processed
       // If the user already has a Stripe customer, consider it successful
       try {
         const user = await UserService.getById(event.data.id);
         if (user?.publicMetadata.stripeCustomerId) {
-          logger.info(`User ${event.data.id} already has Stripe customer, considering webhook successful`);
+          logger.info(`User ${event.data.id} already has Stripe customer, considering webhook successful`, {
+            userId: event.data.id,
+          });
           return Responses.ok();
         }
       } catch (lookupError) {
         // If we can't check the user, log but continue with the error response
-        logger.warn(`Failed to check if user ${event.data.id} has Stripe customer`, { error: lookupError });
+        logger.warn(`Failed to check if user ${event.data.id} has Stripe customer`, {
+          error: lookupError,
+          userId: event.data.id,
+        });
       }
 
       return Responses.serverError();
@@ -78,7 +83,10 @@ export async function action(args: ActionFunctionArgs) {
       await UserService.delete(event.data.id);
     } catch (error) {
       Sentry.captureException(error, { extra: { eventType, userId: event.data.id } });
-      logger.error(`Error deleting user ${event.data.id} from Clerk webhook event ${eventType}`, { error });
+      logger.error(`Error deleting user ${event.data.id} from Clerk webhook event ${eventType}`, {
+        userId: event.data.id,
+        eventType,
+      });
       return Responses.serverError();
     }
   }

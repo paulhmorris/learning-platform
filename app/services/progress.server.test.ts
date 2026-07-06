@@ -160,7 +160,7 @@ describe("ProgressService", () => {
 
   describe("resetAllLesson", () => {
     it("deletes cache and all lesson progress", async () => {
-      mockDb.userLessonProgress.deleteMany.mockResolvedValue({ count: 5 } as never);
+      mockDb.userLessonProgress.deleteMany.mockResolvedValue({ count: 5 });
 
       await ProgressService.resetAllLesson("u1");
       expect(mockCache.delete).toHaveBeenCalled();

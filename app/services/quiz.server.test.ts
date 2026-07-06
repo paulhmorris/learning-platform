@@ -83,7 +83,7 @@ describe("QuizService", () => {
   describe("getAll", () => {
     it("delegates to cms.find", async () => {
       const quizzes = { data: [{ id: 1 }, { id: 2 }], meta: {} };
-      mockCms.find.mockResolvedValue(quizzes as never);
+      mockCms.find.mockResolvedValue(quizzes);
 
       const result = await QuizService.getAll();
       expect(result).toEqual(quizzes);
@@ -93,7 +93,7 @@ describe("QuizService", () => {
   describe("resetAllProgress", () => {
     it("deletes cache and all quiz progress", async () => {
       mockCache.delete.mockResolvedValue(undefined);
-      mockDb.userQuizProgress.deleteMany.mockResolvedValue({ count: 3 } as never);
+      mockDb.userQuizProgress.deleteMany.mockResolvedValue({ count: 3 });
 
       await QuizService.resetAllProgress("u1");
       expect(mockCache.delete).toHaveBeenCalled();

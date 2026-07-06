@@ -31,7 +31,7 @@ export const LessonService = {
       return lessons;
     } catch (error) {
       Sentry.captureException(error);
-      logger.error("Failed to retrieve lessons", { error });
+      logger.error("Failed to retrieve lessons");
       throw error;
     }
   },
@@ -68,7 +68,7 @@ export const LessonService = {
       return lesson.data[0];
     } catch (error) {
       Sentry.captureException(error);
-      logger.error(`Failed to retrieve lesson with slug ${slug}`, { error });
+      logger.error(`Failed to retrieve lesson with slug ${slug}`, { slug });
       throw error;
     }
   },
@@ -94,7 +94,7 @@ export const LessonService = {
       return lesson.data.attributes.required_duration_in_seconds;
     } catch (error) {
       Sentry.captureException(error);
-      logger.error(`Failed to retrieve lesson duration for lesson ${lessonId}`, { error });
+      logger.error(`Failed to retrieve lesson duration for lesson ${lessonId}`, { lessonId });
       throw error;
     }
   },

@@ -20,7 +20,7 @@ export const IdentityService = {
       return verificationSession;
     } catch (error) {
       Sentry.captureException(error, { extra: { userId, email } });
-      logger.error(`Failed to create verification session (${email})`, { error, userId });
+      logger.error(`Failed to create verification session (${email})`, { userId, email });
       throw error;
     }
   },
@@ -31,7 +31,7 @@ export const IdentityService = {
       return stripe.identity.verificationSessions.retrieve(sessionId);
     } catch (error) {
       Sentry.captureException(error, { extra: { sessionId } });
-      logger.error(`Failed to retrieve verification session ${sessionId}`, { error });
+      logger.error(`Failed to retrieve verification session ${sessionId}`, { sessionId });
       throw error;
     }
   },

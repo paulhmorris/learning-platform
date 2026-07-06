@@ -71,7 +71,7 @@ export async function loader(args: LoaderFunctionArgs) {
           });
         } catch (error) {
           Sentry.captureException(error);
-          logger.error(`Failed to send purchase confirmation email`, { error, userId: user.id });
+          logger.error(`Failed to send purchase confirmation email`, { userId: user.id });
         }
       }
     }
@@ -79,7 +79,7 @@ export async function loader(args: LoaderFunctionArgs) {
     return redirect("/preview?purchase_success=true");
   } catch (error) {
     Sentry.captureException(error);
-    logger.error("Failed to complete purchase", { error, userId: user.id });
+    logger.error("Failed to complete purchase", { userId: user.id });
     return Toasts.redirectWithError("/", {
       message: "Unable to complete enrollment",
       description: "Please contact support if the issue persists",

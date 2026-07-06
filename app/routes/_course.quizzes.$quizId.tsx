@@ -41,7 +41,7 @@ export async function loader(args: LoaderFunctionArgs) {
     return { quiz: quiz.data, progress };
   } catch (error) {
     Sentry.captureException(error, { extra: { userId: user.id, quizId } });
-    logger.error(`Error loading quiz ${quizId}`, { error });
+    logger.error(`Error loading quiz ${quizId}`, { quizId });
     if (error instanceof Response) {
       throw error;
     }

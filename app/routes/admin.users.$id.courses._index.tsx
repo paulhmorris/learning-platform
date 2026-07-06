@@ -49,7 +49,7 @@ export async function loader(args: LoaderFunctionArgs) {
     return { courses };
   } catch (error) {
     Sentry.captureException(error);
-    logger.error(`Failed to load user ${id} courses`, { error });
+    logger.error(`Failed to load user ${id} courses`, { userId: id });
     throw Responses.serverError();
   }
 }

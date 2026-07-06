@@ -58,7 +58,11 @@ export async function action(args: ActionFunctionArgs) {
   try {
     await UserCourseService.enrollUser(result.data.userId, courseId);
   } catch (error) {
-    logger.error(`Error enrolling user ${result.data.userId} in course ${courseId}`, { error });
+    logger.error(`Error enrolling user ${result.data.userId} in course ${courseId}`, {
+      error,
+      userId: result.data.userId,
+      courseId,
+    });
     return Responses.serverError("Failed to enroll user in course");
   }
 

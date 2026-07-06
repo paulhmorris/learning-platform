@@ -37,12 +37,12 @@ export async function action({ request }: ActionFunctionArgs) {
         try {
           event = stripe.webhooks.constructEvent(await request.text(), sig, secret);
         } catch (error) {
-          logger.error("Error constructing Stripe webhook event", { error });
+          logger.error("Error constructing Stripe webhook event");
           Sentry.captureException(error);
           return Responses.badRequest("Error constructing event");
         }
 
-        logger.info(`Received Stripe webhook event: ${event.type}`);
+        logger.info(`Received Stripe webhook event: ${event.type}`, { eventType: event.type });
         try {
           switch (event.type) {
             // The user must provide additional information to verify their identity
@@ -143,7 +143,7 @@ export async function action({ request }: ActionFunctionArgs) {
             }
           }
         } catch (error) {
-          logger.error("Error processing Stripe webhook event", { error });
+          logger.error("Error processing Stripe webhook event");
           Sentry.captureException(error);
           return new Response("Webook Error", { status: 500 });
         }

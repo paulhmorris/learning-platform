@@ -66,7 +66,7 @@ export const CertificateService = {
       return allocation;
     } catch (error) {
       Sentry.captureException(error);
-      logger.error(error instanceof Error ? error.message : "Unknown error", { error });
+      logger.error(error instanceof Error ? error.message : "Unknown error");
       return null;
     }
   },
@@ -102,7 +102,7 @@ export const CertificateService = {
       return updatedCourseAndCertifiate;
     } catch (error) {
       Sentry.captureException(error);
-      logger.error(error instanceof Error ? error.message : "Unknown error", { error });
+      logger.error(error instanceof Error ? error.message : "Unknown error");
       throw error;
     }
   },
@@ -119,7 +119,6 @@ export const CertificateService = {
     } catch (error) {
       Sentry.captureException(error, { extra: data });
       logger.error(error instanceof Error ? error.message : "Failed to roll back certificate claim", {
-        error,
         ...data,
       });
     }
@@ -133,7 +132,6 @@ export const CertificateService = {
     } catch (error) {
       Sentry.captureException(error, { extra: { allocationId } });
       logger.error(error instanceof Error ? error.message : "Failed to release certificate allocation", {
-        error,
         allocationId,
       });
     }

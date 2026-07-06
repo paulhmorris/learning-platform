@@ -47,7 +47,10 @@ class _SessionService {
     const auth = await this.requireAuth(args);
     const role = auth.sessionClaims.role ?? UserRole.USER;
     if (!allowedRoles.includes(role)) {
-      logger.warn(`User ${auth.id} with role ${role} is not authorized to access this resource`);
+      logger.warn(`User ${auth.id} with role ${role} is not authorized to access this resource`, {
+        userId: auth.id,
+        role,
+      });
       throw Responses.forbidden();
     }
     return auth;

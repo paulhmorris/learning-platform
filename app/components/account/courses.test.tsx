@@ -37,22 +37,22 @@ function renderWithRouter(props: Parameters<typeof AccountCourses>[0]) {
 
 describe("AccountCourses", () => {
   it("shows a message when no courses are enrolled", () => {
-    renderWithRouter({ courses: [] as any, userCourses: [] as any });
+    renderWithRouter({ courses: [], userCourses: [] });
     expect(screen.getByText("You are not currently enrolled in any courses")).toBeInTheDocument();
   });
 
   it("shows enrolled message when courses exist", () => {
-    renderWithRouter({ courses: [makeCourse()] as any, userCourses: [] as any });
+    renderWithRouter({ courses: [makeCourse()] as any, userCourses: [] });
     expect(screen.getByText("You are enrolled in the following courses")).toBeInTheDocument();
   });
 
   it("renders Complete badge when course is completed", () => {
-    renderWithRouter({ courses: [makeCourse({ isCompleted: true })] as any, userCourses: [] as any });
+    renderWithRouter({ courses: [makeCourse({ isCompleted: true })] as any, userCourses: [] });
     expect(screen.getByText("Complete")).toBeInTheDocument();
   });
 
   it("renders Incomplete badge when course is not completed", () => {
-    renderWithRouter({ courses: [makeCourse({ isCompleted: false })] as any, userCourses: [] as any });
+    renderWithRouter({ courses: [makeCourse({ isCompleted: false })] as any, userCourses: [] });
     expect(screen.getByText("Incomplete")).toBeInTheDocument();
   });
 

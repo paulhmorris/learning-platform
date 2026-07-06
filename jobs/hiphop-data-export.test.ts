@@ -197,7 +197,7 @@ describe("hiphopDataExport", () => {
       });
       mockCertificateService.getUnexported.mockResolvedValue([certWithNoForm]);
       mockEmailService.send.mockResolvedValue({ messageId: "msg-1" });
-      mockBucket.uploadFile.mockResolvedValue({ $metadata: { httpStatusCode: 200 } } as never);
+      mockBucket.uploadFile.mockResolvedValue({ $metadata: { httpStatusCode: 200 } });
 
       await runJob();
 
@@ -233,7 +233,14 @@ describe("hiphopDataExport", () => {
             throw excelError;
           }),
         };
-        return { sheet: vi.fn(() => sheetBuilder) } as never;
+        return {
+          sheets: vi.fn(),
+          defineTable: vi.fn(),
+          build: vi.fn(() => {
+            throw excelError;
+          }),
+          sheet: vi.fn(() => sheetBuilder),
+        } as any;
       });
 
       mockEmailService.send.mockResolvedValue({ messageId: "msg-1" });
@@ -256,7 +263,7 @@ describe("hiphopDataExport", () => {
     it("sends failure email and re-throws", async () => {
       const cert = makeCertificate();
       mockCertificateService.getUnexported.mockResolvedValue([cert]);
-      mockBucket.uploadFile.mockResolvedValue({ $metadata: { httpStatusCode: 200 } } as never);
+      mockBucket.uploadFile.mockResolvedValue({ $metadata: { httpStatusCode: 200 } });
 
       const emailError = new Error("SMTP failure");
       mockEmailService.send
@@ -282,7 +289,7 @@ describe("hiphopDataExport", () => {
       const cert = makeCertificate();
       mockCertificateService.getUnexported.mockResolvedValue([cert]);
       mockEmailService.send.mockResolvedValue({ messageId: "msg-1" });
-      mockBucket.uploadFile.mockResolvedValue({ $metadata: { httpStatusCode: 200 } } as never);
+      mockBucket.uploadFile.mockResolvedValue({ $metadata: { httpStatusCode: 200 } });
 
       const dbError = new Error("Update failed");
       mockCertificateService.markExported.mockRejectedValue(dbError);
@@ -308,7 +315,7 @@ describe("hiphopDataExport", () => {
       const cert = makeCertificate();
       mockCertificateService.getUnexported.mockResolvedValue([cert]);
       mockEmailService.send.mockResolvedValue({ messageId: "msg-1" });
-      mockBucket.uploadFile.mockResolvedValue({ $metadata: { httpStatusCode: 200 } } as never);
+      mockBucket.uploadFile.mockResolvedValue({ $metadata: { httpStatusCode: 200 } });
       mockCertificateService.markExported.mockResolvedValue(undefined);
 
       await runJob();
@@ -347,7 +354,7 @@ describe("hiphopDataExport", () => {
       const cert = makeCertificate();
       mockCertificateService.getUnexported.mockResolvedValue([cert]);
       mockEmailService.send.mockResolvedValue({ messageId: "msg-1" });
-      mockBucket.uploadFile.mockResolvedValue({ $metadata: { httpStatusCode: 200 } } as never);
+      mockBucket.uploadFile.mockResolvedValue({ $metadata: { httpStatusCode: 200 } });
       mockCertificateService.markExported.mockResolvedValue(undefined);
 
       await runJob();
@@ -376,7 +383,7 @@ describe("hiphopDataExport", () => {
       const cert2 = makeCertificate({ id: 2, number: "CERT-002" });
       mockCertificateService.getUnexported.mockResolvedValue([cert1, cert2]);
       mockEmailService.send.mockResolvedValue({ messageId: "msg-1" });
-      mockBucket.uploadFile.mockResolvedValue({ $metadata: { httpStatusCode: 200 } } as never);
+      mockBucket.uploadFile.mockResolvedValue({ $metadata: { httpStatusCode: 200 } });
       mockCertificateService.markExported.mockResolvedValue(undefined);
 
       await runJob();
@@ -404,7 +411,7 @@ describe("hiphopDataExport", () => {
       });
       mockCertificateService.getUnexported.mockResolvedValue([validCert, invalidCert]);
       mockEmailService.send.mockResolvedValue({ messageId: "msg-1" });
-      mockBucket.uploadFile.mockResolvedValue({ $metadata: { httpStatusCode: 200 } } as never);
+      mockBucket.uploadFile.mockResolvedValue({ $metadata: { httpStatusCode: 200 } });
       mockCertificateService.markExported.mockResolvedValue(undefined);
 
       await runJob();
