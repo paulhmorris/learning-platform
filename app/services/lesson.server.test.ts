@@ -55,7 +55,7 @@ describe("LessonService", () => {
     it("fetches from CMS and caches when no cache hit", async () => {
       const lessons = { data: [{ id: 1 }], meta: {} };
       mockCache.get.mockResolvedValue(null);
-      mockCms.find.mockResolvedValue(lessons as never);
+      mockCms.find.mockResolvedValue(lessons);
 
       const result = await LessonService.getAllFromCMS();
       expect(result).toEqual(lessons);
@@ -85,7 +85,7 @@ describe("LessonService", () => {
     it("fetches from CMS and returns the lesson", async () => {
       const lesson = { id: 1, attributes: { title: "Intro" } };
       mockCache.get.mockResolvedValue(null);
-      mockCms.find.mockResolvedValue({ data: [lesson], meta: {} } as never);
+      mockCms.find.mockResolvedValue({ data: [lesson], meta: {} });
 
       const result = await LessonService.getBySlugWithContent("intro");
       expect(result).toEqual(lesson);
@@ -94,7 +94,7 @@ describe("LessonService", () => {
 
     it("throws when multiple lessons found with the same slug", async () => {
       mockCache.get.mockResolvedValue(null);
-      mockCms.find.mockResolvedValue({ data: [{ id: 1 }, { id: 2 }], meta: {} } as never);
+      mockCms.find.mockResolvedValue({ data: [{ id: 1 }, { id: 2 }], meta: {} });
 
       await expect(LessonService.getBySlugWithContent("dup")).rejects.toThrow(
         "Multiple lessons found with the same slug",
@@ -103,7 +103,7 @@ describe("LessonService", () => {
 
     it("throws when no lesson found", async () => {
       mockCache.get.mockResolvedValue(null);
-      mockCms.find.mockResolvedValue({ data: [], meta: {} } as never);
+      mockCms.find.mockResolvedValue({ data: [], meta: {} });
 
       await expect(LessonService.getBySlugWithContent("missing")).rejects.toThrow("Lesson not found");
     });

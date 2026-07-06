@@ -41,7 +41,7 @@ export async function loader(args: LoaderFunctionArgs) {
     return { quiz: quiz.data, progress };
   } catch (error) {
     Sentry.captureException(error, { extra: { userId: user.id, quizId } });
-    logger.error(`Error loading quiz ${quizId}`, { error });
+    logger.error(`Error loading quiz ${quizId}`, { quizId });
     if (error instanceof Response) {
       throw error;
     }
@@ -238,7 +238,7 @@ export default function Quiz() {
 
   return (
     <Wrapper>
-      <QuizResults isPassed={isPassed} score={progress?.score ?? actionData?.score ?? 100} />
+      <QuizResults ref={resultsRef} isPassed={isPassed} score={progress?.score ?? actionData?.score ?? 100} />
       <PassingInfo />
       <TimeInfo />
       {isFailed ? <FailedView /> : <QuizQuestions progress={progress} quiz={quiz} />}

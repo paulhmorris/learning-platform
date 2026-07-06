@@ -75,7 +75,7 @@ export const PaymentService = {
       return { id: stripeCustomer.id };
     } catch (error) {
       Sentry.captureException(error, { extra: { userId, options } });
-      logger.error("Failed to create Stripe customer", { error, userId });
+      logger.error("Failed to create Stripe customer", { userId });
       throw error;
     }
   },
@@ -121,7 +121,8 @@ export const PaymentService = {
     } catch (error) {
       Sentry.captureException(error, { extra: { userId, stripePriceId } });
       logger.error(`Failed to create course checkout session for user ${userId} with price ${stripePriceId}`, {
-        error,
+        userId,
+        stripePriceId,
       });
       throw error;
     }

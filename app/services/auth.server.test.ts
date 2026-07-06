@@ -54,7 +54,7 @@ describe("AuthService", () => {
       const error = new Error("Clerk error");
       mockClerk.users.createUser.mockRejectedValue(error);
 
-      await expect(AuthService.createUser({} as never)).rejects.toThrow("Clerk error");
+      await expect(AuthService.createUser({})).rejects.toThrow("Clerk error");
       expect(vi.mocked(Sentry.captureException)).toHaveBeenCalledWith(error);
     });
   });

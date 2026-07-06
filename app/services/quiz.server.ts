@@ -25,7 +25,7 @@ export const QuizService = {
       });
     } catch (error) {
       Sentry.captureException(error);
-      logger.error(`Failed to get quiz by ID ${quizId}`, { error });
+      logger.error(`Failed to get quiz by ID ${quizId}`, { quizId });
       throw error;
     }
   },
@@ -46,7 +46,7 @@ export const QuizService = {
       });
     } catch (error) {
       Sentry.captureException(error);
-      logger.error(`Failed to get correct answers for quiz ${quizId}`, { error });
+      logger.error(`Failed to get correct answers for quiz ${quizId}`, { quizId });
       throw error;
     }
   },
@@ -58,7 +58,7 @@ export const QuizService = {
       });
     } catch (error) {
       Sentry.captureException(error);
-      logger.error("Failed to get all quizzes", { error });
+      logger.error("Failed to get all quizzes");
       throw error;
     }
   },
@@ -71,7 +71,7 @@ export const QuizService = {
       ]);
     } catch (error) {
       Sentry.captureException(error);
-      logger.error("Failed to reset all quiz progress", { error });
+      logger.error("Failed to reset all quiz progress", { userId });
       throw error;
     }
   },
@@ -84,7 +84,7 @@ export const QuizService = {
       ]);
     } catch (error) {
       Sentry.captureException(error);
-      logger.error(`Failed to reset quiz ${quizId} progress`, { error, userId });
+      logger.error(`Failed to reset quiz ${quizId} progress`, { userId, quizId });
       throw error;
     }
   },
@@ -112,7 +112,7 @@ export const QuizService = {
       return quizProgress;
     } catch (error) {
       Sentry.captureException(error);
-      logger.error("Failed to update quiz progress", { error });
+      logger.error("Failed to update quiz progress", { quizId: data.quizId, userId: data.userId });
       throw error;
     }
   },
@@ -129,7 +129,7 @@ export const QuizService = {
       return progress;
     } catch (error) {
       Sentry.captureException(error);
-      logger.error(`Failed to mark quiz ${quizId} as passed`, { error, userId });
+      logger.error(`Failed to mark quiz ${quizId} as passed`, { userId, quizId });
       throw error;
     }
   },

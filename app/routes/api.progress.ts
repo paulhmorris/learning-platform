@@ -36,7 +36,7 @@ export async function loader(args: LoaderFunctionArgs) {
     ]);
     return { lessonProgress, quizProgress };
   } catch (error) {
-    logger.error("Error loading lesson progress", { error, userId: user.id });
+    logger.error("Error loading lesson progress", { userId: user.id });
     Sentry.captureException(error, { extra: { userId: user.id } });
     return Toasts.dataWithError(null, {
       message: "An error occurred trying to load your progress.",
@@ -116,7 +116,7 @@ export async function action(args: ActionFunctionArgs) {
   } catch (error) {
     logger.error(
       `Error processing lesson progress action for user ${user.id} on lesson ${lessonId} (intent: ${intent})`,
-      { error },
+      { userId: user.id, lessonId, intent },
     );
     Sentry.captureException(error, { extra: { userId: user.id, lessonId, intent } });
 

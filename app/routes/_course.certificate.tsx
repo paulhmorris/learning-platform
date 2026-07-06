@@ -54,7 +54,7 @@ export async function loader(args: LoaderFunctionArgs) {
     const linkedCourse = await CourseService.getByHost(host);
 
     if (!linkedCourse) {
-      logger.error(`Course not found for host ${host}`);
+      logger.error(`Course not found for host ${host}`, { host });
       throw await Toasts.redirectWithError("/preview", {
         message: "Error claiming certificate",
         description: "Please try again later.",
@@ -64,7 +64,10 @@ export async function loader(args: LoaderFunctionArgs) {
     const userCourse = await UserCourseService.getByUserIdAndCourseIdWithCertificate(user.id, linkedCourse.id);
 
     if (!userCourse) {
-      logger.warn(`User does not have access to course ${linkedCourse.id}`, { userId: user.id });
+      logger.warn(`User does not have access to course ${linkedCourse.id}`, {
+        userId: user.id,
+        courseId: linkedCourse.id,
+      });
       Sentry.captureMessage("User tried to claim certificate without having access to course", {
         extra: {
           user: { id: user.id, email: user.email },
@@ -105,7 +108,7 @@ export async function action(args: ActionFunctionArgs) {
     const linkedCourse = await CourseService.getByHost(host);
 
     if (!linkedCourse) {
-      logger.error(`Course not found for host ${host}`);
+      logger.error(`Course not found for host ${host}`, { host });
       return Toasts.redirectWithError("/preview", {
         message: "Error claiming certificate",
         description: "Please try again later.",
@@ -116,7 +119,10 @@ export async function action(args: ActionFunctionArgs) {
     const userCourses = await UserCourseService.getAllByUserId(user.id);
     const userHasAccess = userCourses.some((c) => c.courseId === linkedCourse.id);
     if (!userHasAccess) {
-      logger.warn(`User tried to claim certificate without access to course ${linkedCourse.id}`, { userId: user.id });
+      logger.warn(`User tried to claim certificate without access to course ${linkedCourse.id}`, {
+        userId: user.id,
+        courseId: linkedCourse.id,
+      });
       return Toasts.redirectWithError("/preview", {
         message: "No access to course",
         description: "Please purchase the course to access it.",
@@ -186,7 +192,10 @@ export async function action(args: ActionFunctionArgs) {
       const userCourses = await UserCourseService.getAllByUserId(user.id);
       const userCourseId = userCourses.find((c) => c.courseId === linkedCourse.id)?.id;
       if (!userCourseId) {
-        logger.error(`User course not found for user ${user.id} and course ${linkedCourse.id}`);
+        logger.error(`User course not found for user ${user.id} and course ${linkedCourse.id}`, {
+          userId: user.id,
+          courseId: linkedCourse.id,
+        });
         throw new Error("User course not found.");
       }
       await db.preCertificationFormSubmission.upsert({
@@ -204,7 +213,10 @@ export async function action(args: ActionFunctionArgs) {
     });
 
     if (!job.id) {
-      logger.error(`Failed to initiate certificate generation job for user ${user.id} and course ${linkedCourse.id}`);
+      logger.error(`Failed to initiate certificate generation job for user ${user.id} and course ${linkedCourse.id}`, {
+        userId: user.id,
+        courseId: linkedCourse.id,
+      });
       throw new Error("Failed to initiate certificate generation job.");
     }
 
@@ -220,7 +232,7 @@ export async function action(args: ActionFunctionArgs) {
       },
     );
   } catch (error) {
-    logger.error(`Error claiming certificate for user ${user.id}`, { error });
+    logger.error(`Error claiming certificate for user ${user.id}`, { userId: user.id });
     Sentry.captureException(error);
     return Toasts.dataWithError(null, {
       message: "Error claiming certificate",

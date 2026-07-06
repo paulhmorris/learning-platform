@@ -55,7 +55,7 @@ export async function loader(args: LoaderFunctionArgs) {
 
     return { user, identityVerificationStatus };
   } catch (error) {
-    logger.error(`Failed to load user data for user ${id}`, { error });
+    logger.error(`Failed to load user data for user ${id}`, { userId: id });
     Sentry.captureException(error);
     throw Responses.serverError();
   }

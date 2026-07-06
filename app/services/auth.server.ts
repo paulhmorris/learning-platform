@@ -10,7 +10,7 @@ export const AuthService = {
       return await client.users.createUser(args);
     } catch (error) {
       Sentry.captureException(error);
-      logger.error("Failed to create user", { error });
+      logger.error("Failed to create user");
       throw error;
     }
   },
@@ -20,7 +20,7 @@ export const AuthService = {
       return await client.users.deleteUser(userId);
     } catch (error) {
       Sentry.captureException(error);
-      logger.error("Failed to delete user", { error, userId });
+      logger.error("Failed to delete user", { userId });
       throw error;
     }
   },
@@ -29,7 +29,7 @@ export const AuthService = {
       return await client.users.getUserList(args);
     } catch (error) {
       Sentry.captureException(error);
-      logger.error("Failed to get user list", { error });
+      logger.error("Failed to get user list");
       throw error;
     }
   },
@@ -40,7 +40,7 @@ export const AuthService = {
       return data;
     } catch (error) {
       Sentry.captureException(error);
-      logger.error(`Failed to get invitations by email ${email}`, { error });
+      logger.error(`Failed to get invitations by email ${email}`, { email });
       throw error;
     }
   },
@@ -50,7 +50,7 @@ export const AuthService = {
       return await client.sessions.revokeSession(sessionId);
     } catch (error) {
       Sentry.captureException(error);
-      logger.error(`Failed to revoke session ${sessionId}`, { error });
+      logger.error(`Failed to revoke session ${sessionId}`, { sessionId });
       throw error;
     }
   },
@@ -60,7 +60,7 @@ export const AuthService = {
       return await client.users.updateUserMetadata(clerkId, { publicMetadata: metadata });
     } catch (error) {
       Sentry.captureException(error);
-      logger.error("Failed to update public metadata", { error, clerkId, metadata });
+      logger.error("Failed to update public metadata", { clerkId, metadata });
       throw error;
     }
   },
@@ -70,7 +70,7 @@ export const AuthService = {
       return await client.users.updateUserMetadata(clerkId, { privateMetadata: metadata });
     } catch (error) {
       Sentry.captureException(error);
-      logger.error("Failed to update private metadata", { error, clerkId, metadata });
+      logger.error("Failed to update private metadata", { clerkId, metadata });
       throw error;
     }
   },

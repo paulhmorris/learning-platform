@@ -39,7 +39,7 @@ export const UserService = {
         return null;
       }
       Sentry.captureException(error);
-      logger.error(`Failed to get user by ID ${id}`, { error });
+      logger.error(`Failed to get user by ID ${id}`, { userId: id });
       throw error;
     }
   },
@@ -57,7 +57,7 @@ export const UserService = {
       return user;
     } catch (error) {
       Sentry.captureException(error);
-      logger.error("Failed to create Stripe user", { error, userId });
+      logger.error("Failed to create Stripe user", { userId });
       throw error;
     }
   },
@@ -71,7 +71,7 @@ export const UserService = {
       ]);
     } catch (error) {
       Sentry.captureException(error);
-      logger.error("Failed to delete user data", { error, userId });
+      logger.error("Failed to delete user data", { userId });
       throw error;
     }
   },

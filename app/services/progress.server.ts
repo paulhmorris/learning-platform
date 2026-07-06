@@ -16,9 +16,7 @@ export const ProgressService = {
       create: { userId, lessonId, durationInSeconds: SUBMIT_INTERVAL_MS / 1_000 },
       update: { durationInSeconds: { increment: SUBMIT_INTERVAL_MS / 1_000 } },
     });
-    logger.info(
-      `Incremented progress to ${progress.durationInSeconds} seconds for user ${userId} on lesson ${lessonId}`,
-    );
+    logger.debug(`Incremented progress to ${progress.durationInSeconds} seconds`, { userId, lessonId });
     await CacheService.set(CacheKeys.lessonProgress(userId, lessonId), progress, { ex: PROGRESS_CACHE_TTL });
     return progress;
   },
@@ -95,7 +93,7 @@ export const ProgressService = {
   },
 
   async resetLesson(lessonId: number, userId: string) {
-    logger.info(`Resetting lesson ${lessonId} progress`, { userId });
+    logger.info(`Resetting lesson ${lessonId} progress`, { userId, lessonId });
     await CacheService.delete(CacheKeys.lessonProgress(userId, lessonId));
     return db.userLessonProgress.delete({
       where: {
@@ -148,7 +146,7 @@ export const ProgressService = {
     });
     await CacheService.set(CacheKeys.lessonProgress(data.userId, data.lessonId), progress, { ex: PROGRESS_CACHE_TTL });
     await CacheService.delete(CacheKeys.lessonProgressAll(data.userId));
-    logger.info(`Marked lesson ${data.lessonId} as complete`, { userId: data.userId });
+    logger.info(`Marked lesson ${data.lessonId} as complete`, { userId: data.userId, lessonId: data.lessonId });
     return progress;
   },
 };

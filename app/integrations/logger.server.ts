@@ -1,37 +1,77 @@
-import { Axiom } from "@axiomhq/js";
-import { AxiomJSTransport, ConsoleTransport, Logger, Transport } from "@axiomhq/logging";
-
 import { SERVER_CONFIG } from "~/config.server";
+import { Sentry } from "~/integrations/sentry";
 
-const isCI = SERVER_CONFIG.isCI;
-const axiom = new Axiom({ token: process.env.AXIOM_TOKEN });
-const commonArgs = { environment: SERVER_CONFIG.environment };
+type LogLevel = "debug" | "info" | "warn" | "error";
+type LogAttributes = Record<string, unknown>;
+type LogFn = (message: string, attributes?: LogAttributes) => void;
+export type ServerLogger = Record<LogLevel, LogFn>;
 
-function buildTransports(dataset: string, level: "debug" | "info" | "warn" | "error") {
-  const transports: [Transport, ...Array<Transport>] = [new ConsoleTransport({ logLevel: level, prettyPrint: true })];
+const LEVEL_WEIGHT: Record<LogLevel, number> = { debug: 10, info: 20, warn: 30, error: 40 };
 
-  // Axiom in production, or in test when running in CI
-  if (SERVER_CONFIG.isProd || (SERVER_CONFIG.isTest && isCI)) {
-    transports.push(new AxiomJSTransport({ axiom, logLevel: level, dataset }));
+// Emit debug and up in dev; otherwise honor LOG_LEVEL (default "info").
+const minLevel: LogLevel = SERVER_CONFIG.isDev ? "debug" : (process.env.LOG_LEVEL ?? "info");
+
+const consoleLog: Record<LogLevel, (...args: Array<unknown>) => void> = {
+  debug: console.debug,
+  info: console.info,
+  warn: console.warn,
+  error: console.error,
+};
+
+const sentryLog: Record<LogLevel, (message: string, attributes?: LogAttributes) => void> = {
+  debug: (message, attributes) => Sentry.logger.debug(message, attributes),
+  info: (message, attributes) => Sentry.logger.info(message, attributes),
+  warn: (message, attributes) => Sentry.logger.warn(message, attributes),
+  error: (message, attributes) => Sentry.logger.error(message, attributes),
+};
+
+// Sentry log attributes are meant to be primitives. Flatten Errors to their message
+// (plus a separate `.stack` attribute) and JSON-encode any remaining objects so nested
+// data is preserved rather than serialized as "[object Object]".
+function normalizeAttributes(attributes: LogAttributes): LogAttributes {
+  const normalized: LogAttributes = {};
+  for (const [key, value] of Object.entries(attributes)) {
+    if (value instanceof Error) {
+      normalized[key] = value.message;
+      if (value.stack) normalized[`${key}.stack`] = value.stack;
+    } else if (value !== null && typeof value === "object") {
+      normalized[key] = JSON.stringify(value);
+    } else {
+      normalized[key] = value;
+    }
   }
-
-  return transports;
+  return normalized;
 }
 
-const logLevel = SERVER_CONFIG.isDev ? "debug" : (process.env.LOG_LEVEL ?? "info");
-
-const serverLogger = new Logger({
-  logLevel,
-  args: commonArgs,
-  transports: buildTransports("server", logLevel),
-});
-
-export function createLogger(module: string) {
-  return serverLogger.with({ module });
+interface LoggerOptions {
+  sentryLevels?: ReadonlySet<LogLevel>;
 }
 
-export const httpLogger = new Logger({
-  logLevel,
-  args: commonArgs,
-  transports: buildTransports("http", logLevel),
-});
+const ALL_LEVELS: ReadonlySet<LogLevel> = new Set(["debug", "info", "warn", "error"]);
+
+function buildLogger(module: string, options: LoggerOptions = {}): ServerLogger {
+  const sentryLevels = options.sentryLevels ?? ALL_LEVELS;
+
+  const at =
+    (level: LogLevel): LogFn =>
+    (message, attributes) => {
+      if (LEVEL_WEIGHT[level] < LEVEL_WEIGHT[minLevel]) return;
+
+      consoleLog[level](`[${module}] ${message}`, attributes ?? "");
+
+      if (sentryLevels.has(level)) {
+        sentryLog[level](message, { module, ...(attributes && normalizeAttributes(attributes)) });
+      }
+    };
+
+  return { debug: at("debug"), info: at("info"), warn: at("warn"), error: at("error") };
+}
+
+export function createLogger(module: string): ServerLogger {
+  return buildLogger(module);
+}
+
+// Request/response logging fires on every non-asset request, so only warn (redirects) and
+// error (4xx/5xx) reach Sentry Logs. Routine info request/response lines stay in stdout,
+// where Vercel captures them, keeping Sentry Logs volume (and cost) down.
+export const httpLogger = buildLogger("Http", { sentryLevels: new Set(["warn", "error"]) });

@@ -35,7 +35,7 @@ export const CourseService = {
       }
 
       if (!host.includes("plumblearning.com")) {
-        logger.info(`No course found for host ${host}`);
+        logger.info(`No course found for host ${host}`, { host });
       }
       return null;
     }
@@ -70,7 +70,7 @@ export const CourseService = {
 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!course) {
-      logger.warn(`No course found in CMS for Strapi ID ${strapiId}`);
+      logger.warn(`No course found in CMS for Strapi ID ${strapiId}`, { strapiId });
       return null;
     }
 
@@ -113,7 +113,7 @@ export const CourseService = {
 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!course) {
-      logger.warn(`No course found in CMS for Strapi ID ${strapiId}`);
+      logger.warn(`No course found in CMS for Strapi ID ${strapiId}`, { strapiId });
       return null;
     }
 

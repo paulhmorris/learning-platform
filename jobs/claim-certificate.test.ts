@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as z from "zod";
 
@@ -219,9 +220,9 @@ const validFormData = {
 beforeEach(() => {
   vi.restoreAllMocks();
   // Re-apply default mock implementations after restoreAllMocks
-  mockLoadImage.mockResolvedValue({ width: 1650, height: 1275 } as never);
+  mockLoadImage.mockResolvedValue({ width: 1650, height: 1275 } as any);
   mockGlobalFonts.has.mockReturnValue(false);
-  mockCourseService.getById.mockResolvedValue({ id: KNOWN_COURSE_ID } as never);
+  mockCourseService.getById.mockResolvedValue({ id: KNOWN_COURSE_ID } as any);
   vi.unstubAllGlobals();
   vi.stubGlobal(
     "fetch",
@@ -275,9 +276,7 @@ describe("claimCertificateJob", () => {
 
     it("throws when user has different courses but not the requested one", async () => {
       mockUserService.getById.mockResolvedValue(makeUser());
-      mockUserCourseService.getAllByUserId.mockResolvedValue([
-        makeUserCourse({ courseId: "different-course-id" }) as never,
-      ]);
+      mockUserCourseService.getAllByUserId.mockResolvedValue([makeUserCourse({ courseId: "different-course-id" })]);
 
       await expect(runJob(defaultPayload)).rejects.toThrow("User has not completed this course");
     });
@@ -291,7 +290,7 @@ describe("claimCertificateJob", () => {
         certificate: { id: 1, issuedAt: new Date(), s3Key: "certs/old.png" },
       });
       mockUserService.getById.mockResolvedValue(makeUser());
-      mockUserCourseService.getAllByUserId.mockResolvedValue([userCourse as never]);
+      mockUserCourseService.getAllByUserId.mockResolvedValue([userCourse]);
       mockEmailService.send.mockResolvedValue({ messageId: "msg-1" });
 
       await runJob(defaultPayload);
@@ -313,7 +312,7 @@ describe("claimCertificateJob", () => {
   describe("business checks", () => {
     it("throws when business checks fail for known course", async () => {
       mockUserService.getById.mockResolvedValue(makeUser());
-      mockUserCourseService.getAllByUserId.mockResolvedValue([makeUserCourse() as never]);
+      mockUserCourseService.getAllByUserId.mockResolvedValue([makeUserCourse()]);
       mockDb.preCertificationFormSubmission.count.mockResolvedValue(0);
 
       await expect(runJob(defaultPayload)).rejects.toThrow("Certificate generation function is lacking requirements");
@@ -323,7 +322,7 @@ describe("claimCertificateJob", () => {
       const payload = { ...defaultPayload, courseId: UNKNOWN_COURSE_ID };
       const userCourse = makeUserCourse({ courseId: UNKNOWN_COURSE_ID });
       mockUserService.getById.mockResolvedValue(makeUser());
-      mockUserCourseService.getAllByUserId.mockResolvedValue([userCourse as never]);
+      mockUserCourseService.getAllByUserId.mockResolvedValue([userCourse]);
       mockCertificateService.getNextAllocationForCourse.mockResolvedValue(null);
       mockEmailService.send.mockResolvedValue({ messageId: "msg-1" });
 
@@ -340,7 +339,7 @@ describe("claimCertificateJob", () => {
   describe("allocation handling", () => {
     it("sends error email and reports to Sentry when no allocations available", async () => {
       mockUserService.getById.mockResolvedValue(makeUser());
-      mockUserCourseService.getAllByUserId.mockResolvedValue([makeUserCourse() as never]);
+      mockUserCourseService.getAllByUserId.mockResolvedValue([makeUserCourse()]);
       mockDb.preCertificationFormSubmission.count.mockResolvedValue(1);
       mockCertificateService.getNextAllocationForCourse.mockResolvedValue(null);
       mockEmailService.send.mockResolvedValue({ messageId: "msg-1" });
@@ -367,7 +366,7 @@ describe("claimCertificateJob", () => {
     it("returns early and reports to Sentry when createAndUpdateCourse throws", async () => {
       const error = new Error("DB write failed");
       mockUserService.getById.mockResolvedValue(makeUser());
-      mockUserCourseService.getAllByUserId.mockResolvedValue([makeUserCourse() as never]);
+      mockUserCourseService.getAllByUserId.mockResolvedValue([makeUserCourse()]);
       mockDb.preCertificationFormSubmission.count.mockResolvedValue(1);
       mockCertificateService.getNextAllocationForCourse.mockResolvedValue({
         id: 1,
@@ -390,7 +389,7 @@ describe("claimCertificateJob", () => {
 
     it("returns early and reports to Sentry when certificate number is missing from response", async () => {
       mockUserService.getById.mockResolvedValue(makeUser());
-      mockUserCourseService.getAllByUserId.mockResolvedValue([makeUserCourse() as never]);
+      mockUserCourseService.getAllByUserId.mockResolvedValue([makeUserCourse()]);
       mockDb.preCertificationFormSubmission.count.mockResolvedValue(1);
       mockCertificateService.getNextAllocationForCourse.mockResolvedValue({
         id: 1,
@@ -420,7 +419,7 @@ describe("claimCertificateJob", () => {
   describe("canvas generation", () => {
     function setupHappyPath() {
       mockUserService.getById.mockResolvedValue(makeUser());
-      mockUserCourseService.getAllByUserId.mockResolvedValue([makeUserCourse() as never]);
+      mockUserCourseService.getAllByUserId.mockResolvedValue([makeUserCourse()]);
       mockDb.preCertificationFormSubmission.count.mockResolvedValue(1);
       mockCertificateService.getNextAllocationForCourse.mockResolvedValue({
         id: 1,
@@ -442,7 +441,7 @@ describe("claimCertificateJob", () => {
       const payload = { ...defaultPayload, courseId: UNKNOWN_COURSE_ID };
       const userCourse = makeUserCourse({ courseId: UNKNOWN_COURSE_ID });
       mockUserService.getById.mockResolvedValue(makeUser());
-      mockUserCourseService.getAllByUserId.mockResolvedValue([userCourse as never]);
+      mockUserCourseService.getAllByUserId.mockResolvedValue([userCourse]);
       mockCertificateService.getNextAllocationForCourse.mockResolvedValue({
         id: 1,
         number: "CERT-001",
@@ -513,7 +512,7 @@ describe("claimCertificateJob", () => {
   describe("happy path", () => {
     function setupFullHappyPath() {
       mockUserService.getById.mockResolvedValue(makeUser());
-      mockUserCourseService.getAllByUserId.mockResolvedValue([makeUserCourse() as never]);
+      mockUserCourseService.getAllByUserId.mockResolvedValue([makeUserCourse()]);
       mockDb.preCertificationFormSubmission.count.mockResolvedValue(1);
       mockDb.preCertificationFormSubmission.findFirst.mockResolvedValue({
         id: 1,
@@ -534,7 +533,7 @@ describe("claimCertificateJob", () => {
         id: 1,
         certificate: { number: "CERT-001" },
       });
-      mockBucket.uploadFile.mockResolvedValue({ $metadata: { httpStatusCode: 200 } } as never);
+      mockBucket.uploadFile.mockResolvedValue({ $metadata: { httpStatusCode: 200 } });
       mockEmailService.send.mockResolvedValue({ messageId: "msg-1" });
     }
 
