@@ -1,5 +1,4 @@
 /* eslint-disable no-undef */
-import { nodeProfilingIntegration } from "@sentry/profiling-node";
 import * as Sentry from "@sentry/react-router";
 
 // const isProd = process.env.VERCEL_ENV === "production";
@@ -10,13 +9,10 @@ Sentry.init({
   environment: process.env.VERCEL_ENV,
 
   sampleRate: 1.0,
-
   tracesSampleRate: 1.0,
-  profileSessionSampleRate: 1.0,
-  profileLifecycle: "trace",
 
   sendDefaultPii: true,
-  integrations: [nodeProfilingIntegration(), Sentry.prismaIntegration()],
+  integrations: [Sentry.prismaIntegration()],
 
   // Stale, content-hashed asset requests (e.g. /assets/index-XLjWcFRZ.js.map)
   // hit the server after a deploy when a client is still running old code. React
@@ -27,6 +23,7 @@ Sentry.init({
   beforeSend(event, hint) {
     const message =
       (hint?.originalException instanceof Error && hint.originalException.message) ||
+      // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
       event.exception?.values?.[0]?.value ||
       "";
     if (/No route matches URL "\/assets\/.*"/.test(message)) {
