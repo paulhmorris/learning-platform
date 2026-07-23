@@ -33,7 +33,6 @@ export function LessonCompleteForm(props: {
         name="_action"
         value="complete-lesson"
         disabled={progress?.isCompleted ?? isBeingUpdated}
-        className="hover:bg-primary hover:text-white dark:hover:text-black"
       >
         {isBeingUpdated ? <IconLoader className="size-4 animate-spin" /> : null}
         <span>Complete</span>
