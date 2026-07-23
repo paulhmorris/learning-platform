@@ -11,13 +11,16 @@ generator client {
 }
 
 model Course {
-  id                           String  @id @default(cuid())
+  id                           String   @id @default(cuid())
   strapiId                     Int
+  /// @deprecated use stripePriceIds — kept until a follow-up migration drops it
   stripePriceId                String
+  /// @deprecated unused at runtime, kept until a follow-up migration drops it
   stripeProductId              String
-  host                         String  @unique
-  issuesCertificate            Boolean @default(false)
-  requiresIdentityVerification Boolean @default(false)
+  stripePriceIds               String[] @default([])
+  host                         String   @unique
+  issuesCertificate            Boolean  @default(false)
+  requiresIdentityVerification Boolean  @default(false)
 
   userCourses                  UserCourse[]
   certificateNumberAllocations CertificateNumberAllocation[]

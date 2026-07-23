@@ -134,7 +134,7 @@ describe("PaymentService", () => {
 
       const result = await PaymentService.createCourseCheckoutSession({
         userId: "user_abc123",
-        stripePriceId: "price_123",
+        stripePriceIds: ["price_123"],
         baseUrl: "https://example.com",
       });
       expect(result).toEqual(session);
@@ -150,16 +150,82 @@ describe("PaymentService", () => {
       );
     });
 
+    it("creates multiple line items for multiple prices", async () => {
+      const userWithStripe = { ...fakeUser, publicMetadata: { stripeCustomerId: "cus_existing" } };
+      mockUser.getById.mockResolvedValue(userWithStripe as never);
+      const session = { id: "cs_123", url: "https://checkout.stripe.com" };
+      mockStripe.checkout.sessions.create.mockResolvedValue(session as never);
+
+      await PaymentService.createCourseCheckoutSession({
+        userId: "user_abc123",
+        stripePriceIds: ["price_course", "price_fee"],
+        baseUrl: "https://example.com",
+      });
+      expect(mockStripe.checkout.sessions.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          line_items: [
+            { price: "price_course", quantity: 1 },
+            { price: "price_fee", quantity: 1 },
+          ],
+        }),
+        expect.any(Object),
+      );
+    });
+
+    it("uses a deterministic idempotency key regardless of price order", async () => {
+      const userWithStripe = { ...fakeUser, publicMetadata: { stripeCustomerId: "cus_existing" } };
+      mockUser.getById.mockResolvedValue(userWithStripe as never);
+      const session = { id: "cs_123", url: "https://checkout.stripe.com" };
+      mockStripe.checkout.sessions.create.mockResolvedValue(session as never);
+
+      await PaymentService.createCourseCheckoutSession({
+        userId: "user_abc123",
+        stripePriceIds: ["price_b", "price_a"],
+        baseUrl: "https://example.com",
+      });
+      expect(mockStripe.checkout.sessions.create).toHaveBeenCalledWith(
+        expect.any(Object),
+        expect.objectContaining({ idempotencyKey: "checkout_session_user_abc123_price_a_price_b" }),
+      );
+
+      vi.clearAllMocks();
+      mockUser.getById.mockResolvedValue(userWithStripe as never);
+      mockStripe.checkout.sessions.create.mockResolvedValue(session as never);
+
+      await PaymentService.createCourseCheckoutSession({
+        userId: "user_abc123",
+        stripePriceIds: ["price_a", "price_b"],
+        baseUrl: "https://example.com",
+      });
+      expect(mockStripe.checkout.sessions.create).toHaveBeenCalledWith(
+        expect.any(Object),
+        expect.objectContaining({ idempotencyKey: "checkout_session_user_abc123_price_a_price_b" }),
+      );
+    });
+
     it("throws when user not found", async () => {
       mockUser.getById.mockResolvedValue(null);
 
       await expect(
         PaymentService.createCourseCheckoutSession({
           userId: "user_1",
-          stripePriceId: "price_1",
+          stripePriceIds: ["price_1"],
           baseUrl: "https://example.com",
         }),
       ).rejects.toThrow("User not found");
+    });
+
+    it("throws when no prices are provided", async () => {
+      const userWithStripe = { ...fakeUser, publicMetadata: { stripeCustomerId: "cus_existing" } };
+      mockUser.getById.mockResolvedValue(userWithStripe as never);
+
+      await expect(
+        PaymentService.createCourseCheckoutSession({
+          userId: "user_abc123",
+          stripePriceIds: [],
+          baseUrl: "https://example.com",
+        }),
+      ).rejects.toThrow("At least one stripePriceId is required");
     });
   });
 });

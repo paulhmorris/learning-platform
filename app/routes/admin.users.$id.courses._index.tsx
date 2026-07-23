@@ -3,7 +3,6 @@ import { Link, LoaderFunctionArgs, useLoaderData } from "react-router";
 import { ErrorComponent } from "~/components/error-component";
 import { IconCertificate } from "~/components/icons";
 import { AdminButton } from "~/components/ui/admin-button";
-import { Button } from "~/components/ui/button";
 import { Card, CardFooter, CardHeader, CardTitle } from "~/components/ui/card";
 import { useAdminUserData } from "~/hooks/useAdminUserData";
 import { createLogger } from "~/integrations/logger.server";
@@ -80,9 +79,9 @@ export default function AdminUserCourses() {
                   </p>
                 </CardHeader>
                 <CardFooter>
-                  <Button variant="admin" asChild className="w-auto">
+                  <AdminButton asChild className="w-auto">
                     <Link to={`${course.id}`}>View Progress</Link>
-                  </Button>
+                  </AdminButton>
                   {/* certificate */}
                   {course.certificate ? (
                     <AdminButton variant="outline" asChild className="w-auto">

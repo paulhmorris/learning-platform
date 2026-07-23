@@ -26,7 +26,14 @@ export function LessonUpdateForm(props: {
         name="requiredDurationInSeconds"
         value={lesson.attributes.required_duration_in_seconds ?? 0}
       />
-      <Input name="durationInSeconds" placeholder="Seconds" pattern="[0-9]*" disabled={isBeingUpdated} required />
+      <Input
+        className="h-9 sm:h-8"
+        name="durationInSeconds"
+        placeholder="Seconds"
+        pattern="[0-9]*"
+        disabled={isBeingUpdated}
+        required
+      />
       <AdminButton variant="secondary" type="submit" name="_action" value="update-lesson" disabled={isBeingUpdated}>
         {isBeingUpdated ? <IconLoader className="size-4 animate-spin" /> : null}
         <span>Set Progress</span>
