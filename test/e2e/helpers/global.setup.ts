@@ -1,6 +1,8 @@
 import { clerkSetup } from "@clerk/testing/playwright";
 import { test as setup } from "@playwright/test";
 
+import { cleanupStaleE2ETestUsers } from "./auth";
+
 const DEFAULT_BASE_URL = "http://localhost:3000";
 
 function getBaseUrl() {
@@ -49,4 +51,8 @@ setup("global setup", async () => {
   setup.setTimeout(120_000);
   await waitForHealthyServer(getBaseUrl());
   await clerkSetup();
+
+  const deletedCount = await cleanupStaleE2ETestUsers();
+  // eslint-disable-next-line no-console
+  console.log(`🧹 Cleaned up ${deletedCount} stale E2E test user(s)`);
 });

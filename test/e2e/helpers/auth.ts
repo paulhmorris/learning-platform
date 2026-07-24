@@ -7,7 +7,9 @@ import type { Browser, Page } from "@playwright/test";
 
 import { stripe } from "~/integrations/stripe.server";
 import { AuthService } from "~/services/auth.server";
-import { PaymentService } from "~/services/payment.server";
+import { UserService } from "~/services/user.server";
+
+const E2E_EMAIL_MARKER = "+clerk_test@example.com";
 
 const DEFAULT_BASE_URL = "http://localhost:3000";
 type Credentials = {
@@ -101,9 +103,10 @@ export async function createE2ETestUser(workerIndex: number): Promise<TestUser> 
     password,
   });
 
-  const stripeCustomer = await PaymentService.upsertCustomer(user.id, { metadata: { source: "e2e" } });
+  const clerkUser = await UserService.linkToStripe(user.id);
+  const stripeCustomerId = clerkUser.publicMetadata.stripeCustomerId ?? undefined;
 
-  return { id: user.id, email, password, stripeCustomerId: stripeCustomer.id };
+  return { id: user.id, email, password, stripeCustomerId };
 }
 
 export async function deleteE2ETestUser(userId: string, stripeCustomerId?: string) {
@@ -115,4 +118,25 @@ export async function deleteE2ETestUser(userId: string, stripeCustomerId?: strin
     }
   }
   await AuthService.deleteUser(userId);
+}
+
+// Crashed/killed workers skip fixture teardown, leaving stale Clerk users behind.
+export async function cleanupStaleE2ETestUsers() {
+  const { data: users } = await AuthService.getUserList({ query: "e2e-", limit: 500 });
+  const staleUsers = users.filter((user) =>
+    user.emailAddresses.some((address) => address.emailAddress.includes(E2E_EMAIL_MARKER)),
+  );
+
+  await Promise.all(
+    staleUsers.map(async (user) => {
+      const stripeCustomerId = user.publicMetadata.stripeCustomerId as string | undefined;
+      try {
+        await deleteE2ETestUser(user.id, stripeCustomerId);
+      } catch {
+        // Best-effort cleanup; a failure here shouldn't block the test run.
+      }
+    }),
+  );
+
+  return staleUsers.length;
 }

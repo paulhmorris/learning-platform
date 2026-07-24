@@ -22,6 +22,7 @@ async function seed() {
       strapiId: 1,
       stripePriceId: "price_1PP9UMJWTi6PPwsmDAPQTHvh",
       stripeProductId: "prod_QFenLoxmawFmBo",
+      stripePriceIds: ["price_1PP9UMJWTi6PPwsmDAPQTHvh"],
       host: "localhost:3000",
       requiresIdentityVerification: true,
       issuesCertificate: true,

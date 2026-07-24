@@ -5,18 +5,18 @@ import * as z from "zod";
 
 import { CompleteCourseDialog } from "~/components/admin/courses/complete-course-dialog";
 import { LessonCompleteForm } from "~/components/admin/courses/lesson-complete-form";
-import { LessonProgressHeader } from "~/components/admin/courses/lesson-progress-header";
 import { LessonResetForm } from "~/components/admin/courses/lesson-reset-form";
 import { LessonUpdateForm } from "~/components/admin/courses/lesson-update-form";
-import { QuizProgressHeader } from "~/components/admin/courses/quiz-progress-header";
 import { QuizResetForm } from "~/components/admin/courses/quiz-reset-form";
 import { QuizUpdateForm } from "~/components/admin/courses/quiz-update-form";
 import { ResetAllProgressDialog } from "~/components/admin/courses/reset-all-progress-dialog";
+import { SectionProgressHeader } from "~/components/admin/courses/section-progress-header";
 import { ErrorComponent } from "~/components/error-component";
 import { Responses } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
 import { formatSeconds } from "~/lib/utils";
 import { optionalNumber } from "~/schemas/fields";
+import { CourseService } from "~/services/course.server";
 import { LessonService } from "~/services/lesson.server";
 import { ProgressService } from "~/services/progress.server";
 import { QuizService } from "~/services/quiz.server";
@@ -49,15 +49,20 @@ export async function loader(args: LoaderFunctionArgs) {
     throw Responses.notFound();
   }
 
-  // Load user and course data
-  const [lessons, quizzes, lessonProgress, quizProgress] = await Promise.all([
-    LessonService.getAllFromCMS(),
-    QuizService.getAll(),
+  const dbCourse = await CourseService.getById(courseId);
+
+  // Load course structure (in the same order it's presented to students) and progress data
+  const [course, lessonProgress, quizProgress] = await Promise.all([
+    CourseService.getFromCMSForCourseLayout(dbCourse.strapiId),
     ProgressService.getAllLesson(userId),
     ProgressService.getAllQuiz(userId),
   ]);
 
-  return { lessons, quizzes, lessonProgress, quizProgress };
+  if (!course) {
+    throw Responses.notFound();
+  }
+
+  return { sections: course.data.attributes.sections, lessonProgress, quizProgress };
 }
 
 export async function action(args: ActionFunctionArgs) {
@@ -199,8 +204,8 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export default function AdminUserCourse() {
-  const { lessons, lessonProgress, quizzes, quizProgress } = useLoaderData<typeof loader>();
-  const isTimed = lessons.data.some((l) => l.attributes.required_duration_in_seconds);
+  const { sections, lessonProgress, quizProgress } = useLoaderData<typeof loader>();
+  const isTimed = sections.some((s) => s.lessons?.data.some((l) => l.attributes.required_duration_in_seconds));
 
   return (
     <>
@@ -215,111 +220,116 @@ export default function AdminUserCourse() {
         adjust entire sections. If that doesn&apos;t satisfy your use case, avoid having out of order lessons completed.
       </p>
 
-      <LessonProgressHeader />
-      <ul className="mb-8 divide-y divide-border/75">
-        {lessons.data.map((l) => {
-          const progress = lessonProgress.find((lp) => lp.lessonId === l.id);
+      {sections.map((section) => (
+        <div key={section.id} className="mb-8">
+          <h2 className="mb-2 text-xl">{section.title}</h2>
+          <SectionProgressHeader />
+          <ul className="divide-y divide-border/75">
+            {section.lessons?.data.map((l) => {
+              const progress = lessonProgress.find((lp) => lp.lessonId === l.id);
 
-          return (
-            <li key={l.attributes.uuid} className="items-center py-3 md:grid md:grid-cols-12 md:py-2">
-              {/* Mobile */}
-              <div className="mb-2 flex items-center gap-4 md:hidden">
-                <div className="col-span-1">
-                  {!progress ? (
-                    <IconCircleDashed className="size-6 text-muted-foreground" />
-                  ) : !progress.isCompleted ? (
-                    <IconCircleDashedCheck className="size-6 text-muted-foreground" />
+              return (
+                <li key={l.attributes.uuid} className="items-center py-3 md:grid md:grid-cols-12 md:py-1">
+                  {/* Mobile */}
+                  <div className="mb-2 flex items-center gap-4 md:hidden">
+                    <div className="col-span-1">
+                      {!progress ? (
+                        <IconCircleDashed className="size-6 text-muted-foreground" />
+                      ) : !progress.isCompleted ? (
+                        <IconCircleDashedCheck className="size-6 text-muted-foreground" />
+                      ) : (
+                        <IconCircleCheckFilled className="size-6 text-success" />
+                      )}
+                    </div>
+                    <h3 className="col-span-2 text-sm font-normal">{l.attributes.title}</h3>
+                    {isTimed ? (
+                      <p className="col-span-3 text-sm">
+                        {formatSeconds(progress?.durationInSeconds ?? 0)} /{" "}
+                        {formatSeconds(l.attributes.required_duration_in_seconds ?? 0)}
+                      </p>
+                    ) : (
+                      <p className="col-span-3 text-sm">Untimed</p>
+                    )}
+                  </div>
+
+                  {/* Desktop */}
+                  <div className="col-span-1 hidden md:block">
+                    {!progress ? (
+                      <IconCircleDashed className="size-6 text-muted-foreground" />
+                    ) : !progress.isCompleted ? (
+                      <IconCircleDashedCheck className="size-6 text-muted-foreground" />
+                    ) : (
+                      <IconCircleCheckFilled className="size-6 text-success" />
+                    )}
+                  </div>
+                  <h3 className="col-span-2 hidden text-sm font-normal md:block">{l.attributes.title}</h3>
+                  {isTimed ? (
+                    <p className="col-span-3 hidden text-sm md:block">
+                      {formatSeconds(progress?.durationInSeconds ?? 0)} /{" "}
+                      {formatSeconds(l.attributes.required_duration_in_seconds ?? 0)}
+                    </p>
                   ) : (
-                    <IconCircleCheckFilled className="size-6 text-success" />
+                    <p className="col-span-3 text-sm">Untimed</p>
                   )}
-                </div>
-                <h3 className="col-span-2 text-sm font-normal">{l.attributes.title}</h3>
-                {isTimed ? (
-                  <p className="col-span-3 text-sm">
-                    {formatSeconds(progress?.durationInSeconds ?? 0)} /{" "}
-                    {formatSeconds(l.attributes.required_duration_in_seconds ?? 0)}
-                  </p>
-                ) : (
-                  <p className="col-span-3 text-sm">Untimed</p>
-                )}
-              </div>
+                  <div className="col-span-6 flex flex-wrap items-center gap-1.5 md:flex-nowrap">
+                    <LessonResetForm lesson={l} progress={progress} />
+                    <LessonCompleteForm lesson={l} progress={progress} />
+                    {isTimed ? <LessonUpdateForm lesson={l} /> : null}
+                  </div>
+                </li>
+              );
+            })}
 
-              {/* Desktop */}
-              <div className="col-span-1 hidden md:block">
-                {!progress ? (
-                  <IconCircleDashed className="size-6 text-muted-foreground" />
-                ) : !progress.isCompleted ? (
-                  <IconCircleDashedCheck className="size-6 text-muted-foreground" />
-                ) : (
-                  <IconCircleCheckFilled className="size-6 text-success" />
-                )}
-              </div>
-              <h3 className="col-span-2 hidden text-sm font-normal md:block">{l.attributes.title}</h3>
-              {isTimed ? (
-                <p className="col-span-3 hidden text-sm md:block">
-                  {formatSeconds(progress?.durationInSeconds ?? 0)} /{" "}
-                  {formatSeconds(l.attributes.required_duration_in_seconds ?? 0)}
-                </p>
-              ) : (
-                <p className="col-span-3 text-sm">Untimed</p>
-              )}
-              <div className="col-span-6 flex flex-wrap items-center gap-1.5 md:flex-nowrap">
-                <LessonResetForm lesson={l} progress={progress} />
-                <LessonCompleteForm lesson={l} progress={progress} />
-                {isTimed ? <LessonUpdateForm lesson={l} /> : null}
-              </div>
-            </li>
-          );
-        })}
-      </ul>
+            {section.quiz?.data
+              ? (() => {
+                  const q = section.quiz.data;
+                  const progress = quizProgress.find((qp) => qp.quizId === q.id);
+                  const passingScore = q.attributes.passing_score;
 
-      <QuizProgressHeader />
-      <ul className="divide-y divide-border">
-        {quizzes.data.map((q) => {
-          const progress = quizProgress.find((qp) => qp.quizId === q.id);
-          const passingScore = q.attributes.passing_score;
+                  return (
+                    <li key={q.attributes.uuid} className="items-center py-3 md:grid md:grid-cols-12 md:py-1">
+                      {/* Mobile */}
+                      <div className="mb-2 flex items-center gap-4 md:hidden">
+                        <div className="col-span-1">
+                          {!progress ? (
+                            <IconCircleDashed className="size-6 text-muted-foreground" />
+                          ) : progress.score && progress.score < passingScore ? (
+                            <IconCircleXFilled className="size-6 text-destructive" />
+                          ) : (
+                            <IconCircleCheckFilled className="size-6 text-success" />
+                          )}
+                        </div>
+                        <h3 className="col-span-2 text-sm font-normal">{q.attributes.title}</h3>
+                        <p className="col-span-3 text-sm">
+                          {progress?.score ? `${progress.score}%` : "-"} / {q.attributes.passing_score}%
+                        </p>
+                      </div>
 
-          return (
-            <li key={q.attributes.uuid} className="items-center py-3 md:grid md:grid-cols-12 md:py-2">
-              {/* Mobile */}
-              <div className="mb-2 flex items-center gap-4 md:hidden">
-                <div className="col-span-1">
-                  {!progress ? (
-                    <IconCircleDashed className="size-6 text-muted-foreground" />
-                  ) : progress.score && progress.score < passingScore ? (
-                    <IconCircleXFilled className="size-6 text-destructive" />
-                  ) : (
-                    <IconCircleCheckFilled className="size-6 text-success" />
-                  )}
-                </div>
-                <h3 className="col-span-2 text-sm font-normal">{q.attributes.title}</h3>
-                <p className="col-span-3 text-sm">
-                  {progress?.score ? `${progress.score}%` : "-"} / {q.attributes.passing_score}%
-                </p>
-              </div>
-
-              {/* Desktop */}
-              <div className="col-span-1 hidden md:block">
-                {!progress ? (
-                  <IconCircleDashed className="size-6 text-muted-foreground" />
-                ) : progress.score && progress.score < passingScore ? (
-                  <IconCircleXFilled className="size-6 text-destructive" />
-                ) : (
-                  <IconCircleCheckFilled className="size-6 text-success" />
-                )}
-              </div>
-              <h3 className="col-span-2 hidden text-sm font-normal md:block">{q.attributes.title}</h3>
-              <p className="col-span-3 hidden text-sm md:block">
-                {progress?.score ? `${progress.score}%` : "-"} / {q.attributes.passing_score}%
-              </p>
-              <div className="col-span-6 flex items-center gap-1.5">
-                <QuizResetForm quiz={q} hasProgress={Boolean(progress)} />
-                <QuizUpdateForm quiz={q} />
-              </div>
-            </li>
-          );
-        })}
-      </ul>
+                      {/* Desktop */}
+                      <div className="col-span-1 hidden md:block">
+                        {!progress ? (
+                          <IconCircleDashed className="size-6 text-muted-foreground" />
+                        ) : progress.score && progress.score < passingScore ? (
+                          <IconCircleXFilled className="size-6 text-destructive" />
+                        ) : (
+                          <IconCircleCheckFilled className="size-6 text-success" />
+                        )}
+                      </div>
+                      <h3 className="col-span-2 hidden text-sm font-normal md:block">{q.attributes.title}</h3>
+                      <p className="col-span-3 hidden text-sm md:block">
+                        {progress?.score ? `${progress.score}%` : "-"} / {q.attributes.passing_score}%
+                      </p>
+                      <div className="col-span-6 flex items-center gap-1.5">
+                        <QuizResetForm quiz={q} hasProgress={Boolean(progress)} />
+                        <QuizUpdateForm quiz={q} />
+                      </div>
+                    </li>
+                  );
+                })()
+              : null}
+          </ul>
+        </div>
+      ))}
     </>
   );
 }

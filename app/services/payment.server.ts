@@ -12,7 +12,7 @@ type CreateCustomerOptions = {
 
 type CreateCourseCheckoutSessionArgs = {
   userId: string;
-  stripePriceId: string;
+  stripePriceIds: Array<string>;
   baseUrl: string;
 };
 
@@ -80,8 +80,12 @@ export const PaymentService = {
     }
   },
 
-  async createCourseCheckoutSession({ userId, stripePriceId, baseUrl }: CreateCourseCheckoutSessionArgs) {
+  async createCourseCheckoutSession({ userId, stripePriceIds, baseUrl }: CreateCourseCheckoutSessionArgs) {
     try {
+      if (stripePriceIds.length === 0) {
+        throw new Error("At least one stripePriceId is required");
+      }
+
       const success_url = new URL("/api/purchase?success=true&session_id={CHECKOUT_SESSION_ID}", baseUrl).toString();
       const cancel_url = new URL("/api/purchase?success=false", baseUrl).toString();
 
@@ -102,7 +106,7 @@ export const PaymentService = {
         {
           customer: stripeCustomerId,
           mode: "payment",
-          line_items: [{ price: stripePriceId, quantity: 1 }],
+          line_items: stripePriceIds.map((price) => ({ price, quantity: 1 })),
           success_url,
           cancel_url,
           metadata: {
@@ -110,20 +114,26 @@ export const PaymentService = {
           },
         },
         {
-          // Use deterministic idempotency key based on user and price to prevent duplicate sessions
-          // from double-clicks. Stripe retains idempotency keys for 24 hours, which is sufficient
-          // to prevent accidental duplicates while still allowing intentional re-purchases.
-          idempotencyKey: `checkout_session_${user.id}_${stripePriceId}`,
+          // Use deterministic idempotency key based on user and the sorted set of prices to prevent
+          // duplicate sessions from double-clicks, regardless of selection order. Stripe retains
+          // idempotency keys for 24 hours, which is sufficient to prevent accidental duplicates
+          // while still allowing intentional re-purchases.
+          idempotencyKey: `checkout_session_${user.id}_${[...stripePriceIds].sort().join("_")}`,
         },
       );
-      logger.info(`Created course checkout session ${session.id} with price ${stripePriceId}`, { userId });
+      logger.info(`Created course checkout session ${session.id} with prices ${stripePriceIds.join(", ")}`, {
+        userId,
+      });
       return session;
     } catch (error) {
-      Sentry.captureException(error, { extra: { userId, stripePriceId } });
-      logger.error(`Failed to create course checkout session for user ${userId} with price ${stripePriceId}`, {
-        userId,
-        stripePriceId,
-      });
+      Sentry.captureException(error, { extra: { userId, stripePriceIds } });
+      logger.error(
+        `Failed to create course checkout session for user ${userId} with prices ${stripePriceIds.join(", ")}`,
+        {
+          userId,
+          stripePriceIds,
+        },
+      );
       throw error;
     }
   },

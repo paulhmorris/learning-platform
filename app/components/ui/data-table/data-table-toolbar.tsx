@@ -15,19 +15,32 @@ export interface Facet {
 interface DataTableToolbarProps<TData> {
   table: Table<TData>;
   facets?: Array<Facet>;
+  /** Controlled search value. When provided (with `onSearchChange`), the input drives the caller's state instead of the table's internal global filter. */
+  searchValue?: string;
+  onSearchChange?: (value: string) => void;
+  searchPlaceholder?: string;
 }
 
-export function DataTableToolbar<TData>({ table, facets }: DataTableToolbarProps<TData>) {
+export function DataTableToolbar<TData>({
+  table,
+  facets,
+  searchValue,
+  onSearchChange,
+  searchPlaceholder,
+}: DataTableToolbarProps<TData>) {
   const isFiltered = table.getState().columnFilters.length > 0;
+  const isSearchControlled = onSearchChange !== undefined;
 
   return (
     <div className="flex items-center justify-between">
       <div className="flex flex-1 flex-wrap items-center gap-2">
         <Input
-          placeholder="Search..."
+          placeholder={searchPlaceholder ?? "Search..."}
           // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-          value={table.getState().globalFilter ?? ""}
-          onChange={(e) => table.setGlobalFilter(e.target.value)}
+          value={isSearchControlled ? (searchValue ?? "") : (table.getState().globalFilter ?? "")}
+          onChange={(e) =>
+            isSearchControlled ? onSearchChange(e.target.value) : table.setGlobalFilter(e.target.value)
+          }
           className="h-8 w-[150px] lg:w-[250px]"
         />
         {facets ? (
