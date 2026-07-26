@@ -89,7 +89,7 @@ export async function action(args: ActionFunctionArgs) {
   try {
     const session = await PaymentService.createCourseCheckoutSession({
       userId: user.id,
-      stripePriceId: course.stripePriceId,
+      stripePriceIds: course.stripePriceIds,
       baseUrl: url.origin,
     });
 
