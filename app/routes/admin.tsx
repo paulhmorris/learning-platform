@@ -1,5 +1,5 @@
 import { RedirectToSignIn, SignedIn, SignedOut } from "@clerk/react-router";
-import { IconCertificate, IconUsersGroup } from "@tabler/icons-react";
+import { IconCertificate, IconDatabase, IconUsersGroup } from "@tabler/icons-react";
 import { CSSProperties } from "react";
 import { LoaderFunctionArgs, NavLink, Outlet } from "react-router";
 
@@ -11,6 +11,7 @@ import { SessionService } from "~/services/session.server";
 const links = [
   { href: "/admin/users", text: "Users", icon: <IconUsersGroup className="size-[1.125rem]" /> },
   { href: "/admin/courses", text: "Courses", icon: <IconCertificate className="size-[1.125rem]" /> },
+  { href: "/admin/cache", text: "Cache", icon: <IconDatabase className="size-[1.125rem]" /> },
 ];
 
 export async function loader(args: LoaderFunctionArgs) {
