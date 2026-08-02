@@ -9,6 +9,8 @@ vi.mock("~/integrations/redis.server", () => ({
     get: vi.fn(),
     set: vi.fn(),
     del: vi.fn(),
+    keys: vi.fn(),
+    ttl: vi.fn(),
   },
 }));
 
@@ -109,6 +111,60 @@ describe("CacheService", () => {
       mockRedis.del.mockRejectedValue(error);
 
       await CacheService.delete("cms:course:all");
+      expect(vi.mocked(Sentry.captureException)).toHaveBeenCalledWith(error);
+    });
+  });
+
+  describe("listByPrefixes", () => {
+    it("returns deduped, sorted keys with their TTLs", async () => {
+      mockRedis.keys.mockImplementation((pattern: string) =>
+        Promise.resolve(pattern === "cms:course:*" ? ["cms:course:all", "cms:course:root:1"] : ["lesson:intro"]),
+      );
+      mockRedis.ttl.mockImplementation((key: string) => Promise.resolve(key === "lesson:intro" ? -1 : 120));
+
+      const result = await CacheService.listByPrefixes(["cms:course:*", "lesson:*"]);
+
+      expect(result).toEqual([
+        { key: "cms:course:all", ttl: 120 },
+        { key: "cms:course:root:1", ttl: 120 },
+        { key: "lesson:intro", ttl: -1 },
+      ]);
+    });
+
+    it("returns an empty array in dev environment", async () => {
+      Object.assign(mockConfig, { isDev: true });
+      const result = await CacheService.listByPrefixes(["cms:course:*"]);
+      expect(mockRedis.keys).not.toHaveBeenCalled();
+      expect(result).toEqual([]);
+    });
+
+    it("captures exception and returns empty array on redis error", async () => {
+      const error = new Error("Redis keys error");
+      mockRedis.keys.mockRejectedValue(error);
+
+      const result = await CacheService.listByPrefixes(["cms:course:*"]);
+      expect(vi.mocked(Sentry.captureException)).toHaveBeenCalledWith(error);
+      expect(result).toEqual([]);
+    });
+  });
+
+  describe("deleteRawKey", () => {
+    it("deletes a key from redis", async () => {
+      await CacheService.deleteRawKey("cms:course:all");
+      expect(mockRedis.del).toHaveBeenCalledWith("cms:course:all");
+    });
+
+    it("skips in dev environment", async () => {
+      Object.assign(mockConfig, { isDev: true });
+      await CacheService.deleteRawKey("cms:course:all");
+      expect(mockRedis.del).not.toHaveBeenCalled();
+    });
+
+    it("captures exception on redis error without throwing", async () => {
+      const error = new Error("Redis del error");
+      mockRedis.del.mockRejectedValue(error);
+
+      await CacheService.deleteRawKey("cms:course:all");
       expect(vi.mocked(Sentry.captureException)).toHaveBeenCalledWith(error);
     });
   });

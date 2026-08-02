@@ -9,7 +9,7 @@
   "scripts": {
     "build": "react-router build",
     "copytypes": "node copyTypes.mjs && npx prettier --write .",
-    "dev": "sh -c 'cd ../learning-platform-cms && npm run dev >/dev/null 2>&1 & react-router dev'",
+    "dev": "react-router dev",
     "email:dev": "email dev --port 3001 --dir ./app/emails",
     "format": "prettier --write .",
     "lint": "eslint . --cache",
