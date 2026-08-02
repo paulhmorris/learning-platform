@@ -131,11 +131,14 @@ describe("CacheService", () => {
       ]);
     });
 
-    it("returns an empty array in dev environment", async () => {
-      Object.assign(mockConfig, { isDev: true });
+    it("returns fake entries in test environment instead of hitting redis", async () => {
+      Object.assign(mockConfig, { isTest: true });
       const result = await CacheService.listByPrefixes(["cms:course:*"]);
       expect(mockRedis.keys).not.toHaveBeenCalled();
-      expect(result).toEqual([]);
+      expect(result).toEqual([
+        { key: "cms:course:all", ttl: 3600 },
+        { key: "lesson:example-lesson", ttl: 1800 },
+      ]);
     });
 
     it("captures exception and returns empty array on redis error", async () => {
@@ -154,8 +157,8 @@ describe("CacheService", () => {
       expect(mockRedis.del).toHaveBeenCalledWith("cms:course:all");
     });
 
-    it("skips in dev environment", async () => {
-      Object.assign(mockConfig, { isDev: true });
+    it("skips in test environment", async () => {
+      Object.assign(mockConfig, { isTest: true });
       await CacheService.deleteRawKey("cms:course:all");
       expect(mockRedis.del).not.toHaveBeenCalled();
     });
