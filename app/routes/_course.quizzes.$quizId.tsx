@@ -4,6 +4,7 @@ import invariant from "tiny-invariant";
 
 import { PageTitle } from "~/components/common/page-title";
 import { ErrorComponent } from "~/components/error-component";
+import { ProgressLoadError } from "~/components/progress-load-error";
 import { QuizLocked } from "~/components/quiz/quiz-locked";
 import { QuizQuestions } from "~/components/quiz/quiz-questions";
 import { QuizResults } from "~/components/quiz/quiz-results";
@@ -128,7 +129,7 @@ export async function action(args: ActionFunctionArgs) {
 export default function Quiz() {
   const { course } = useCourseData();
   const { quiz, progress } = useLoaderData<typeof loader>();
-  const { lessonProgress } = useProgress();
+  const { lessonProgress, isError, refetch } = useProgress();
   const actionData = useActionData<typeof action>();
   const resultsRef = useRef<HTMLDivElement>(null);
   const trackedStartRef = useRef(false);
@@ -167,7 +168,7 @@ export default function Quiz() {
   const isQuizLocked = lessons.filter((l) => l.sectionId === quizSection?.id).some((l) => !l.isCompleted);
 
   useEffect(() => {
-    if (trackedStartRef.current || isQuizLocked) return;
+    if (trackedStartRef.current || isQuizLocked || isError) return;
     trackedStartRef.current = true;
     void Analytics.trackEvent("Quiz Started", {
       quiz_id: quiz.id,
@@ -175,7 +176,7 @@ export default function Quiz() {
       course_id: course.id,
       course_title: course.attributes.title,
     });
-  }, [course.attributes.title, course.id, isQuizLocked, quiz.attributes.title, quiz.id]);
+  }, [course.attributes.title, course.id, isQuizLocked, isError, quiz.attributes.title, quiz.id]);
 
   useEffect(() => {
     if (trackedCompleteRef.current || !actionData) return;
@@ -199,6 +200,19 @@ export default function Quiz() {
       passed: actionData.passed,
     });
   }, [actionData, course.attributes.title, course.id, quiz.attributes.title, quiz.id]);
+
+  // `isQuizLocked` is derived from lesson completion, so unknown progress reads as "locked".
+  if (isError) {
+    return (
+      <Wrapper>
+        <ProgressLoadError
+          message="We couldn't load your course progress, so we can't tell whether this quiz is unlocked."
+          onRetry={refetch}
+        />
+      </Wrapper>
+    );
+  }
+
   if (isQuizLocked) {
     return (
       <Wrapper>

@@ -8,6 +8,7 @@ import {
   HiphopDrivingPreCertificateForm,
   hipHopDrivingCertificationSchema,
 } from "~/components/pre-certificate-forms/hiphopdriving";
+import { ProgressLoadError } from "~/components/progress-load-error";
 import { SubmitButton } from "~/components/ui/submit-button";
 import { useCourseData } from "~/hooks/useCourseData";
 import { useProgress } from "~/hooks/useProgress";
@@ -248,7 +249,7 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export default function CourseCertificate() {
-  const { lessonProgress, quizProgress, isLoading } = useProgress();
+  const { lessonProgress, quizProgress, isLoading, isError, refetch } = useProgress();
   const { course: cmsCourse } = useCourseData();
   const { userCourse, course, userProfile } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
@@ -275,7 +276,7 @@ export default function CourseCertificate() {
     });
 
   useEffect(() => {
-    if (trackedBlockedRef.current) return;
+    if (trackedBlockedRef.current || isError) return;
     if (!isCourseComplete) {
       trackedBlockedRef.current = true;
       void Analytics.trackEvent("Certificate Claim Blocked", {
@@ -294,7 +295,7 @@ export default function CourseCertificate() {
         reason: "identity_verification_required",
       });
     }
-  }, [course.id, cmsCourse.attributes.title, isCourseComplete, userHasVerifiedIdentity]);
+  }, [course.id, cmsCourse.attributes.title, isCourseComplete, userHasVerifiedIdentity, isError]);
 
   useEffect(() => {
     if (trackedClaimedRef.current) return;
@@ -309,6 +310,18 @@ export default function CourseCertificate() {
 
   if (isLoading) {
     return null;
+  }
+
+  // Progress is unknown, so we can't tell the user whether they're eligible either way.
+  if (isError) {
+    return (
+      <Wrapper>
+        <ProgressLoadError
+          message="We couldn't load your course progress, so we can't confirm whether your certificate is ready."
+          onRetry={refetch}
+        />
+      </Wrapper>
+    );
   }
 
   if (!isCourseComplete) {
