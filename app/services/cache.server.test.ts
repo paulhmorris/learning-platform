@@ -60,11 +60,12 @@ describe("CacheService", () => {
       expect(result).toBeNull();
     });
 
-    it("propagates redis errors in get", async () => {
+    it("degrades to null when redis errors, so callers fall back to the source of truth", async () => {
       const error = new Error("Redis error");
       mockRedis.get.mockRejectedValue(error);
 
-      await expect(CacheService.get("cms:course:all")).rejects.toThrow("Redis error");
+      await expect(CacheService.get("cms:course:all")).resolves.toBeNull();
+      expect(Sentry.captureException).toHaveBeenCalledWith(error);
     });
   });
 

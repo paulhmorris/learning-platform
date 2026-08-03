@@ -8,7 +8,7 @@ export const UserCourseService = {
   getAllByUserId: async (userId: string) => {
     logger.debug("Fetching user courses", { userId });
     try {
-      return db.userCourse.findMany({
+      return await db.userCourse.findMany({
         select: {
           id: true,
           courseId: true,
@@ -40,7 +40,7 @@ export const UserCourseService = {
   getByUserIdAndCourseIdWithCertificate: async (userId: string, courseId: string) => {
     logger.debug(`Fetching course ${courseId} with certificate`, { userId });
     try {
-      return db.userCourse.findUnique({
+      return await db.userCourse.findUnique({
         where: { userId_courseId: { userId, courseId } },
         select: {
           certificate: {

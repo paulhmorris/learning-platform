@@ -4,6 +4,7 @@ import * as z from "zod";
 
 import { createLogger } from "~/integrations/logger.server";
 import { Sentry } from "~/integrations/sentry";
+import { isResponseLike } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
 import { number } from "~/schemas/fields";
 import { LessonService } from "~/services/lesson.server";
@@ -114,15 +115,15 @@ export async function action(args: ActionFunctionArgs) {
 
     return { progress: currentProgress };
   } catch (error) {
+    if (isResponseLike(error)) {
+      throw error;
+    }
+
     logger.error(
       `Error processing lesson progress action for user ${user.id} on lesson ${lessonId} (intent: ${intent})`,
       { userId: user.id, lessonId, intent },
     );
     Sentry.captureException(error, { extra: { userId: user.id, lessonId, intent } });
-
-    if (error instanceof Response) {
-      throw error;
-    }
 
     return data({
       progress: null,

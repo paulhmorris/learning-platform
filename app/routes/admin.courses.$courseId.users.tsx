@@ -18,6 +18,7 @@ import { AdminButton } from "~/components/ui/admin-button";
 import { DataTable, DEFAULT_PAGE_SIZE } from "~/components/ui/data-table/data-table";
 import { DataTableColumnHeader } from "~/components/ui/data-table/data-table-column-header";
 import { createLogger } from "~/integrations/logger.server";
+import { Sentry } from "~/integrations/sentry";
 import { Responses } from "~/lib/responses.server";
 import type { loader as adminCourseLoader } from "~/routes/admin.courses.$courseId";
 import { text } from "~/schemas/fields";
@@ -90,10 +91,10 @@ export async function action(args: ActionFunctionArgs) {
     await UserCourseService.enrollUser(result.data.userId, courseId);
   } catch (error) {
     logger.error(`Error enrolling user ${result.data.userId} in course ${courseId}`, {
-      error,
       userId: result.data.userId,
       courseId,
     });
+    Sentry.captureException(error, { extra: { userId: result.data.userId, courseId } });
     return Responses.serverError("Failed to enroll user in course");
   }
 

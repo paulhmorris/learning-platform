@@ -15,7 +15,7 @@ import { SectionProgressHeader } from "~/components/admin/courses/section-progre
 import { ErrorComponent } from "~/components/error-component";
 import { createLogger } from "~/integrations/logger.server";
 import { Sentry } from "~/integrations/sentry";
-import { Responses } from "~/lib/responses.server";
+import { isResponseLike, Responses } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
 import { formatSeconds } from "~/lib/utils";
 import { optionalNumber } from "~/schemas/fields";
@@ -70,7 +70,7 @@ export async function loader(args: LoaderFunctionArgs) {
 
     return { sections: course.data.attributes.sections, lessonProgress, quizProgress };
   } catch (error) {
-    if (error instanceof Response) {
+    if (isResponseLike(error)) {
       throw error;
     }
 

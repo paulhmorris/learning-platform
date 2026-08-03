@@ -16,7 +16,7 @@ import { db } from "~/integrations/db.server";
 import { createLogger } from "~/integrations/logger.server";
 import { Analytics } from "~/integrations/mixpanel.client";
 import { Sentry } from "~/integrations/sentry";
-import { Responses } from "~/lib/responses.server";
+import { isResponseLike, Responses } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
 import { getLessonsInOrder } from "~/lib/utils";
 import { CourseService } from "~/services/course.server";
@@ -93,8 +93,11 @@ export async function loader(args: LoaderFunctionArgs) {
       },
     };
   } catch (error) {
-    console.error(error);
-    Sentry.captureException(error);
+    if (isResponseLike(error)) {
+      throw error;
+    }
+    logger.error(`Error loading certificate page for user ${user.id}`, { userId: user.id });
+    Sentry.captureException(error, { extra: { userId: user.id } });
     throw Responses.serverError();
   }
 }
@@ -232,8 +235,11 @@ export async function action(args: ActionFunctionArgs) {
       },
     );
   } catch (error) {
+    if (isResponseLike(error)) {
+      throw error;
+    }
     logger.error(`Error claiming certificate for user ${user.id}`, { userId: user.id });
-    Sentry.captureException(error);
+    Sentry.captureException(error, { extra: { userId: user.id } });
     return Toasts.dataWithError(null, {
       message: "Error claiming certificate",
       description: "Please try again later",

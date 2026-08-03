@@ -64,7 +64,7 @@ export const UserService = {
 
   async delete(userId: string) {
     try {
-      return db.$transaction([
+      return await db.$transaction([
         db.userQuizProgress.deleteMany({ where: { userId } }),
         db.userLessonProgress.deleteMany({ where: { userId } }),
         db.userCourse.deleteMany({ where: { userId } }),

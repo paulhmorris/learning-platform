@@ -1,4 +1,31 @@
-import { data, redirect } from "react-router";
+import { data, redirect, type UNSAFE_DataWithResponseInit } from "react-router";
+
+type DataResponse = UNSAFE_DataWithResponseInit<unknown>;
+
+/**
+ * The `Responses` helpers below are built on react-router's `data()`, which returns a
+ * `DataWithResponseInit` instance — *not* a `Response`. That makes `error instanceof Response`
+ * silently false for anything thrown via `Responses.notFound()` and friends, which turns
+ * intentional 4xx control flow into a 500.
+ *
+ * Use this in a catch block to decide whether a caught error is control flow to re-throw.
+ */
+export function isResponseLike(error: unknown): error is Response | DataResponse {
+  if (error instanceof Response) {
+    return true;
+  }
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "type" in error &&
+    (error as { type?: unknown }).type === "DataWithResponseInit"
+  );
+}
+
+/** Status code of a value that has passed `isResponseLike`, if it carries one. */
+export function getResponseStatus(error: Response | DataResponse): number | undefined {
+  return error instanceof Response ? error.status : (error.init?.status ?? undefined);
+}
 
 function responseFactory(status: number) {
   return <T = unknown>(body?: T, init?: Omit<ResponseInit, "status">) => {

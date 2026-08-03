@@ -14,13 +14,16 @@ import { SectionLesson } from "~/components/sidebar/section-lesson";
 import { SectionQuiz } from "~/components/sidebar/section-quiz";
 import { Separator } from "~/components/ui/separator";
 import { useProgress } from "~/hooks/useProgress";
+import { createLogger } from "~/integrations/logger.server";
 import { Sentry } from "~/integrations/sentry";
-import { HttpHeaders } from "~/lib/responses.server";
+import { HttpHeaders, isResponseLike } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
 import { cn, getCourseLayoutValues, getLessonsInOrder } from "~/lib/utils";
 import { CourseService } from "~/services/course.server";
 import { SessionService } from "~/services/session.server";
 import { UserCourseService } from "~/services/user-course.server";
+
+const logger = createLogger("Routes.CourseLayout");
 
 export async function loader(args: LoaderFunctionArgs) {
   const user = await SessionService.requireUser(args);
@@ -52,8 +55,11 @@ export async function loader(args: LoaderFunctionArgs) {
     const userCourseIds = userCourses.map((c) => c.courseId);
     return { course: course.data, linkedCourse, userCourseIds };
   } catch (error) {
-    console.error(error);
-    Sentry.captureException(error);
+    if (isResponseLike(error)) {
+      throw error;
+    }
+    logger.error(`Failed to load course layout for user ${user.id}`, { userId: user.id });
+    Sentry.captureException(error, { extra: { userId: user.id } });
     return Toasts.redirectWithError("/preview", {
       message: "Failed to load course",
       description: "Please try again later",

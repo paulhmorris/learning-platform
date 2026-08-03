@@ -13,7 +13,7 @@ import { useProgress } from "~/hooks/useProgress";
 import { createLogger } from "~/integrations/logger.server";
 import { Analytics } from "~/integrations/mixpanel.client";
 import { Sentry } from "~/integrations/sentry";
-import { Responses } from "~/lib/responses.server";
+import { isResponseLike, Responses } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
 import { formatSeconds, getLessonsInOrder } from "~/lib/utils";
 import { ProgressService } from "~/services/progress.server";
@@ -40,11 +40,11 @@ export async function loader(args: LoaderFunctionArgs) {
     const progress = await ProgressService.getByQuizId(user.id, parseInt(quizId));
     return { quiz: quiz.data, progress };
   } catch (error) {
-    Sentry.captureException(error, { extra: { userId: user.id, quizId } });
-    logger.error(`Error loading quiz ${quizId}`, { quizId });
-    if (error instanceof Response) {
+    if (isResponseLike(error)) {
       throw error;
     }
+    Sentry.captureException(error, { extra: { userId: user.id, quizId } });
+    logger.error(`Error loading quiz ${quizId}`, { quizId });
     throw Responses.serverError();
   }
 }

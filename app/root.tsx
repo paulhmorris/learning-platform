@@ -13,8 +13,9 @@ import { Header } from "~/components/header";
 import { Notifications } from "~/components/notifications";
 import { SERVER_CONFIG } from "~/config.server";
 import { useAnalytics } from "~/hooks/useAnalytics";
+import { createLogger } from "~/integrations/logger.server";
 import { Sentry } from "~/integrations/sentry";
-import { HttpHeaders, Responses } from "~/lib/responses.server";
+import { HttpHeaders, isResponseLike, Responses } from "~/lib/responses.server";
 import { cn, hexToPartialHSL } from "~/lib/utils";
 import { themeSessionResolver } from "~/routes/api.set-theme";
 import { CourseService } from "~/services/course.server";
@@ -22,6 +23,8 @@ import globalStyles from "~/tailwind.css?url";
 
 // eslint-disable-next-line import/no-unresolved
 import { Route } from "./+types/root";
+
+const logger = createLogger("Root");
 
 export const links: LinksFunction = () => [{ rel: "stylesheet", href: globalStyles, as: "style" }];
 
@@ -42,7 +45,7 @@ export const loader = async (args: LoaderFunctionArgs) => {
   };
 
   try {
-    return rootAuthLoader(args, async () => {
+    return await rootAuthLoader(args, async () => {
       const { host } = new URL(args.request.url);
       const linkedCourse = await CourseService.getByHost(host);
 
@@ -59,7 +62,10 @@ export const loader = async (args: LoaderFunctionArgs) => {
       return data({ ...defaultResponse, course, hasLinkedCourse: true }, { headers });
     });
   } catch (error) {
-    console.error(error);
+    if (isResponseLike(error)) {
+      throw error;
+    }
+    logger.error("Error in root loader");
     Sentry.captureException(error);
     throw Responses.notFound();
   }

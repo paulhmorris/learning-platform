@@ -28,7 +28,7 @@ export const IdentityService = {
   async retrieveVerificationSession(sessionId: string) {
     try {
       logger.debug(`Retrieving verification session ${sessionId}`);
-      return stripe.identity.verificationSessions.retrieve(sessionId);
+      return await stripe.identity.verificationSessions.retrieve(sessionId);
     } catch (error) {
       Sentry.captureException(error, { extra: { sessionId } });
       logger.error(`Failed to retrieve verification session ${sessionId}`, { sessionId });
