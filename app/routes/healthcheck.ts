@@ -2,6 +2,7 @@
 import type { LoaderFunctionArgs } from "react-router";
 
 import { db } from "~/integrations/db.server";
+import { Sentry } from "~/integrations/sentry";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const host = request.headers.get("X-Forwarded-Host") ?? request.headers.get("host");
@@ -20,6 +21,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     return new Response("OK");
   } catch (error: unknown) {
     console.log("healthcheck ❌", { error });
+    Sentry.captureException(error);
     return new Response("ERROR", { status: 500 });
   }
 };

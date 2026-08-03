@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useFetcher } from "react-router";
 
 import { loader } from "~/routes/api.progress";
@@ -29,9 +29,19 @@ export function useProgress() {
     }
   }, [fetcher.state, fetcher.data, hasLoaded]);
 
+  const refetch = useCallback(() => {
+    void fetcher.load("/api/progress");
+  }, [fetcher]);
+
   return {
     lessonProgress: fetcher.data?.lessonProgress ?? [],
     quizProgress: fetcher.data?.quizProgress ?? [],
     isLoading: isLoading || !hasLoaded,
+    /**
+     * The progress request failed. The progress arrays are empty, but that means "unknown",
+     * not "zero" — don't use them to lock content or tell the user they're incomplete.
+     */
+    isError: fetcher.data?.ok === false,
+    refetch,
   };
 }

@@ -7,7 +7,7 @@ import { Card, CardFooter, CardHeader, CardTitle } from "~/components/ui/card";
 import { useAdminUserData } from "~/hooks/useAdminUserData";
 import { createLogger } from "~/integrations/logger.server";
 import { Sentry } from "~/integrations/sentry";
-import { Responses } from "~/lib/responses.server";
+import { isResponseLike, Responses } from "~/lib/responses.server";
 import { CourseService } from "~/services/course.server";
 import { SessionService } from "~/services/session.server";
 import { UserCourseService } from "~/services/user-course.server";
@@ -47,6 +47,9 @@ export async function loader(args: LoaderFunctionArgs) {
 
     return { courses };
   } catch (error) {
+    if (isResponseLike(error)) {
+      throw error;
+    }
     Sentry.captureException(error);
     logger.error(`Failed to load user ${id} courses`, { userId: id });
     throw Responses.serverError();

@@ -49,6 +49,8 @@ class _SessionService {
     if (!allowedRoles.includes(role)) {
       logger.warn(`User ${auth.id} with role ${role} is not authorized to access this resource`, {
         userId: auth.id,
+        url: args.request.url,
+        method: args.request.method,
         role,
       });
       throw Responses.forbidden();

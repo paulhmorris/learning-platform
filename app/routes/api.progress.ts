@@ -4,6 +4,7 @@ import * as z from "zod";
 
 import { createLogger } from "~/integrations/logger.server";
 import { Sentry } from "~/integrations/sentry";
+import { isResponseLike } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
 import { number } from "~/schemas/fields";
 import { LessonService } from "~/services/lesson.server";
@@ -26,6 +27,19 @@ export function shouldRevalidate({ formAction }: ShouldRevalidateFunctionArgs) {
   return false;
 }
 
+/**
+ * Progress failures return the same shape as a success, discriminated by `ok`. An empty
+ * progress list is not a neutral value in this app — it locks lessons and denies
+ * certificates — so consumers must be able to tell "no progress" from "couldn't load it".
+ */
+const EMPTY_PROGRESS: {
+  lessonProgress: Awaited<ReturnType<typeof ProgressService.getAllLesson>>;
+  quizProgress: Awaited<ReturnType<typeof ProgressService.getAllQuiz>>;
+} = {
+  lessonProgress: [],
+  quizProgress: [],
+};
+
 export async function loader(args: LoaderFunctionArgs) {
   const user = await SessionService.requireUser(args);
   try {
@@ -34,14 +48,21 @@ export async function loader(args: LoaderFunctionArgs) {
       ProgressService.getAllLesson(user.id),
       ProgressService.getAllQuiz(user.id),
     ]);
-    return { lessonProgress, quizProgress };
+    return { ok: true as const, lessonProgress, quizProgress };
   } catch (error) {
+    if (isResponseLike(error)) {
+      throw error;
+    }
+
     logger.error("Error loading lesson progress", { userId: user.id });
     Sentry.captureException(error, { extra: { userId: user.id } });
-    return Toasts.dataWithError(null, {
-      message: "An error occurred trying to load your progress.",
-      description: "If the problem persists, please contact support.",
-    });
+    return Toasts.dataWithError(
+      { ok: false as const, ...EMPTY_PROGRESS },
+      {
+        message: "An error occurred trying to load your progress.",
+        description: "If the problem persists, please contact support.",
+      },
+    );
   }
 }
 
@@ -114,15 +135,15 @@ export async function action(args: ActionFunctionArgs) {
 
     return { progress: currentProgress };
   } catch (error) {
+    if (isResponseLike(error)) {
+      throw error;
+    }
+
     logger.error(
       `Error processing lesson progress action for user ${user.id} on lesson ${lessonId} (intent: ${intent})`,
       { userId: user.id, lessonId, intent },
     );
     Sentry.captureException(error, { extra: { userId: user.id, lessonId, intent } });
-
-    if (error instanceof Response) {
-      throw error;
-    }
 
     return data({
       progress: null,

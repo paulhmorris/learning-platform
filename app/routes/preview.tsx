@@ -26,7 +26,7 @@ import { useProgress } from "~/hooks/useProgress";
 import { createLogger } from "~/integrations/logger.server";
 import { Analytics } from "~/integrations/mixpanel.client";
 import { Sentry } from "~/integrations/sentry";
-import { Responses } from "~/lib/responses.server";
+import { getResponseStatus, isResponseLike, Responses } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
 import { getLessonsInOrder, getPreviewValues } from "~/lib/utils";
 import { CourseService } from "~/services/course.server";
@@ -62,14 +62,14 @@ export async function loader(args: LoaderFunctionArgs) {
 
     return { course: course.data, linkedCourse, userCourseIds };
   } catch (error) {
-    Sentry.captureException(error);
-    logger.error(`Failed to load course for host ${url.host}`, { host: url.host });
-    if (error instanceof Response) {
-      if (error.status === 404) {
+    if (isResponseLike(error)) {
+      if (getResponseStatus(error) === 404) {
         return redirect("/account/courses");
       }
       throw error;
     }
+    Sentry.captureException(error);
+    logger.error(`Failed to load course for host ${url.host}`, { host: url.host });
     throw Responses.serverError();
   }
 }

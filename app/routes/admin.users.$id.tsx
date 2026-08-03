@@ -14,7 +14,7 @@ import { Badge } from "~/components/ui/badge";
 import { createLogger } from "~/integrations/logger.server";
 import { Sentry } from "~/integrations/sentry";
 import { stripe } from "~/integrations/stripe.server";
-import { Responses } from "~/lib/responses.server";
+import { isResponseLike, Responses } from "~/lib/responses.server";
 import { cn } from "~/lib/utils";
 import { SessionService } from "~/services/session.server";
 import { UserService } from "~/services/user.server";
@@ -55,6 +55,9 @@ export async function loader(args: LoaderFunctionArgs) {
 
     return { user, identityVerificationStatus };
   } catch (error) {
+    if (isResponseLike(error)) {
+      throw error;
+    }
     logger.error(`Failed to load user data for user ${id}`, { userId: id });
     Sentry.captureException(error);
     throw Responses.serverError();

@@ -8,6 +8,7 @@ import {
   HiphopDrivingPreCertificateForm,
   hipHopDrivingCertificationSchema,
 } from "~/components/pre-certificate-forms/hiphopdriving";
+import { ProgressLoadError } from "~/components/progress-load-error";
 import { SubmitButton } from "~/components/ui/submit-button";
 import { useCourseData } from "~/hooks/useCourseData";
 import { useProgress } from "~/hooks/useProgress";
@@ -16,7 +17,7 @@ import { db } from "~/integrations/db.server";
 import { createLogger } from "~/integrations/logger.server";
 import { Analytics } from "~/integrations/mixpanel.client";
 import { Sentry } from "~/integrations/sentry";
-import { Responses } from "~/lib/responses.server";
+import { isResponseLike, Responses } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
 import { getLessonsInOrder } from "~/lib/utils";
 import { CourseService } from "~/services/course.server";
@@ -93,8 +94,11 @@ export async function loader(args: LoaderFunctionArgs) {
       },
     };
   } catch (error) {
-    console.error(error);
-    Sentry.captureException(error);
+    if (isResponseLike(error)) {
+      throw error;
+    }
+    logger.error(`Error loading certificate page for user ${user.id}`, { userId: user.id });
+    Sentry.captureException(error, { extra: { userId: user.id } });
     throw Responses.serverError();
   }
 }
@@ -232,8 +236,11 @@ export async function action(args: ActionFunctionArgs) {
       },
     );
   } catch (error) {
+    if (isResponseLike(error)) {
+      throw error;
+    }
     logger.error(`Error claiming certificate for user ${user.id}`, { userId: user.id });
-    Sentry.captureException(error);
+    Sentry.captureException(error, { extra: { userId: user.id } });
     return Toasts.dataWithError(null, {
       message: "Error claiming certificate",
       description: "Please try again later",
@@ -242,7 +249,7 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export default function CourseCertificate() {
-  const { lessonProgress, quizProgress, isLoading } = useProgress();
+  const { lessonProgress, quizProgress, isLoading, isError, refetch } = useProgress();
   const { course: cmsCourse } = useCourseData();
   const { userCourse, course, userProfile } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
@@ -269,7 +276,7 @@ export default function CourseCertificate() {
     });
 
   useEffect(() => {
-    if (trackedBlockedRef.current) return;
+    if (trackedBlockedRef.current || isError) return;
     if (!isCourseComplete) {
       trackedBlockedRef.current = true;
       void Analytics.trackEvent("Certificate Claim Blocked", {
@@ -288,7 +295,7 @@ export default function CourseCertificate() {
         reason: "identity_verification_required",
       });
     }
-  }, [course.id, cmsCourse.attributes.title, isCourseComplete, userHasVerifiedIdentity]);
+  }, [course.id, cmsCourse.attributes.title, isCourseComplete, userHasVerifiedIdentity, isError]);
 
   useEffect(() => {
     if (trackedClaimedRef.current) return;
@@ -303,6 +310,18 @@ export default function CourseCertificate() {
 
   if (isLoading) {
     return null;
+  }
+
+  // Progress is unknown, so we can't tell the user whether they're eligible either way.
+  if (isError) {
+    return (
+      <Wrapper>
+        <ProgressLoadError
+          message="We couldn't load your course progress, so we can't confirm whether your certificate is ready."
+          onRetry={refetch}
+        />
+      </Wrapper>
+    );
   }
 
   if (!isCourseComplete) {

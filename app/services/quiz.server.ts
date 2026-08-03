@@ -11,7 +11,7 @@ const PROGRESS_CACHE_TTL = 22; // 22 seconds
 export const QuizService = {
   async getById(quizId: string | number) {
     try {
-      return cms.findOne<APIResponseData<"api::quiz.quiz">>("quizzes", quizId, {
+      return await cms.findOne<APIResponseData<"api::quiz.quiz">>("quizzes", quizId, {
         populate: {
           questions: {
             fields: "*",
@@ -32,7 +32,7 @@ export const QuizService = {
 
   async getCorrectAnswers(quizId: string | number) {
     try {
-      return cms.findOne<APIResponseData<"api::quiz.quiz">>("quizzes", quizId, {
+      return await cms.findOne<APIResponseData<"api::quiz.quiz">>("quizzes", quizId, {
         populate: {
           questions: {
             fields: ["question_type"],
@@ -53,7 +53,7 @@ export const QuizService = {
 
   async getAll() {
     try {
-      return cms.find<APIResponseCollection<"api::quiz.quiz">["data"]>("quizzes", {
+      return await cms.find<APIResponseCollection<"api::quiz.quiz">["data"]>("quizzes", {
         fields: ["title", "passing_score", "uuid"],
       });
     } catch (error) {

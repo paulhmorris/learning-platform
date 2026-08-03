@@ -46,7 +46,7 @@ export const CacheService = {
 
     try {
       logger.debug(`Getting cache item: ${key}`);
-      return redis.get<T>(key);
+      return await redis.get<T>(key);
     } catch (error) {
       Sentry.captureException(error);
       logger.error(`Failed to get cache item: ${key}`, { key });

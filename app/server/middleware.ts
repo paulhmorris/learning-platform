@@ -26,7 +26,7 @@ export function loggerMiddleware() {
     const requestId = c.get("requestId") as string;
     const reqIsFromBot = c.req.header("cf-isbot") === "true" || isbot(c.req.header("user-agent") ?? "");
 
-    const reqData: Record<string, unknown> = {
+    const reqData = {
       id: requestId,
       uri: c.req.url,
       path: c.req.path,
@@ -43,7 +43,7 @@ export function loggerMiddleware() {
         country: geo.country,
         postalCode: geo.postalCode,
       },
-    };
+    } as const;
 
     const resData: Record<string, unknown> = {
       status: resStatus,
@@ -52,11 +52,11 @@ export function loggerMiddleware() {
       path: c.req.path,
       content_type: c.res.headers.get("content-type"),
       duration: end - start,
-    };
+    } as const;
 
     if (resStatus >= 300 && resStatus < 400) {
-      resData.redirect_url = c.res.url;
-      httpLogger.warn("Response", resData);
+      resData.redirect_url = c.res.headers.get("location");
+      httpLogger.warn(`Redirecting from ${c.req.url} to ${resData.redirect_url as string}`, resData);
     }
 
     if (resStatus >= 400) {
