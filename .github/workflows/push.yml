@@ -42,6 +42,7 @@ jobs:
           node-version: 24.18.0
           cache: "npm"
       - run: npm ci --no-audit --no-fund
+      - run: npm run typegen
       - run: npm run lint:prepush
 
   typecheck:
