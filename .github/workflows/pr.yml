@@ -1,9 +1,6 @@
-name: 🧪 PR to Staging
+name: 🧪 PR to Main
 
 env:
-  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-  SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
   NEON_PROJECT_ID: ${{ vars.NEON_PROJECT_ID }}
   NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
 
@@ -15,98 +12,51 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, closed]
     branches:
-      - staging
+      - main
 
 permissions:
   contents: read
+  actions: read
   pull-requests: write
 
 jobs:
-  neon:
-    name: 🧬 Setup Neon branch
+  slug:
+    name: 🏷️ Compute branch slug
+    runs-on: ubuntu-latest
+    outputs:
+      slug: ${{ steps.slug.outputs.slug }}
+    steps:
+      - name: Compute branch slug
+        id: slug
+        run: |
+          slug=$(echo "${HEAD_REF}" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+|-+$//g' | cut -c1-40)
+          echo "slug=${slug}" >> "$GITHUB_OUTPUT"
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+
+  schema-diff:
+    name: 🧬 Post schema diff
     runs-on: ubuntu-latest
     if: github.event.action != 'closed'
+    needs: [slug]
     steps:
-      - uses: actions/checkout@v6
-      - name: Create Neon branch
-        id: neon_branch
-        uses: neondatabase/create-branch-action@v6
-        with:
-          project_id: ${{ env.NEON_PROJECT_ID }}
-          branch_name: pr-${{ github.event.pull_request.number }}
-          parent_branch: staging
-          role: learning-platform_owner
-          database: learning-platform
-          prisma: true
-          api_key: ${{ env.NEON_API_KEY }}
-
-      - name: Run Prisma migrations
-        run: npx prisma@6.12.0 migrate deploy
-        env:
-          DATABASE_URL: ${{ steps.neon_branch.outputs.db_url }}
-          DIRECT_URL: ${{ steps.neon_branch.outputs.db_url }}
-
       - name: Post schema diff
         uses: neondatabase/schema-diff-action@v1
         with:
           project_id: ${{ env.NEON_PROJECT_ID }}
-          compare_branch: pr-${{ github.event.pull_request.number }}
-          base_branch: staging
+          compare_branch: preview-${{ needs.slug.outputs.slug }}
+          base_branch: main
           database: learning-platform
           api_key: ${{ env.NEON_API_KEY }}
-
-  deploy:
-    name: 🧩 Deploy Preview
-    runs-on: ubuntu-latest
-    if: github.event.action != 'closed'
-    needs: [neon]
-    outputs:
-      deploy_url: ${{ steps.vercel_deploy.outputs.url }}
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Install Vercel CLI
-        run: npm install --global vercel@latest
-
-      - name: Pull Vercel Environment Information
-        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
-
-      - name: Fetch Neon connection string
-        id: neon_branch_deploy
-        uses: neondatabase/create-branch-action@v6
-        with:
-          project_id: ${{ env.NEON_PROJECT_ID }}
-          branch_name: pr-${{ github.event.pull_request.number }}
-          parent_branch: staging
-          role: learning-platform_owner
-          database: learning-platform
-          prisma: true
-          api_key: ${{ env.NEON_API_KEY }}
-
-      - name: Build Project Artifacts
-        run: vercel build --token=${{ secrets.VERCEL_TOKEN }} \
-          --build-env DATABASE_URL='${{ steps.neon_branch_deploy.outputs.db_url_pooled || steps.neon_branch_deploy.outputs.db_url }}' \
-          --build-env DIRECT_URL='${{ steps.neon_branch_deploy.outputs.db_url }}'
-
-      - name: Deploy to Vercel
-        id: vercel_deploy
-        run: |
-          DEPLOY_URL=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }} --yes \
-            --env DATABASE_URL='${{ steps.neon_branch_deploy.outputs.db_url_pooled || steps.neon_branch_deploy.outputs.db_url }}' \
-            --env DIRECT_URL='${{ steps.neon_branch_deploy.outputs.db_url }}' \
-            | tail -n 1)
-          echo "url=${DEPLOY_URL}" >> "$GITHUB_OUTPUT"
 
   e2e:
     name: 🎭 Test e2e
     runs-on: ubuntu-latest
     if: github.event.action != 'closed'
-    needs: [neon, deploy]
-    env:
-      E2E_BASE_URL: ${{ needs.deploy.outputs.deploy_url }}
+    needs: [slug]
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 24.18.0
           cache: "npm"
@@ -121,15 +71,27 @@ jobs:
         run: npm install --global vercel@latest
 
       - name: Pull Vercel Environment Information
-        run: vercel env pull .env --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Download deploy URL from push workflow
+        uses: dawidd6/action-download-artifact@v9
+        with:
+          workflow: push.yml
+          branch: ${{ github.head_ref }}
+          name: deploy-url
+          path: .
+
+      - name: Read deploy URL
+        id: deploy_url
+        run: echo "url=$(cat deploy-url.txt)" >> "$GITHUB_OUTPUT"
 
       - name: Fetch Neon connection string
         id: neon_branch_e2e
         uses: neondatabase/create-branch-action@v6
         with:
           project_id: ${{ env.NEON_PROJECT_ID }}
-          branch_name: pr-${{ github.event.pull_request.number }}
-          parent_branch: staging
+          branch_name: preview-${{ needs.slug.outputs.slug }}
+          parent_branch: main
           role: learning-platform_owner
           database: learning-platform
           prisma: true
@@ -138,6 +100,7 @@ jobs:
       - name: Run e2e Tests
         run: npm run test:e2e
         env:
+          E2E_BASE_URL: ${{ steps.deploy_url.outputs.url }}
           LOG_LEVEL: "error"
           DIRECT_URL: ${{ steps.neon_branch_e2e.outputs.db_url }}
           DATABASE_URL: ${{ steps.neon_branch_e2e.outputs.db_url_pooled || steps.neon_branch_e2e.outputs.db_url }}
@@ -163,10 +126,11 @@ jobs:
     name: 🧹 Delete Neon Branch
     runs-on: ubuntu-latest
     if: github.event.action == 'closed'
+    needs: [slug]
     steps:
       - name: Delete Neon branch
         uses: neondatabase/delete-branch-action@v3
         with:
           project_id: ${{ env.NEON_PROJECT_ID }}
-          branch: pr-${{ github.event.pull_request.number }}
+          branch: preview-${{ needs.slug.outputs.slug }}
           api_key: ${{ env.NEON_API_KEY }}
