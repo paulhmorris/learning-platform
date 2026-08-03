@@ -34,6 +34,7 @@ export async function loader(args: LoaderFunctionArgs) {
 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!quiz) {
+      Sentry.captureMessage(`Quiz ${quizId} not found`, { level: "error", extra: { userId: user.id, quizId } });
       logger.error(`Quiz ${quizId} not found`);
       throw Responses.notFound();
     }
@@ -68,6 +69,7 @@ export async function action(args: ActionFunctionArgs) {
   const quiz = await QuizService.getCorrectAnswers(quizId);
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (!quiz) {
+    Sentry.captureMessage(`Quiz ${quizId} not found`, { level: "error", extra: { userId: user.id, quizId } });
     logger.error(`Quiz ${quizId} not found`);
     throw Responses.notFound();
   }

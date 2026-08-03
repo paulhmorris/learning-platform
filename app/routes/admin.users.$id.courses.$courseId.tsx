@@ -46,7 +46,7 @@ const schema = z.object({
 });
 
 export async function loader(args: LoaderFunctionArgs) {
-  await SessionService.requireAdmin(args);
+  const user = await SessionService.requireAdmin(args);
   const userId = args.params.id;
   const courseId = args.params.courseId;
 
@@ -65,6 +65,7 @@ export async function loader(args: LoaderFunctionArgs) {
     ]);
 
     if (!course) {
+      Sentry.captureMessage(`Course ${courseId} not found`, { level: "error", extra: { userId: user.id, courseId } });
       throw Responses.notFound();
     }
 
@@ -75,6 +76,7 @@ export async function loader(args: LoaderFunctionArgs) {
     }
 
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+      Sentry.captureMessage(`Course ${courseId} not found`, { level: "error", extra: { userId: user.id, courseId } });
       throw Responses.notFound();
     }
 

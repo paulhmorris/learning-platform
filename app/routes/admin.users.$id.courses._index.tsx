@@ -83,7 +83,7 @@ export default function AdminUserCourses() {
                 </CardHeader>
                 <CardFooter>
                   <AdminButton asChild className="w-auto">
-                    <Link to={`${course.id}`}>View Progress</Link>
+                    <Link to={`${course.courseId}`}>View Progress</Link>
                   </AdminButton>
                   {/* certificate */}
                   {course.certificate ? (
