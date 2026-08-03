@@ -1,6 +1,8 @@
 name: 🧪 PR to Main
 
 env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
   NEON_PROJECT_ID: ${{ vars.NEON_PROJECT_ID }}
   NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
 
@@ -74,7 +76,7 @@ jobs:
         run: vercel env pull .env --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Download deploy URL from push workflow
-        uses: dawidd6/action-download-artifact@v9
+        uses: dawidd6/action-download-artifact@v21
         with:
           workflow: push.yml
           branch: ${{ github.head_ref }}
@@ -115,7 +117,7 @@ jobs:
 
       - name: Upload Playwright Report
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-report
           path: |

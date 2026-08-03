@@ -140,7 +140,7 @@ jobs:
         run: echo "${{ steps.vercel_deploy.outputs.url }}" > deploy-url.txt
 
       - name: Upload deploy URL
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: deploy-url
           path: deploy-url.txt
