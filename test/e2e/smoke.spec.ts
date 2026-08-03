@@ -105,12 +105,14 @@ test.describe("Smoke Test", () => {
     const htmlElement = page.locator("html");
     const menu = page.getByRole("menu");
 
+    // Wait out the previous menu's close animation before reopening: clicking an item in a
+    // menu that is still unmounting fails with "element was detached from the DOM".
     const selectTheme = async (name: "Dark" | "Light" | "System") => {
-      // eslint-disable-next-line playwright/no-conditional-in-test
-      if (!(await menu.isVisible().catch(() => false))) {
-        await button.click();
-      }
+      await expect(menu).toBeHidden();
+      await button.click();
+      await expect(menu).toBeVisible();
       await page.getByRole("menuitem", { name }).click();
+      await expect(menu).toBeHidden();
     };
 
     await expect(button).toBeVisible();
@@ -132,9 +134,11 @@ test.describe("Smoke Test", () => {
     await page.goto("/preview", { waitUntil: "domcontentloaded" });
     const button = page.getByRole("button", { name: /set visual theme/i });
     const htmlElement = page.locator("html");
+    const menu = page.getByRole("menu");
 
     // Switch to light theme.
     await button.click();
+    await expect(menu).toBeVisible();
     await page.getByRole("menuitem", { name: "Light" }).click();
     await expect(htmlElement).toHaveAttribute("data-theme", "light");
 
@@ -144,6 +148,7 @@ test.describe("Smoke Test", () => {
 
     // Reset to system for other tests.
     await button.click();
+    await expect(menu).toBeVisible();
     await page.getByRole("menuitem", { name: "System" }).click();
     await expect(htmlElement).toHaveAttribute("data-theme", "light");
   });

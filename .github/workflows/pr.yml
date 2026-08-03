@@ -5,6 +5,9 @@ env:
   VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
   NEON_PROJECT_ID: ${{ vars.NEON_PROJECT_ID }}
   NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+  # Preview branches fork from the long-lived `staging` branch, not `main`. Staging holds
+  # test-mode Stripe price IDs, which is what preview deploys (test-mode Stripe key) need.
+  NEON_PARENT_BRANCH: staging
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
@@ -93,7 +96,7 @@ jobs:
         with:
           project_id: ${{ env.NEON_PROJECT_ID }}
           branch_name: preview-${{ needs.slug.outputs.slug }}
-          parent_branch: main
+          parent_branch: ${{ env.NEON_PARENT_BRANCH }}
           role: learning-platform_owner
           database: learning-platform
           prisma: true
