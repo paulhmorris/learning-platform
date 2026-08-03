@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { parseFormData } from "@rvf/react-router";
 import { IconCircleCheckFilled, IconCircleDashed, IconCircleDashedCheck, IconCircleXFilled } from "@tabler/icons-react";
 import { ActionFunctionArgs, LoaderFunctionArgs, useLoaderData } from "react-router";
@@ -12,6 +13,8 @@ import { QuizUpdateForm } from "~/components/admin/courses/quiz-update-form";
 import { ResetAllProgressDialog } from "~/components/admin/courses/reset-all-progress-dialog";
 import { SectionProgressHeader } from "~/components/admin/courses/section-progress-header";
 import { ErrorComponent } from "~/components/error-component";
+import { createLogger } from "~/integrations/logger.server";
+import { Sentry } from "~/integrations/sentry";
 import { Responses } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
 import { formatSeconds } from "~/lib/utils";
@@ -21,6 +24,8 @@ import { LessonService } from "~/services/lesson.server";
 import { ProgressService } from "~/services/progress.server";
 import { QuizService } from "~/services/quiz.server";
 import { SessionService } from "~/services/session.server";
+
+const logger = createLogger("Admin.Users.Course");
 
 const schema = z.object({
   _action: z.enum([
@@ -49,20 +54,34 @@ export async function loader(args: LoaderFunctionArgs) {
     throw Responses.notFound();
   }
 
-  const dbCourse = await CourseService.getById(courseId);
+  try {
+    const dbCourse = await CourseService.getById(courseId);
 
-  // Load course structure (in the same order it's presented to students) and progress data
-  const [course, lessonProgress, quizProgress] = await Promise.all([
-    CourseService.getFromCMSForCourseLayout(dbCourse.strapiId),
-    ProgressService.getAllLesson(userId),
-    ProgressService.getAllQuiz(userId),
-  ]);
+    // Load course structure (in the same order it's presented to students) and progress data
+    const [course, lessonProgress, quizProgress] = await Promise.all([
+      CourseService.getFromCMSForCourseLayout(dbCourse.strapiId),
+      ProgressService.getAllLesson(userId),
+      ProgressService.getAllQuiz(userId),
+    ]);
 
-  if (!course) {
-    throw Responses.notFound();
+    if (!course) {
+      throw Responses.notFound();
+    }
+
+    return { sections: course.data.attributes.sections, lessonProgress, quizProgress };
+  } catch (error) {
+    if (error instanceof Response) {
+      throw error;
+    }
+
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+      throw Responses.notFound();
+    }
+
+    logger.error(error instanceof Error ? error.message : "Unknown error");
+    Sentry.captureException(error);
+    throw Responses.serverError();
   }
-
-  return { sections: course.data.attributes.sections, lessonProgress, quizProgress };
 }
 
 export async function action(args: ActionFunctionArgs) {
