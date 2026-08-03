@@ -18,6 +18,10 @@ const consoleLog: Record<LogLevel, (...args: Array<unknown>) => void> = {
   error: console.error,
 };
 
+// Under test (vitest sets NODE_ENV=test, Playwright sets PLAYWRIGHT_TEST) logs stay on stdout
+// only — test runs shouldn't add noise or cost to Sentry Logs.
+const sentryEnabled = !SERVER_CONFIG.isTest;
+
 const sentryLog: Record<LogLevel, (message: string, attributes?: LogAttributes) => void> = {
   debug: (message, attributes) => Sentry.logger.debug(message, attributes),
   info: (message, attributes) => Sentry.logger.info(message, attributes),
@@ -59,7 +63,7 @@ function buildLogger(module: string, options: LoggerOptions = {}): ServerLogger 
 
       consoleLog[level](`[${module}] ${message}`, attributes ?? "");
 
-      if (sentryLevels.has(level)) {
+      if (sentryEnabled && sentryLevels.has(level)) {
         sentryLog[level](message, { module, ...(attributes && normalizeAttributes(attributes)) });
       }
     };

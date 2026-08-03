@@ -46,6 +46,11 @@ export async function loader(args: LoaderFunctionArgs) {
   try {
     const linkedCourse = await CourseService.getByHost(url.host);
     if (!linkedCourse) {
+      Sentry.captureMessage(`Course for host ${url.host} not found`, {
+        level: "error",
+        extra: { userId: user.id, host: url.host },
+      });
+      logger.error(`Course for host ${url.host} not found`);
       throw Responses.notFound();
     }
 
@@ -55,6 +60,11 @@ export async function loader(args: LoaderFunctionArgs) {
     ]);
 
     if (!course) {
+      Sentry.captureMessage(`Course ${linkedCourse.strapiId} not found`, {
+        level: "error",
+        extra: { userId: user.id, courseId: linkedCourse.strapiId },
+      });
+      logger.error(`Course ${linkedCourse.strapiId} not found`);
       throw Responses.notFound();
     }
 

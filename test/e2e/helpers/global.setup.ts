@@ -2,6 +2,7 @@ import { clerkSetup } from "@clerk/testing/playwright";
 import { test as setup } from "@playwright/test";
 
 import { cleanupStaleE2ETestUsers } from "./auth";
+import { ensureCourseHostForE2E } from "./progress";
 
 const DEFAULT_BASE_URL = "http://localhost:3000";
 
@@ -55,4 +56,8 @@ setup("global setup", async () => {
   const deletedCount = await cleanupStaleE2ETestUsers();
   // eslint-disable-next-line no-console
   console.log(`🧹 Cleaned up ${deletedCount} stale E2E test user(s)`);
+
+  const course = await ensureCourseHostForE2E();
+  // eslint-disable-next-line no-console
+  console.log(`🔗 Course ${course.id} bound to host ${course.host}`);
 });

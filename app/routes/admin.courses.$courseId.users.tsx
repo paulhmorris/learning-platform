@@ -109,7 +109,7 @@ function EnrollButton({ userId }: { userId: string }) {
   return (
     <fetcher.Form method="put">
       <input type="hidden" name="userId" value={userId} />
-      <AdminButton type="submit" disabled={fetcher.state !== "idle"} variant="link">
+      <AdminButton type="submit" disabled={fetcher.state !== "idle"} variant="link" className="-my-1.5">
         Enroll
       </AdminButton>
     </fetcher.Form>

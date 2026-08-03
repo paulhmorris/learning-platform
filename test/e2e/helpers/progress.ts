@@ -3,6 +3,8 @@ import { CourseService } from "~/services/course.server";
 import { ProgressService } from "~/services/progress.server";
 import { QuizService } from "~/services/quiz.server";
 
+import { invalidateAllProgressCacheForUser, invalidateLessonProgressCache, invalidateQuizProgressCache } from "./cache";
+
 export async function getCourseLayoutForE2E() {
   const course = await db.course.findFirst();
   if (!course) {
@@ -17,27 +19,30 @@ export async function getCourseLayoutForE2E() {
   return courseLayout.data;
 }
 
-export async function enrollUserInCourse(userId: string) {
+/**
+ * Points the course under test at the current base URL's host, which is how the app resolves
+ * the tenant. Runs in global setup so specs that never enroll a user (e.g. the purchase flow)
+ * don't depend on some other spec having synced the host first.
+ */
+export async function ensureCourseHostForE2E() {
   const baseUrl = process.env.E2E_BASE_URL ?? "http://localhost:3000";
   const host = new URL(baseUrl).host;
 
-  let course = await db.course.findUnique({ where: { host } });
-  if (!course) {
-    course = await db.course.findFirst();
-    if (!course) {
-      throw new Error("No course found in database. Cannot enroll user.");
-    }
+  const existing = await db.course.findUnique({ where: { host } });
+  if (existing) {
+    return existing;
+  }
 
-    if (course.host !== host) {
-      course = await db.course.update({
-        where: { id: course.id },
-        data: { host },
-      });
-    }
-  }
+  const course = await db.course.findFirst();
   if (!course) {
-    throw new Error("No course found in database. Cannot enroll user.");
+    throw new Error("No course found in database. Cannot run e2e tests.");
   }
+
+  return db.course.update({ where: { id: course.id }, data: { host } });
+}
+
+export async function enrollUserInCourse(userId: string) {
+  const course = await ensureCourseHostForE2E();
 
   await db.userCourse.upsert({
     where: { userId_courseId: { userId, courseId: course.id } },
@@ -52,10 +57,12 @@ export async function cleanupUserCourseData(userId: string) {
     QuizService.resetAllProgress(userId),
     db.userCourse.deleteMany({ where: { userId } }),
   ]);
+  await invalidateAllProgressCacheForUser(userId);
 }
 
 export async function resetProgressForUser(userId: string) {
   await Promise.all([ProgressService.resetAllLesson(userId), QuizService.resetAllProgress(userId)]);
+  await invalidateAllProgressCacheForUser(userId);
 }
 
 export async function markLessonCompleteForUser(
@@ -67,12 +74,12 @@ export async function markLessonCompleteForUser(
     lessonId: lesson.id,
     requiredDurationInSeconds: lesson.attributes.required_duration_in_seconds ?? undefined,
   });
-  // ProgressService's own cache invalidation is a no-op in the test process (NODE_ENV=test),
-  // so the deployed preview server's Redis cache must be cleared directly here too.
+  await invalidateLessonProgressCache(userId, lesson.id);
   return progress;
 }
 
 export async function markQuizPassedForUser(userId: string, quizId: number, score = 100) {
   const progress = await QuizService.markAsPassed(quizId, userId, score);
+  await invalidateQuizProgressCache(userId, quizId);
   return progress;
 }

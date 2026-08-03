@@ -3,16 +3,18 @@ import { LoaderFunctionArgs, Outlet, useLoaderData } from "react-router";
 import { BackLink } from "~/components/common/back-link";
 import { ErrorComponent } from "~/components/error-component";
 import { db } from "~/integrations/db.server";
+import { Sentry } from "~/integrations/sentry";
 import { Responses } from "~/lib/responses.server";
 import { CourseService } from "~/services/course.server";
 import { SessionService } from "~/services/session.server";
 
 export async function loader(args: LoaderFunctionArgs) {
-  await SessionService.requireAdmin(args);
+  const user = await SessionService.requireAdmin(args);
   const id = args.params.courseId;
 
   const dbCourse = await db.course.findUnique({ where: { id }, include: { userCourses: true } });
   if (!dbCourse) {
+    Sentry.captureMessage(`Course ${id} not found`, { level: "error", extra: { userId: user.id, courseId: id } });
     throw Responses.notFound();
   }
   const cmsCourse = await CourseService.getFromCMSForRoot(dbCourse.strapiId);
