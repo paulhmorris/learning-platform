@@ -1,0 +1,264 @@
+name: 🧪 CI
+
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+  SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+  NEON_PROJECT_ID: ${{ vars.NEON_PROJECT_ID }}
+  NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+
+# Shared across both triggers so a push and a PR event for the same branch
+# can never run concurrently.
+concurrency:
+  group: ci-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches-ignore:
+      - main
+  # `synchronize` is intentionally omitted — pushes to a PR branch are already
+  # covered by the push trigger above.
+  pull_request:
+    types: [opened, reopened, closed]
+    branches:
+      - main
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  context:
+    name: 🏷️ Resolve branch context
+    runs-on: ubuntu-latest
+    outputs:
+      slug: ${{ steps.slug.outputs.slug }}
+      has_pr: ${{ steps.pr.outputs.has_pr }}
+    steps:
+      - name: Compute branch slug
+        id: slug
+        run: |
+          slug=$(echo "${BRANCH}" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+|-+$//g' | cut -c1-40)
+          echo "slug=${slug}" >> "$GITHUB_OUTPUT"
+        env:
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+
+      - name: Detect open PR for branch
+        id: pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "has_pr=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          count=$(gh pr list --repo "${GITHUB_REPOSITORY}" --base main --head "${BRANCH}" --state open --json number --jq 'length')
+          if [ "$count" -gt 0 ]; then
+            echo "has_pr=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_pr=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  lint:
+    name: 🧹 Lint
+    runs-on: ubuntu-latest
+    if: github.event.action != 'closed'
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.18.0
+          cache: "npm"
+      - run: npm ci --no-audit --no-fund
+      - run: npm run typegen
+      - run: npm run lint:prepush
+
+  typecheck:
+    name: 🔎 Typecheck
+    runs-on: ubuntu-latest
+    if: github.event.action != 'closed'
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.18.0
+          cache: "npm"
+      - run: npm ci --no-audit --no-fund
+      - run: npm run typegen
+      - run: npm run typecheck
+
+  test:
+    name: 🧪 Unit Tests
+    runs-on: ubuntu-latest
+    if: github.event.action != 'closed'
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.18.0
+          cache: "npm"
+      - run: npm ci --no-audit --no-fund
+      - run: npm test
+
+  neon:
+    name: 🧬 Setup Neon branch
+    runs-on: ubuntu-latest
+    if: github.event.action != 'closed'
+    needs: [context, lint, typecheck, test]
+    steps:
+      - uses: actions/checkout@v7
+      - name: Create Neon branch
+        id: neon_branch
+        uses: neondatabase/create-branch-action@v6
+        with:
+          project_id: ${{ env.NEON_PROJECT_ID }}
+          branch_name: preview-${{ needs.context.outputs.slug }}
+          parent_branch: main
+          role: learning-platform_owner
+          database: learning-platform
+          prisma: true
+          api_key: ${{ env.NEON_API_KEY }}
+
+      - name: Run Prisma migrations
+        run: npx prisma@6.12.0 migrate deploy
+        env:
+          DATABASE_URL: ${{ steps.neon_branch.outputs.db_url }}
+          DIRECT_URL: ${{ steps.neon_branch.outputs.db_url }}
+
+  deploy:
+    name: 🧩 Deploy Preview
+    runs-on: ubuntu-latest
+    if: github.event.action != 'closed'
+    needs: [context, neon]
+    outputs:
+      deploy_url: ${{ steps.vercel_deploy.outputs.url }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Pull Vercel Environment Information
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Fetch Neon connection string
+        id: neon_branch_deploy
+        uses: neondatabase/create-branch-action@v6
+        with:
+          project_id: ${{ env.NEON_PROJECT_ID }}
+          branch_name: preview-${{ needs.context.outputs.slug }}
+          parent_branch: main
+          role: learning-platform_owner
+          database: learning-platform
+          prisma: true
+          api_key: ${{ env.NEON_API_KEY }}
+
+      - name: Build Project Artifacts
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }} \
+          --build-env DATABASE_URL='${{ steps.neon_branch_deploy.outputs.db_url_pooled || steps.neon_branch_deploy.outputs.db_url }}' \
+          --build-env DIRECT_URL='${{ steps.neon_branch_deploy.outputs.db_url }}'
+
+      - name: Deploy to Vercel
+        id: vercel_deploy
+        run: |
+          DEPLOY_URL=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }} --yes \
+            --env DATABASE_URL='${{ steps.neon_branch_deploy.outputs.db_url_pooled || steps.neon_branch_deploy.outputs.db_url }}' \
+            --env DIRECT_URL='${{ steps.neon_branch_deploy.outputs.db_url }}' \
+            | tail -n 1)
+          echo "url=${DEPLOY_URL}" >> "$GITHUB_OUTPUT"
+
+      - name: Alias staging deployment
+        run: vercel alias set ${{ steps.vercel_deploy.outputs.url }} hiphop-staging.plumblearning.com --token=${{ secrets.VERCEL_TOKEN }}
+
+  schema-diff:
+    name: 🧬 Post schema diff
+    runs-on: ubuntu-latest
+    needs: [context, neon]
+    # Must be a pull_request event — the action comments via `context.issue.number`,
+    # which does not exist on push events.
+    if: ${{ github.event_name == 'pull_request' && github.event.action != 'closed' }}
+    steps:
+      - name: Post schema diff
+        uses: neondatabase/schema-diff-action@v1
+        with:
+          project_id: ${{ env.NEON_PROJECT_ID }}
+          compare_branch: preview-${{ needs.context.outputs.slug }}
+          base_branch: main
+          database: learning-platform
+          api_key: ${{ env.NEON_API_KEY }}
+
+  e2e:
+    name: 🎭 Test e2e
+    runs-on: ubuntu-latest
+    needs: [context, deploy]
+    if: ${{ github.event.action != 'closed' && needs.context.outputs.has_pr == 'true' }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.18.0
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Pull Vercel Environment Information
+        run: vercel env pull .env --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Fetch Neon connection string
+        id: neon_branch_e2e
+        uses: neondatabase/create-branch-action@v6
+        with:
+          project_id: ${{ env.NEON_PROJECT_ID }}
+          branch_name: preview-${{ needs.context.outputs.slug }}
+          parent_branch: main
+          role: learning-platform_owner
+          database: learning-platform
+          prisma: true
+          api_key: ${{ env.NEON_API_KEY }}
+
+      - name: Run e2e Tests
+        run: npm run test:e2e
+        env:
+          E2E_BASE_URL: ${{ needs.deploy.outputs.deploy_url }}
+          LOG_LEVEL: "error"
+          DIRECT_URL: ${{ steps.neon_branch_e2e.outputs.db_url }}
+          DATABASE_URL: ${{ steps.neon_branch_e2e.outputs.db_url_pooled || steps.neon_branch_e2e.outputs.db_url }}
+          AXIOM_TOKEN: ${{ secrets.AXIOM_TOKEN }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+          CLERK_PUBLISHABLE_KEY: ${{ vars.CLERK_PUBLISHABLE_KEY_TEST }}
+          E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
+          E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
+          UPSTASH_REDIS_REST_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
+          STRAPI_URL: ${{ vars.STRAPI_URL }}
+          STRAPI_TOKEN: ${{ secrets.STRAPI_TOKEN }}
+
+      - name: Upload Playwright Report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: |
+            playwright-report
+            test-results
+
+  cleanup:
+    name: 🧹 Delete Neon Branch
+    runs-on: ubuntu-latest
+    needs: [context]
+    if: ${{ github.event_name == 'pull_request' && github.event.action == 'closed' }}
+    steps:
+      - name: Delete Neon branch
+        uses: neondatabase/delete-branch-action@v3
+        with:
+          project_id: ${{ env.NEON_PROJECT_ID }}
+          branch: preview-${{ needs.context.outputs.slug }}
+          api_key: ${{ env.NEON_API_KEY }}
