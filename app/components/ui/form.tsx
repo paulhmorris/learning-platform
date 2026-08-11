@@ -228,7 +228,9 @@ export function FormSelect(props: FormSelectProps) {
             rest.className,
           )}
         >
-          <SelectValue placeholder={placeholder} />
+          {/* Keyed so a value change remounts the element instead of swapping its text node,
+              which browser translation replaces out from under React and strands on screen. */}
+          <SelectValue key={String(input.value)} placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent>
           {options?.length === 0 ? (
