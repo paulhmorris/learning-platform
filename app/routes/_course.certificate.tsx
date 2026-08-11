@@ -259,14 +259,6 @@ export default function CourseCertificate() {
 
   const lessons = getLessonsInOrder({ course: cmsCourse, progress: lessonProgress });
 
-  const Wrapper = ({ children }: { children: React.ReactNode }) => (
-    <>
-      <title>{`Certificate | ${cmsCourse.attributes.title}`}</title>
-      <PageTitle>Certificate</PageTitle>
-      <div className="mt-8">{children}</div>
-    </>
-  );
-
   const userHasVerifiedIdentity = course.requiresIdentityVerification ? userProfile.isIdentityVerified : true;
 
   const isCourseComplete =
@@ -315,7 +307,7 @@ export default function CourseCertificate() {
   // Progress is unknown, so we can't tell the user whether they're eligible either way.
   if (isError) {
     return (
-      <Wrapper>
+      <Wrapper courseTitle={cmsCourse.attributes.title}>
         <ProgressLoadError
           message="We couldn't load your course progress, so we can't confirm whether your certificate is ready."
           onRetry={refetch}
@@ -326,7 +318,7 @@ export default function CourseCertificate() {
 
   if (!isCourseComplete) {
     return (
-      <Wrapper>
+      <Wrapper courseTitle={cmsCourse.attributes.title}>
         <ErrorText>You must complete all lessons and quizzes before you can claim your certificate.</ErrorText>
       </Wrapper>
     );
@@ -334,7 +326,7 @@ export default function CourseCertificate() {
 
   if (!userHasVerifiedIdentity) {
     return (
-      <Wrapper>
+      <Wrapper courseTitle={cmsCourse.attributes.title}>
         <ErrorText>
           <span>You must verify your identity before you can claim your certificate for this course. </span>
           <Link to="/account/identity" className="mt-2 block text-lg font-bold underline decoration-2">
@@ -347,7 +339,7 @@ export default function CourseCertificate() {
 
   if (userCourse.certificate) {
     return (
-      <Wrapper>
+      <Wrapper courseTitle={cmsCourse.attributes.title}>
         <SuccessText>
           You have claimed your certificate.{" "}
           <a
@@ -365,7 +357,7 @@ export default function CourseCertificate() {
 
   if (actionData?.success) {
     return (
-      <Wrapper>
+      <Wrapper courseTitle={cmsCourse.attributes.title}>
         <SuccessText>
           Thank you! Your certificate will be emailed to <span className="font-bold">{userProfile.email}</span> shortly.
         </SuccessText>
@@ -376,7 +368,7 @@ export default function CourseCertificate() {
   const CourseSpecificForm = courseSpecificForms.find((f) => f.courseId === data.course.id)?.render(userProfile);
 
   return (
-    <Wrapper>
+    <Wrapper courseTitle={cmsCourse.attributes.title}>
       <SuccessText>
         Congratulations on successfully completing <span className="font-bold">{data.course.attributes.title}</span>!
       </SuccessText>
@@ -396,6 +388,16 @@ export default function CourseCertificate() {
         )}
       </div>
     </Wrapper>
+  );
+}
+
+function Wrapper({ courseTitle, children }: { courseTitle: string; children: React.ReactNode }) {
+  return (
+    <>
+      <title>{`Certificate | ${courseTitle}`}</title>
+      <PageTitle>Certificate</PageTitle>
+      <div className="mt-8">{children}</div>
+    </>
   );
 }
 
