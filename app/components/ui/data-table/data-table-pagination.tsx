@@ -21,7 +21,10 @@ export function DataTablePagination<TData>({ table }: DataTablePaginationProps<T
             }}
           >
             <SelectTrigger className="h-8 w-[70px]" aria-label="Select number of results to display">
-              <SelectValue placeholder={table.getState().pagination.pageSize} />
+              <SelectValue
+                key={table.getState().pagination.pageSize}
+                placeholder={table.getState().pagination.pageSize}
+              />
             </SelectTrigger>
             <SelectContent side="top">
               {[10, 20, 30, 40, 50].map((pageSize) => (

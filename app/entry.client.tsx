@@ -3,6 +3,9 @@ import { hydrateRoot } from "react-dom/client";
 import { HydratedRouter } from "react-router/dom";
 
 import { Sentry } from "~/integrations/sentry";
+import { installTranslationSafeDom } from "~/lib/translation-safe-dom.client";
+
+installTranslationSafeDom();
 
 Sentry.init({
   dsn: "https://3093e529a633d80d697b26390e53886d@o4505496663359488.ingest.us.sentry.io/4506584484151296",

@@ -47,10 +47,10 @@ export async function loader(args: LoaderFunctionArgs) {
     const linkedCourse = await CourseService.getByHost(url.host);
     if (!linkedCourse) {
       Sentry.captureMessage(`Course for host ${url.host} not found`, {
-        level: "error",
+        level: "warning",
         extra: { userId: user.id, host: url.host },
       });
-      logger.error(`Course for host ${url.host} not found`);
+      logger.warn(`Course for host ${url.host} not found`);
       throw Responses.notFound();
     }
 
