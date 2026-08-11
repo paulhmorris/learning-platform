@@ -61,8 +61,8 @@ jobs:
             echo "has_pr=false" >> "$GITHUB_OUTPUT"
           fi
 
-  lint:
-    name: 🧹 Lint
+  validate:
+    name: 🧪 Validate
     runs-on: ubuntu-latest
     if: github.event.action != 'closed'
     steps:
@@ -74,39 +74,14 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - run: npm run typegen
       - run: npm run lint:prepush
-
-  typecheck:
-    name: 🔎 Typecheck
-    runs-on: ubuntu-latest
-    if: github.event.action != 'closed'
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 24.18.0
-          cache: "npm"
-      - run: npm ci --no-audit --no-fund
-      - run: npm run typegen
       - run: npm run typecheck
-
-  test:
-    name: 🧪 Unit Tests
-    runs-on: ubuntu-latest
-    if: github.event.action != 'closed'
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 24.18.0
-          cache: "npm"
-      - run: npm ci --no-audit --no-fund
-      - run: npm test
+      - run: npm run test
 
   neon:
     name: 🧬 Setup Neon branch
     runs-on: ubuntu-latest
     if: github.event.action != 'closed'
-    needs: [context, lint, typecheck, test]
+    needs: [context, validate]
     steps:
       - uses: actions/checkout@v7
       - name: Create Neon branch
