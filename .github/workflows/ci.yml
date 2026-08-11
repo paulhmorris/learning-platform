@@ -71,11 +71,19 @@ jobs:
         with:
           node-version: 24.18.0
           cache: "npm"
-      - run: npm ci --no-audit --no-fund
-      - run: npm run typegen
-      - run: npm run lint:prepush
-      - run: npm run typecheck
-      - run: npm run test
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Typegen
+        run: npm run typegen
+
+      - parallel:
+          - name: Lint
+            run: npm run lint:prepush
+          - name: Typecheck
+            run: npm run typecheck
+          - name: Test
+            run: npm run test
 
   neon:
     name: 🧬 Setup Neon branch
