@@ -98,7 +98,7 @@ jobs:
         with:
           project_id: ${{ env.NEON_PROJECT_ID }}
           branch_name: preview-${{ needs.context.outputs.slug }}
-          parent_branch: main
+          parent_branch: staging
           role: learning-platform_owner
           database: learning-platform
           prisma: true
@@ -132,7 +132,7 @@ jobs:
         with:
           project_id: ${{ env.NEON_PROJECT_ID }}
           branch_name: preview-${{ needs.context.outputs.slug }}
-          parent_branch: main
+          parent_branch: staging
           role: learning-platform_owner
           database: learning-platform
           prisma: true
@@ -202,7 +202,7 @@ jobs:
         with:
           project_id: ${{ env.NEON_PROJECT_ID }}
           branch_name: preview-${{ needs.context.outputs.slug }}
-          parent_branch: main
+          parent_branch: staging
           role: learning-platform_owner
           database: learning-platform
           prisma: true
