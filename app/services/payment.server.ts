@@ -118,7 +118,7 @@ export const PaymentService = {
           // duplicate sessions from double-clicks, regardless of selection order. Stripe retains
           // idempotency keys for 24 hours, which is sufficient to prevent accidental duplicates
           // while still allowing intentional re-purchases.
-          idempotencyKey: `checkout_session_${user.id}_${[...stripePriceIds].sort().join("_")}`,
+          idempotencyKey: `checkout_session_${user.id}_${[...stripePriceIds].toSorted().join("_")}`,
         },
       );
       logger.info(`Created course checkout session ${session.id} with prices ${stripePriceIds.join(", ")}`, {

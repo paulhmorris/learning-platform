@@ -163,10 +163,10 @@ export async function action(args: ActionFunctionArgs) {
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     const allQuizIds = course.data.attributes.sections.flatMap((s) => s.quiz?.data?.id).filter(Boolean);
 
-    const allLessonProgress = progress.map((p) => p.lessonId);
+    const allLessonProgress = new Set(progress.map((p) => p.lessonId));
     const allQuizProgress = quizProgress.map((p) => p.quizId);
 
-    const allLessonsCompleted = allLessonIds.every((id) => allLessonProgress.includes(id));
+    const allLessonsCompleted = allLessonIds.every((id) => allLessonProgress.has(id));
     const allQuizzesCompleted = allQuizIds.every((id) => allQuizProgress.includes(id));
 
     if (!allLessonsCompleted || !allQuizzesCompleted) {
@@ -193,8 +193,8 @@ export async function action(args: ActionFunctionArgs) {
         throw validationError(formData.error);
       }
       // TODO: Clerk migration
-      const userCourses = await UserCourseService.getAllByUserId(user.id);
-      const userCourseId = userCourses.find((c) => c.courseId === linkedCourse.id)?.id;
+      const _userCourses = await UserCourseService.getAllByUserId(user.id);
+      const userCourseId = _userCourses.find((c) => c.courseId === linkedCourse.id)?.id;
       if (!userCourseId) {
         logger.error(`User course not found for user ${user.id} and course ${linkedCourse.id}`, {
           userId: user.id,

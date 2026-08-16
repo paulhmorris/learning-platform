@@ -25,6 +25,7 @@ export function QuizQuestion({ question, questionIndex, answers }: Props) {
 
           return (
             <QuizAnswer
+              // oxlint-disable-next-line react/no-array-index-key
               key={`question-${questionIndex}-answer-${a_index}`}
               questionIndex={questionIndex}
               answerIndex={a_index}

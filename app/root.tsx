@@ -1,6 +1,7 @@
 import { ClerkProvider, SignedIn, useUser } from "@clerk/react-router";
 import { rootAuthLoader } from "@clerk/react-router/ssr.server";
 import { dark } from "@clerk/themes";
+
 import "@fontsource-variable/inter/wght.css";
 import { useEffect } from "react";
 import type { LinksFunction, LoaderFunctionArgs } from "react-router";
@@ -15,14 +16,16 @@ import { SERVER_CONFIG } from "~/config.server";
 import { useAnalytics } from "~/hooks/useAnalytics";
 import { createLogger } from "~/integrations/logger.server";
 import { Sentry } from "~/integrations/sentry";
+import { GA_MEASUREMENT_ID } from "~/lib/constants";
 import { HttpHeaders, isResponseLike, Responses } from "~/lib/responses.server";
 import { cn, hexToPartialHSL } from "~/lib/utils";
 import { themeSessionResolver } from "~/routes/api.set-theme";
 import { CourseService } from "~/services/course.server";
-import globalStyles from "~/tailwind.css?url";
 
 // eslint-disable-next-line import/no-unresolved
 import { Route } from "./+types/root";
+
+import globalStyles from "~/tailwind.css?url";
 
 const logger = createLogger("Root");
 
@@ -67,7 +70,7 @@ export const loader = async (args: LoaderFunctionArgs) => {
     }
     logger.error("Error in root loader");
     Sentry.captureException(error);
-    throw Responses.notFound();
+    throw Responses.serverError();
   }
 };
 
@@ -76,12 +79,23 @@ export default function App() {
 }
 
 export function Layout({ children }: { children: React.ReactNode }) {
-  const data = useRouteLoaderData<typeof loader>("root");
+  const _data = useRouteLoaderData<typeof loader>("root");
+
+  // A throwing root loader leaves us without clerkState. ClerkProvider asserts on that and throws,
+  // replacing the real error with its own, so render the ErrorBoundary without Clerk instead.
+  if (!_data) {
+    return (
+      <ThemeProvider specifiedTheme={null} themeAction="/api/set-theme">
+        <Document ssrTheme={false}>{children}</Document>
+      </ThemeProvider>
+    );
+  }
+
   return (
     <ClerkProvider
-      loaderData={data}
+      loaderData={_data}
       telemetry={{ disabled: true }}
-      appearance={{ theme: (data?.theme ?? null) === Theme.DARK ? dark : undefined }}
+      appearance={{ theme: _data.theme === Theme.DARK ? dark : undefined }}
       publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY}
       signInUrl="/sign-in"
       signUpUrl="/sign-up"
@@ -90,17 +104,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
       signInFallbackRedirectUrl="/preview"
       signUpFallbackRedirectUrl="/preview"
     >
-      <ThemeProvider specifiedTheme={data?.theme ?? null} themeAction="/api/set-theme">
-        <InnerLayout ssrTheme={Boolean(data?.theme)}>{children}</InnerLayout>
+      <ThemeProvider specifiedTheme={_data.theme} themeAction="/api/set-theme">
+        <InnerLayout ssrTheme={Boolean(_data.theme)}>{children}</InnerLayout>
       </ThemeProvider>
     </ClerkProvider>
   );
 }
 
 function InnerLayout({ ssrTheme, children }: { ssrTheme: boolean; children: React.ReactNode }) {
-  const data = useRouteLoaderData<typeof loader>("root");
   const { user } = useUser();
-  const [theme] = useTheme();
   useAnalytics();
 
   useEffect(() => {
@@ -116,13 +128,27 @@ function InnerLayout({ ssrTheme, children }: { ssrTheme: boolean; children: Reac
   }, [user]);
 
   return (
+    <Document ssrTheme={ssrTheme}>
+      <SignedIn>
+        <Header />
+      </SignedIn>
+      {children}
+    </Document>
+  );
+}
+
+function Document({ ssrTheme, children }: { ssrTheme: boolean; children: React.ReactNode }) {
+  const _data = useRouteLoaderData<typeof loader>("root");
+  const [theme] = useTheme();
+
+  return (
     <html lang="en" data-theme={theme ?? ssrTheme} className={cn("h-full")}>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
         <meta name="theme-color" media="(prefers-color-scheme: light)" content="#fff" />
         <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#030712" />
-        {data?.ENV ? <meta name="git-sha" content={data.ENV.VERCEL_GIT_COMMIT_SHA} /> : null}
+        {_data?.ENV ? <meta name="git-sha" content={_data.ENV.VERCEL_GIT_COMMIT_SHA} /> : null}
 
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
@@ -133,25 +159,40 @@ function InnerLayout({ ssrTheme, children }: { ssrTheme: boolean; children: Reac
         <style>
           {`
             :root {
-              --primary: ${hexToPartialHSL(data?.course?.data.attributes.primary_color) ?? "210 100% 40%"};
-              --primary-foreground: ${hexToPartialHSL(data?.course?.data.attributes.secondary_color) ?? "0 0% 100%"};
+              --primary: ${hexToPartialHSL(_data?.course?.data.attributes.primary_color) ?? "210 100% 40%"};
+              --primary-foreground: ${hexToPartialHSL(_data?.course?.data.attributes.secondary_color) ?? "0 0% 100%"};
             }
           `}
         </style>
+        {_data?.ENV.VERCEL_ENV === "production" ? (
+          <>
+            <script async src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`} />
+            <script
+              dangerouslySetInnerHTML={{
+                __html: `window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+window.gtag = gtag;
+gtag('js', new Date());
+gtag('config', '${GA_MEASUREMENT_ID}', ${JSON.stringify({
+                  send_page_view: false,
+                  course: _data.course?.data.attributes.title ?? "unknown",
+                }).replaceAll("<", "\\u003c")});`,
+              }}
+            />
+          </>
+        ) : null}
+
         <PreventFlashOnWrongTheme ssrTheme={Boolean(ssrTheme)} />
         <Meta />
         <Links />
       </head>
       <body className="flex h-full min-h-full flex-col bg-background font-sans text-foreground">
-        <SignedIn>
-          <Header />
-        </SignedIn>
         {children}
         <Notifications />
         <ScrollRestoration />
         <script
           dangerouslySetInnerHTML={{
-            __html: `window.ENV = ${JSON.stringify(data?.ENV)}`,
+            __html: `window.ENV = ${JSON.stringify(_data?.ENV)}`,
           }}
         />
         <Scripts />

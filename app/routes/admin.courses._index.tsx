@@ -27,6 +27,7 @@ export async function loader(args: LoaderFunctionArgs) {
   if (!cmsCourses.length) {
     throw new Error(`No courses found in CMS`);
   }
+  // oxlint-disable-next-line oxc/no-map-spread
   const courses = dbCourses.map((course) => {
     const cmsCourse = cmsCourses.find((c) => c.id === course.strapiId);
     return {

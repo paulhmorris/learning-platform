@@ -66,6 +66,8 @@ declare global {
   // Client side
   interface Window {
     ENV: z.infer<typeof _clientEnvValidation>;
+    dataLayer?: Array<unknown>;
+    gtag?: (...args: Array<unknown>) => void;
   }
 
   // Vite

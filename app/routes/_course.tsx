@@ -92,7 +92,7 @@ export default function CourseLayout() {
       toast.error("You do not have access to this course. Please purchase it to continue.");
       void navigate("/preview");
     }
-  }, [hasAccess, linkedCourse.id]);
+  }, [hasAccess, linkedCourse.id, navigate]);
 
   // Auto-scroll to active section when collapsed on mobile
   useEffect(() => {

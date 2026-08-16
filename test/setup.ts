@@ -1,3 +1,4 @@
+// oxlint-disable-next-line import/no-unassigned-import
 import "@testing-library/jest-dom";
 import { URLSearchParams } from "url";
 

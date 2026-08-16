@@ -1,3 +1,4 @@
+// oxlint-disable-next-line import/no-unassigned-import
 import "@total-typescript/ts-reset/filter-boolean";
 
 declare module "react" {
@@ -5,5 +6,3 @@ declare module "react" {
     fetchpriority?: "high" | "low" | "auto";
   }
 }
-
-export {};

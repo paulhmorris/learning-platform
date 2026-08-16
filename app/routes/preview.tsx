@@ -155,6 +155,7 @@ export default function CoursePreview() {
         course_title: course.attributes.title,
       });
     }
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [isSuccessful, isCanceled]);
 
   useEffect(() => {

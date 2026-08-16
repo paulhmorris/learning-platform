@@ -80,7 +80,7 @@ export function SectionItemLink({ children, className, ...props }: Omit<NavLinkP
       }
       {...props}
     >
-      {(props) => (typeof children === "function" ? children(props) : children)}
+      {(_props) => (typeof children === "function" ? children(_props) : children)}
     </NavLink>
   );
 }
