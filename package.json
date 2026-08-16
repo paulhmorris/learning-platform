@@ -147,7 +147,7 @@
     "fsevents": "~2.3.2"
   },
   "lint-staged": {
-    "*": "npm run lint"
+    "*": "npm run lint -- --no-error-on-unmatched-pattern"
   },
   "engines": {
     "node": "24.x"

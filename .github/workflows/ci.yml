@@ -7,10 +7,8 @@ env:
   NEON_PROJECT_ID: ${{ vars.NEON_PROJECT_ID }}
   NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
 
-# Shared across both triggers so a push and a PR event for the same branch
-# can never run concurrently.
 concurrency:
-  group: ci-${{ github.head_ref || github.ref_name }}
+  group: ci-${{ github.event_name }}-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
 on:
