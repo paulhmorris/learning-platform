@@ -36,6 +36,7 @@ export async function loader(args: LoaderFunctionArgs) {
     }
 
     // TODO: Maybe do this whole call on its own to reduce data load for all the other places we need userCourses with less data
+    // oxlint-disable-next-line oxc/no-map-spread
     const courses = userCourses.map((dbCourse) => {
       const cmsCourse = cmsCourses.find((course) => course.id === dbCourse.course.strapiId);
       return {

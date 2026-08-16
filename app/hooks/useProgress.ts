@@ -20,6 +20,7 @@ export function useProgress() {
     if (fetcher.data) {
       loadInitiated = false;
     }
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [fetcher.state, fetcher.data]);
 
   useEffect(() => {

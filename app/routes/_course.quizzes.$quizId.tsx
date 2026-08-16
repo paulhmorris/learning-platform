@@ -1,3 +1,4 @@
+// oxlint-disable react/no-unstable-nested-components TODO: fix
 import { useEffect, useRef } from "react";
 import { ActionFunctionArgs, Link, LoaderFunctionArgs, useActionData, useLoaderData } from "react-router";
 import invariant from "tiny-invariant";

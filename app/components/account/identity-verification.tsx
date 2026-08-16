@@ -25,10 +25,10 @@ export function IdentityVerification({
 
   useEffect(() => {
     if (!stripePromise) return;
-    async function loadStripe() {
+    async function _loadStripe() {
       setStripe(await stripePromise);
     }
-    void loadStripe();
+    void _loadStripe();
   }, []);
 
   async function handleStartVerification() {

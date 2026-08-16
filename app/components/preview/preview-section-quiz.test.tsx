@@ -6,6 +6,7 @@ vi.mock("~/hooks/useProgress", () => ({
 }));
 
 import { APIResponseData } from "~/types/utils";
+
 import { PreviewSectionQuiz } from "./preview-section-quiz";
 
 function makeQuiz(questionCount: number) {

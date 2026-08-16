@@ -103,7 +103,7 @@ export const CacheService = {
       const keysByPattern = await Promise.all(patterns.map((pattern) => redis.keys(pattern)));
       const keys = Array.from(new Set(keysByPattern.flat()));
       const ttls = await Promise.all(keys.map((key) => redis.ttl(key)));
-      return keys.map((key, i) => ({ key, ttl: ttls[i] })).sort((a, b) => a.key.localeCompare(b.key));
+      return keys.map((key, i) => ({ key, ttl: ttls[i] })).toSorted((a, b) => a.key.localeCompare(b.key));
     } catch (error) {
       Sentry.captureException(error);
       logger.error("Failed to list cache items");

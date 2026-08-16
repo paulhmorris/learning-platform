@@ -14,6 +14,7 @@ type AuthWorkerFixtures = {
 
 export const test = base.extend<AuthFixtures, AuthWorkerFixtures>({
   testUser: [
+    // oxlint-disable-next-line no-empty-pattern
     async ({}, use, workerInfo) => {
       const testUser = await createE2ETestUser(workerInfo.workerIndex);
       await enrollUserInCourse(testUser.id);

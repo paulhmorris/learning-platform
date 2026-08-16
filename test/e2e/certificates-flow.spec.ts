@@ -19,12 +19,8 @@ test.describe("Certificate flow", () => {
       .filter((quiz): quiz is NonNullable<typeof quiz> => Boolean(quiz));
 
     await resetProgressForUser(userId);
-    for (const lesson of lessons) {
-      await markLessonCompleteForUser(userId, lesson);
-    }
-    for (const quiz of quizzes) {
-      await markQuizPassedForUser(userId, quiz.id, 100);
-    }
+    await Promise.all(lessons.map((lesson) => markLessonCompleteForUser(userId, lesson)));
+    await Promise.all(quizzes.map((quiz) => markQuizPassedForUser(userId, quiz.id, 100)));
   }
 
   test("requires identity verification after completion", async ({ page, userId }) => {

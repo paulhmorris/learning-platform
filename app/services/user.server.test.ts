@@ -48,6 +48,7 @@ vi.mock("~/integrations/sentry", () => ({
 }));
 
 import { isClerkAPIResponseError } from "@clerk/shared/error";
+
 import { clerkClient } from "~/integrations/clerk.server";
 import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";

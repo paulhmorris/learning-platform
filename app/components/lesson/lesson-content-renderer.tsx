@@ -66,10 +66,12 @@ export function LessonContentRenderer({ content }: Props) {
 
           case "blocks.slideshow": {
             return (
+              // oxlint-disable-next-line react/no-array-index-key
               <Carousel key={`carousel-${c_index}`} className="mx-12 max-w-[75%]">
                 <CarouselContent>
                   {component.images.data.map((i, index) => {
                     return (
+                      // oxlint-disable-next-line react/no-array-index-key
                       <CarouselItem key={`slideshow-image-${i.id}-${index}`}>
                         <div className="flex aspect-square items-center justify-center p-6">
                           <img src={`${window.ENV.STRAPI_URL}${i.attributes.url}`} alt={i.attributes.alternativeText} />

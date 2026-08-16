@@ -9,10 +9,10 @@ import { loggerMiddleware } from "~/server/middleware";
 const isVercel = process.env.VERCEL === "1";
 
 const server = await createHonoServer({
-  configure(server) {
-    server.use(requestId());
-    server.use(GeoMiddleware());
-    server.use(loggerMiddleware());
+  configure(_server) {
+    _server.use(requestId());
+    _server.use(GeoMiddleware());
+    _server.use(loggerMiddleware());
   },
 });
 

@@ -1,6 +1,7 @@
 import { ClerkProvider, SignedIn, useUser } from "@clerk/react-router";
 import { rootAuthLoader } from "@clerk/react-router/ssr.server";
 import { dark } from "@clerk/themes";
+
 import "@fontsource-variable/inter/wght.css";
 import { useEffect } from "react";
 import type { LinksFunction, LoaderFunctionArgs } from "react-router";
@@ -20,10 +21,11 @@ import { HttpHeaders, isResponseLike, Responses } from "~/lib/responses.server";
 import { cn, hexToPartialHSL } from "~/lib/utils";
 import { themeSessionResolver } from "~/routes/api.set-theme";
 import { CourseService } from "~/services/course.server";
-import globalStyles from "~/tailwind.css?url";
 
 // eslint-disable-next-line import/no-unresolved
 import { Route } from "./+types/root";
+
+import globalStyles from "~/tailwind.css?url";
 
 const logger = createLogger("Root");
 
@@ -77,11 +79,11 @@ export default function App() {
 }
 
 export function Layout({ children }: { children: React.ReactNode }) {
-  const data = useRouteLoaderData<typeof loader>("root");
+  const _data = useRouteLoaderData<typeof loader>("root");
 
   // A throwing root loader leaves us without clerkState. ClerkProvider asserts on that and throws,
   // replacing the real error with its own, so render the ErrorBoundary without Clerk instead.
-  if (!data) {
+  if (!_data) {
     return (
       <ThemeProvider specifiedTheme={null} themeAction="/api/set-theme">
         <Document ssrTheme={false}>{children}</Document>
@@ -91,9 +93,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <ClerkProvider
-      loaderData={data}
+      loaderData={_data}
       telemetry={{ disabled: true }}
-      appearance={{ theme: data.theme === Theme.DARK ? dark : undefined }}
+      appearance={{ theme: _data.theme === Theme.DARK ? dark : undefined }}
       publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY}
       signInUrl="/sign-in"
       signUpUrl="/sign-up"
@@ -102,8 +104,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
       signInFallbackRedirectUrl="/preview"
       signUpFallbackRedirectUrl="/preview"
     >
-      <ThemeProvider specifiedTheme={data.theme} themeAction="/api/set-theme">
-        <InnerLayout ssrTheme={Boolean(data.theme)}>{children}</InnerLayout>
+      <ThemeProvider specifiedTheme={_data.theme} themeAction="/api/set-theme">
+        <InnerLayout ssrTheme={Boolean(_data.theme)}>{children}</InnerLayout>
       </ThemeProvider>
     </ClerkProvider>
   );
@@ -136,7 +138,7 @@ function InnerLayout({ ssrTheme, children }: { ssrTheme: boolean; children: Reac
 }
 
 function Document({ ssrTheme, children }: { ssrTheme: boolean; children: React.ReactNode }) {
-  const data = useRouteLoaderData<typeof loader>("root");
+  const _data = useRouteLoaderData<typeof loader>("root");
   const [theme] = useTheme();
 
   return (
@@ -146,7 +148,7 @@ function Document({ ssrTheme, children }: { ssrTheme: boolean; children: React.R
         <meta name="viewport" content="width=device-width,initial-scale=1" />
         <meta name="theme-color" media="(prefers-color-scheme: light)" content="#fff" />
         <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#030712" />
-        {data?.ENV ? <meta name="git-sha" content={data.ENV.VERCEL_GIT_COMMIT_SHA} /> : null}
+        {_data?.ENV ? <meta name="git-sha" content={_data.ENV.VERCEL_GIT_COMMIT_SHA} /> : null}
 
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
@@ -157,12 +159,12 @@ function Document({ ssrTheme, children }: { ssrTheme: boolean; children: React.R
         <style>
           {`
             :root {
-              --primary: ${hexToPartialHSL(data?.course?.data.attributes.primary_color) ?? "210 100% 40%"};
-              --primary-foreground: ${hexToPartialHSL(data?.course?.data.attributes.secondary_color) ?? "0 0% 100%"};
+              --primary: ${hexToPartialHSL(_data?.course?.data.attributes.primary_color) ?? "210 100% 40%"};
+              --primary-foreground: ${hexToPartialHSL(_data?.course?.data.attributes.secondary_color) ?? "0 0% 100%"};
             }
           `}
         </style>
-        {data?.ENV.VERCEL_ENV === "production" ? (
+        {_data?.ENV.VERCEL_ENV === "production" ? (
           <>
             <script async src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`} />
             <script
@@ -173,7 +175,7 @@ window.gtag = gtag;
 gtag('js', new Date());
 gtag('config', '${GA_MEASUREMENT_ID}', ${JSON.stringify({
                   send_page_view: false,
-                  course: data.course?.data.attributes.title ?? "unknown",
+                  course: _data.course?.data.attributes.title ?? "unknown",
                 }).replaceAll("<", "\\u003c")});`,
               }}
             />
@@ -190,7 +192,7 @@ gtag('config', '${GA_MEASUREMENT_ID}', ${JSON.stringify({
         <ScrollRestoration />
         <script
           dangerouslySetInnerHTML={{
-            __html: `window.ENV = ${JSON.stringify(data?.ENV)}`,
+            __html: `window.ENV = ${JSON.stringify(_data?.ENV)}`,
           }}
         />
         <Scripts />

@@ -66,7 +66,7 @@ export const claimCertificateJob = task({
     } catch (error) {
       Sentry.captureException(error, { extra: { userId: payload.userId } });
       logger.error("Error fetching user for certificate claim", { error, userId: payload.userId });
-      throw new Error("Error fetching user for certificate claim");
+      throw new Error("Error fetching user for certificate claim", { cause: error });
     }
 
     if (!user) {
@@ -86,7 +86,7 @@ export const claimCertificateJob = task({
     } catch (error) {
       Sentry.captureException(error, { extra: { courseId: payload.courseId } });
       logger.error("Course not found for certificate claim", { error, courseId: payload.courseId });
-      throw new Error("Course not found for certificate claim");
+      throw new Error("Course not found for certificate claim", { cause: error });
     }
 
     const userCourses = await UserCourseService.getAllByUserId(user.id);

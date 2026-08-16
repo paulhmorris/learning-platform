@@ -45,6 +45,7 @@ export function ProgressTimer({ lesson, progress, setClientProgressPercentage }:
         { method: "POST", action: "/api/progress" },
       );
     }
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [shouldSubmit]);
 
   // Fire toast immediately when the action returns a toast in its response data
@@ -71,6 +72,7 @@ export function ProgressTimer({ lesson, progress, setClientProgressPercentage }:
   useEffect(() => {
     document.addEventListener("visibilitychange", handleVisibilityChange);
     return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [stop, start]);
 
   if (!duration) {

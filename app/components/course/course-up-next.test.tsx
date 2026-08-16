@@ -3,6 +3,7 @@ import { createRoutesStub } from "react-router";
 import { describe, expect, it } from "vitest";
 
 import { LessonInOrder } from "~/lib/utils";
+
 import { CourseUpNext } from "./course-up-next";
 
 function renderWithRouter(ui: React.ReactElement) {
