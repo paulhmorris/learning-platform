@@ -15,6 +15,7 @@ import { SERVER_CONFIG } from "~/config.server";
 import { useAnalytics } from "~/hooks/useAnalytics";
 import { createLogger } from "~/integrations/logger.server";
 import { Sentry } from "~/integrations/sentry";
+import { GA_MEASUREMENT_ID } from "~/lib/constants";
 import { HttpHeaders, isResponseLike, Responses } from "~/lib/responses.server";
 import { cn, hexToPartialHSL } from "~/lib/utils";
 import { themeSessionResolver } from "~/routes/api.set-theme";
@@ -67,7 +68,7 @@ export const loader = async (args: LoaderFunctionArgs) => {
     }
     logger.error("Error in root loader");
     Sentry.captureException(error);
-    throw Responses.notFound();
+    throw Responses.serverError();
   }
 };
 
@@ -77,11 +78,22 @@ export default function App() {
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const data = useRouteLoaderData<typeof loader>("root");
+
+  // A throwing root loader leaves us without clerkState. ClerkProvider asserts on that and throws,
+  // replacing the real error with its own, so render the ErrorBoundary without Clerk instead.
+  if (!data) {
+    return (
+      <ThemeProvider specifiedTheme={null} themeAction="/api/set-theme">
+        <Document ssrTheme={false}>{children}</Document>
+      </ThemeProvider>
+    );
+  }
+
   return (
     <ClerkProvider
       loaderData={data}
       telemetry={{ disabled: true }}
-      appearance={{ theme: (data?.theme ?? null) === Theme.DARK ? dark : undefined }}
+      appearance={{ theme: data.theme === Theme.DARK ? dark : undefined }}
       publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY}
       signInUrl="/sign-in"
       signUpUrl="/sign-up"
@@ -90,17 +102,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
       signInFallbackRedirectUrl="/preview"
       signUpFallbackRedirectUrl="/preview"
     >
-      <ThemeProvider specifiedTheme={data?.theme ?? null} themeAction="/api/set-theme">
-        <InnerLayout ssrTheme={Boolean(data?.theme)}>{children}</InnerLayout>
+      <ThemeProvider specifiedTheme={data.theme} themeAction="/api/set-theme">
+        <InnerLayout ssrTheme={Boolean(data.theme)}>{children}</InnerLayout>
       </ThemeProvider>
     </ClerkProvider>
   );
 }
 
 function InnerLayout({ ssrTheme, children }: { ssrTheme: boolean; children: React.ReactNode }) {
-  const data = useRouteLoaderData<typeof loader>("root");
   const { user } = useUser();
-  const [theme] = useTheme();
   useAnalytics();
 
   useEffect(() => {
@@ -114,6 +124,20 @@ function InnerLayout({ ssrTheme, children }: { ssrTheme: boolean; children: Reac
       Sentry.setUser(null);
     }
   }, [user]);
+
+  return (
+    <Document ssrTheme={ssrTheme}>
+      <SignedIn>
+        <Header />
+      </SignedIn>
+      {children}
+    </Document>
+  );
+}
+
+function Document({ ssrTheme, children }: { ssrTheme: boolean; children: React.ReactNode }) {
+  const data = useRouteLoaderData<typeof loader>("root");
+  const [theme] = useTheme();
 
   return (
     <html lang="en" data-theme={theme ?? ssrTheme} className={cn("h-full")}>
@@ -138,14 +162,29 @@ function InnerLayout({ ssrTheme, children }: { ssrTheme: boolean; children: Reac
             }
           `}
         </style>
+        {data?.ENV.VERCEL_ENV === "production" ? (
+          <>
+            <script async src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`} />
+            <script
+              dangerouslySetInnerHTML={{
+                __html: `window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+window.gtag = gtag;
+gtag('js', new Date());
+gtag('config', '${GA_MEASUREMENT_ID}', ${JSON.stringify({
+                  send_page_view: false,
+                  course: data.course?.data.attributes.title ?? "unknown",
+                }).replaceAll("<", "\\u003c")});`,
+              }}
+            />
+          </>
+        ) : null}
+
         <PreventFlashOnWrongTheme ssrTheme={Boolean(ssrTheme)} />
         <Meta />
         <Links />
       </head>
       <body className="flex h-full min-h-full flex-col bg-background font-sans text-foreground">
-        <SignedIn>
-          <Header />
-        </SignedIn>
         {children}
         <Notifications />
         <ScrollRestoration />
