@@ -2,15 +2,17 @@ import { useUser } from "@clerk/react-router";
 import { useEffect, useRef } from "react";
 import { useLocation } from "react-router";
 
+import { GoogleAnalytics } from "~/integrations/gtag.client";
 import { Analytics } from "~/integrations/mixpanel.client";
 import { AUTH_PAGE_KEY } from "~/lib/constants";
 
 export function useAnalytics() {
   const location = useLocation();
-  const { user } = useUser();
+  const { user, isLoaded } = useUser();
   const initialized = useRef(false);
   const lastUserIdRef = useRef<string | null>(null);
 
+  // Declared before the page view effect so the user id is attached to the first page view of a session.
   useEffect(() => {
     // Skip analytics on the server
     if (typeof window === "undefined") {
@@ -19,6 +21,10 @@ export function useAnalytics() {
 
     // Skip analytics in non-production environments
     if (window.ENV.VERCEL_ENV !== "production") {
+      return;
+    }
+
+    if (!isLoaded) {
       return;
     }
 
@@ -26,26 +32,6 @@ export function useAnalytics() {
       // Fire and forget - init is async but we don't need to wait for it
       void Analytics.init();
       initialized.current = true;
-    }
-
-    const pageUrl = `${location.pathname}${location.search}${location.hash}`;
-    // Fire and forget - trackPageView is async but we don't need to wait for it
-    void Analytics.trackPageView(pageUrl);
-  }, [location]);
-
-  useEffect(() => {
-    // Skip analytics on the server
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    // Skip analytics in non-production environments
-    if (window.ENV.VERCEL_ENV !== "production") {
-      return;
-    }
-
-    if (!initialized.current) {
-      return;
     }
 
     if (user) {
@@ -56,6 +42,7 @@ export function useAnalytics() {
         firstName: user.firstName ?? null,
         lastName: user.lastName ?? null,
       });
+      GoogleAnalytics.setUserId(user.id);
 
       if (!lastUserIdRef.current) {
         const authPage = sessionStorage.getItem(AUTH_PAGE_KEY);
@@ -73,9 +60,31 @@ export function useAnalytics() {
     } else {
       // Fire and forget - clearUser is async but we don't need to wait for it
       void Analytics.clearUser();
+      GoogleAnalytics.setUserId(null);
       lastUserIdRef.current = null;
     }
-  }, [user]);
+  }, [user, isLoaded]);
+
+  useEffect(() => {
+    // Skip analytics on the server
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    // Skip analytics in non-production environments
+    if (window.ENV.VERCEL_ENV !== "production") {
+      return;
+    }
+
+    if (!isLoaded) {
+      return;
+    }
+
+    const pageUrl = `${location.pathname}${location.search}${location.hash}`;
+    // Fire and forget - trackPageView is async but we don't need to wait for it
+    void Analytics.trackPageView(pageUrl);
+    GoogleAnalytics.trackPageView(pageUrl);
+  }, [location, isLoaded]);
 
   return null;
 }
