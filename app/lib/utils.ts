@@ -356,3 +356,8 @@ export type LessonInOrder = {
   requiredDurationInSeconds: number | undefined;
   progressDuration: number | null | undefined;
 };
+
+/** A certificate number bound written with a leading zero, e.g. "001", means the numbers are a fixed width. */
+export function isZeroPadded(value: string) {
+  return value.length > 1 && value.startsWith("0");
+}

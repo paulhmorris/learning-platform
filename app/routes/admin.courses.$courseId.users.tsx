@@ -124,7 +124,7 @@ function getColumns(courseId: string, enrolledUserIds: Set<string>): Array<Colum
       header: ({ column }) => <DataTableColumnHeader column={column} title="Name" />,
       cell: ({ row }) => (
         <Link
-          to={`/admin/users/${row.original.id}/courses/${courseId}`}
+          to={`/admin/users/${row.original.id}`}
           className="max-w-[200px] truncate font-medium text-primary hover:underline"
         >
           {row.getValue("name")}
