@@ -356,3 +356,4 @@ export type LessonInOrder = {
   requiredDurationInSeconds: number | undefined;
   progressDuration: number | null | undefined;
 };
+

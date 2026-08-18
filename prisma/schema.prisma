@@ -87,8 +87,10 @@ model UserQuizProgress {
 }
 
 model Certificate {
-  id         Int       @id @default(autoincrement())
-  number     String    @unique
+  id Int @id @default(autoincrement())
+  /// Unique per course, not globally: two courses may issue the same number. Uniqueness is
+  /// enforced upstream by CertificateNumberAllocation, which hands each number out once.
+  number     String
   s3Key      String?
   issuedAt   DateTime  @default(now())
   isExported DateTime?
@@ -100,11 +102,12 @@ model Certificate {
   updatedAt DateTime @updatedAt
 
   @@index([userCourseId])
+  @@index([number])
 }
 
 model CertificateNumberAllocation {
   id     Int     @id @default(autoincrement())
-  number String  @unique
+  number String
   isUsed Boolean @default(false)
 
   course   Course @relation(fields: [courseId], references: [id])
@@ -113,6 +116,7 @@ model CertificateNumberAllocation {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([courseId, number])
   @@index([courseId])
 }
 

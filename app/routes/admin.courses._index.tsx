@@ -67,6 +67,11 @@ export default function CoursesIndex() {
                   Edit
                 </Link>
               </AdminButton>
+              <AdminButton asChild variant="outline">
+                <Link to={`${course.id}/certificates`} prefetch="intent">
+                  Certificate Numbers
+                </Link>
+              </AdminButton>
             </CardFooter>
           </Card>
         ))}

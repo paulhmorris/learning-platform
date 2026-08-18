@@ -20,7 +20,7 @@ class BucketStorageClient {
   }
 
   async uploadFile({ key, file }: { key: string; file: Buffer }) {
-    if (SERVER_CONFIG.isDev) {
+    if (SERVER_CONFIG.isDev || SERVER_CONFIG.isTest) {
       logger.info("Dev mode - skipping file upload to bucket", { key });
       return undefined as unknown as PutObjectCommandOutput;
     }

@@ -38,7 +38,7 @@ function FieldDescription({ id, description }: { id: string; description?: strin
 
 function LabelOptionalIndicator({ required, error }: { required?: boolean; error: string | null }) {
   return (
-    <span className={cn(required || error ? "text-destructive" : "text-muted-foreground", !required && "text-xs")}>
+    <span className={cn(error ? "text-destructive" : "text-muted-foreground", "text-xs")}>
       {required ? "*" : "(optional)"}
     </span>
   );

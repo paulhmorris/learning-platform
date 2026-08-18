@@ -43,6 +43,7 @@ export const UserCourseService = {
       return await db.userCourse.findUnique({
         where: { userId_courseId: { userId, courseId } },
         select: {
+          id: true,
           certificate: {
             select: {
               id: true,

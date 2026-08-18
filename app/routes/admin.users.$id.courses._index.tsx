@@ -88,17 +88,22 @@ export default function AdminUserCourses() {
                   </AdminButton>
                   {/* certificate */}
                   {course.certificate ? (
-                    <AdminButton variant="outline" asChild className="w-auto">
-                      <a
-                        href={`https://assets.hiphopdriving.com/${course.certificate.s3Key}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex items-center gap-2"
-                      >
-                        <IconCertificate className="size-4" />
-                        <span>View Certificate</span>
-                      </a>
-                    </AdminButton>
+                    <>
+                      <AdminButton variant="outline" asChild className="w-auto">
+                        <a
+                          href={`https://assets.hiphopdriving.com/${course.certificate.s3Key}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex items-center gap-2"
+                        >
+                          <IconCertificate className="size-4" />
+                          <span>View Certificate</span>
+                        </a>
+                      </AdminButton>
+                      <AdminButton variant="outline" asChild className="w-auto">
+                        <Link to={`../certificate/${course.courseId}`}>Edit Certificate</Link>
+                      </AdminButton>
+                    </>
                   ) : null}
                 </CardFooter>
               </Card>

@@ -44,6 +44,16 @@ export async function loginAsRegularUser(page: Page, credentials: Credentials) {
   await page.goto(new URL("/preview", getBaseUrl()).toString());
 }
 
+/**
+ * Roles and flags live in the Clerk session claims, so a metadata change is invisible to the app
+ * until the browser gets a new session token.
+ */
+export async function refreshSessionClaims(page: Page, credentials: Credentials) {
+  await page.goto(new URL("/preview", getBaseUrl()).toString());
+  await clerk.signOut({ page });
+  await loginAsRegularUser(page, credentials);
+}
+
 export async function ensureAuthenticatedStorageState(
   browser: Browser,
   credentials: Credentials,
