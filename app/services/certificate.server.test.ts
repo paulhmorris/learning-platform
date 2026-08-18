@@ -6,6 +6,7 @@ vi.mock("~/integrations/db.server", () => ({
       count: vi.fn(),
       update: vi.fn(),
       createMany: vi.fn(),
+      findFirst: vi.fn(),
       findMany: vi.fn(),
       deleteMany: vi.fn(),
       groupBy: vi.fn(),
@@ -16,13 +17,14 @@ vi.mock("~/integrations/db.server", () => ({
       findMany: vi.fn(),
     },
     preCertificationFormSubmission: {
-      update: vi.fn(),
+      upsert: vi.fn(),
     },
     userCourse: {
       update: vi.fn(),
       findUnique: vi.fn(),
     },
     $transaction: vi.fn(),
+    $queryRaw: vi.fn(),
   },
 }));
 
@@ -48,39 +50,38 @@ describe("CertificateService", () => {
   });
 
   describe("getNextAllocationForCourse", () => {
-    it("returns the next allocation via transaction", async () => {
-      const allocation = { id: 1, number: "CERT-001", courseId: "course_1", isUsed: false };
-      mockDb.$transaction.mockImplementation(async (fn) => {
-        // Simulate the transaction callback
-        return fn({
-          certificateNumberAllocation: {
-            findFirst: vi.fn().mockResolvedValue(allocation),
-            update: vi.fn().mockResolvedValue({ ...allocation, isUsed: true }),
-          },
-        } as never);
-      });
+    it("claims the returned allocation in a single statement", async () => {
+      const allocation = { id: 1, number: "CERT-001", courseId: "course_1", isUsed: true };
+      mockDb.$queryRaw.mockResolvedValue([allocation] as never);
 
       const result = await CertificateService.getNextAllocationForCourse("course_1");
+
       expect(result).toEqual(allocation);
+      expect(mockDb.$queryRaw).toHaveBeenCalledOnce();
+    });
+
+    it("locks the row it claims so concurrent claims take different numbers", async () => {
+      mockDb.$queryRaw.mockResolvedValue([] as never);
+
+      await CertificateService.getNextAllocationForCourse("course_1");
+
+      const sql = mockDb.$queryRaw.mock.calls[0]![0] as unknown as { strings: Array<string> };
+      const statement = sql.strings.join("");
+      expect(statement).toContain("FOR UPDATE SKIP LOCKED");
+      // Plain string order would hand out 1, 10, 100, 11 for an unpadded range.
+      expect(statement).toContain('ORDER BY LENGTH("number"), "number"');
     });
 
     it("returns null when no allocations are available", async () => {
-      mockDb.$transaction.mockImplementation(async (fn) => {
-        return fn({
-          certificateNumberAllocation: {
-            findFirst: vi.fn().mockResolvedValue(null),
-            update: vi.fn(),
-          },
-        } as never);
-      });
+      mockDb.$queryRaw.mockResolvedValue([] as never);
 
       const result = await CertificateService.getNextAllocationForCourse("course_1");
       expect(result).toBeNull();
     });
 
     it("returns null and captures exception on error", async () => {
-      const error = new Error("Transaction error");
-      mockDb.$transaction.mockRejectedValue(error);
+      const error = new Error("Query error");
+      mockDb.$queryRaw.mockRejectedValue(error as never);
 
       const result = await CertificateService.getNextAllocationForCourse("course_1");
       expect(result).toBeNull();
@@ -192,8 +193,21 @@ describe("CertificateService", () => {
     it("selects the certificate and form submission needed to re-render", async () => {
       mockDb.userCourse.findUnique.mockResolvedValue(null as never);
 
+      await CertificateService.getForRegenerationByUserAndCourse("user_1", "course_1");
+
+      const select = mockDb.userCourse.findUnique.mock.calls[0]![0].select!;
+      expect(select.certificate).toBeTruthy();
+      expect(select.preCertificationFormSubmission).toBeTruthy();
+    });
+  });
+
+  describe("getForRegeneration", () => {
+    it("looks the user course up by its id", async () => {
+      mockDb.userCourse.findUnique.mockResolvedValue(null as never);
+
       await CertificateService.getForRegeneration(7);
 
+      expect(mockDb.userCourse.findUnique).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 7 } }));
       const select = mockDb.userCourse.findUnique.mock.calls[0]![0].select!;
       expect(select.certificate).toBeTruthy();
       expect(select.preCertificationFormSubmission).toBeTruthy();
@@ -206,9 +220,10 @@ describe("CertificateService", () => {
 
       await CertificateService.amendFormSubmission({ userCourseId: 5, formData: { city: "City of Lubbock" } });
 
-      expect(mockDb.preCertificationFormSubmission.update).toHaveBeenCalledWith({
+      expect(mockDb.preCertificationFormSubmission.upsert).toHaveBeenCalledWith({
         where: { userCourseId: 5 },
-        data: { formData: { city: "City of Lubbock" } },
+        update: { formData: { city: "City of Lubbock" } },
+        create: { userCourseId: 5, formData: { city: "City of Lubbock" } },
       });
       expect(mockDb.certificate.update).toHaveBeenCalledWith({
         where: { userCourseId: 5 },
@@ -248,22 +263,7 @@ describe("CertificateService", () => {
       expect(result).toEqual({ requested: 4, created: 4, skipped: 0 });
     });
 
-    it("stores the padding width the admin typed", async () => {
-      mockDb.certificateNumberAllocation.createMany.mockResolvedValue({ count: 2 } as never);
-
-      await CertificateService.createAllocationRange({ courseId: "course_1", start: "0098", end: "0099" });
-
-      expect(mockDb.certificateNumberAllocation.createMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: [
-            { number: "0098", courseId: "course_1" },
-            { number: "0099", courseId: "course_1" },
-          ],
-        }),
-      );
-    });
-
-    it("does not pad when the bounds are written without leading zeros", async () => {
+    it("stores numbers exactly as written, without padding", async () => {
       mockDb.certificateNumberAllocation.createMany.mockResolvedValue({ count: 3 } as never);
 
       await CertificateService.createAllocationRange({ courseId: "course_1", start: "98", end: "100" });
@@ -279,11 +279,24 @@ describe("CertificateService", () => {
       );
     });
 
-    it("refuses a padded bound of a different width rather than guessing", async () => {
-      await expect(
-        CertificateService.createAllocationRange({ courseId: "course_1", start: "01", end: "100" }),
-      ).rejects.toThrow("same number of digits");
-      expect(mockDb.certificateNumberAllocation.createMany).not.toHaveBeenCalled();
+    it("expands numbers past 2^53 exactly instead of rounding them together", async () => {
+      mockDb.certificateNumberAllocation.createMany.mockResolvedValue({ count: 3 } as never);
+
+      await CertificateService.createAllocationRange({
+        courseId: "course_1",
+        start: "12345678901234567890",
+        end: "12345678901234567892",
+      });
+
+      expect(mockDb.certificateNumberAllocation.createMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: [
+            { number: "12345678901234567890", courseId: "course_1" },
+            { number: "12345678901234567891", courseId: "course_1" },
+            { number: "12345678901234567892", courseId: "course_1" },
+          ],
+        }),
+      );
     });
 
     it("handles a single-number range", async () => {
@@ -342,7 +355,7 @@ describe("CertificateService", () => {
 
   describe("getAllocations", () => {
     beforeEach(() => {
-      mockDb.certificateNumberAllocation.findMany.mockResolvedValue([
+      mockDb.$queryRaw.mockResolvedValue([
         { id: 1, number: "123000", isUsed: true, createdAt: new Date() },
         { id: 2, number: "123001", isUsed: false, createdAt: new Date() },
       ] as never);
@@ -375,6 +388,13 @@ describe("CertificateService", () => {
       );
     });
 
+    it("sorts numerically rather than by string, so 10 does not come before 2", async () => {
+      await CertificateService.getAllocations({ courseId: "course_1", page: 1, pageSize: 20 });
+
+      const sql = mockDb.$queryRaw.mock.calls[0]![0] as unknown as { strings: Array<string> };
+      expect(sql.strings.join("")).toContain('ORDER BY LENGTH("number")');
+    });
+
     it("filters by status and search query", async () => {
       await CertificateService.getAllocations({
         courseId: "course_1",
@@ -384,19 +404,24 @@ describe("CertificateService", () => {
         query: "1230",
       });
 
-      expect(mockDb.certificateNumberAllocation.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: { courseId: "course_1", isUsed: false, number: { contains: "1230" } },
-        }),
-      );
+      const sql = mockDb.$queryRaw.mock.calls[0]![0] as unknown as {
+        strings: Array<string>;
+        values: Array<unknown>;
+      };
+      expect(sql.strings.join("")).toContain('"isUsed" =');
+      expect(sql.values).toContain("%1230%");
+      // The count is still a typed Prisma query and has to filter identically.
+      expect(mockDb.certificateNumberAllocation.count).toHaveBeenCalledWith({
+        where: { courseId: "course_1", isUsed: false, number: { contains: "1230" } },
+      });
     });
 
     it("offsets by page", async () => {
       await CertificateService.getAllocations({ courseId: "course_1", page: 3, pageSize: 20 });
 
-      expect(mockDb.certificateNumberAllocation.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ skip: 40, take: 20 }),
-      );
+      const sql = mockDb.$queryRaw.mock.calls[0]![0] as unknown as { values: Array<unknown> };
+      expect(sql.values).toContain(40);
+      expect(sql.values).toContain(20);
     });
   });
 
@@ -406,24 +431,14 @@ describe("CertificateService", () => {
 
       const result = await CertificateService.deleteUnusedAllocationRange({
         courseId: "course_1",
-        start: "001",
-        end: "003",
+        start: "1",
+        end: "3",
       });
 
       expect(mockDb.certificateNumberAllocation.deleteMany).toHaveBeenCalledWith({
-        where: { courseId: "course_1", isUsed: false, number: { in: ["001", "002", "003"] } },
+        where: { courseId: "course_1", isUsed: false, number: { in: ["1", "2", "3"] } },
       });
       expect(result).toEqual({ requested: 3, deleted: 3 });
-    });
-
-    it("matches stored numbers exactly, so an unpadded range misses padded rows", async () => {
-      mockDb.certificateNumberAllocation.deleteMany.mockResolvedValue({ count: 0 } as never);
-
-      await CertificateService.deleteUnusedAllocationRange({ courseId: "course_1", start: "1", end: "3" });
-
-      expect(mockDb.certificateNumberAllocation.deleteMany).toHaveBeenCalledWith(
-        expect.objectContaining({ where: expect.objectContaining({ number: { in: ["1", "2", "3"] } }) }),
-      );
     });
 
     it("reports how many were kept because they were claimed", async () => {
@@ -431,8 +446,8 @@ describe("CertificateService", () => {
 
       const result = await CertificateService.deleteUnusedAllocationRange({
         courseId: "course_1",
-        start: "001",
-        end: "005",
+        start: "1",
+        end: "5",
       });
 
       expect(result).toEqual({ requested: 5, deleted: 2 });

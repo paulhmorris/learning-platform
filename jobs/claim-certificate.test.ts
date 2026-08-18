@@ -373,8 +373,6 @@ describe("claimCertificateJob", () => {
         number: "CERT-001",
         isUsed: true,
         courseId: KNOWN_COURSE_ID,
-        createdAt: new Date(),
-        updatedAt: new Date(),
       });
       mockCertificateService.createAndUpdateCourse.mockRejectedValue(error);
 
@@ -396,11 +394,10 @@ describe("claimCertificateJob", () => {
         number: "CERT-001",
         isUsed: true,
         courseId: KNOWN_COURSE_ID,
-        createdAt: new Date(),
-        updatedAt: new Date(),
       });
       mockCertificateService.createAndUpdateCourse.mockResolvedValue({
         id: 1,
+        completedAt: new Date("2026-08-17T12:00:00Z"),
         certificate: null,
       });
 
@@ -426,13 +423,12 @@ describe("claimCertificateJob", () => {
         number: "CERT-001",
         isUsed: true,
         courseId: KNOWN_COURSE_ID,
-        createdAt: new Date(),
-        updatedAt: new Date(),
       });
       mockCertificateService.getRemainingAllocationsCount.mockResolvedValue(100);
       mockCertificateService.createAndUpdateCourse.mockResolvedValue({
         id: 1,
-        certificate: { number: "CERT-001" },
+        completedAt: new Date("2026-08-17T12:00:00Z"),
+        certificate: { number: "CERT-001", issuedAt: new Date("2026-08-17T12:00:00Z") },
       });
       mockEmailService.send.mockResolvedValue({ messageId: "msg-1" });
     }
@@ -447,12 +443,11 @@ describe("claimCertificateJob", () => {
         number: "CERT-001",
         isUsed: true,
         courseId: UNKNOWN_COURSE_ID,
-        createdAt: new Date(),
-        updatedAt: new Date(),
       });
       mockCertificateService.createAndUpdateCourse.mockResolvedValue({
         id: 1,
-        certificate: { number: "CERT-001" },
+        completedAt: new Date("2026-08-17T12:00:00Z"),
+        certificate: { number: "CERT-001", issuedAt: new Date("2026-08-17T12:00:00Z") },
       });
 
       await runJob(payload);
@@ -526,12 +521,11 @@ describe("claimCertificateJob", () => {
         number: "CERT-001",
         isUsed: true,
         courseId: KNOWN_COURSE_ID,
-        createdAt: new Date(),
-        updatedAt: new Date(),
       });
       mockCertificateService.createAndUpdateCourse.mockResolvedValue({
         id: 1,
-        certificate: { number: "CERT-001" },
+        completedAt: new Date("2026-08-17T12:00:00Z"),
+        certificate: { number: "CERT-001", issuedAt: new Date("2026-08-17T12:00:00Z") },
       });
       mockBucket.uploadFile.mockResolvedValue({ $metadata: { httpStatusCode: 200 } });
       mockEmailService.send.mockResolvedValue({ messageId: "msg-1" });

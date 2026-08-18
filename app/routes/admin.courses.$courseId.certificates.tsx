@@ -27,7 +27,7 @@ import { createLogger } from "~/integrations/logger.server";
 import { Sentry } from "~/integrations/sentry";
 import { MAX_ALLOCATION_RANGE_SIZE } from "~/lib/constants";
 import { Toasts } from "~/lib/toast.server";
-import { cn, isZeroPadded } from "~/lib/utils";
+import { cn } from "~/lib/utils";
 import { CertificateService } from "~/services/certificate.server";
 import { SessionService } from "~/services/session.server";
 
@@ -39,27 +39,26 @@ const STATUS_FILTERS = [
   { value: "used", label: "Claimed" },
 ] as const;
 
-const digits = z.string().min(1, "Required").max(20, "Must be 20 digits or less").regex(/^\d+$/, "Numbers only");
+const digits = z
+  .string()
+  .min(1, "Required")
+  .max(20, "Must be 20 digits or less")
+  // No leading zeros: one number, one written form, so a stored number is never ambiguous.
+  .regex(/^(0|[1-9]\d*)$/, "Numbers only, without leading zeros");
 
 function withRangeRules<T extends z.ZodType<{ start: string; end: string }>>(schema: T) {
-  return schema
-    .refine(
-      (data) =>
-        !(isZeroPadded(data.start) || isZeroPadded(data.end)) || data.start.length === data.end.length,
-      {
-        // "01" to "100" would silently become either 001-100 or 1-100, so make the admin say which.
-        message: "Must have the same number of digits when either number has a leading zero (e.g. 001 to 100)",
+  return (
+    schema
+      // BigInt, not Number: 20-digit numbers are allowed and would round past 2^53.
+      .refine((data) => BigInt(data.end) >= BigInt(data.start), {
+        message: "Must be greater than or equal to the first number",
         path: ["end"],
-      },
-    )
-    .refine((data) => Number(data.end) >= Number(data.start), {
-      message: "Must be greater than or equal to the first number",
-      path: ["end"],
-    })
-    .refine((data) => Number(data.end) - Number(data.start) + 1 <= MAX_ALLOCATION_RANGE_SIZE, {
-      message: `Ranges are limited to ${MAX_ALLOCATION_RANGE_SIZE.toLocaleString()} numbers at a time`,
-      path: ["end"],
-    });
+      })
+      .refine((data) => BigInt(data.end) - BigInt(data.start) + 1n <= BigInt(MAX_ALLOCATION_RANGE_SIZE), {
+        message: `Ranges are limited to ${MAX_ALLOCATION_RANGE_SIZE.toLocaleString()} numbers at a time`,
+        path: ["end"],
+      })
+  );
 }
 
 const addRangeSchema = withRangeRules(
@@ -165,10 +164,10 @@ export async function action(args: ActionFunctionArgs) {
       return Toasts.dataWithSuccess(
         { ok: true },
         {
-          message: `Removed ${deleted.toLocaleString()} numbers`,
+          message: `Removed ${deleted.toLocaleString()} number${deleted === 1 ? "" : "s"}`,
           description:
             kept > 0
-              ? `${kept.toLocaleString()} were claimed or not found and were kept.`
+              ? `${kept === 1 ? "1 was" : `${kept.toLocaleString()} were`} claimed or not found and kept.`
               : "The whole range was removed.",
         },
       );
@@ -199,7 +198,10 @@ export async function action(args: ActionFunctionArgs) {
         { ok: true },
         {
           message: "No numbers added",
-          description: `All ${requested.toLocaleString()} numbers in that range already exist.`,
+          description:
+            requested === 1
+              ? "That number already exists."
+              : `All ${requested.toLocaleString()} numbers in that range already exist.`,
         },
       );
     }
@@ -207,9 +209,11 @@ export async function action(args: ActionFunctionArgs) {
     return Toasts.dataWithSuccess(
       { ok: true },
       {
-        message: `Added ${created.toLocaleString()} numbers`,
+        message: `Added ${created.toLocaleString()} number${created === 1 ? "" : "s"}`,
         description:
-          skipped > 0 ? `${skipped.toLocaleString()} already existed and were skipped.` : "The range is ready to use.",
+          skipped > 0
+            ? `${skipped.toLocaleString()} already existed and ${skipped === 1 ? "was" : "were"} skipped.`
+            : "The range is ready to use.",
       },
     );
   } catch (error) {
@@ -273,7 +277,16 @@ const columns: Array<ColumnDef<AllocationRow>> = [
     id: "number",
     accessorFn: (row) => row.number,
     header: ({ column }) => <DataTableColumnHeader column={column} title="Number" />,
-    cell: ({ row }) => <span className="font-mono">{row.original.number}</span>,
+    cell: ({ row }) => (
+      <span className="flex items-center gap-2">
+        <span className="font-mono">{row.original.number}</span>
+        {row.original.isDuplicated ? (
+          <Badge variant="destructive" title="More than one certificate on this course carries this number">
+            Duplicate
+          </Badge>
+        ) : null}
+      </span>
+    ),
     enableColumnFilter: false,
   },
   {
@@ -374,10 +387,9 @@ export default function AdminCourseCertificates() {
         <h2 className="text-xl">Add a range</h2>
         <p className="mt-1 max-w-screen-md text-sm text-muted-foreground">
           Adds every number between the two values, inclusive. Numbers only need to be unique within this course, and
-          any this course already has are skipped. Write a leading zero to store fixed-width numbers &mdash;{" "}
-          <span className="font-mono">001</span> to <span className="font-mono">100</span> stores{" "}
-          <span className="font-mono">001, 002, &hellip; 100</span>, while <span className="font-mono">1</span> to{" "}
-          <span className="font-mono">100</span> stores <span className="font-mono">1, 2, &hellip; 100</span>.
+          any this course already has are skipped. Leading zeros are not allowed &mdash;{" "}
+          <span className="font-mono">1</span> to <span className="font-mono">100</span> stores{" "}
+          <span className="font-mono">1, 2, &hellip; 100</span>.
         </p>
         <ValidatedForm
           id="add-allocation-range"
@@ -446,8 +458,8 @@ function RemoveRangeSection() {
   }, [fetcher.data]);
 
   const spanSize =
-    pendingRange && Number(pendingRange.end) >= Number(pendingRange.start)
-      ? Number(pendingRange.end) - Number(pendingRange.start) + 1
+    pendingRange && BigInt(pendingRange.end) >= BigInt(pendingRange.start)
+      ? Number(BigInt(pendingRange.end) - BigInt(pendingRange.start) + 1n)
       : 0;
 
   return (
@@ -455,9 +467,7 @@ function RemoveRangeSection() {
       <h2 className="text-xl">Remove a range</h2>
       <p className="mt-1 max-w-screen-md text-sm text-muted-foreground">
         Removes unused numbers in bulk, for undoing a range that was added by mistake. Claimed numbers are never
-        removed. Numbers are matched exactly as they are stored, so removing{" "}
-        <span className="font-mono">1</span> to <span className="font-mono">100</span> will not touch numbers stored as{" "}
-        <span className="font-mono">001</span> to <span className="font-mono">100</span>.
+        removed.
       </p>
       <ValidatedForm
         id="remove-allocation-range"
@@ -470,7 +480,7 @@ function RemoveRangeSection() {
       >
         {(form) => (
           <>
-            <FormField scope={form.scope("start")} label="First number" placeholder="e.g. 001" required />
+            <FormField scope={form.scope("start")} label="First number" placeholder="e.g. 1" required />
             <FormField scope={form.scope("end")} label="Last number" placeholder="e.g. 100" required />
             <AdminButton type="submit" variant="secondary" className="mt-6 w-auto">
               Remove Range
@@ -483,7 +493,8 @@ function RemoveRangeSection() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              Remove {spanSize.toLocaleString()} numbers from {pendingRange?.start} to {pendingRange?.end}?
+              Remove {spanSize.toLocaleString()} number{spanSize === 1 ? "" : "s"} from {pendingRange?.start} to{" "}
+              {pendingRange?.end}?
             </DialogTitle>
             <DialogDescription>
               Any of these that are unused on this course will be deleted. Claimed numbers and numbers that do not exist

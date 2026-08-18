@@ -1,31 +1,35 @@
+import { Prisma } from "@prisma/client";
+
 import { db } from "~/integrations/db.server";
 import { createLogger } from "~/integrations/logger.server";
 import { Sentry } from "~/integrations/sentry";
-import { isZeroPadded } from "~/lib/utils";
+import { MAX_ALLOCATION_RANGE_SIZE } from "~/lib/constants";
 
 const logger = createLogger("CertificateService");
 
 const ALLOCATION_INSERT_CHUNK_SIZE = 5_000;
 
 /**
- * Expands an inclusive range into the exact number strings stored on the allocation rows. Padding is
- * taken from what the admin typed rather than inferred: "001"–"100" is fixed-width and stores
- * "001, 002, … 100", while "1"–"100" stores "1, 2, … 100". A padded bound therefore has to be the
- * same width as the other one, or the intended width would be a guess.
+ * Expands an inclusive range into the number strings stored on the allocation rows. Leading zeros are
+ * rejected upstream, so every number has exactly one written form and "1"–"100" stores "1, 2, … 100".
+ *
+ * BigInt, not Number: state-issued numbers run past 2^53, where "12345678901234567890" and
+ * "…891" would round to the same string and collapse a range into one row.
  */
 function buildAllocationNumbers(start: string, end: string) {
-  const isFixedWidth = isZeroPadded(start) || isZeroPadded(end);
+  const startNumber = BigInt(start);
+  const endNumber = BigInt(end);
 
-  if (isFixedWidth && start.length !== end.length) {
-    throw new Error("Zero-padded certificate number bounds must have the same number of digits");
+  if (endNumber < startNumber) {
+    throw new Error("The last certificate number must be greater than or equal to the first");
   }
 
-  const width = isFixedWidth ? start.length : 0;
-  const startNumber = Number(start);
-  const endNumber = Number(end);
-  return Array.from({ length: endNumber - startNumber + 1 }, (_, i) =>
-    String(startNumber + i).padStart(width, "0"),
-  );
+  const count = endNumber - startNumber + 1n;
+  if (count > BigInt(MAX_ALLOCATION_RANGE_SIZE)) {
+    throw new Error(`Ranges are limited to ${MAX_ALLOCATION_RANGE_SIZE.toLocaleString()} numbers at a time`);
+  }
+
+  return Array.from({ length: Number(count) }, (_, i) => (startNumber + BigInt(i)).toString());
 }
 
 type CertificateCreateArgs = {
@@ -33,6 +37,15 @@ type CertificateCreateArgs = {
   userCourseId: number;
   s3Key: string;
 };
+
+const regenerationSelect = {
+  id: true,
+  userId: true,
+  courseId: true,
+  completedAt: true,
+  certificate: { select: { id: true, number: true, s3Key: true, issuedAt: true, isExported: true } },
+  preCertificationFormSubmission: { select: { formData: true, updatedAt: true } },
+} satisfies Prisma.UserCourseSelect;
 
 export const CertificateService = {
   async getUnexported() {
@@ -58,6 +71,39 @@ export const CertificateService = {
     });
   },
 
+  /** Certificate, form answers, and completion dates needed to re-render an already-issued certificate. */
+  async getForRegeneration(userCourseId: number) {
+    return db.userCourse.findUnique({ where: { id: userCourseId }, select: regenerationSelect });
+  },
+
+  async getForRegenerationByUserAndCourse(userId: string, courseId: string) {
+    return db.userCourse.findUnique({ where: { userId_courseId: { userId, courseId } }, select: regenerationSelect });
+  },
+
+  /**
+   * Overwrite a student's pre-certification answers after the certificate was issued. Clearing
+   * isExported re-queues the certificate for the next state data export so the corrected values
+   * are sent through. Upserts because a certificate can outlive its submission row, and repairing
+   * that case is exactly what an admin comes here to do.
+   */
+  async amendFormSubmission(data: { userCourseId: number; formData: Prisma.JsonObject }) {
+    await db.$transaction([
+      db.preCertificationFormSubmission.upsert({
+        where: { userCourseId: data.userCourseId },
+        update: { formData: data.formData },
+        create: { userCourseId: data.userCourseId, formData: data.formData },
+      }),
+      db.certificate.update({
+        where: { userCourseId: data.userCourseId },
+        data: { isExported: null },
+      }),
+    ]);
+  },
+
+  async updateS3Key(certificateId: number, s3Key: string) {
+    await db.certificate.update({ where: { id: certificateId }, data: { s3Key } });
+  },
+
   async markExported(certificateIds: Array<number>) {
     await db.certificate.updateMany({
       where: { id: { in: certificateIds } },
@@ -65,28 +111,39 @@ export const CertificateService = {
     });
   },
 
-  // TODO: possible race conditions here if two people hit this at the same time?
+  /**
+   * Claims the next unused number for a course. A read-then-write would let two simultaneous claims
+   * take the same row and issue one number to two students, so the row is selected and marked used
+   * in a single statement: FOR UPDATE SKIP LOCKED makes concurrent callers take different rows.
+   *
+   * Ordered by length before value because the numbers are stored as strings — plain string order
+   * would hand out 1, 10, 100, 11 for a 1–100 range.
+   */
   async getNextAllocationForCourse(courseId: string) {
     try {
-      const allocation = await db.$transaction(async (tx) => {
-        logger.debug(`Getting certificate number allocation for course ${courseId}`);
-        const nextAllocation = await tx.certificateNumberAllocation.findFirst({
-          where: { courseId, isUsed: false },
-          orderBy: { number: "asc" },
-        });
+      logger.debug(`Getting certificate number allocation for course ${courseId}`);
+      const claimed = await db.$queryRaw<
+        Array<{ id: number; number: string; isUsed: boolean; courseId: string }>
+      >(Prisma.sql`
+        UPDATE "CertificateNumberAllocation"
+        SET "isUsed" = true, "updatedAt" = NOW()
+        WHERE "id" = (
+          SELECT "id" FROM "CertificateNumberAllocation"
+          WHERE "courseId" = ${courseId} AND "isUsed" = false
+          ORDER BY LENGTH("number"), "number"
+          LIMIT 1
+          FOR UPDATE SKIP LOCKED
+        )
+        RETURNING "id", "number", "isUsed", "courseId"
+      `);
 
-        if (!nextAllocation) {
-          logger.error(`No allocations were found for course ${courseId}. Please add more.`);
-          return null;
-        }
+      const allocation = claimed.at(0);
+      if (!allocation) {
+        logger.error(`No allocations were found for course ${courseId}. Please add more.`);
+        return null;
+      }
 
-        logger.info(`Found allocation for course ${courseId}, marking as used`);
-        await tx.certificateNumberAllocation.update({
-          where: { id: nextAllocation.id },
-          data: { isUsed: true },
-        });
-        return nextAllocation;
-      });
+      logger.info(`Claimed allocation ${allocation.id} (${allocation.number}) for course ${courseId}`);
       return allocation;
     } catch (error) {
       Sentry.captureException(error);
@@ -157,14 +214,26 @@ export const CertificateService = {
       ...(params.query ? { number: { contains: params.query } } : {}),
     };
 
+    // Ordered by length before value: the numbers are stored as strings, so plain string order
+    // would list 1, 10, 100, 11. Leading zeros are rejected on the way in, which makes that pair
+    // exactly numeric order.
+    const direction = params.order === "desc" ? Prisma.sql`DESC` : Prisma.sql`ASC`;
+    const conditions = [Prisma.sql`"courseId" = ${params.courseId}`];
+    if (params.status) {
+      conditions.push(Prisma.sql`"isUsed" = ${params.status === "used"}`);
+    }
+    if (params.query) {
+      conditions.push(Prisma.sql`"number" LIKE ${`%${params.query}%`}`);
+    }
+
     const [allocations, totalCount] = await Promise.all([
-      db.certificateNumberAllocation.findMany({
-        where,
-        orderBy: { number: params.order ?? "asc" },
-        skip: (params.page - 1) * params.pageSize,
-        take: params.pageSize,
-        select: { id: true, number: true, isUsed: true, createdAt: true },
-      }),
+      db.$queryRaw<Array<{ id: number; number: string; isUsed: boolean; createdAt: Date }>>(Prisma.sql`
+        SELECT "id", "number", "isUsed", "createdAt"
+        FROM "CertificateNumberAllocation"
+        WHERE ${Prisma.join(conditions, " AND ")}
+        ORDER BY LENGTH("number") ${direction}, "number" ${direction}
+        LIMIT ${params.pageSize} OFFSET ${(params.page - 1) * params.pageSize}
+      `),
       db.certificateNumberAllocation.count({ where }),
     ]);
 
@@ -176,7 +245,24 @@ export const CertificateService = {
       },
       select: { number: true, issuedAt: true, isExported: true, userCourse: { select: { userId: true } } },
     });
+    // One number should map to one certificate. If it doesn't, the number was issued twice and a Map
+    // would quietly show whichever row came back last, hiding it on the page built to catch it.
     const certificatesByNumber = new Map(certificates.map((c) => [c.number, c]));
+    const duplicatedNumbers = certificates
+      .map((c) => c.number)
+      .filter((number, i, all) => all.indexOf(number) !== i);
+
+    if (duplicatedNumbers.length > 0) {
+      const numbers = [...new Set(duplicatedNumbers)];
+      logger.error(`Course ${params.courseId} has certificates sharing a number`, {
+        courseId: params.courseId,
+        numbers,
+      });
+      Sentry.captureMessage("Duplicate certificate numbers issued for a course", {
+        extra: { courseId: params.courseId, numbers },
+        level: "error",
+      });
+    }
 
     return {
       totalCount,
@@ -190,15 +276,13 @@ export const CertificateService = {
           claimedByUserId: certificate?.userCourse.userId ?? null,
           issuedAt: certificate?.issuedAt ?? null,
           isExported: certificate?.isExported ?? null,
+          isDuplicated: duplicatedNumbers.includes(allocation.number),
         };
       }),
     };
   },
 
-  /**
-   * Removes every unused number in an inclusive range. Numbers are matched as exact strings, so a
-   * range of "1"–"100" will not touch allocations stored as "001"–"100".
-   */
+  /** Removes every unused number in an inclusive range. */
   async deleteUnusedAllocationRange(data: { courseId: string; start: string; end: string }) {
     const numbers = buildAllocationNumbers(data.start, data.end);
 
@@ -240,9 +324,13 @@ export const CertificateService = {
         },
         select: {
           id: true,
+          // The dates the certificate is rendered with have to be the persisted ones, so a later
+          // regeneration reads back exactly what was printed.
+          completedAt: true,
           certificate: {
             select: {
               number: true,
+              issuedAt: true,
             },
           },
         },

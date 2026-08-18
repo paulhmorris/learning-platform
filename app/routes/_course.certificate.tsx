@@ -82,8 +82,12 @@ export async function loader(args: LoaderFunctionArgs) {
       });
     }
 
+    const existingFormResponse = await db.preCertificationFormSubmission.findUnique({
+      where: { userCourseId: userCourse?.id },
+    });
     return {
       userCourse,
+      hasSubmittedForm: Boolean(existingFormResponse),
       course: linkedCourse,
       userProfile: {
         isIdentityVerified: user.isIdentityVerified,
@@ -202,18 +206,32 @@ export async function action(args: ActionFunctionArgs) {
         });
         throw new Error("User course not found.");
       }
-      await db.preCertificationFormSubmission.upsert({
+      // Students can't amend their answers themselves
+      const existingSubmission = await db.preCertificationFormSubmission.findUnique({
         where: { userCourseId },
-        update: { formData: formData.data },
-        create: { userCourseId, formData: formData.data },
+        select: { id: true },
       });
+      if (existingSubmission) {
+        logger.info(`User ${user.id} re-submitted the pre-certification form for course ${linkedCourse.id}`, {
+          userId: user.id,
+          courseId: linkedCourse.id,
+        });
+        return Toasts.dataWithSuccess(
+          { success: true },
+          {
+            message: "We already have your information",
+            description: "Your certificate is on its way to your email.",
+          },
+        );
+      }
+
+      await db.preCertificationFormSubmission.create({ data: { userCourseId, formData: formData.data } });
     }
 
     const job = await claimCertificateJob.trigger({
       userId: user.id,
       courseId: linkedCourse.id,
       courseName: course.data.attributes.title,
-      issuedDate: new Date().toLocaleDateString("en-US"),
     });
 
     if (!job.id) {
@@ -251,7 +269,7 @@ export async function action(args: ActionFunctionArgs) {
 export default function CourseCertificate() {
   const { lessonProgress, quizProgress, isLoading, isError, refetch } = useProgress();
   const { course: cmsCourse } = useCourseData();
-  const { userCourse, course, userProfile } = useLoaderData<typeof loader>();
+  const { userCourse, course, userProfile, hasSubmittedForm } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const data = useCourseData();
   const trackedBlockedRef = useRef(false);
@@ -355,11 +373,13 @@ export default function CourseCertificate() {
     );
   }
 
-  if (actionData?.success) {
+  if (actionData?.success || hasSubmittedForm) {
     return (
       <Wrapper courseTitle={cmsCourse.attributes.title}>
         <SuccessText>
-          Thank you! Your certificate will be emailed to <span className="font-bold">{userProfile.email}</span> shortly.
+          Thank you! We have your information, and your certificate will be emailed to{" "}
+          <span className="font-bold">{userProfile.email}</span> shortly. Contact support if it doesn&apos;t arrive or
+          anything on it needs to be corrected.
         </SuccessText>
       </Wrapper>
     );

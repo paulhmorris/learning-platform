@@ -3,6 +3,8 @@ import { clerk } from "@clerk/testing/playwright";
 import { AuthService } from "~/services/auth.server";
 
 import { expect, test } from "./fixtures/authenticated";
+import { refreshSessionClaims } from "./helpers/auth";
+import { cleanupCertificateDataForUser, seedFormSubmission } from "./helpers/certificates";
 import {
   getCourseLayoutForE2E,
   markLessonCompleteForUser,
@@ -52,5 +54,23 @@ test.describe("Certificate flow", () => {
     await page.goto("/certificate");
 
     await expect(page.getByRole("button", { name: /claim certificate/i })).toBeVisible();
+  });
+
+  test("shows the submitted state instead of the form once answers are on file", async ({ page, userId, testUser }) => {
+    await completeCourse(userId);
+    await AuthService.updatePublicMetadata(userId, { isIdentityVerified: true });
+    await seedFormSubmission(userId);
+
+    try {
+      await refreshSessionClaims(page, testUser);
+      await page.goto("/certificate");
+
+      await expect(page.getByText(/we have your information/i)).toBeVisible();
+      // The form is gone, so the student can't queue a second certificate.
+      await expect(page.getByRole("button", { name: /claim certificate/i })).toBeHidden();
+      await expect(page.getByLabel("First Name")).toBeHidden();
+    } finally {
+      await cleanupCertificateDataForUser(userId);
+    }
   });
 });

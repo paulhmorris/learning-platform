@@ -69,6 +69,7 @@
     "@tabler/icons-react": "3.17.0",
     "@tanstack/match-sorter-utils": "^8.19.4",
     "@tanstack/react-table": "^8.21.3",
+    "@trigger.dev/react-hooks": "^4.4.2",
     "@trigger.dev/sdk": "4.4.2",
     "@upstash/redis": "^1.35.1",
     "@vercel/react-router": "^1.2.2",

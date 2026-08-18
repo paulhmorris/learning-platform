@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { test as userTest } from "./fixtures/authenticated";
 import { test as adminTest, expect } from "./fixtures/authenticated-admin";
 import { deleteCacheKey, e2eCacheKey, seedCacheKey } from "./helpers/cache";
+import { gotoHydrated } from "./helpers/hydration";
 
 adminTest.describe("Admin cache page", () => {
   adminTest("lists a cache item and deletes it via the confirmation dialog", async ({ page }) => {
@@ -10,7 +11,7 @@ adminTest.describe("Admin cache page", () => {
     await seedCacheKey(key);
 
     try {
-      await page.goto("/admin/cache", { waitUntil: "domcontentloaded" });
+      await gotoHydrated(page, "/admin/cache");
 
       await expect(page.getByRole("link", { name: "Cache" })).toHaveAttribute("aria-current", "page");
 
@@ -43,7 +44,7 @@ adminTest.describe("Admin cache page", () => {
 
 userTest.describe("Admin cache page access control", () => {
   userTest("forbids non-admin users", async ({ page }) => {
-    await page.goto("/admin/cache", { waitUntil: "domcontentloaded" });
+    await gotoHydrated(page, "/admin/cache");
     await expect(page.getByRole("heading", { name: "Error" })).toBeVisible();
   });
 });
