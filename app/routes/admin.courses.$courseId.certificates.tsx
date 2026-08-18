@@ -23,6 +23,7 @@ import {
 } from "~/components/ui/dialog";
 import { FormField } from "~/components/ui/form";
 import { SubmitButton } from "~/components/ui/submit-button";
+import { useUpdateSearchParams } from "~/hooks/useSearchParamsUpdater";
 import { createLogger } from "~/integrations/logger.server";
 import { Sentry } from "~/integrations/sentry";
 import { MAX_ALLOCATION_RANGE_SIZE } from "~/lib/constants";
@@ -352,25 +353,21 @@ const columns: Array<ColumnDef<AllocationRow>> = [
 
 export default function AdminCourseCertificates() {
   const { summary, allocations, totalCount } = useLoaderData<typeof loader>();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
+  const updateSearchParams = useUpdateSearchParams();
   const activeStatus = searchParams.get("status") ?? "";
 
   const memoizedColumns = useMemo(() => columns, []);
 
   function setStatus(value: string) {
-    setSearchParams(
-      (prev) => {
-        const params = new URLSearchParams(prev);
-        if (value) {
-          params.set("status", value);
-        } else {
-          params.delete("status");
-        }
-        params.delete("page");
-        return params;
-      },
-      { replace: true, preventScrollReset: true },
-    );
+    updateSearchParams((params) => {
+      if (value) {
+        params.set("status", value);
+      } else {
+        params.delete("status");
+      }
+      params.delete("page");
+    });
   }
 
   return (

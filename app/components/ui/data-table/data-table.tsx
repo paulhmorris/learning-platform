@@ -20,6 +20,8 @@ import * as React from "react";
 import { useSearchParams } from "react-router";
 import { useDebounceCallback } from "usehooks-ts";
 
+import { useUpdateSearchParams } from "~/hooks/useSearchParamsUpdater";
+
 import { DataTablePagination } from "~/components/ui/data-table/data-table-pagination";
 import { DataTableToolbar, Facet } from "~/components/ui/data-table/data-table-toolbar";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "~/components/ui/table";
@@ -61,7 +63,8 @@ export function DataTable<TData>({
   rowCount,
   searchPlaceholder,
 }: DataTableProps<TData>) {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
+  const updateSearchParams = useUpdateSearchParams();
 
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
@@ -80,19 +83,14 @@ export function DataTable<TData>({
   const [searchInput, setSearchInput] = React.useState(() => searchParams.get("q") ?? "");
 
   const commitSearch = useDebounceCallback((value: string) => {
-    setSearchParams(
-      (prev) => {
-        const params = new URLSearchParams(prev);
-        if (value) {
-          params.set("q", value);
-        } else {
-          params.delete("q");
-        }
-        params.delete("page");
-        return params;
-      },
-      { replace: true, preventScrollReset: true },
-    );
+    updateSearchParams((params) => {
+      if (value) {
+        params.set("q", value);
+      } else {
+        params.delete("q");
+      }
+      params.delete("page");
+    });
   }, 400);
 
   function updateSearch(value: string) {
@@ -105,21 +103,16 @@ export function DataTable<TData>({
     setSorting(newValue);
     if (!serverPagination) return;
 
-    setSearchParams(
-      (prev) => {
-        const params = new URLSearchParams(prev);
-        if (newValue.length > 0) {
-          const [first] = newValue;
-          params.set("sort", first.id);
-          params.set("order", first.desc ? "desc" : "asc");
-        } else {
-          params.delete("sort");
-          params.delete("order");
-        }
-        return params;
-      },
-      { replace: true, preventScrollReset: true },
-    );
+    updateSearchParams((params) => {
+      if (newValue.length > 0) {
+        const [first] = newValue;
+        params.set("sort", first.id);
+        params.set("order", first.desc ? "desc" : "asc");
+      } else {
+        params.delete("sort");
+        params.delete("order");
+      }
+    });
   }
 
   function updatePagination(updaterOrValue: Updater<PaginationState>) {
@@ -127,15 +120,10 @@ export function DataTable<TData>({
     setPagination(newValue);
     if (!serverPagination) return;
 
-    setSearchParams(
-      (prev) => {
-        const params = new URLSearchParams(prev);
-        params.set("page", String(newValue.pageIndex + 1));
-        params.set("pageSize", String(newValue.pageSize));
-        return params;
-      },
-      { replace: true, preventScrollReset: true },
-    );
+    updateSearchParams((params) => {
+      params.set("page", String(newValue.pageIndex + 1));
+      params.set("pageSize", String(newValue.pageSize));
+    });
   }
 
   const table = useReactTable({
