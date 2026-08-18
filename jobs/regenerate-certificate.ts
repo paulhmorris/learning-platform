@@ -3,8 +3,9 @@ import { logger, task } from "@trigger.dev/sdk/v3";
 import { SERVER_CONFIG } from "~/config.server";
 import CertificateReadyEmail from "~/emails/certificate-ready";
 import { Bucket } from "~/integrations/bucket.server";
-import { Sentry } from "~/integrations/sentry";
+import { CDN } from "~/integrations/cdn.server";
 import { EmailService } from "~/integrations/email.server";
+import { Sentry } from "~/integrations/sentry";
 import { CertificateService } from "~/services/certificate.server";
 import { UserService } from "~/services/user.server";
 
@@ -74,6 +75,18 @@ export const regenerateCertificateJob = task({
         userCourseId: userCourse.id,
       });
       throw error;
+    }
+
+    // The key is unchanged, so the CDN still serves the superseded file until it's evicted. A
+    // failed purge leaves the corrected certificate uploaded but not yet visible, which is worth
+    // reporting but not worth failing the job over.
+    try {
+      await CDN.purge([`${ASSET_BASE_URL}/${key}`]);
+    } catch (error) {
+      Sentry.captureException(error, { extra: { userCourseId: userCourse.id, key } });
+      logger.error(error instanceof Error ? error.message : "Failed to purge CDN cache for certificate", {
+        userCourseId: userCourse.id,
+      });
     }
 
     if (!certificate.s3Key) {

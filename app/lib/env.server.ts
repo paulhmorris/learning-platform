@@ -24,6 +24,8 @@ const _serverEnvValidation = z.object({
   R2_BUCKET_URL: z.url(),
   R2_ACCESS_KEY_ID: z.string().min(1),
   R2_SECRET_ACCESS_KEY: z.string().min(1),
+  CLOUDFLARE_ZONE_ID: z.string().min(1),
+  CLOUDFLARE_PURGE_API_TOKEN: z.string().min(1),
 
   // Database
   DATABASE_URL: z.url(),
