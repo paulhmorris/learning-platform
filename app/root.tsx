@@ -29,6 +29,9 @@ import globalStyles from "~/tailwind.css?url";
 
 const logger = createLogger("Root");
 
+/** Clerk colors links with `colorPrimary`, which is unreadable for light course colors (e.g. yellow). */
+const clerkLinkStyle = { color: "hsl(var(--foreground))", textDecoration: "underline" };
+
 export const links: LinksFunction = () => [{ rel: "stylesheet", href: globalStyles, as: "style" }];
 
 export const loader = async (args: LoaderFunctionArgs) => {
@@ -91,11 +94,36 @@ export function Layout({ children }: { children: React.ReactNode }) {
     );
   }
 
+  const course = _data.course?.data.attributes;
+
   return (
     <ClerkProvider
       loaderData={_data}
       telemetry={{ disabled: true }}
-      appearance={{ theme: _data.theme === Theme.DARK ? dark : undefined }}
+      appearance={{
+        theme: _data.theme === Theme.DARK ? dark : undefined,
+        variables: {
+          colorPrimary: course?.primary_color,
+          colorPrimaryForeground: course?.secondary_color,
+        },
+        elements: {
+          footerActionLink: clerkLinkStyle,
+          formFieldAction: clerkLinkStyle,
+          formResendCodeLink: clerkLinkStyle,
+        },
+      }}
+      localization={
+        course
+          ? {
+              signIn: {
+                start: {
+                  title: `Sign in to ${course.title}`,
+                  titleCombined: `Continue to ${course.title}`,
+                },
+              },
+            }
+          : undefined
+      }
       publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY}
       signInUrl="/sign-in"
       signUpUrl="/sign-up"
