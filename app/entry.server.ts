@@ -4,30 +4,17 @@ import { createReadableStreamFromReadable } from "@react-router/node";
 import * as Sentry from "@sentry/react-router";
 import { renderToPipeableStream } from "react-dom/server";
 import type { HandleErrorFunction } from "react-router";
-import { ServerRouter } from "react-router";
+import { isRouteErrorResponse, ServerRouter } from "react-router";
 
 import { createLogger } from "~/integrations/logger.server";
 
 const logger = createLogger("ServerEntry");
 
-// Stale, content-hashed asset requests (e.g. /assets/index-XLjWcFRZ.js.map) hit the
-// server after a deploy when a client is still running old code. React Router surfaces
-// these as an ErrorResponse (not an Error instance), with the message on `.data`.
-function errorMessage(error: unknown): string {
-  if (error instanceof Error) return error.message;
-  if (error && typeof error === "object" && "data" in error && typeof error.data === "string") {
-    return error.data;
-  }
-  return "";
-}
+/** Unmatched URLs and POSTs to action-less routes, mostly bot scans (/wp-json, /.git/config) and stale asset maps. */
+const IGNORED_ROUTE_STATUSES = [404, 405];
 
 export const handleError: HandleErrorFunction = (error, { request }) => {
-  const isMissingAssetSourceMap =
-    request.url.includes("/assets/") &&
-    request.url.endsWith(".map") &&
-    errorMessage(error).includes("No route matches URL");
-
-  if (isMissingAssetSourceMap || request.url.includes(".well-known")) {
+  if (isRouteErrorResponse(error) && IGNORED_ROUTE_STATUSES.includes(error.status)) {
     return;
   }
 
