@@ -63,7 +63,9 @@ export function loggerMiddleware() {
       httpLogger.error("Response", resData);
     }
 
-    httpLogger.info("Request", reqData);
-    httpLogger.info("Response", resData);
+    if (resStatus < 300) {
+      httpLogger.info("Request", reqData);
+      httpLogger.info("Response", resData);
+    }
   });
 }
