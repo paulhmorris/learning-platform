@@ -41,6 +41,16 @@ export async function ensureCourseHostForE2E() {
   return db.course.update({ where: { id: course.id }, data: { host } });
 }
 
+export async function getCourseTitleForE2E() {
+  const course = await ensureCourseHostForE2E();
+  const courseRoot = await CourseService.getFromCMSForRoot(course.strapiId);
+  if (!courseRoot) {
+    throw new Error("No course found in CMS.");
+  }
+
+  return courseRoot.data.attributes.title;
+}
+
 export async function enrollUserInCourse(userId: string) {
   const course = await ensureCourseHostForE2E();
 
