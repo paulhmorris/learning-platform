@@ -8,6 +8,20 @@ import { httpLogger } from "~/integrations/logger.server";
 
 const matchers = ["/assets", "favicon", ".well-known", "site.webmanifest", "sitemap.xml", "robots.txt"];
 
+/** Clerk's handshake param carries a session token. */
+const REDACTED_PARAMS = ["__clerk_handshake"];
+const redactedParamPattern = new RegExp(`([?&](?:${REDACTED_PARAMS.join("|")})=)[^&#]*`, "g");
+
+function redactUrl(url: string | null) {
+  return url?.replace(redactedParamPattern, "$1REDACTED") ?? null;
+}
+
+function redactQuery(query: Record<string, string>) {
+  return Object.fromEntries(
+    Object.entries(query).map(([key, value]) => [key, REDACTED_PARAMS.includes(key) ? "REDACTED" : value]),
+  );
+}
+
 export function loggerMiddleware() {
   return createMiddleware(async (c, next) => {
     if (SERVER_CONFIG.isDev) {
@@ -24,13 +38,14 @@ export function loggerMiddleware() {
     const geo = getGeo(c);
     const resStatus = c.res.status;
     const requestId = c.get("requestId") as string;
+    const reqUrl = redactUrl(c.req.url);
     const reqIsFromBot = c.req.header("cf-isbot") === "true" || isbot(c.req.header("user-agent") ?? "");
 
     const reqData = {
       id: requestId,
-      uri: c.req.url,
+      uri: reqUrl,
       path: c.req.path,
-      query: c.req.query(),
+      query: redactQuery(c.req.query()),
       method: c.req.method,
       is_bot: reqIsFromBot,
       user_agent: c.req.header("user-agent"),
@@ -48,22 +63,24 @@ export function loggerMiddleware() {
     const resData: Record<string, unknown> = {
       status: resStatus,
       request_id: requestId,
-      request_uri: c.req.url,
+      request_uri: reqUrl,
       path: c.req.path,
       content_type: c.res.headers.get("content-type"),
       duration: end - start,
     } as const;
 
     if (resStatus >= 300 && resStatus < 400) {
-      resData.redirect_url = c.res.headers.get("location");
-      httpLogger.warn(`Redirecting from ${c.req.url} to ${resData.redirect_url as string}`, resData);
+      resData.redirect_url = redactUrl(c.res.headers.get("location"));
+      httpLogger.warn(`Redirecting from ${reqUrl} to ${resData.redirect_url as string}`, resData);
     }
 
     if (resStatus >= 400) {
       httpLogger.error("Response", resData);
     }
 
-    httpLogger.info("Request", reqData);
-    httpLogger.info("Response", resData);
+    if (resStatus < 300) {
+      httpLogger.info("Request", reqData);
+      httpLogger.info("Response", resData);
+    }
   });
 }

@@ -1,10 +1,14 @@
 import { SignIn } from "@clerk/react-router";
 import { useEffect } from "react";
 
+import { AuthLayout } from "~/components/common/auth-layout";
+import { useRootData } from "~/hooks/useRootData";
 import { Analytics } from "~/integrations/mixpanel.client";
 import { AUTH_PAGE_KEY } from "~/lib/constants";
 
 export default function SignInPage() {
+  const courseTitle = useRootData()?.course?.data.attributes.title;
+
   useEffect(() => {
     sessionStorage.setItem(AUTH_PAGE_KEY, "/sign-in");
     void Analytics.trackEvent("Sign In Started");
@@ -12,10 +16,10 @@ export default function SignInPage() {
 
   return (
     <>
-      <title>Sign In | Plumb Media & Education</title>
-      <div className="flex min-h-dvh w-dvw items-start justify-center pt-[clamp(2rem,10vw,5rem)]">
+      <title>{`Sign In | ${courseTitle ?? "Plumb Media & Education"}`}</title>
+      <AuthLayout variant="sign-in">
         <SignIn />
-      </div>
+      </AuthLayout>
     </>
   );
 }
