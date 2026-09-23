@@ -7,6 +7,7 @@ export default defineConfig({
   dirs: ["./jobs"],
   maxDuration: 300,
   project: "proj_wkknrufxoeexxegqdcsz",
+  runtime: "node-24",
   build: {
     extensions: [
       prismaExtension({

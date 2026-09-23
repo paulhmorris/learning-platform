@@ -65,4 +65,4 @@ jobs:
         env:
           TRIGGER_ACCESS_TOKEN: ${{ secrets.TRIGGER_ACCESS_TOKEN }}
         run: |
-          npx trigger.dev@4.4.2 deploy
+          npx trigger.dev@4.5.16 deploy
