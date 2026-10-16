@@ -3,10 +3,10 @@ export const SERVER_CONFIG = {
   emailFromDomain: "plumblearning.com",
   isCI: Boolean(process.env.CI),
   baseUrl: process.env.BASE_URL,
-  environment: process.env.VERCEL_ENV || "development",
+  environment: process.env.APP_ENV || "development",
   isTest: process.env.NODE_ENV === "test" || Boolean(process.env.PLAYWRIGHT_TEST),
   isDev: process.env.NODE_ENV === "development",
-  isProd: process.env.VERCEL_ENV === "production" && process.env.NODE_ENV === "production",
-  isPreview: process.env.VERCEL_ENV === "preview" && process.env.NODE_ENV === "production",
+  isProd: process.env.APP_ENV === "production" && process.env.NODE_ENV === "production",
+  isPreview: process.env.APP_ENV === "preview" && process.env.NODE_ENV === "production",
   reportRecipients: ["paulh.morris@gmail.com", "jaredn7@gmail.com"] as Array<string>,
 } as const;
