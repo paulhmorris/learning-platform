@@ -19,7 +19,7 @@ import { Analytics } from "~/integrations/mixpanel.client";
 import { Sentry } from "~/integrations/sentry";
 import { isResponseLike, Responses } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
-import { getLessonsInOrder } from "~/lib/utils";
+import { getAssetUrl, getLessonsInOrder } from "~/lib/utils";
 import { CourseService } from "~/services/course.server";
 import { ProgressService } from "~/services/progress.server";
 import { SessionService } from "~/services/session.server";
@@ -364,7 +364,7 @@ export default function CourseCertificate() {
             className="mt-2 block text-lg font-bold underline decoration-2"
             target="_blank"
             rel="noreferrer"
-            href={`https://assets.plumblearning.com/${userCourse.certificate.s3Key}`}
+            href={getAssetUrl(userCourse.certificate.s3Key)}
           >
             Access it here.
           </a>

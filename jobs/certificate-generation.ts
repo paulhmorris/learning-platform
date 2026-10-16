@@ -4,7 +4,7 @@ import { logger } from "@trigger.dev/sdk/v3";
 import { hipHopDrivingCertificationSchema } from "~/components/pre-certificate-forms/hiphopdriving";
 import { db } from "~/integrations/db.server";
 
-export const ASSET_BASE_URL = "https://assets.plumblearning.com";
+export const ASSET_BASE_URL = process.env.ASSETS_URL;
 
 /**
  * Certificate dates are printed in the issuing state's timezone, not the worker's. A claim just

@@ -4,6 +4,7 @@ import dayjs from "dayjs";
 import { AdminButton } from "~/components/ui/admin-button";
 import { Badge } from "~/components/ui/badge";
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "~/components/ui/card";
+import { getAssetUrl } from "~/lib/utils";
 import type { loader } from "~/routes/account.$";
 
 type Props = {
@@ -58,7 +59,7 @@ export function AccountCourses(props: Props) {
                         className="flex items-center gap-1.5"
                         target="_blank"
                         rel="noreferrer"
-                        href={`https://assets.plumblearning.com/${userCourse.certificate.s3Key}`}
+                        href={getAssetUrl(userCourse.certificate.s3Key)}
                       >
                         <IconCertificate className="size-4 shrink-0" />
                         <span>View Certificate</span>

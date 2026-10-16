@@ -57,10 +57,14 @@ describe("AccountCourses", () => {
   });
 
   it("renders View Certificate link when certificate is claimed", () => {
+    (window as any).ENV = { ASSETS_URL: "https://assets.example.com" };
     const courses = [makeCourse({ isCompleted: true })];
     const userCourses = [makeUserCourse({ certificateClaimed: true, completedAt: new Date("2024-06-01") })];
     renderWithRouter({ courses: courses as any, userCourses: userCourses as any });
-    expect(screen.getByText("View Certificate")).toBeInTheDocument();
+    expect(screen.getByText("View Certificate").closest("a")).toHaveAttribute(
+      "href",
+      "https://assets.example.com/certs/cert.pdf",
+    );
   });
 
   it("does not render View Certificate link when no certificate", () => {

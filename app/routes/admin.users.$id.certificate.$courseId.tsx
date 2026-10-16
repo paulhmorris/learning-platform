@@ -21,6 +21,7 @@ import { createLogger } from "~/integrations/logger.server";
 import { Sentry } from "~/integrations/sentry";
 import { isResponseLike, Responses } from "~/lib/responses.server";
 import { Toasts } from "~/lib/toast.server";
+import { getAssetUrl } from "~/lib/utils";
 import { CertificateService } from "~/services/certificate.server";
 import { CourseService } from "~/services/course.server";
 import { SessionService } from "~/services/session.server";
@@ -29,8 +30,6 @@ import { APIResponseData } from "~/types/utils";
 import { regenerateCertificateJob } from "../../jobs/regenerate-certificate";
 
 const logger = createLogger("Routes.Admin.Users.Certificate");
-
-const ASSET_BASE_URL = "https://assets.plumblearning.com";
 
 const sendEmailSchema = z.object({
   sendEmail: z.stringbool().catch(false),
@@ -271,7 +270,7 @@ export default function AdminUserCertificate() {
         </Badge>
         {certificate.s3Key ? (
           <a
-            href={`${ASSET_BASE_URL}/${certificate.s3Key}`}
+            href={getAssetUrl(certificate.s3Key)}
             target="_blank"
             rel="noreferrer"
             className="text-sm font-medium underline decoration-2"
