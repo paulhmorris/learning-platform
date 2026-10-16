@@ -22,6 +22,16 @@ function redactQuery(query: Record<string, string>) {
   );
 }
 
+/** Railway terminates TLS, so restore the original scheme for React Router, Clerk and `url.origin`. */
+export function forwardedProtoMiddleware() {
+  return createMiddleware(async (c, next) => {
+    if (c.req.header("x-forwarded-proto") === "https" && c.req.url.startsWith("http:")) {
+      c.req.raw = new Request(c.req.url.replace(/^http:/, "https:"), c.req.raw);
+    }
+    await next();
+  });
+}
+
 export function loggerMiddleware() {
   return createMiddleware(async (c, next) => {
     if (SERVER_CONFIG.isDev) {

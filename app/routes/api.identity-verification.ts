@@ -40,7 +40,11 @@ export async function action(args: ActionFunctionArgs) {
 
   try {
     logger.info("Creating new identity verification session", { userId: user.id });
-    const _session = await IdentityService.createVerificationSession(user.id, user.email);
+    const _session = await IdentityService.createVerificationSession(
+      user.id,
+      user.email,
+      new URL(args.request.url).origin,
+    );
     logger.info(`Created identity verification session with id ${_session.id}`, { userId: user.id });
     return Responses.ok({ client_secret: _session.client_secret });
   } catch (error) {
