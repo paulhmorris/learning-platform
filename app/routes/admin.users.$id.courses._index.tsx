@@ -91,7 +91,7 @@ export default function AdminUserCourses() {
                     <>
                       <AdminButton variant="outline" asChild className="w-auto">
                         <a
-                          href={`https://assets.hiphopdriving.com/${course.certificate.s3Key}`}
+                          href={`https://assets.plumblearning.com/${course.certificate.s3Key}`}
                           target="_blank"
                           rel="noreferrer"
                           className="flex items-center gap-2"

@@ -30,7 +30,7 @@ import { regenerateCertificateJob } from "../../jobs/regenerate-certificate";
 
 const logger = createLogger("Routes.Admin.Users.Certificate");
 
-const ASSET_BASE_URL = "https://assets.hiphopdriving.com";
+const ASSET_BASE_URL = "https://assets.plumblearning.com";
 
 const sendEmailSchema = z.object({
   sendEmail: z.stringbool().catch(false),

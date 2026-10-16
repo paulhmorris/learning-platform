@@ -364,7 +364,7 @@ export default function CourseCertificate() {
             className="mt-2 block text-lg font-bold underline decoration-2"
             target="_blank"
             rel="noreferrer"
-            href={`https://assets.hiphopdriving.com/${userCourse.certificate.s3Key}`}
+            href={`https://assets.plumblearning.com/${userCourse.certificate.s3Key}`}
           >
             Access it here.
           </a>

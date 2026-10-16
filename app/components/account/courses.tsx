@@ -58,7 +58,7 @@ export function AccountCourses(props: Props) {
                         className="flex items-center gap-1.5"
                         target="_blank"
                         rel="noreferrer"
-                        href={`https://assets.hiphopdriving.com/${userCourse.certificate.s3Key}`}
+                        href={`https://assets.plumblearning.com/${userCourse.certificate.s3Key}`}
                       >
                         <IconCertificate className="size-4 shrink-0" />
                         <span>View Certificate</span>
