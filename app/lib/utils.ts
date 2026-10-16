@@ -22,6 +22,11 @@ export function getAllSearchParams(param: string, request: Request) {
   return url.searchParams.getAll(param);
 }
 
+export function getAssetUrl(key: string | null) {
+  const baseUrl = typeof window === "undefined" ? process.env.ASSETS_URL : window.ENV.ASSETS_URL;
+  return `${baseUrl}/${key}`;
+}
+
 export function getStrapiImgSrcSetAndSizes(formats: Attribute.JsonValue | undefined) {
   if (!formats) {
     return {
@@ -356,4 +361,3 @@ export type LessonInOrder = {
   requiredDurationInSeconds: number | undefined;
   progressDuration: number | null | undefined;
 };
-

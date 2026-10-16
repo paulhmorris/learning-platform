@@ -52,6 +52,7 @@ const _serverEnvValidation = z.object({
 });
 
 const _clientEnvValidation = z.object({
+  ASSETS_URL: z.url(),
   STRAPI_URL: z.url(),
   STRIPE_PUBLIC_KEY: z.string().startsWith("pk_"),
   VERCEL_ENV: z.enum(["development", "preview", "production"]),

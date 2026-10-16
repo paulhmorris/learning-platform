@@ -8,6 +8,7 @@ import { useAdminUserData } from "~/hooks/useAdminUserData";
 import { createLogger } from "~/integrations/logger.server";
 import { Sentry } from "~/integrations/sentry";
 import { isResponseLike, Responses } from "~/lib/responses.server";
+import { getAssetUrl } from "~/lib/utils";
 import { CourseService } from "~/services/course.server";
 import { SessionService } from "~/services/session.server";
 import { UserCourseService } from "~/services/user-course.server";
@@ -91,7 +92,7 @@ export default function AdminUserCourses() {
                     <>
                       <AdminButton variant="outline" asChild className="w-auto">
                         <a
-                          href={`https://assets.hiphopdriving.com/${course.certificate.s3Key}`}
+                          href={getAssetUrl(course.certificate.s3Key)}
                           target="_blank"
                           rel="noreferrer"
                           className="flex items-center gap-2"
