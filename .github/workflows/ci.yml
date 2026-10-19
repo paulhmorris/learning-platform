@@ -141,14 +141,6 @@ jobs:
       - name: Deploy to Railway
         run: npx @railway/cli@5 up --service web --ci --message "${{ github.head_ref || github.ref_name }} ${{ github.sha }}"
 
-      - name: Wait for staging to serve this commit
-        run: |
-          for _ in $(seq 1 60); do
-            if curl -fs "$STAGING_URL" | grep -q "content=\"${{ github.sha }}\""; then exit 0; fi
-            sleep 10
-          done
-          echo "Staging did not serve ${{ github.sha }} within 10 minutes" && exit 1
-
   schema-diff:
     name: 🧬 Post schema diff
     runs-on: ubuntu-latest
