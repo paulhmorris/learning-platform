@@ -1,7 +1,7 @@
 /* eslint-disable no-undef */
 import * as Sentry from "@sentry/react-router";
 
-// const isProd = process.env.VERCEL_ENV === "production";
+// const isProd = process.env.APP_ENV === "production";
 
 Sentry.init({
   // PLAYWRIGHT_TEST covers a production-mode server started by/for an e2e run.
@@ -9,7 +9,7 @@ Sentry.init({
   dsn: "https://3093e529a633d80d697b26390e53886d@o4505496663359488.ingest.us.sentry.io/4506584484151296",
   enableLogs: true,
   sendDefaultPii: true,
-  environment: process.env.VERCEL_ENV,
+  environment: process.env.APP_ENV,
   integrations: [Sentry.prismaIntegration()],
 
   sampleRate: 1.0,

@@ -46,8 +46,8 @@ export const loader = async (args: LoaderFunctionArgs) => {
       ASSETS_URL: process.env.ASSETS_URL,
       STRAPI_URL: process.env.STRAPI_URL,
       STRIPE_PUBLIC_KEY: process.env.STRIPE_PUBLIC_KEY,
-      VERCEL_ENV: process.env.VERCEL_ENV,
-      VERCEL_GIT_COMMIT_SHA: process.env.VERCEL_GIT_COMMIT_SHA,
+      APP_ENV: process.env.APP_ENV,
+      GIT_COMMIT_SHA: process.env.GIT_COMMIT_SHA,
     },
   };
 
@@ -177,7 +177,7 @@ function Document({ ssrTheme, children }: { ssrTheme: boolean; children: React.R
         <meta name="viewport" content="width=device-width,initial-scale=1" />
         <meta name="theme-color" media="(prefers-color-scheme: light)" content="#fff" />
         <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#030712" />
-        {_data?.ENV ? <meta name="git-sha" content={_data.ENV.VERCEL_GIT_COMMIT_SHA} /> : null}
+        {_data?.ENV ? <meta name="git-sha" content={_data.ENV.GIT_COMMIT_SHA} /> : null}
 
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
@@ -193,7 +193,7 @@ function Document({ ssrTheme, children }: { ssrTheme: boolean; children: React.R
             }
           `}
         </style>
-        {_data?.ENV.VERCEL_ENV === "production" ? (
+        {_data?.ENV.APP_ENV === "production" ? (
           <>
             <script async src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`} />
             <script

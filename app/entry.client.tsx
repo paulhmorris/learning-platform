@@ -11,7 +11,7 @@ Sentry.init({
   dsn: "https://3093e529a633d80d697b26390e53886d@o4505496663359488.ingest.us.sentry.io/4506584484151296",
   enabled: window.location.hostname !== "localhost",
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  environment: window.ENV?.VERCEL_ENV,
+  environment: window.ENV?.APP_ENV,
 
   sampleRate: 1.0,
   tracesSampleRate: 1.0,
