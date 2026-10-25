@@ -2,6 +2,7 @@ import { getGeo } from "hono-geo-middleware";
 // eslint-disable-next-line import/order
 import { createMiddleware } from "hono/factory";
 import { isbot } from "isbot";
+import { matchRoutes, type RouteObject, type ServerBuild } from "react-router";
 
 import { SERVER_CONFIG } from "~/config.server";
 import { httpLogger } from "~/integrations/logger.server";
@@ -27,6 +28,50 @@ export function forwardedProtoMiddleware() {
   return createMiddleware(async (c, next) => {
     if (c.req.header("x-forwarded-proto") === "https" && c.req.url.startsWith("http:")) {
       c.req.raw = new Request(c.req.url.replace(/^http:/, "https:"), c.req.raw);
+    }
+    await next();
+  });
+}
+
+type RouteManifest = ServerBuild["routes"];
+
+function toRouteObjects(manifest: RouteManifest, parentId?: string): Array<RouteObject> {
+  return Object.values(manifest)
+    .filter((route) => route?.parentId === parentId)
+    .map((route) => {
+      const children = toRouteObjects(manifest, route!.id);
+      return {
+        path: route!.path,
+        index: route!.index,
+        caseSensitive: route!.caseSensitive,
+        children: children.length ? children : undefined,
+      } as RouteObject;
+    });
+}
+
+const validParam = /^[\w-]+$/;
+const validSplat = /^[\w/-]*$/;
+
+/** Single fetch requests `/_root.data` for `/` and `<path>.data` for everything else. */
+function toDocumentPath(path: string) {
+  if (path === "/_root.data") return "/";
+  return path.endsWith(".data") ? path.slice(0, -".data".length) : path;
+}
+
+/**
+ * 404s paths no route can serve before any loader runs, so scanners probing `/.env`,
+ * `/wp-login.php` etc. don't trigger auth, course and CMS lookups.
+ */
+export function unknownPathMiddleware(loadRoutes: () => Promise<RouteManifest>) {
+  let routes: Array<RouteObject> | undefined;
+  return createMiddleware(async (c, next) => {
+    routes ??= toRouteObjects(await loadRoutes());
+    const matches = matchRoutes(routes, toDocumentPath(c.req.path));
+    const params = Object.entries(matches?.at(-1)?.params ?? {});
+    const isValid =
+      matches && params.every(([key, value]) => (key === "*" ? validSplat : validParam).test(value ?? ""));
+    if (!isValid) {
+      return c.text("Not Found", 404);
     }
     await next();
   });
