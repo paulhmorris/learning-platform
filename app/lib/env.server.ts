@@ -15,10 +15,6 @@ const _serverEnvValidation = z.object({
   STRAPI_TOKEN: z.string().min(1),
   STRAPI_URL: z.url(),
 
-  // AWS
-  AWS_SECRET_ACCESS_KEY: z.string(),
-  AWS_ACCESS_KEY_ID: z.string(),
-
   // Cloudflare
   R2_BUCKET_NAME: z.string().min(1),
   R2_BUCKET_URL: z.url(),
