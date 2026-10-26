@@ -15,10 +15,6 @@ const _serverEnvValidation = z.object({
   STRAPI_TOKEN: z.string().min(1),
   STRAPI_URL: z.url(),
 
-  // AWS
-  AWS_SECRET_ACCESS_KEY: z.string(),
-  AWS_ACCESS_KEY_ID: z.string(),
-
   // Cloudflare
   R2_BUCKET_NAME: z.string().min(1),
   R2_BUCKET_URL: z.url(),
@@ -55,8 +51,8 @@ const _clientEnvValidation = z.object({
   ASSETS_URL: z.url(),
   STRAPI_URL: z.url(),
   STRIPE_PUBLIC_KEY: z.string().startsWith("pk_"),
-  VERCEL_ENV: z.enum(["development", "preview", "production"]),
-  VERCEL_GIT_COMMIT_SHA: z.string(),
+  APP_ENV: z.enum(["development", "preview", "production"]),
+  GIT_COMMIT_SHA: z.string(),
 });
 
 declare global {

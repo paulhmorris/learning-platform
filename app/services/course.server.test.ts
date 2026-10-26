@@ -82,13 +82,13 @@ describe("CourseService", () => {
       expect(mockDb.course.findFirst).toHaveBeenCalled();
     });
 
-    it("falls back to first course for vercel preview host", async () => {
+    it("falls back to first course for railway host", async () => {
       const fallbackCourse = { id: "c1", host: "real.com" };
       mockCache.get.mockResolvedValue(null);
       mockDb.course.findUnique.mockResolvedValue(null);
       mockDb.course.findFirst.mockResolvedValue(fallbackCourse as never);
 
-      const result = await CourseService.getByHost("my-app-cosmic-labs.vercel.app");
+      const result = await CourseService.getByHost("learning-platform-staging.up.railway.app");
       expect(result).toEqual(fallbackCourse);
     });
 

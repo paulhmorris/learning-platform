@@ -76,7 +76,10 @@ export async function action({ request }: ActionFunctionArgs) {
                   to: user.email,
                   from: `Plumb Media & Education <no-reply@${SERVER_CONFIG.emailFromDomain}>`,
                   subject: "Action Required: Verify Your Identity",
-                  react: VerificationRequiresInputEmail({ baseUrl: SERVER_CONFIG.baseUrl }),
+                  // Sessions created before `base_url` was recorded fall back to BASE_URL.
+                  react: VerificationRequiresInputEmail({
+                    baseUrl: event.data.object.metadata.base_url ?? SERVER_CONFIG.baseUrl,
+                  }),
                 });
               }
 

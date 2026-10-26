@@ -1,14 +1,12 @@
 /* eslint-disable no-console */
-import type { LoaderFunctionArgs } from "react-router";
 
 import { db } from "~/integrations/db.server";
 import { Sentry } from "~/integrations/sentry";
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const host = request.headers.get("X-Forwarded-Host") ?? request.headers.get("host");
-
+export const loader = async () => {
   try {
-    const url = new URL("/", `http://${host}`);
+    // Railway's healthcheck sends `Host: healthcheck.railway.app`, so call ourselves directly.
+    const url = new URL("/", `http://localhost:${process.env.PORT ?? 3000}`);
     // if we can connect to the database and make a simple query
     // and make a HEAD request to ourselves, then we're good.
     await Promise.all([

@@ -45,12 +45,16 @@ describe("IdentityService", () => {
       mockStripe.identity.verificationSessions.create.mockResolvedValue(session as never);
       mockAuth.updatePublicMetadata.mockResolvedValue({} as never);
 
-      const result = await IdentityService.createVerificationSession("user_1", "test@example.com");
+      const result = await IdentityService.createVerificationSession(
+        "user_1",
+        "test@example.com",
+        "https://course.example.com",
+      );
       expect(result).toEqual(session);
       expect(mockStripe.identity.verificationSessions.create).toHaveBeenCalledWith({
         type: "document",
         provided_details: { email: "test@example.com" },
-        metadata: { user_id: "user_1" },
+        metadata: { user_id: "user_1", base_url: "https://course.example.com" },
       });
       expect(mockAuth.updatePublicMetadata).toHaveBeenCalledWith("user_1", {
         stripeVerificationSessionId: "vs_123",
@@ -61,7 +65,9 @@ describe("IdentityService", () => {
       const error = new Error("Stripe error");
       mockStripe.identity.verificationSessions.create.mockRejectedValue(error);
 
-      await expect(IdentityService.createVerificationSession("user_1", "a@b.com")).rejects.toThrow("Stripe error");
+      await expect(
+        IdentityService.createVerificationSession("user_1", "a@b.com", "https://course.example.com"),
+      ).rejects.toThrow("Stripe error");
       expect(vi.mocked(Sentry.captureException)).toHaveBeenCalledWith(error, expect.any(Object));
     });
   });

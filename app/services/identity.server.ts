@@ -8,12 +8,12 @@ const logger = createLogger("IdentityService");
 export type VerificationSession = Awaited<ReturnType<typeof IdentityService.retrieveVerificationSession>>;
 
 export const IdentityService = {
-  async createVerificationSession(userId: string, email: string) {
+  async createVerificationSession(userId: string, email: string, baseUrl: string) {
     try {
       const verificationSession = await stripe.identity.verificationSessions.create({
         type: "document",
         provided_details: { email },
-        metadata: { user_id: userId },
+        metadata: { user_id: userId, base_url: baseUrl },
       });
       await AuthService.updatePublicMetadata(userId, { stripeVerificationSessionId: verificationSession.id });
       logger.info(`Created verification session ${verificationSession.id} (${email})`, { userId });
