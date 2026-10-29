@@ -47,15 +47,7 @@ function normalizeAttributes(attributes: LogAttributes): LogAttributes {
   return normalized;
 }
 
-interface LoggerOptions {
-  sentryLevels?: ReadonlySet<LogLevel>;
-}
-
-const ALL_LEVELS: ReadonlySet<LogLevel> = new Set(["debug", "info", "warn", "error"]);
-
-function buildLogger(module: string, options: LoggerOptions = {}): ServerLogger {
-  const sentryLevels = options.sentryLevels ?? ALL_LEVELS;
-
+export function createLogger(module: string): ServerLogger {
   const at =
     (level: LogLevel): LogFn =>
     (message, attributes) => {
@@ -63,7 +55,7 @@ function buildLogger(module: string, options: LoggerOptions = {}): ServerLogger 
 
       consoleLog[level](`[${module}] ${message}`, attributes ?? "");
 
-      if (sentryEnabled && sentryLevels.has(level)) {
+      if (sentryEnabled) {
         sentryLog[level](message, { module, ...(attributes && normalizeAttributes(attributes)) });
       }
     };
@@ -71,11 +63,4 @@ function buildLogger(module: string, options: LoggerOptions = {}): ServerLogger 
   return { debug: at("debug"), info: at("info"), warn: at("warn"), error: at("error") };
 }
 
-export function createLogger(module: string): ServerLogger {
-  return buildLogger(module);
-}
-
-// Request/response logging fires on every non-asset request, so only warn (redirects) and
-// error (4xx/5xx) reach Sentry Logs. Routine info request/response lines stay in stdout,
-// where Vercel captures them, keeping Sentry Logs volume (and cost) down.
-export const httpLogger = buildLogger("Http", { sentryLevels: new Set(["warn", "error"]) });
+export const httpLogger = createLogger("Http");

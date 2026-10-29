@@ -9,18 +9,17 @@ import { httpLogger } from "~/integrations/logger.server";
 
 const matchers = ["/assets", "favicon", ".well-known", "site.webmanifest", "sitemap.xml", "robots.txt"];
 
-/** Clerk's handshake param carries a session token. */
-const REDACTED_PARAMS = ["__clerk_handshake"];
-const redactedParamPattern = new RegExp(`([?&](?:${REDACTED_PARAMS.join("|")})=)[^&#]*`, "g");
+/** Clerk's handshake params (`__clerk_handshake`, `__clerk_handshake_nonce`) carry session tokens. */
+const isClerkHandshakeParam = (key: string) => key.startsWith("__clerk_handshake");
 
-function redactUrl(url: string | null) {
-  return url?.replace(redactedParamPattern, "$1REDACTED") ?? null;
+function stripHandshakeParams(rawUrl: string) {
+  const url = new URL(rawUrl);
+  url.search = new URLSearchParams([...url.searchParams].filter(([key]) => !isClerkHandshakeParam(key))).toString();
+  return url.toString();
 }
 
-function redactQuery(query: Record<string, string>) {
-  return Object.fromEntries(
-    Object.entries(query).map(([key, value]) => [key, REDACTED_PARAMS.includes(key) ? "REDACTED" : value]),
-  );
+function stripHandshakeQuery(query: Record<string, string>) {
+  return Object.fromEntries(Object.entries(query).filter(([key]) => !isClerkHandshakeParam(key)));
 }
 
 /** The proxy terminates TLS, so restore the original scheme for React Router, Clerk and `url.origin`. */
@@ -77,6 +76,10 @@ export function unknownPathMiddleware(loadRoutes: () => Promise<RouteManifest>) 
   });
 }
 
+/**
+ * Logs only failed requests; Railway's HTTP logs and metrics cover routine traffic.
+ * 4xx from bots are skipped since scanners would flood Sentry Logs.
+ */
 export function loggerMiddleware() {
   return createMiddleware(async (c, next) => {
     if (SERVER_CONFIG.isDev) {
@@ -88,24 +91,32 @@ export function loggerMiddleware() {
 
     const start = Date.now();
     await next();
-    const end = Date.now();
+    const duration = Date.now() - start;
+
+    const status = c.res.status;
+    if (status < 400) {
+      return;
+    }
+
+    const userAgent = c.req.header("user-agent");
+    const isBot = c.req.header("cf-isbot") === "true" || isbot(userAgent ?? "");
+    if (status < 500 && isBot) {
+      return;
+    }
 
     const geo = getGeo(c);
-    const resStatus = c.res.status;
-    const requestId = c.get("requestId") as string;
-    const reqUrl = redactUrl(c.req.url);
-    const reqIsFromBot = c.req.header("cf-isbot") === "true" || isbot(c.req.header("user-agent") ?? "");
-
-    const reqData = {
-      id: requestId,
-      uri: reqUrl,
+    const data = {
+      status,
+      request_id: c.get("requestId") as string,
+      uri: stripHandshakeParams(c.req.url),
       path: c.req.path,
-      query: redactQuery(c.req.query()),
+      query: stripHandshakeQuery(c.req.query()),
       method: c.req.method,
-      is_bot: reqIsFromBot,
-      user_agent: c.req.header("user-agent"),
-      content_type: c.req.header("content-type"),
-      duration: end - start,
+      is_bot: isBot,
+      user_agent: userAgent,
+      request_content_type: c.req.header("content-type"),
+      response_content_type: c.res.headers.get("content-type"),
+      duration,
       ip: geo.ip,
       geo: {
         city: geo.city,
@@ -113,29 +124,12 @@ export function loggerMiddleware() {
         country: geo.country,
         postalCode: geo.postalCode,
       },
-    } as const;
+    };
 
-    const resData: Record<string, unknown> = {
-      status: resStatus,
-      request_id: requestId,
-      request_uri: reqUrl,
-      path: c.req.path,
-      content_type: c.res.headers.get("content-type"),
-      duration: end - start,
-    } as const;
-
-    if (resStatus >= 300 && resStatus < 400) {
-      resData.redirect_url = redactUrl(c.res.headers.get("location"));
-      httpLogger.warn(`Redirecting from ${reqUrl} to ${resData.redirect_url as string}`, resData);
-    }
-
-    if (resStatus >= 400) {
-      httpLogger.error("Response", resData);
-    }
-
-    if (resStatus < 300) {
-      httpLogger.info("Request", reqData);
-      httpLogger.info("Response", resData);
+    if (status >= 500) {
+      httpLogger.error("Response", data);
+    } else {
+      httpLogger.warn("Response", data);
     }
   });
 }
