@@ -20,7 +20,7 @@ export function useAnalytics() {
     }
 
     // Skip analytics in non-production environments
-    if (window.ENV.APP_ENV !== "production") {
+    if (window.ENV.VERCEL_ENV !== "production") {
       return;
     }
 
@@ -72,7 +72,7 @@ export function useAnalytics() {
     }
 
     // Skip analytics in non-production environments
-    if (window.ENV.APP_ENV !== "production") {
+    if (window.ENV.VERCEL_ENV !== "production") {
       return;
     }
 

@@ -1,8 +1,8 @@
 name: 🧪 CI
 
 env:
-  RAILWAY_TOKEN: ${{ secrets.RAILWAY_STAGING_TOKEN }}
-  STAGING_URL: https://hiphop-staging.plumblearning.com
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
   SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
   NEON_PROJECT_ID: ${{ vars.NEON_PROJECT_ID }}
   NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
@@ -109,15 +109,20 @@ jobs:
           DIRECT_URL: ${{ steps.neon_branch.outputs.db_url }}
 
   deploy:
-    name: 🧩 Deploy Staging
+    name: 🧩 Deploy Preview
     runs-on: ubuntu-latest
     if: github.event.action != 'closed'
     needs: [context, neon]
-    # One shared staging environment, so deploys queue instead of overlapping.
-    concurrency:
-      group: railway-staging
+    outputs:
+      deploy_url: ${{ steps.vercel_deploy.outputs.url }}
     steps:
       - uses: actions/checkout@v7
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Pull Vercel Environment Information
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Fetch Neon connection string
         id: neon_branch_deploy
@@ -131,15 +136,22 @@ jobs:
           prisma: true
           api_key: ${{ env.NEON_API_KEY }}
 
-      - name: Point staging at the branch database
-        run: |
-          npx @railway/cli@5 variables --service web --skip-deploys \
-            --set "DATABASE_URL=${{ steps.neon_branch_deploy.outputs.db_url_pooled || steps.neon_branch_deploy.outputs.db_url }}" \
-            --set "DIRECT_URL=${{ steps.neon_branch_deploy.outputs.db_url }}" \
-            --set "GIT_COMMIT_SHA=${{ github.sha }}"
+      - name: Build Project Artifacts
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }} \
+          --build-env DATABASE_URL='${{ steps.neon_branch_deploy.outputs.db_url_pooled || steps.neon_branch_deploy.outputs.db_url }}' \
+          --build-env DIRECT_URL='${{ steps.neon_branch_deploy.outputs.db_url }}'
 
-      - name: Deploy to Railway
-        run: npx @railway/cli@5 up --service web --ci --message "${{ github.head_ref || github.ref_name }} ${{ github.sha }}"
+      - name: Deploy to Vercel
+        id: vercel_deploy
+        run: |
+          DEPLOY_URL=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }} --yes \
+            --env DATABASE_URL='${{ steps.neon_branch_deploy.outputs.db_url_pooled || steps.neon_branch_deploy.outputs.db_url }}' \
+            --env DIRECT_URL='${{ steps.neon_branch_deploy.outputs.db_url }}' \
+            | tail -n 1)
+          echo "url=${DEPLOY_URL}" >> "$GITHUB_OUTPUT"
+
+      - name: Alias staging deployment
+        run: vercel alias set ${{ steps.vercel_deploy.outputs.url }} hiphop-staging.plumblearning.com --token=${{ secrets.VERCEL_TOKEN }}
 
   schema-diff:
     name: 🧬 Post schema diff
@@ -176,8 +188,11 @@ jobs:
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps
 
-      - name: Pull staging environment
-        run: npx @railway/cli@5 variables --service web --kv > .env
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Pull Vercel Environment Information
+        run: vercel env pull .env --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Fetch Neon connection string
         id: neon_branch_e2e
@@ -194,7 +209,7 @@ jobs:
       - name: Run e2e Tests
         run: npm run test:e2e
         env:
-          E2E_BASE_URL: ${{ env.STAGING_URL }}
+          E2E_BASE_URL: ${{ needs.deploy.outputs.deploy_url }}
           LOG_LEVEL: "error"
           DIRECT_URL: ${{ steps.neon_branch_e2e.outputs.db_url }}
           DATABASE_URL: ${{ steps.neon_branch_e2e.outputs.db_url_pooled || steps.neon_branch_e2e.outputs.db_url }}

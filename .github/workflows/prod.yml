@@ -1,6 +1,8 @@
 name: 🚢 Deploy Production
 env:
-  RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+  SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -21,17 +23,29 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Pull Vercel Environment Information
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build Project Artifacts
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy to Vercel
+        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+
       - name: Migrate Database
+        id: migrate
         run: npx prisma@6.12.0 migrate deploy
+        continue-on-error: true
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           DIRECT_URL: ${{ secrets.DIRECT_URL }}
 
-      - name: Set commit SHA
-        run: npx @railway/cli@5 variables --service web --skip-deploys --set "GIT_COMMIT_SHA=${{ github.sha }}"
-
-      - name: Deploy to Railway
-        run: npx @railway/cli@5 up --service web --ci --message "${{ github.sha }}"
+      - name: Rollback Deployment
+        if: steps.migrate.outcome == 'failure'
+        run: vercel rollback --token=${{ secrets.VERCEL_TOKEN }} && exit 1
 
   trigger:
     name: 🔫 Deploy Trigger
