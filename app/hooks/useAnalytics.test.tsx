@@ -64,7 +64,7 @@ const makeSignedInReturn = (user: UserResource): SignedInReturn => ({
 describe("useAnalytics", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    (window as any).ENV = { APP_ENV: "production" };
+    (window as any).ENV = { VERCEL_ENV: "production" };
     sessionStorage.clear();
     const location: Location = {
       pathname: "/preview",
@@ -93,7 +93,7 @@ describe("useAnalytics", () => {
   });
 
   it("skips analytics when not in production", async () => {
-    (window as any).ENV = { APP_ENV: "preview" };
+    (window as any).ENV = { VERCEL_ENV: "preview" };
     mockUseUser.mockReturnValue(makeSignedOutReturn());
 
     render(<TestComponent />);

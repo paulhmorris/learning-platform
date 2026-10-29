@@ -20,7 +20,7 @@ const initOptions: Partial<Config> = {
 let isInitialized = false;
 
 function isProdEnvironment(): boolean {
-  return window.ENV.APP_ENV === "production";
+  return window.ENV.VERCEL_ENV === "production";
 }
 
 function shouldSkipTracking(): boolean {
@@ -29,7 +29,7 @@ function shouldSkipTracking(): boolean {
 
 function init() {
   if (!isProdEnvironment()) {
-    console.info("[Analytics] Skipping init: non-production environment", { appEnv: window.ENV.APP_ENV });
+    console.info("[Analytics] Skipping init: non-production environment", { vercelEnv: window.ENV.VERCEL_ENV });
     return;
   }
   if (!MIXPANEL_TOKEN) {
@@ -42,7 +42,7 @@ function init() {
 
   mixpanel.init(MIXPANEL_TOKEN, initOptions);
   isInitialized = true;
-  console.info("[Analytics] Mixpanel initialized", { appEnv: window.ENV.APP_ENV });
+  console.info("[Analytics] Mixpanel initialized", { vercelEnv: window.ENV.VERCEL_ENV });
 }
 
 function trackEvent(eventName: string, properties?: Record<string, unknown>) {

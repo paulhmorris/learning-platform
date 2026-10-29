@@ -1,9 +1,12 @@
 // eslint-disable-next-line import/order
 import { GeoMiddleware } from "hono-geo-middleware";
 import { requestId } from "hono/request-id";
+import { handle } from "hono/vercel";
 import { createHonoServer } from "react-router-hono-server/node";
 
 import { forwardedProtoMiddleware, loggerMiddleware, unknownPathMiddleware } from "~/server/middleware";
+
+const isVercel = process.env.VERCEL === "1";
 
 const server = await createHonoServer({
   configure(_server) {
@@ -15,4 +18,4 @@ const server = await createHonoServer({
   },
 });
 
-export default server;
+export default isVercel ? handle(server) : server;
