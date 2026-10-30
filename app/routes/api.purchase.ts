@@ -1,7 +1,6 @@
 import { LoaderFunctionArgs, redirect } from "react-router";
 
 import { SERVER_CONFIG } from "~/config.server";
-import PurchaseConfirmationEmail from "~/emails/purchase-confirmation";
 import { EmailService } from "~/integrations/email.server";
 import { createLogger } from "~/integrations/logger.server";
 import { Sentry } from "~/integrations/sentry";
@@ -59,6 +58,7 @@ export async function loader(args: LoaderFunctionArgs) {
       const courseUrl = `https://${linkedCourse.host}/preview`;
       if (title) {
         try {
+          const { default: PurchaseConfirmationEmail } = await import("~/emails/purchase-confirmation");
           await EmailService.send({
             to: user.email,
             from: `Plumb Media & Education <no-reply@${SERVER_CONFIG.emailFromDomain}>`,

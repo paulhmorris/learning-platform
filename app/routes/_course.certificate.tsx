@@ -26,7 +26,7 @@ import { SessionService } from "~/services/session.server";
 import { UserCourseService } from "~/services/user-course.server";
 import { APIResponseData } from "~/types/utils";
 
-import { claimCertificateJob } from "../../jobs/claim-certificate";
+import type { claimCertificateJob } from "../../jobs/claim-certificate";
 
 // BUSINESS LOGIC
 type UserProfileData = {
@@ -228,7 +228,8 @@ export async function action(args: ActionFunctionArgs) {
       await db.preCertificationFormSubmission.create({ data: { userCourseId, formData: formData.data } });
     }
 
-    const job = await claimCertificateJob.trigger({
+    const { tasks } = await import("@trigger.dev/sdk/v3");
+    const job = await tasks.trigger<typeof claimCertificateJob>("claim-certificate", {
       userId: user.id,
       courseId: linkedCourse.id,
       courseName: course.data.attributes.title,

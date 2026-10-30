@@ -1,8 +1,6 @@
 import { ActionFunctionArgs } from "react-router";
 
 import { SERVER_CONFIG } from "~/config.server";
-import VerificationRequiresInputEmail from "~/emails/verification-requires-input";
-import VerificationSuccessEmail from "~/emails/verification-success";
 import { EmailService } from "~/integrations/email.server";
 import { createLogger } from "~/integrations/logger.server";
 import { Sentry } from "~/integrations/sentry";
@@ -72,6 +70,8 @@ export async function action({ request }: ActionFunctionArgs) {
               }
 
               if (user.email) {
+                const { default: VerificationRequiresInputEmail } =
+                  await import("~/emails/verification-requires-input");
                 await EmailService.send({
                   to: user.email,
                   from: `Plumb Media & Education <no-reply@${SERVER_CONFIG.emailFromDomain}>`,
@@ -111,6 +111,7 @@ export async function action({ request }: ActionFunctionArgs) {
                 logger.info("Verification successful", { userId });
 
                 if (user.email) {
+                  const { default: VerificationSuccessEmail } = await import("~/emails/verification-success");
                   await EmailService.send({
                     to: user.email,
                     from: `Plumb Media & Education <no-reply@${SERVER_CONFIG.emailFromDomain}>`,
