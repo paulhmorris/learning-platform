@@ -1,9 +1,7 @@
 import type { SendEmailCommandInput } from "@aws-sdk/client-sesv2";
-import { SESv2Client, SendEmailCommand } from "@aws-sdk/client-sesv2";
-import { render } from "@react-email/render";
 import { nanoid } from "nanoid";
-import React from "react";
-import { CreateEmailOptions, Resend } from "resend";
+import type React from "react";
+import type { CreateEmailOptions, Resend } from "resend";
 
 import { SERVER_CONFIG } from "~/config.server";
 import { createLogger } from "~/integrations/logger.server";
@@ -11,8 +9,14 @@ import { Sentry } from "~/integrations/sentry";
 
 const logger = createLogger("EmailService");
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-const sesClient = new SESv2Client({ region: "us-east-1" });
+let resendClient: Resend | undefined;
+async function getResend() {
+  if (!resendClient) {
+    const { Resend } = await import("resend");
+    resendClient = new Resend(process.env.RESEND_API_KEY);
+  }
+  return resendClient;
+}
 
 export type EmailAttachment = {
   content: Buffer;
@@ -29,6 +33,7 @@ export type SendEmailInput = {
 
 async function resolveHtml(props: SendEmailInput): Promise<string> {
   if (props.react) {
+    const { render } = await import("@react-email/render");
     return await render(props.react);
   }
   if (props.html) {
@@ -68,8 +73,9 @@ async function _sendSESEmail(props: SendEmailInput) {
 
   if (SERVER_CONFIG.isProd) {
     try {
-      const command = new SendEmailCommand(input);
-      const response = await sesClient.send(command);
+      const { SESv2Client, SendEmailCommand } = await import("@aws-sdk/client-sesv2");
+      const sesClient = new SESv2Client({ region: "us-east-1" });
+      const response = await sesClient.send(new SendEmailCommand(input));
       if (!response.MessageId) {
         throw new Error("Email not sent");
       }
@@ -91,6 +97,7 @@ async function _sendSESEmail(props: SendEmailInput) {
 
 async function sendResendEmail(props: SendEmailInput) {
   if (SERVER_CONFIG.isProd) {
+    const resend = await getResend();
     const response = await resend.emails.send({
       from: props.from ?? `Plumb Media & Education <no-reply@${SERVER_CONFIG.emailFromDomain}>`,
       to: props.to,
