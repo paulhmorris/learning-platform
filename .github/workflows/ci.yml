@@ -102,8 +102,15 @@ jobs:
           prisma: true
           api_key: ${{ env.NEON_API_KEY }}
 
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.21.0
+          cache: "npm"
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
       - name: Run Prisma migrations
-        run: npx prisma@6.12.0 migrate deploy
+        run: npx prisma migrate deploy
         env:
           DATABASE_URL: ${{ steps.neon_branch.outputs.db_url }}
           DIRECT_URL: ${{ steps.neon_branch.outputs.db_url }}

@@ -1,5 +1,4 @@
-import { Prisma } from "@prisma/client";
-
+import { Prisma } from "~/generated/prisma/client";
 import { db } from "~/integrations/db.server";
 import { createLogger } from "~/integrations/logger.server";
 import { Sentry } from "~/integrations/sentry";
@@ -248,9 +247,7 @@ export const CertificateService = {
     // One number should map to one certificate. If it doesn't, the number was issued twice and a Map
     // would quietly show whichever row came back last, hiding it on the page built to catch it.
     const certificatesByNumber = new Map(certificates.map((c) => [c.number, c]));
-    const duplicatedNumbers = certificates
-      .map((c) => c.number)
-      .filter((number, i, all) => all.indexOf(number) !== i);
+    const duplicatedNumbers = certificates.map((c) => c.number).filter((number, i, all) => all.indexOf(number) !== i);
 
     if (duplicatedNumbers.length > 0) {
       const numbers = [...new Set(duplicatedNumbers)];

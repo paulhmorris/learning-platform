@@ -1,5 +1,5 @@
 {
-  "typescript.preferences.autoImportFileExcludePatterns": ["node_modules/@radix-ui", "node_modules/postcss", "stripe"],
-  "prisma.pinToPrisma6": true,
+  "js/ts.preferences.autoImportFileExcludePatterns": ["node_modules/@radix-ui", "node_modules/postcss", "stripe"],
+  "prisma.pinToPrisma6": false,
   "typescript.native-preview.tsdk": "node_modules/@typescript/native-preview"
 }

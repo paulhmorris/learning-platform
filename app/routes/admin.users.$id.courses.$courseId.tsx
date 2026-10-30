@@ -1,4 +1,3 @@
-import { Prisma } from "@prisma/client";
 import { parseFormData } from "@rvf/react-router";
 import { IconCircleCheckFilled, IconCircleDashed, IconCircleDashedCheck, IconCircleXFilled } from "@tabler/icons-react";
 import { ActionFunctionArgs, LoaderFunctionArgs, useLoaderData } from "react-router";
@@ -13,6 +12,7 @@ import { QuizUpdateForm } from "~/components/admin/courses/quiz-update-form";
 import { ResetAllProgressDialog } from "~/components/admin/courses/reset-all-progress-dialog";
 import { SectionProgressHeader } from "~/components/admin/courses/section-progress-header";
 import { ErrorComponent } from "~/components/error-component";
+import { Prisma } from "~/generated/prisma/client";
 import { createLogger } from "~/integrations/logger.server";
 import { Sentry } from "~/integrations/sentry";
 import { isResponseLike, Responses } from "~/lib/responses.server";

@@ -1,4 +1,3 @@
-import { UserLessonProgress } from "@prisma/client";
 import { useParams } from "react-router";
 
 import {
@@ -10,6 +9,7 @@ import {
 } from "~/components/section";
 import { ProgressCircle } from "~/components/sidebar/progress-circle";
 import { ProgressTimer } from "~/components/sidebar/progress-timer";
+import { UserLessonProgress } from "~/generated/prisma/browser";
 import { cn, formatSeconds, getLessonAttributes } from "~/lib/utils";
 import { APIResponseData } from "~/types/utils";
 

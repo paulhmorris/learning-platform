@@ -1,10 +1,10 @@
-import { UserLessonProgress } from "@prisma/client";
 import { IconAlertCircleFilled, IconCircleCheckFilled, IconInfoCircleFilled } from "@tabler/icons-react";
 import { useEffect } from "react";
 import { useFetcher } from "react-router";
 import { useCountdown } from "react-timing-hooks";
 import { toast } from "sonner";
 
+import { UserLessonProgress } from "~/generated/prisma/browser";
 import { cn, formatSeconds } from "~/lib/utils";
 import { SUBMIT_INTERVAL_MS } from "~/routes/api.progress";
 import { APIResponseData } from "~/types/utils";

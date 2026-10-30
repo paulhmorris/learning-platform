@@ -1,4 +1,3 @@
-import { UserLessonProgress } from "@prisma/client";
 import React from "react";
 
 import { LessonLocked } from "~/components/preview/lesson-locked";
@@ -12,6 +11,7 @@ import { ProgressCircle } from "~/components/sidebar/progress-circle";
 import { SectionLessonCompleted } from "~/components/sidebar/section-lesson-completed";
 import { SectionLessonInProgress } from "~/components/sidebar/section-lesson-in-progress";
 import { SectionLessonUnstarted } from "~/components/sidebar/section-lesson-unstarted";
+import { UserLessonProgress } from "~/generated/prisma/browser";
 import { cn, getLessonAttributes } from "~/lib/utils";
 import { APIResponseData } from "~/types/utils";
 

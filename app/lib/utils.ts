@@ -1,4 +1,3 @@
-import { UserLessonProgress, UserQuizProgress } from "@prisma/client";
 import type { Attribute } from "@strapi/strapi";
 import { ClassValue, clsx } from "clsx";
 import { Params } from "react-router";
@@ -6,6 +5,7 @@ import { StrapiResponse } from "strapi-sdk-js";
 import { twMerge } from "tailwind-merge";
 
 import { IconCameraFilled, IconClipboard } from "~/components/icons";
+import { UserLessonProgress, UserQuizProgress } from "~/generated/prisma/browser";
 import { APIResponseData } from "~/types/utils";
 
 export function cn(...inputs: Array<ClassValue>) {
