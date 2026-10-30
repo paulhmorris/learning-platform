@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { Hono } from "hono";
 
-import { forwardedProtoMiddleware, unknownPathMiddleware } from "~/server/middleware";
+import { coldStartMiddleware, forwardedProtoMiddleware, unknownPathMiddleware } from "~/server/middleware";
 
 function createApp() {
   const app = new Hono();
@@ -57,4 +57,19 @@ describe("unknownPathMiddleware", () => {
       expect(res.status).toBe(404);
     },
   );
+});
+
+describe("coldStartMiddleware", () => {
+  it("adds Server-Timing to the first response only, including redirects", async () => {
+    const app = new Hono();
+    app.use(coldStartMiddleware());
+    app.get("/", (c) => c.redirect("/preview"));
+
+    const first = await app.request("http://example.com/");
+    const second = await app.request("http://example.com/");
+
+    expect(first.status).toBe(302);
+    expect(first.headers.get("server-timing")).toMatch(/^boot;dur=\d+, cold-request;dur=\d+$/);
+    expect(second.headers.get("server-timing")).toBeNull();
+  });
 });
