@@ -1,5 +1,4 @@
-import { UserLessonProgress, UserQuizProgress } from "@prisma/client";
-
+import { UserLessonProgress, UserQuizProgress } from "~/generated/prisma/client";
 import { db } from "~/integrations/db.server";
 import { createLogger } from "~/integrations/logger.server";
 import { SUBMIT_INTERVAL_MS } from "~/routes/api.progress";

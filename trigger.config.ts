@@ -11,8 +11,7 @@ export default defineConfig({
   build: {
     extensions: [
       prismaExtension({
-        mode: "legacy",
-        schema: "prisma/schema.prisma",
+        mode: "modern",
       }),
     ],
     external: ["@napi-rs/canvas", "fsevents", "resend", "@react-email/render", "@react-email/components"],

@@ -1,8 +1,10 @@
 import { neonConfig } from "@neondatabase/serverless";
 import { PrismaNeon } from "@prisma/adapter-neon";
-import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 import invariant from "tiny-invariant";
 import ws from "ws";
+
+import { PrismaClient } from "~/generated/prisma/client";
 
 export const singleton = <Value>(name: string, valueFactory: () => Value): Value => {
   const g = global as unknown as { __singletons: Record<string, unknown> };
@@ -17,14 +19,7 @@ function getPrismaClient() {
   invariant(typeof DATABASE_URL === "string", "DATABASE_URL env var not set");
 
   if (process.env.NODE_ENV !== "production") {
-    const databaseUrl = new URL(DATABASE_URL);
-    const client = new PrismaClient({
-      datasources: {
-        db: {
-          url: databaseUrl.toString(),
-        },
-      },
-    });
+    const client = new PrismaClient({ adapter: new PrismaPg({ connectionString: DATABASE_URL }) });
     void client.$connect();
 
     return client;

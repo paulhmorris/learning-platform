@@ -24,7 +24,7 @@ export default defineConfig({
   ],
   plugins: ["typescript", "unicorn", "oxc", "import", "react"],
   rules: {
-    "import/no-unassigned-import": ["warn", { allow: ["**/*.css"] }],
+    "import/no-unassigned-import": ["warn", { allow: ["**/*.css", "dotenv/config"] }],
     "no-underscore-dangle": "off",
     "unicorn/prefer-set-has": "off",
     "unicorn/consistent-function-scoping": "off",

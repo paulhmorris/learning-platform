@@ -1,0 +1,446 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Architecture review for learning-platform</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({ startOnLoad: true, theme: "neutral", securityLevel: "loose" });
+</script>
+<style>
+  .seam { stroke-dasharray: 4 4; }
+  .leak { stroke: #dc2626; }
+  .deep { background: linear-gradient(135deg, #0f172a, #1e293b); }
+  .lbl { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; }
+  .diagram { min-height: 300px; }
+</style>
+</head>
+<body class="bg-stone-50 text-slate-900 font-sans">
+<main class="max-w-6xl mx-auto px-6 py-12 space-y-14">
+
+<header class="space-y-4">
+  <h1 class="font-serif text-4xl">learning-platform: deepening opportunities</h1>
+  <p class="text-sm text-slate-500">2026-10-16 · branch <span class="font-mono">railway</span> · weighted to recent hot spots: certificates, progress, admin user↔course, cache</p>
+  <div class="flex flex-wrap gap-6 text-xs text-slate-600 items-center">
+    <span class="flex items-center gap-2"><span class="inline-block w-5 h-4 border border-slate-500 bg-white"></span>module</span>
+    <span class="flex items-center gap-2"><svg width="30" height="6"><line x1="0" y1="3" x2="30" y2="3" stroke="#475569" stroke-width="2" class="seam"/></svg>seam</span>
+    <span class="flex items-center gap-2"><svg width="30" height="8"><line x1="0" y1="4" x2="24" y2="4" class="leak" stroke-width="2"/><polygon points="24,0 30,4 24,8" fill="#dc2626"/></svg>leakage</span>
+    <span class="flex items-center gap-2"><span class="inline-block w-5 h-4 deep"></span>deep module</span>
+  </div>
+  <div class="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">
+    <strong>Found while exploring (bugs, not refactors):</strong>
+    <ul class="list-disc ml-5 mt-1 space-y-0.5">
+      <li><span class="font-mono">_course.tsx:226</span> <span class="font-mono">isLessonLocked = (bool) ?? … ?? …</span>: the section-quiz and "last completed + 1" lock rules never run.</li>
+      <li><span class="font-mono">admin.users.$id.courses.$courseId.tsx:104-135</span> "reset-all-progress" / "complete-course" act on <em>every</em> course, not the one in the URL.</li>
+      <li><span class="font-mono">_course.certificate.tsx:170</span> certificate eligibility counts any progress row, ignores <span class="font-mono">isCompleted</span>; <span class="font-mono">requiresIdentityVerification</span> only checked in the UI.</li>
+      <li>Enrollment only on Stripe redirect (<span class="font-mono">api.purchase.ts</span>); no <span class="font-mono">checkout.session.completed</span> webhook, reload hits unique constraint.</li>
+      <li><span class="font-mono">UserCourse.certificateClaimed</span> is never written, yet gates the student "View Certificate" link.</li>
+    </ul>
+  </div>
+</header>
+
+<section id="candidates" class="space-y-14">
+
+<!-- 1 -->
+<article id="c1" class="rounded-xl border border-slate-200 bg-white p-8 space-y-5 shadow-sm">
+  <div class="flex flex-wrap items-center gap-2">
+    <h2 class="font-serif text-2xl mr-3">1. Deepen Course Progress into one derivation module</h2>
+    <span class="rounded-full bg-emerald-100 text-emerald-800 text-xs font-semibold px-3 py-1">Strong</span>
+    <span class="rounded-full bg-slate-100 text-slate-700 text-xs px-3 py-1">in-process</span>
+  </div>
+  <ul class="font-mono text-sm text-slate-600 grid md:grid-cols-2 gap-x-6">
+    <li>app/lib/utils.ts · getCourseLayoutValues / getPreviewValues</li>
+    <li>app/routes/_course.tsx (lesson + quiz lock inline)</li>
+    <li>app/routes/preview.tsx (lock inline, copy)</li>
+    <li>app/routes/_course.quizzes.$quizId.tsx (quiz lock)</li>
+    <li>app/routes/_course.certificate.tsx (eligibility, client + server)</li>
+  </ul>
+  <div class="grid md:grid-cols-2 gap-6">
+    <div class="rounded-lg border border-slate-200 p-4 diagram">
+      <p class="lbl text-slate-500 mb-2">Before: completion rules in 6 places</p>
+      <pre class="mermaid">
+flowchart TB
+  P[(Lesson/Quiz progress)] --> U1[getCourseLayoutValues]
+  P --> U2[getPreviewValues ~70% copy]
+  P --> L1[_course.tsx lock JSX]
+  P --> L2[preview.tsx lock JSX]
+  P --> Q[quiz route lock]
+  P --> C1[certificate action: any row = done]
+  P --> C2[certificate UI: isCompleted]
+  classDef leak stroke:#dc2626,stroke-width:2px,color:#991b1b;
+  class C1,L1 leak
+      </pre>
+    </div>
+    <div class="rounded-lg border border-slate-200 p-4 diagram flex flex-col">
+      <p class="lbl text-slate-500 mb-2">After: one interface, every caller reads it</p>
+      <div class="flex-1 flex flex-col justify-center gap-3">
+        <div class="flex gap-2 justify-center text-xs">
+          <span class="border border-slate-400 px-2 py-1 rounded">_course loader</span>
+          <span class="border border-slate-400 px-2 py-1 rounded">preview loader</span>
+          <span class="border border-slate-400 px-2 py-1 rounded">quiz action</span>
+          <span class="border border-slate-400 px-2 py-1 rounded">certificate action</span>
+        </div>
+        <svg height="14" class="w-full"><line x1="5%" y1="7" x2="95%" y2="7" stroke="#475569" stroke-width="2" class="seam"/></svg>
+        <div class="deep rounded-lg p-5 text-white">
+          <p class="lbl text-slate-300">Course Progress</p>
+          <p class="font-mono text-sm mt-1">(course, progress) → state</p>
+          <div class="grid grid-cols-3 gap-2 mt-4 text-[11px] text-slate-400">
+            <span class="border border-slate-600 rounded px-2 py-1">lessons in order</span>
+            <span class="border border-slate-600 rounded px-2 py-1">lock rules</span>
+            <span class="border border-slate-600 rounded px-2 py-1">durations</span>
+            <span class="border border-slate-600 rounded px-2 py-1">course-scoped counts</span>
+            <span class="border border-slate-600 rounded px-2 py-1">isCompleted</span>
+            <span class="border border-slate-600 rounded px-2 py-1">certificate eligible</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p><strong>Problem:</strong> what "complete" and "locked" mean is rewritten per route, client vs server disagree, and the copies have already drifted into bugs.</p>
+  <p><strong>Solution:</strong> one pure module takes the CMS course + the user's progress and returns per-lesson/quiz state and course completion; loaders and actions call it, the server enforces it.</p>
+  <ul class="list-disc ml-5 text-sm text-slate-700 space-y-0.5">
+    <li>Locality: lock bug fixed once</li>
+    <li>Leverage: one interface, 5 call sites</li>
+    <li>Tests: table-driven, no mocks</li>
+    <li>Server enforces what UI shows</li>
+    <li>Delete ~70% duplicate in utils.ts</li>
+  </ul>
+</article>
+
+<!-- 2 -->
+<article id="c2" class="rounded-xl border border-slate-200 bg-white p-8 space-y-5 shadow-sm">
+  <div class="flex flex-wrap items-center gap-2">
+    <h2 class="font-serif text-2xl mr-3">2. Deepen the Certificate module: claim, regenerate, amend behind one interface</h2>
+    <span class="rounded-full bg-emerald-100 text-emerald-800 text-xs font-semibold px-3 py-1">Strong</span>
+    <span class="rounded-full bg-slate-100 text-slate-700 text-xs px-3 py-1">ports &amp; adapters</span>
+  </div>
+  <ul class="font-mono text-sm text-slate-600 grid md:grid-cols-2 gap-x-6">
+    <li>app/routes/_course.certificate.tsx (action L110-267)</li>
+    <li>jobs/claim-certificate.ts</li>
+    <li>jobs/regenerate-certificate.ts</li>
+    <li>jobs/certificate-generation.ts (certificateMap)</li>
+    <li>app/services/certificate.server.ts</li>
+    <li>app/routes/admin.users.$id.certificate.$courseId.tsx</li>
+    <li>app/components/pre-certificate-forms/hiphopdriving.tsx</li>
+    <li>jobs/hiphop-data-export.tsx</li>
+  </ul>
+  <div class="grid md:grid-cols-2 gap-6">
+    <div class="rounded-lg border border-slate-200 p-4 diagram">
+      <p class="lbl text-slate-500 mb-2">Before: orchestration spread, config keyed 3 ways</p>
+      <pre class="mermaid">
+flowchart LR
+  R[certificate route] -->|raw db| F[(FormSubmission)]
+  R --> J1[claim job]
+  A[admin amend route] -->|always HipHop| F
+  A --> J2[regenerate job]
+  J1 -->|4 rollback paths| S[CertificateService]
+  J1 --> G[generation: certificateMap by cuid]
+  J2 --> G
+  R -.Strapi id 1.-> CF[courseSpecificForms]
+  G -->|raw db| F
+  J1 --> S3[S3 key inline]
+  J2 --> S3b[S3 key copy]
+  classDef leak stroke:#dc2626,stroke-width:2px,color:#991b1b;
+  class CF,S3b,A leak
+      </pre>
+    </div>
+    <div class="rounded-lg border border-slate-200 p-4 diagram">
+      <p class="lbl text-slate-500 mb-2">After: thin callers, deep module, two real seams</p>
+      <pre class="mermaid">
+flowchart LR
+  R[certificate route] --> M
+  A[admin amend route] --> M
+  J[trigger jobs] --> M
+  subgraph M[Certificate module]
+    direction TB
+    cfg[per-course certificate config]
+    cl[claim · rollback]
+    rg[regenerate]
+    key[S3 key · asset URL]
+  end
+  M -.seam.-> ST[Storage adapter: S3 / in-memory]
+  M -.seam.-> RN[Renderer adapter: canvas / stub]
+  classDef deep fill:#0f172a,color:#fff,stroke:#0f172a;
+  class M deep
+      </pre>
+    </div>
+  </div>
+  <p><strong>Problem:</strong> understanding a claim means reading 7 files; per-course config is keyed by DB cuid in one place, Strapi id in another, hardcoded in a third; job tests mock ~10 modules.</p>
+  <p><strong>Solution:</strong> one Certificate module owns per-course config, form submission access, claim/regenerate/amend sequences and rollback; jobs and routes become thin callers.</p>
+  <ul class="list-disc ml-5 text-sm text-slate-700 space-y-0.5">
+    <li>Locality: per-course config in one place</li>
+    <li>Tests cross one interface</li>
+    <li>Two adapters: S3 + in-memory</li>
+    <li>Rollback paths collapse to one</li>
+    <li>Delete duplicate key/URL builders</li>
+  </ul>
+</article>
+
+<!-- 3 -->
+<article id="c3" class="rounded-xl border border-slate-200 bg-white p-8 space-y-5 shadow-sm">
+  <div class="flex flex-wrap items-center gap-2">
+    <h2 class="font-serif text-2xl mr-3">3. Merge lesson + quiz progress into one Progress store that owns its cache</h2>
+    <span class="rounded-full bg-emerald-100 text-emerald-800 text-xs font-semibold px-3 py-1">Strong</span>
+    <span class="rounded-full bg-slate-100 text-slate-700 text-xs px-3 py-1">local-substitutable</span>
+  </div>
+  <ul class="font-mono text-sm text-slate-600 grid md:grid-cols-2 gap-x-6">
+    <li>app/services/progress.server.ts</li>
+    <li>app/services/quiz.server.ts (progress writes)</li>
+    <li>app/routes/api.progress.ts (timing rules)</li>
+    <li>app/routes/_course.quizzes.$quizId.tsx (scoring)</li>
+    <li>app/routes/admin.users.$id.courses.$courseId.tsx</li>
+  </ul>
+  <div class="grid md:grid-cols-2 gap-6">
+    <div class="rounded-lg border border-slate-200 p-4 diagram">
+      <p class="lbl text-slate-500 mb-3">Before: each write picks its own invalidation</p>
+      <table class="w-full text-xs font-mono">
+        <thead class="text-slate-500"><tr><th class="text-left py-1">write</th><th>item key</th><th>:all key</th></tr></thead>
+        <tbody class="divide-y divide-slate-100">
+          <tr><td class="py-1">markComplete</td><td class="text-center">set</td><td class="text-center">del</td></tr>
+          <tr><td class="py-1">incrementProgress</td><td class="text-center">set</td><td class="text-center text-red-600 font-bold">stale</td></tr>
+          <tr><td class="py-1">Progress.updateProgress</td><td class="text-center text-red-600 font-bold">stale</td><td class="text-center text-red-600 font-bold">stale</td></tr>
+          <tr><td class="py-1">resetLesson</td><td class="text-center">del</td><td class="text-center text-red-600 font-bold">stale</td></tr>
+          <tr><td class="py-1">resetAllLesson</td><td class="text-center text-red-600 font-bold">stale</td><td class="text-center">del</td></tr>
+          <tr><td class="py-1">Quiz.updateProgress</td><td class="text-center text-red-600 font-bold">stale</td><td class="text-center text-red-600 font-bold">stale</td></tr>
+          <tr><td class="py-1">Quiz.resetProgress</td><td class="text-center">del</td><td class="text-center text-red-600 font-bold">stale</td></tr>
+          <tr><td class="py-1">markAsPassed</td><td class="text-center">set</td><td class="text-center">del</td></tr>
+        </tbody>
+      </table>
+      <p class="text-xs text-red-700 mt-3">service imports SUBMIT_INTERVAL_MS from a route · cache no-op in tests</p>
+    </div>
+    <div class="rounded-lg border border-slate-200 p-4 diagram flex flex-col justify-center gap-4">
+      <p class="lbl text-slate-500">After</p>
+      <div class="flex gap-2 justify-center text-xs">
+        <span class="border border-slate-400 px-2 py-1 rounded">api.progress</span>
+        <span class="border border-slate-400 px-2 py-1 rounded">quiz action</span>
+        <span class="border border-slate-400 px-2 py-1 rounded">admin actions</span>
+      </div>
+      <svg height="14" class="w-full"><line x1="5%" y1="7" x2="95%" y2="7" stroke="#475569" stroke-width="2" class="seam"/></svg>
+      <div class="deep rounded-lg p-5 text-white">
+        <p class="lbl text-slate-300">Progress store</p>
+        <p class="font-mono text-sm mt-1">recordLessonTime · submitQuiz · reset(courseId) · read</p>
+        <div class="flex flex-wrap gap-2 mt-3 text-[11px] text-slate-400">
+          <span class="border border-slate-600 rounded px-2 py-1">timing → completion</span>
+          <span class="border border-slate-600 rounded px-2 py-1">quiz scoring</span>
+          <span class="border border-slate-600 rounded px-2 py-1">course scoping</span>
+          <span class="border border-slate-600 rounded px-2 py-1">one invalidation rule</span>
+        </div>
+      </div>
+      <svg height="14" class="w-full"><line x1="5%" y1="7" x2="95%" y2="7" stroke="#475569" stroke-width="2" class="seam"/></svg>
+      <div class="flex gap-2 justify-center text-xs">
+        <span class="border border-slate-400 px-2 py-1 rounded">Redis cache</span>
+        <span class="border border-slate-400 px-2 py-1 rounded">in-memory cache (tests)</span>
+      </div>
+    </div>
+  </div>
+  <p><strong>Problem:</strong> quiz progress reads in one module, writes in another; 8 write paths, 8 different cache behaviours; admin resets ignore the course.</p>
+  <p><strong>Solution:</strong> one Progress store owns lesson time, quiz scoring, course-scoped resets and cache invalidation; in-memory cache adapter in tests so stale-read bugs show up.</p>
+  <ul class="list-disc ml-5 text-sm text-slate-700 space-y-0.5">
+    <li>Locality: one invalidation rule</li>
+    <li>Quiz scoring gets tested</li>
+    <li>Fix route→module import inversion</li>
+    <li>Cache paths exercised in tests</li>
+  </ul>
+</article>
+
+<!-- 4 -->
+<article id="c4" class="rounded-xl border border-slate-200 bg-white p-8 space-y-5 shadow-sm">
+  <div class="flex flex-wrap items-center gap-2">
+    <h2 class="font-serif text-2xl mr-3">4. Linked-course access: one call gives course + enrollment, or throws</h2>
+    <span class="rounded-full bg-amber-100 text-amber-800 text-xs font-semibold px-3 py-1">Worth exploring</span>
+    <span class="rounded-full bg-slate-100 text-slate-700 text-xs px-3 py-1">in-process</span>
+  </div>
+  <ul class="font-mono text-sm text-slate-600 grid md:grid-cols-2 gap-x-6">
+    <li>app/root.tsx · _course.tsx · preview.tsx</li>
+    <li>_course.certificate.tsx · _course.$lessonSlug.tsx</li>
+    <li>api.purchase.ts · account.$.tsx</li>
+    <li>app/services/user-course.server.ts</li>
+  </ul>
+  <div class="grid md:grid-cols-2 gap-6">
+    <div class="rounded-lg border border-slate-200 p-4 diagram">
+      <p class="lbl text-slate-500 mb-3">Before: 7 enrollment checks, mostly client-side</p>
+      <div class="space-y-1.5">
+        <div class="h-8 border-l-4 border-slate-300 bg-slate-50 px-3 text-xs flex items-center">getByHost(host) ×7 call sites</div>
+        <div class="h-8 border-l-4 border-red-400 bg-red-50 px-3 text-xs flex items-center">_course: return ids, component toasts + navigates</div>
+        <div class="h-8 border-l-4 border-red-400 bg-red-50 px-3 text-xs flex items-center">lesson loader: signed-in only</div>
+        <div class="h-8 border-l-4 border-slate-300 bg-slate-50 px-3 text-xs flex items-center">certificate action: getAllByUserId ×2</div>
+        <div class="h-8 border-l-4 border-slate-300 bg-slate-50 px-3 text-xs flex items-center">claim job: getAllByUserId().find</div>
+        <div class="h-8 border-l-4 border-slate-300 bg-slate-50 px-3 text-xs flex items-center">account: raw db.userCourse.findMany</div>
+        <div class="h-8 border-l-4 border-red-400 bg-red-50 px-3 text-xs flex items-center">quiz action: no access check</div>
+      </div>
+    </div>
+    <div class="rounded-lg border border-slate-200 p-4 diagram flex flex-col justify-center">
+      <p class="lbl text-slate-500 mb-3">After</p>
+      <div class="h-10 border-l-4 border-slate-300 bg-slate-50 px-3 text-xs flex items-center mb-2">every course loader / action</div>
+      <div class="deep rounded-lg p-6 text-white h-40 flex flex-col justify-center">
+        <p class="lbl text-slate-300">Linked-course access</p>
+        <p class="font-mono text-sm mt-2">request → { course, user, userCourse }</p>
+        <p class="text-[11px] text-slate-400 mt-3">host lookup · preview fallback · enrollment · 403 redirect</p>
+      </div>
+    </div>
+  </div>
+  <p><strong>Problem:</strong> every route rebuilds "which course, is this user enrolled" differently; denial is often a client redirect, so direct requests bypass it.</p>
+  <p><strong>Solution:</strong> one module resolves the linked course and enrollment from the request and throws the redirect itself; routes receive a guaranteed-enrolled context.</p>
+  <ul class="list-disc ml-5 text-sm text-slate-700 space-y-0.5">
+    <li>Access enforced at the seam</li>
+    <li>Leverage: 7 call sites</li>
+    <li>Clerk-migration TODOs in one place</li>
+    <li>UserCourseService pass-through deletable</li>
+  </ul>
+</article>
+
+<!-- 5 -->
+<article id="c5" class="rounded-xl border border-slate-200 bg-white p-8 space-y-5 shadow-sm">
+  <div class="flex flex-wrap items-center gap-2">
+    <h2 class="font-serif text-2xl mr-3">5. Enrollment module with two adapters: Stripe redirect and Stripe webhook</h2>
+    <span class="rounded-full bg-amber-100 text-amber-800 text-xs font-semibold px-3 py-1">Worth exploring</span>
+    <span class="rounded-full bg-slate-100 text-slate-700 text-xs px-3 py-1">ports &amp; adapters</span>
+  </div>
+  <ul class="font-mono text-sm text-slate-600 grid md:grid-cols-2 gap-x-6">
+    <li>app/routes/api.purchase.ts</li>
+    <li>app/routes/api.webhooks.stripe.ts</li>
+    <li>app/routes/preview.tsx (action)</li>
+    <li>app/services/payment.server.ts ⇄ user.server.ts (cycle)</li>
+  </ul>
+  <div class="grid md:grid-cols-2 gap-6">
+    <div class="rounded-lg border border-slate-200 p-4 diagram">
+      <p class="lbl text-slate-500 mb-2">Before</p>
+      <pre class="mermaid">
+sequenceDiagram
+  participant B as Browser
+  participant S as Stripe
+  participant L as api.purchase loader
+  participant DB
+  B->>S: checkout
+  S-->>B: redirect (maybe never)
+  B->>L: GET ?session_id
+  L->>S: retrieve session
+  L->>DB: create UserCourse (reload = error)
+  L->>L: send email inline
+  Note over S,DB: webhook ignores checkout.session.completed
+      </pre>
+    </div>
+    <div class="rounded-lg border border-slate-200 p-4 diagram">
+      <p class="lbl text-slate-500 mb-2">After</p>
+      <pre class="mermaid">
+flowchart LR
+  L[purchase redirect] --> E
+  W[stripe webhook] --> E
+  E[Enrollment module<br/>enroll from checkout session<br/>idempotent · verifies user + price · email once]
+  classDef deep fill:#0f172a,color:#fff,stroke:#0f172a;
+  class E deep
+      </pre>
+    </div>
+  </div>
+  <p><strong>Problem:</strong> enrollment lives in a redirect loader; a lost redirect means paid but not enrolled; a reload errors; no check the session belongs to this user/course.</p>
+  <p><strong>Solution:</strong> one idempotent Enrollment module that both the redirect and the webhook call; two callers make the seam real.</p>
+  <ul class="list-disc ml-5 text-sm text-slate-700 space-y-0.5">
+    <li>Two adapters justify the seam</li>
+    <li>Idempotency tested once</li>
+    <li>Break payment⇄user cycle</li>
+  </ul>
+</article>
+
+<!-- 6 -->
+<article id="c6" class="rounded-xl border border-slate-200 bg-white p-8 space-y-5 shadow-sm">
+  <div class="flex flex-wrap items-center gap-2">
+    <h2 class="font-serif text-2xl mr-3">6. Certificate number allocation owns its own rules</h2>
+    <span class="rounded-full bg-amber-100 text-amber-800 text-xs font-semibold px-3 py-1">Worth exploring</span>
+    <span class="rounded-full bg-slate-100 text-slate-700 text-xs px-3 py-1">local-substitutable</span>
+  </div>
+  <ul class="font-mono text-sm text-slate-600 grid md:grid-cols-2 gap-x-6">
+    <li>app/routes/admin.courses.$courseId.certificates.tsx (zod L43-79)</li>
+    <li>app/services/certificate.server.ts (buildAllocationNumbers, raw SQL ×2)</li>
+    <li>jobs/claim-certificate.ts (low-stock alert)</li>
+  </ul>
+  <div class="grid md:grid-cols-2 gap-6">
+    <div class="rounded-lg border border-slate-200 p-4 diagram flex items-end justify-center gap-10">
+      <div class="text-center">
+        <div class="w-24 bg-slate-300 border border-slate-500" style="height:150px"></div>
+        <div class="w-24 bg-slate-100 border border-slate-500 border-t-0" style="height:60px"></div>
+        <p class="lbl text-slate-500 mt-2">Before</p>
+        <p class="text-[11px] text-slate-500">interface ≈ implementation<br/>(range rules, no-leading-zero<br/>invariant live in caller)</p>
+      </div>
+    </div>
+    <div class="rounded-lg border border-slate-200 p-4 diagram flex items-end justify-center gap-10">
+      <div class="text-center">
+        <div class="w-24 bg-slate-300 border border-slate-500" style="height:30px"></div>
+        <div class="w-24 deep border border-slate-900 border-t-0" style="height:180px"></div>
+        <p class="lbl text-slate-500 mt-2">After</p>
+        <p class="text-[11px] text-slate-500">parse · order · next · low-stock<br/>all behind the Allocation interface</p>
+      </div>
+    </div>
+  </div>
+  <p><strong>Problem:</strong> the invariant the SQL ordering relies on (no leading zeros) is enforced only by a route regex; ordering SQL and filters written twice; low-stock alert sits in the claim job.</p>
+  <p><strong>Solution:</strong> Allocation module parses and validates ranges itself and owns ordering, next-number and low-stock; tested against a real Postgres (already done in e2e).</p>
+  <ul class="list-disc ml-5 text-sm text-slate-700 space-y-0.5">
+    <li>Invariant lives with its user</li>
+    <li>Test SQL, not SQL strings</li>
+  </ul>
+</article>
+
+<!-- 7 -->
+<article id="c7" class="rounded-xl border border-slate-200 bg-white p-8 space-y-5 shadow-sm">
+  <div class="flex flex-wrap items-center gap-2">
+    <h2 class="font-serif text-2xl mr-3">7. Cache module does read-through and invalidates on Course writes</h2>
+    <span class="rounded-full bg-slate-200 text-slate-700 text-xs font-semibold px-3 py-1">Speculative</span>
+    <span class="rounded-full bg-slate-100 text-slate-700 text-xs px-3 py-1">local-substitutable</span>
+  </div>
+  <ul class="font-mono text-sm text-slate-600 grid md:grid-cols-2 gap-x-6">
+    <li>app/services/cache.server.ts</li>
+    <li>app/routes/admin.cache.tsx</li>
+    <li>app/routes/admin.courses.$courseId.edit.tsx (raw db.course.update)</li>
+    <li>course / lesson / progress / quiz services (~10 hand-rolled get→fetch→set)</li>
+    <li>app/integrations/cdn.server.ts</li>
+  </ul>
+  <div class="grid md:grid-cols-2 gap-6">
+    <div class="rounded-lg border border-slate-200 p-4 diagram">
+      <p class="lbl text-slate-500 mb-2">Before</p>
+      <pre class="mermaid">
+flowchart TB
+  S1[course svc] --> C[Cache get/set/del]
+  S2[lesson svc] --> C
+  S3[progress svc] --> C
+  S4[quiz svc] --> C
+  E[course edit route] -->|db.update, no invalidate| DB[(db)]
+  AC[admin cache page] -->|raw key delete| C
+  classDef leak stroke:#dc2626,stroke-width:2px,color:#991b1b;
+  class E,AC leak
+      </pre>
+    </div>
+    <div class="rounded-lg border border-slate-200 p-4 diagram">
+      <p class="lbl text-slate-500 mb-2">After</p>
+      <pre class="mermaid">
+flowchart TB
+  S1[course svc] --> C
+  S2[lesson svc] --> C
+  E[course edit] --> S1
+  C[Cache: cached key,ttl,fetch · invalidate]
+  C -.seam.-> R[Redis]
+  C -.seam.-> M[in-memory: dev/test]
+  classDef deep fill:#0f172a,color:#fff,stroke:#0f172a;
+  class C deep
+      </pre>
+    </div>
+  </div>
+  <p><strong>Problem:</strong> cache module is shallow (get/set/del); callers reimplement read-through; course edits leave a 24h stale host key, papered over by a manual admin page.</p>
+  <p><strong>Solution:</strong> read-through in the Cache module, course writes go through the Course module which invalidates; in-memory adapter instead of no-op in dev/test.</p>
+  <ul class="list-disc ml-5 text-sm text-slate-700 space-y-0.5">
+    <li>Delete ~10 hand-rolled read-throughs</li>
+    <li>Two adapters: Redis + memory</li>
+    <li>Admin cache page maybe deletable</li>
+  </ul>
+</article>
+
+</section>
+
+<section id="top-recommendation" class="rounded-xl deep text-white p-10 space-y-3">
+  <p class="lbl text-emerald-300">Top recommendation</p>
+  <h2 class="font-serif text-3xl"><a href="#c1" class="underline decoration-emerald-400">1. Course Progress derivation module</a></h2>
+  <p class="text-slate-300 max-w-3xl">Pure, in-process, no seams to invent; it fixes a live lock bug and the certificate-eligibility gap, gives tested rules the server can enforce, and is the foundation candidates 2–4 call into.</p>
+</section>
+
+</main>
+</body>
+</html>

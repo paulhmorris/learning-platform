@@ -1,9 +1,11 @@
 /* eslint-disable no-console */
-import { PrismaClient } from "@prisma/client";
+import "dotenv/config";
+import { PrismaPg } from "@prisma/adapter-pg";
 
+import { PrismaClient } from "~/generated/prisma/client";
 import { AuthService } from "~/services/auth.server";
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }) });
 
 async function seed() {
   const email = "paulh.morris@gmail.com";

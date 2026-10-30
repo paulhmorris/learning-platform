@@ -21,3 +21,5 @@ node_modules
 
 one-offs/
 .env*
+
+/app/generated/prisma

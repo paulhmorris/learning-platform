@@ -1,4 +1,3 @@
-import { UserQuizProgress } from "@prisma/client";
 import React from "react";
 
 import { IconDocument } from "~/components/icons";
@@ -9,6 +8,7 @@ import {
   SectionItemTitle,
 } from "~/components/section";
 import { ProgressCircle } from "~/components/sidebar/progress-circle";
+import { UserQuizProgress } from "~/generated/prisma/browser";
 import { cn } from "~/lib/utils";
 import { APIResponseData } from "~/types/utils";
 

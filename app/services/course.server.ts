@@ -1,6 +1,6 @@
-import { Course } from "@prisma/client";
 import { StrapiResponse } from "strapi-sdk-js";
 
+import { Course } from "~/generated/prisma/client";
 import { cms } from "~/integrations/cms.server";
 import { db } from "~/integrations/db.server";
 import { createLogger } from "~/integrations/logger.server";
