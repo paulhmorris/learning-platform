@@ -1,5 +1,5 @@
 import type { Config } from "@react-router/dev/config";
-import { sentryOnBuildEnd } from "@sentry/react-router";
+import { sentryOnBuildEnd } from "@sentry/react-router/vite";
 import { vercelPreset } from "@vercel/react-router/vite";
 
 const isVercel = process.env.VERCEL === "1";
