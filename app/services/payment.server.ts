@@ -1,6 +1,6 @@
 import { createLogger } from "~/integrations/logger.server";
 import { Sentry } from "~/integrations/sentry";
-import { stripe } from "~/integrations/stripe.server";
+import { getStripe } from "~/integrations/stripe.server";
 import { AuthService } from "~/services/auth.server";
 import { UserService } from "~/services/user.server";
 
@@ -29,6 +29,7 @@ export const PaymentService = {
         throw new Error("Invalid user ID format");
       }
 
+      const stripe = await getStripe();
       // Check if a Stripe customer already exists for this user
       const existingCustomers = await stripe.customers.search({
         query: `metadata["user_id"]:"${userId}"`,
@@ -102,6 +103,7 @@ export const PaymentService = {
         stripeCustomerId = customer.id;
       }
 
+      const stripe = await getStripe();
       const session = await stripe.checkout.sessions.create(
         {
           customer: stripeCustomerId,

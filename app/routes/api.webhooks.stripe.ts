@@ -4,7 +4,7 @@ import { SERVER_CONFIG } from "~/config.server";
 import { EmailService } from "~/integrations/email.server";
 import { createLogger } from "~/integrations/logger.server";
 import { Sentry } from "~/integrations/sentry";
-import { stripe } from "~/integrations/stripe.server";
+import { getStripe } from "~/integrations/stripe.server";
 import { Responses } from "~/lib/responses.server";
 import { AuthService } from "~/services/auth.server";
 import { UserService } from "~/services/user.server";
@@ -30,6 +30,7 @@ export async function action({ request }: ActionFunctionArgs) {
       }
 
       if (sig && request.body) {
+        const stripe = await getStripe();
         let event: ReturnType<typeof stripe.webhooks.constructEvent>;
 
         try {

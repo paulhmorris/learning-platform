@@ -10,8 +10,11 @@ import {
   loggerMiddleware,
   unknownPathMiddleware,
 } from "~/server/middleware";
+import { warmUpConnections } from "~/server/warm-up";
 
 const isVercel = process.env.VERCEL === "1";
+
+warmUpConnections();
 
 const server = await createHonoServer({
   configure(_server) {

@@ -5,7 +5,7 @@ import path from "node:path";
 import { clerk } from "@clerk/testing/playwright";
 import type { Browser, Page } from "@playwright/test";
 
-import { stripe } from "~/integrations/stripe.server";
+import { getStripe } from "~/integrations/stripe.server";
 import { AuthService } from "~/services/auth.server";
 import { UserService } from "~/services/user.server";
 
@@ -122,6 +122,7 @@ export async function createE2ETestUser(workerIndex: number): Promise<TestUser> 
 export async function deleteE2ETestUser(userId: string, stripeCustomerId?: string) {
   if (stripeCustomerId) {
     try {
+      const stripe = await getStripe();
       await stripe.customers.del(stripeCustomerId);
     } catch {
       // Ignore Stripe cleanup failures in tests.
