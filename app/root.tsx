@@ -92,14 +92,31 @@ export function Layout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  const course = _data.course?.data.attributes;
+  return (
+    <ThemeProvider specifiedTheme={_data.theme} themeAction="/api/set-theme">
+      <ThemedClerkProvider loaderData={_data}>
+        <InnerLayout ssrTheme={Boolean(_data.theme)}>{children}</InnerLayout>
+      </ThemedClerkProvider>
+    </ThemeProvider>
+  );
+}
+
+function ThemedClerkProvider({
+  loaderData,
+  children,
+}: {
+  loaderData: NonNullable<ReturnType<typeof useRouteLoaderData<typeof loader>>>;
+  children: React.ReactNode;
+}) {
+  const [theme] = useTheme();
+  const course = loaderData.course?.data.attributes;
 
   return (
     <ClerkProvider
-      loaderData={_data}
+      loaderData={loaderData}
       telemetry={{ disabled: true }}
       appearance={{
-        theme: _data.theme === Theme.DARK ? dark : undefined,
+        theme: theme === Theme.DARK ? dark : undefined,
       }}
       localization={
         course
@@ -121,9 +138,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       signInFallbackRedirectUrl="/preview"
       signUpFallbackRedirectUrl="/preview"
     >
-      <ThemeProvider specifiedTheme={_data.theme} themeAction="/api/set-theme">
-        <InnerLayout ssrTheme={Boolean(_data.theme)}>{children}</InnerLayout>
-      </ThemeProvider>
+      {children}
     </ClerkProvider>
   );
 }
