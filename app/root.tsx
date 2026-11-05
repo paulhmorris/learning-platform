@@ -29,9 +29,6 @@ import globalStyles from "~/tailwind.css?url";
 
 const logger = createLogger("Root");
 
-/** Clerk colors links with `colorPrimary`, which is unreadable for light course colors (e.g. yellow). */
-const clerkLinkStyle = { color: "hsl(var(--foreground))", textDecoration: "underline" };
-
 export const links: LinksFunction = () => [{ rel: "stylesheet", href: globalStyles, as: "style" }];
 
 export const loader = async (args: LoaderFunctionArgs) => {
@@ -72,7 +69,7 @@ export const loader = async (args: LoaderFunctionArgs) => {
     if (isResponseLike(error)) {
       throw error;
     }
-    logger.error("Error in root loader");
+    logger.error("Error in root loader", { error });
     Sentry.captureException(error);
     throw Responses.serverError();
   }
@@ -95,23 +92,31 @@ export function Layout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  const course = _data.course?.data.attributes;
+  return (
+    <ThemeProvider specifiedTheme={_data.theme} themeAction="/api/set-theme">
+      <ThemedClerkProvider loaderData={_data}>
+        <InnerLayout ssrTheme={Boolean(_data.theme)}>{children}</InnerLayout>
+      </ThemedClerkProvider>
+    </ThemeProvider>
+  );
+}
+
+function ThemedClerkProvider({
+  loaderData,
+  children,
+}: {
+  loaderData: NonNullable<ReturnType<typeof useRouteLoaderData<typeof loader>>>;
+  children: React.ReactNode;
+}) {
+  const [theme] = useTheme();
+  const course = loaderData.course?.data.attributes;
 
   return (
     <ClerkProvider
-      loaderData={_data}
+      loaderData={loaderData}
       telemetry={{ disabled: true }}
       appearance={{
-        theme: _data.theme === Theme.DARK ? dark : undefined,
-        variables: {
-          colorPrimary: course?.primary_color,
-          colorPrimaryForeground: course?.secondary_color,
-        },
-        elements: {
-          footerActionLink: clerkLinkStyle,
-          formFieldAction: clerkLinkStyle,
-          formResendCodeLink: clerkLinkStyle,
-        },
+        theme: theme === Theme.DARK ? dark : undefined,
       }}
       localization={
         course
@@ -133,9 +138,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       signInFallbackRedirectUrl="/preview"
       signUpFallbackRedirectUrl="/preview"
     >
-      <ThemeProvider specifiedTheme={_data.theme} themeAction="/api/set-theme">
-        <InnerLayout ssrTheme={Boolean(_data.theme)}>{children}</InnerLayout>
-      </ThemeProvider>
+      {children}
     </ClerkProvider>
   );
 }

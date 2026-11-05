@@ -1,4 +1,3 @@
-import { SignUp } from "@clerk/react-router";
 import { useEffect } from "react";
 
 import { AuthLayout } from "~/components/common/auth-layout";
@@ -17,9 +16,7 @@ export default function SignUpPage() {
   return (
     <>
       <title>{`Sign Up | ${courseTitle ?? "Plumb Media & Education"}`}</title>
-      <AuthLayout variant="sign-up">
-        <SignUp />
-      </AuthLayout>
+      <AuthLayout variant="sign-up" />
     </>
   );
 }

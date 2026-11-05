@@ -1,8 +1,6 @@
 import { RedirectToSignIn, SignedIn, SignedOut, UserProfile } from "@clerk/react-router";
-import { dark } from "@clerk/themes";
 import { IconCertificate, IconKey } from "@tabler/icons-react";
 import { LoaderFunctionArgs, useLoaderData } from "react-router";
-import { Theme, useTheme } from "remix-themes";
 
 import { AccountCourses } from "~/components/account/courses";
 import { IdentityVerification } from "~/components/account/identity-verification";
@@ -81,7 +79,6 @@ export async function loader(args: LoaderFunctionArgs) {
 }
 
 export default function AccountLayout() {
-  const [theme] = useTheme();
   const { courses, userCourses, session, isIdentityVerified } = useLoaderData<typeof loader>();
 
   return (
@@ -91,9 +88,9 @@ export default function AccountLayout() {
       </SignedOut>
       <SignedIn>
         <title>Account</title>
-        <div className="flex min-h-[calc(100dvh-80px)] flex-col items-center justify-center md:bg-secondary dark:bg-background">
+        <div className="flex min-h-[calc(100dvh-80px)] shrink-0 flex-col items-center justify-center py-6 md:bg-secondary dark:bg-background">
           <main>
-            <UserProfile appearance={{ theme: theme === Theme.DARK ? dark : undefined }}>
+            <UserProfile>
               <UserProfile.Page label="Identity" labelIcon={<IconKey className="size-4" />} url="/identity">
                 <IdentityVerification session={session} isIdentityVerified={isIdentityVerified} />
               </UserProfile.Page>
