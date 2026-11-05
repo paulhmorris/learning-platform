@@ -1,7 +1,9 @@
-import { SignIn, SignUp } from "@clerk/react-router";
+import { ClerkLoading, SignIn, SignUp } from "@clerk/react-router";
 import { IconLoader } from "@tabler/icons-react";
+import { useNavigation } from "react-router";
 
 import { PageTitle } from "~/components/common/page-title";
+import { Skeleton } from "~/components/ui/skeleton";
 import { useRootData } from "~/hooks/useRootData";
 
 const STEPS = [
@@ -42,6 +44,9 @@ interface AuthLayoutProps {
 export function AuthLayout({ variant }: AuthLayoutProps) {
   const course = useRootData()?.course?.data.attributes;
   const courseTitle = course?.title;
+  const navigation = useNavigation();
+  /** Clerk navigates via React Router to its force-redirect URL (set in root.tsx) after a successful submit. */
+  const isRedirecting = navigation.state !== "idle" && navigation.location?.pathname === "/preview";
   const appearance = {
     variables: {
       colorPrimary: course?.primary_color,
@@ -77,12 +82,37 @@ export function AuthLayout({ variant }: AuthLayoutProps) {
             })}
           </ol>
         </div>
-        {/* Spinner sits behind the Clerk card, showing while Clerk loads and after submit while it redirects. */}
-        <div className="grid place-items-center *:[grid-area:1/1]">
-          <IconLoader className="size-8 animate-spin text-muted-foreground" aria-label="Loading" />
+        <div className="flex justify-center">
+          <ClerkLoading>
+            <ClerkCardSkeleton />
+          </ClerkLoading>
           {variant === "sign-in" ? <SignIn appearance={appearance} /> : <SignUp appearance={appearance} />}
         </div>
       </div>
+      {isRedirecting ? (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-background/80">
+          <IconLoader className="size-16 animate-spin text-muted-foreground" aria-label="Loading" />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function ClerkCardSkeleton() {
+  return (
+    <div className="w-full max-w-[25rem] space-y-6 rounded-xl border bg-card px-10 py-8 shadow-sm" aria-hidden>
+      <div className="flex flex-col items-center gap-2">
+        <Skeleton className="h-5 w-48" />
+        <Skeleton className="h-4 w-56" />
+      </div>
+      <Skeleton className="h-9 w-full" />
+      <Skeleton className="mx-auto h-3 w-8" />
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-24" />
+        <Skeleton className="h-9 w-full" />
+      </div>
+      <Skeleton className="h-9 w-full" />
+      <Skeleton className="mx-auto h-4 w-40" />
     </div>
   );
 }
