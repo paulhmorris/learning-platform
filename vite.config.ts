@@ -1,7 +1,7 @@
 // eslint-disable-next-line @typescript-eslint/triple-slash-reference
 /// <reference types="vitest/config" />
 import { reactRouter } from "@react-router/dev/vite";
-import { sentryReactRouter, type SentryReactRouterBuildOptions } from "@sentry/react-router";
+import { sentryReactRouter, type SentryReactRouterBuildOptions } from "@sentry/react-router/vite";
 import { reactRouterHonoServer } from "react-router-hono-server/dev";
 import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
@@ -12,7 +12,7 @@ const sentryConfig: SentryReactRouterBuildOptions = {
   org: "cosmic-labs",
   project: "learning-platform",
   authToken: process.env.SENTRY_AUTH_TOKEN,
-  sourceMapsUploadOptions: {
+  sourcemaps: {
     filesToDeleteAfterUpload: ["**/*.map"],
   },
 };
