@@ -1,6 +1,6 @@
 import { createLogger } from "~/integrations/logger.server";
 import { Sentry } from "~/integrations/sentry";
-import { stripe } from "~/integrations/stripe.server";
+import { getStripe } from "~/integrations/stripe.server";
 import { AuthService } from "~/services/auth.server";
 
 const logger = createLogger("IdentityService");
@@ -10,6 +10,7 @@ export type VerificationSession = Awaited<ReturnType<typeof IdentityService.retr
 export const IdentityService = {
   async createVerificationSession(userId: string, email: string, baseUrl: string) {
     try {
+      const stripe = await getStripe();
       const verificationSession = await stripe.identity.verificationSessions.create({
         type: "document",
         provided_details: { email },
@@ -28,6 +29,7 @@ export const IdentityService = {
   async retrieveVerificationSession(sessionId: string) {
     try {
       logger.debug(`Retrieving verification session ${sessionId}`);
+      const stripe = await getStripe();
       return await stripe.identity.verificationSessions.retrieve(sessionId);
     } catch (error) {
       Sentry.captureException(error, { extra: { sessionId } });

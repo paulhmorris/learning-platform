@@ -1,11 +1,10 @@
 import { LoaderFunctionArgs, redirect } from "react-router";
 
 import { SERVER_CONFIG } from "~/config.server";
-import PurchaseConfirmationEmail from "~/emails/purchase-confirmation";
 import { EmailService } from "~/integrations/email.server";
 import { createLogger } from "~/integrations/logger.server";
 import { Sentry } from "~/integrations/sentry";
-import { stripe } from "~/integrations/stripe.server";
+import { getStripe } from "~/integrations/stripe.server";
 import { Toasts } from "~/lib/toast.server";
 import { CourseService } from "~/services/course.server";
 import { SessionService } from "~/services/session.server";
@@ -33,6 +32,7 @@ export async function loader(args: LoaderFunctionArgs) {
   }
 
   try {
+    const stripe = await getStripe();
     const session = await stripe.checkout.sessions.retrieve(stripeSessionId);
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!session || session.payment_status === "unpaid") {
@@ -59,6 +59,7 @@ export async function loader(args: LoaderFunctionArgs) {
       const courseUrl = `https://${linkedCourse.host}/preview`;
       if (title) {
         try {
+          const { default: PurchaseConfirmationEmail } = await import("~/emails/purchase-confirmation");
           await EmailService.send({
             to: user.email,
             from: `Plumb Media & Education <no-reply@${SERVER_CONFIG.emailFromDomain}>`,

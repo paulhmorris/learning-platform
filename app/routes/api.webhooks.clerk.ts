@@ -2,7 +2,6 @@ import { verifyWebhook } from "@clerk/backend/webhooks";
 import { ActionFunctionArgs } from "react-router";
 
 import { SERVER_CONFIG } from "~/config.server";
-import WelcomeEmail from "~/emails/welcome";
 import { EmailService } from "~/integrations/email.server";
 import { createLogger } from "~/integrations/logger.server";
 import { Sentry } from "~/integrations/sentry";
@@ -34,6 +33,7 @@ export async function action(args: ActionFunctionArgs) {
       const firstName = event.data.first_name;
       if (email) {
         try {
+          const { default: WelcomeEmail } = await import("~/emails/welcome");
           await EmailService.send({
             to: email,
             from: `Plumb Media & Education <no-reply@${SERVER_CONFIG.emailFromDomain}>`,

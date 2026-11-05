@@ -1,6 +1,6 @@
 import { parseFormData, ValidatedForm, validationError } from "@rvf/react-router";
-import { useRealtimeRun } from "@trigger.dev/react-hooks";
-import { useEffect, useRef, useState } from "react";
+import type { AnyRealtimeRun } from "@trigger.dev/sdk/v3";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { ActionFunctionArgs, LoaderFunctionArgs, useFetcher, useLoaderData, useRevalidator } from "react-router";
 import { toast } from "sonner";
 import * as z from "zod";
@@ -27,7 +27,9 @@ import { CourseService } from "~/services/course.server";
 import { SessionService } from "~/services/session.server";
 import { APIResponseData } from "~/types/utils";
 
-import { regenerateCertificateJob } from "../../jobs/regenerate-certificate";
+import type { regenerateCertificateJob } from "../../jobs/regenerate-certificate";
+
+const RealtimeRunWatcher = lazy(() => import("~/components/admin/realtime-run-watcher"));
 
 const logger = createLogger("Routes.Admin.Users.Certificate");
 
@@ -135,7 +137,8 @@ export async function action(args: ActionFunctionArgs) {
 
     await CertificateService.amendFormSubmission({ userCourseId: userCourse.id, formData: answers.data });
 
-    const job = await regenerateCertificateJob.trigger({
+    const { tasks } = await import("@trigger.dev/sdk/v3");
+    const job = await tasks.trigger<typeof regenerateCertificateJob>("regenerate-certificate", {
       userCourseId: userCourse.id,
       courseName,
       sendEmail,
@@ -216,42 +219,40 @@ export default function AdminUserCertificate() {
     setWatchedRun({ runId: data.runId, accessToken: data.publicAccessToken });
   }, [fetcher.data, revalidator]);
 
-  const { run, error } = useRealtimeRun<typeof regenerateCertificateJob>(watchedRun?.runId, {
-    accessToken: watchedRun?.accessToken,
-    enabled: Boolean(watchedRun),
-  });
-
   // Settle on the run status rather than the hook's onComplete callback, which has been reported to
   // fire on non-terminal statuses and would report success before the file is rewritten.
-  useEffect(() => {
-    const settle = settleRef.current;
-    if (!settle) {
-      return;
-    }
+  const handleRunChange = useCallback(
+    (run: AnyRealtimeRun | undefined, error: Error | undefined) => {
+      const settle = settleRef.current;
+      if (!settle) {
+        return;
+      }
 
-    if (error) {
+      if (error) {
+        settleRef.current = null;
+        setWatchedRun(null);
+        settle.reject(new Error("Lost track of the regeneration. Refresh in a moment to check on it."));
+        return;
+      }
+
+      // Ignore a lingering run from a previous submission, whose terminal status would settle this
+      // promise before its own run has finished.
+      if (!run || run.id !== watchedRun?.runId || !TERMINAL_STATUSES.some((s) => s === run.status)) {
+        return;
+      }
+
       settleRef.current = null;
       setWatchedRun(null);
-      settle.reject(new Error("Lost track of the regeneration. Refresh in a moment to check on it."));
-      return;
-    }
-
-    // Ignore a lingering run from a previous submission, whose terminal status would settle this
-    // promise before its own run has finished.
-    if (!run || run.id !== watchedRun?.runId || !TERMINAL_STATUSES.some((s) => s === run.status)) {
-      return;
-    }
-
-    settleRef.current = null;
-    setWatchedRun(null);
-    if (run.status === "COMPLETED") {
-      settle.resolve();
-    } else {
-      settle.reject(
-        new Error(`Regeneration ${run.status.toLowerCase().replace(/_/g, " ")}. The old certificate is intact.`),
-      );
-    }
-  }, [run, error, watchedRun]);
+      if (run.status === "COMPLETED") {
+        settle.resolve();
+      } else {
+        settle.reject(
+          new Error(`Regeneration ${run.status.toLowerCase().replace(/_/g, " ")}. The old certificate is intact.`),
+        );
+      }
+    },
+    [watchedRun],
+  );
 
   return (
     <>
@@ -317,6 +318,17 @@ export default function AdminUserCertificate() {
           </>
         )}
       </ValidatedForm>
+
+      {watchedRun ? (
+        <Suspense fallback={null}>
+          <RealtimeRunWatcher
+            key={watchedRun.runId}
+            runId={watchedRun.runId}
+            accessToken={watchedRun.accessToken}
+            onChange={handleRunChange}
+          />
+        </Suspense>
+      ) : null}
     </>
   );
 }

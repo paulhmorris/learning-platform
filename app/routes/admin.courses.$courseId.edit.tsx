@@ -10,7 +10,7 @@ import { FormField, GenericFieldError } from "~/components/ui/form";
 import { Label } from "~/components/ui/label";
 import { SubmitButton } from "~/components/ui/submit-button";
 import { db } from "~/integrations/db.server";
-import { stripe } from "~/integrations/stripe.server";
+import { getStripe } from "~/integrations/stripe.server";
 import { Toasts } from "~/lib/toast.server";
 import type { loader as adminCourseLoader } from "~/routes/admin.courses.$courseId";
 import { checkbox, checkboxGroup, number, text } from "~/schemas/fields";
@@ -19,6 +19,7 @@ import { SessionService } from "~/services/session.server";
 export async function loader(args: LoaderFunctionArgs) {
   await SessionService.requireAdmin(args);
 
+  const stripe = await getStripe();
   const prices = await stripe.prices.list({ active: true, expand: ["data.product"], limit: 100 });
   const priceOptions = prices.data
     .filter((price) => typeof price.product === "object" && !price.product.deleted)

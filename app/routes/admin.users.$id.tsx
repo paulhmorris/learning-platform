@@ -13,7 +13,7 @@ import { ErrorComponent } from "~/components/error-component";
 import { Badge } from "~/components/ui/badge";
 import { createLogger } from "~/integrations/logger.server";
 import { Sentry } from "~/integrations/sentry";
-import { stripe } from "~/integrations/stripe.server";
+import { getStripe } from "~/integrations/stripe.server";
 import { isResponseLike, Responses } from "~/lib/responses.server";
 import { cn } from "~/lib/utils";
 import { SessionService } from "~/services/session.server";
@@ -49,6 +49,7 @@ export async function loader(args: LoaderFunctionArgs) {
     let identityVerificationStatus;
     const sessionId = user.publicMetadata.stripeVerificationSessionId;
     if (sessionId) {
+      const stripe = await getStripe();
       const session = await stripe.identity.verificationSessions.retrieve(sessionId);
       identityVerificationStatus = session.status;
     }
