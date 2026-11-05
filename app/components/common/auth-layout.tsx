@@ -1,4 +1,5 @@
-import { ReactNode } from "react";
+import { SignIn, SignUp } from "@clerk/react-router";
+import { IconLoader } from "@tabler/icons-react";
 
 import { PageTitle } from "~/components/common/page-title";
 import { useRootData } from "~/hooks/useRootData";
@@ -28,13 +29,30 @@ const STEPS = [
   },
 ];
 
+/** Clerk colors links with `colorPrimary`, which is unreadable for light course colors (e.g. yellow). */
+const clerkLinkStyle = {
+  color: "hsl(var(--foreground))",
+  textDecoration: "underline",
+};
+
 interface AuthLayoutProps {
   variant: "sign-in" | "sign-up";
-  children: ReactNode;
 }
 
-export function AuthLayout({ variant, children }: AuthLayoutProps) {
-  const courseTitle = useRootData()?.course?.data.attributes.title;
+export function AuthLayout({ variant }: AuthLayoutProps) {
+  const course = useRootData()?.course?.data.attributes;
+  const courseTitle = course?.title;
+  const appearance = {
+    variables: {
+      colorPrimary: course?.primary_color,
+      colorPrimaryForeground: course?.secondary_color,
+    },
+    elements: {
+      footerActionLink: clerkLinkStyle,
+      formFieldAction: clerkLinkStyle,
+      formResendCodeLink: clerkLinkStyle,
+    },
+  };
 
   return (
     <div className="mx-auto w-full max-w-screen-xl px-6 py-6 lg:py-20">
@@ -59,7 +77,11 @@ export function AuthLayout({ variant, children }: AuthLayoutProps) {
             })}
           </ol>
         </div>
-        <div className="flex justify-center">{children}</div>
+        {/* Spinner sits behind the Clerk card, showing while Clerk loads and after submit while it redirects. */}
+        <div className="grid place-items-center *:[grid-area:1/1]">
+          <IconLoader className="size-8 animate-spin text-muted-foreground" aria-label="Loading" />
+          {variant === "sign-in" ? <SignIn appearance={appearance} /> : <SignUp appearance={appearance} />}
+        </div>
       </div>
     </div>
   );

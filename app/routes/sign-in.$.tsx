@@ -1,4 +1,3 @@
-import { SignIn } from "@clerk/react-router";
 import { useEffect } from "react";
 
 import { AuthLayout } from "~/components/common/auth-layout";
@@ -17,9 +16,7 @@ export default function SignInPage() {
   return (
     <>
       <title>{`Sign In | ${courseTitle ?? "Plumb Media & Education"}`}</title>
-      <AuthLayout variant="sign-in">
-        <SignIn />
-      </AuthLayout>
+      <AuthLayout variant="sign-in" />
     </>
   );
 }

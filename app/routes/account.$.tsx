@@ -91,7 +91,7 @@ export default function AccountLayout() {
       </SignedOut>
       <SignedIn>
         <title>Account</title>
-        <div className="flex min-h-[calc(100dvh-80px)] flex-col items-center justify-center md:bg-secondary dark:bg-background">
+        <div className="flex min-h-[calc(100dvh-80px)] shrink-0 flex-col items-center justify-center py-6 md:bg-secondary dark:bg-background">
           <main>
             <UserProfile appearance={{ theme: theme === Theme.DARK ? dark : undefined }}>
               <UserProfile.Page label="Identity" labelIcon={<IconKey className="size-4" />} url="/identity">

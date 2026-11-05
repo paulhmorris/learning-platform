@@ -29,9 +29,6 @@ import globalStyles from "~/tailwind.css?url";
 
 const logger = createLogger("Root");
 
-/** Clerk colors links with `colorPrimary`, which is unreadable for light course colors (e.g. yellow). */
-const clerkLinkStyle = { color: "hsl(var(--foreground))", textDecoration: "underline" };
-
 export const links: LinksFunction = () => [{ rel: "stylesheet", href: globalStyles, as: "style" }];
 
 export const loader = async (args: LoaderFunctionArgs) => {
@@ -72,7 +69,7 @@ export const loader = async (args: LoaderFunctionArgs) => {
     if (isResponseLike(error)) {
       throw error;
     }
-    logger.error("Error in root loader");
+    logger.error("Error in root loader", { error });
     Sentry.captureException(error);
     throw Responses.serverError();
   }
@@ -103,15 +100,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
       telemetry={{ disabled: true }}
       appearance={{
         theme: _data.theme === Theme.DARK ? dark : undefined,
-        variables: {
-          colorPrimary: course?.primary_color,
-          colorPrimaryForeground: course?.secondary_color,
-        },
-        elements: {
-          footerActionLink: clerkLinkStyle,
-          formFieldAction: clerkLinkStyle,
-          formResendCodeLink: clerkLinkStyle,
-        },
       }}
       localization={
         course
