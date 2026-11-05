@@ -5,7 +5,9 @@ import { isbot } from "isbot";
 import { matchRoutes, type RouteObject, type ServerBuild } from "react-router";
 
 import { SERVER_CONFIG } from "~/config.server";
-import { httpLogger } from "~/integrations/logger.server";
+import { createLogger, httpLogger } from "~/integrations/logger.server";
+
+const coldStartLogger = createLogger("ColdStart");
 
 const matchers = ["/assets", "favicon", ".well-known", "site.webmanifest", "sitemap.xml", "robots.txt"];
 
@@ -29,6 +31,28 @@ export function forwardedProtoMiddleware() {
       c.req.raw = new Request(c.req.url.replace(/^http:/, "https:"), c.req.raw);
     }
     await next();
+  });
+}
+
+/**
+ * Reports the first request an instance serves: `bootMs` is time from process start (the server
+ * build loads during boot), `requestMs` is how long that request took. Logged and sent as `Server-Timing`.
+ */
+export function coldStartMiddleware() {
+  let isFirstRequest = true;
+  return createMiddleware(async (c, next) => {
+    if (!isFirstRequest) {
+      return next();
+    }
+    isFirstRequest = false;
+
+    const bootMs = Math.round(performance.now());
+    const start = performance.now();
+    await next();
+    const requestMs = Math.round(performance.now() - start);
+
+    c.header("Server-Timing", `boot;dur=${bootMs}, cold-request;dur=${requestMs}`, { append: true });
+    coldStartLogger.info("Cold start", { bootMs, requestMs, path: c.req.path, status: c.res.status });
   });
 }
 

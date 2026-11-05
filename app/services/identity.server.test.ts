@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("~/integrations/stripe.server", () => ({
+const { stripe } = vi.hoisted(() => ({
   stripe: {
     identity: {
       verificationSessions: {
@@ -10,6 +10,8 @@ vi.mock("~/integrations/stripe.server", () => ({
     },
   },
 }));
+
+vi.mock("~/integrations/stripe.server", () => ({ getStripe: () => Promise.resolve(stripe) }));
 
 vi.mock("~/services/auth.server", () => ({
   AuthService: {
@@ -26,7 +28,6 @@ vi.mock("~/integrations/sentry", () => ({
 }));
 
 import { Sentry } from "~/integrations/sentry";
-import { stripe } from "~/integrations/stripe.server";
 import { AuthService } from "~/services/auth.server";
 
 import { IdentityService } from "./identity.server";
