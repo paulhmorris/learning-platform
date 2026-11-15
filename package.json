@@ -108,7 +108,7 @@
   "devDependencies": {
     "@axe-core/playwright": "^4.14.0",
     "@clerk/testing": "^1.14.8",
-    "@faker-js/faker": "^9.9.0",
+    "@faker-js/faker": "^10.6.0",
     "@playwright/test": "^1.65.0",
     "@react-email/preview-server": "^5.2.11",
     "@react-router/dev": "^7.18.5",
