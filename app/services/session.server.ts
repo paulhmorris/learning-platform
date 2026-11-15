@@ -1,4 +1,4 @@
-import { getAuth } from "@clerk/react-router/ssr.server";
+import { getAuth } from "@clerk/react-router/server";
 import { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 
 import { UserRole } from "~/config";
