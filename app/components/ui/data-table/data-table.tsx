@@ -20,11 +20,10 @@ import * as React from "react";
 import { useSearchParams } from "react-router";
 import { useDebounceCallback } from "usehooks-ts";
 
-import { useUpdateSearchParams } from "~/hooks/useSearchParamsUpdater";
-
 import { DataTablePagination } from "~/components/ui/data-table/data-table-pagination";
 import { DataTableToolbar, Facet } from "~/components/ui/data-table/data-table-toolbar";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "~/components/ui/table";
+import { useUpdateSearchParams } from "~/hooks/useSearchParamsUpdater";
 
 const fuzzyFilter: FilterFn<any> = (row, columnId, value, addMeta) => {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-argument

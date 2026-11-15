@@ -58,7 +58,10 @@ const DEFAULT_FORM_DATA = {
  * Puts a user in the state the amendment page expects: a completed course with an issued
  * certificate and the answers it was rendered from. Nothing here goes through the claim job.
  */
-export async function seedIssuedCertificate(userId: string, options: { number: string; formData?: object } = { number: "" }) {
+export async function seedIssuedCertificate(
+  userId: string,
+  options: { number: string; formData?: object } = { number: "" },
+) {
   const course = await ensureCourseHostForE2E();
   const formData = options.formData ?? DEFAULT_FORM_DATA;
 

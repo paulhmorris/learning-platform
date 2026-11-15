@@ -144,7 +144,7 @@ function makeCertificate(overrides?: Partial<UnexportedCertificate>): Unexported
 // ─── Tests ───────────────────────────────────────────────────────────────────
 
 beforeEach(() => {
-  vi.restoreAllMocks();
+  vi.resetAllMocks();
 });
 
 describe("hiphopDataExport", () => {
