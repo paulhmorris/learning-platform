@@ -30,7 +30,7 @@
     "@aws-sdk/client-s3": "^3.1164.0",
     "@aws-sdk/client-sesv2": "^3.1164.0",
     "@aws-sdk/s3-request-presigner": "^3.1164.0",
-    "@chronicstone/typed-xlsx": "^0.2.17",
+    "@chronicstone/typed-xlsx": "0.2.16",
     "@clerk/backend": "^2.5.0",
     "@clerk/react-router": "^2.4.18",
     "@clerk/themes": "^2.4.57",
