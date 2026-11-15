@@ -1,4 +1,4 @@
-import type { Attribute } from "@strapi/strapi";
+import type { Attribute } from "@strapi/types";
 import { ClassValue, clsx } from "clsx";
 import { Params } from "react-router";
 import { StrapiResponse } from "strapi-sdk-js";

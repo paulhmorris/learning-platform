@@ -1,4 +1,4 @@
-import type { Attribute, Schema } from "@strapi/strapi";
+import type { Attribute, Schema } from "@strapi/types";
 
 export interface AdminPermission extends Schema.CollectionType {
   collectionName: "admin_permissions";

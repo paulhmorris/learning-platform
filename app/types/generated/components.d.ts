@@ -1,4 +1,4 @@
-import type { Attribute, Schema } from "@strapi/strapi";
+import type { Attribute, Schema } from "@strapi/types";
 
 export interface BlocksAudio extends Schema.Component {
   collectionName: "components_blocks_audio";
