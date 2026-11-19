@@ -6,6 +6,7 @@ import { matchRoutes, type RouteObject, type ServerBuild } from "react-router";
 
 import { SERVER_CONFIG } from "~/config.server";
 import { createLogger, httpLogger } from "~/integrations/logger.server";
+import { Sentry } from "~/integrations/sentry";
 
 const coldStartLogger = createLogger("ColdStart");
 
@@ -36,7 +37,8 @@ export function forwardedProtoMiddleware() {
 
 /**
  * Reports the first request an instance serves: `bootMs` is time from process start (the server
- * build loads during boot), `requestMs` is how long that request took. Logged and sent as `Server-Timing`.
+ * build loads during boot), `requestMs` is how long that request took. Logged, sent as `Server-Timing`,
+ * and set as `cold_start`/`boot_ms` on the request's root span so cold traces are filterable.
  */
 export function coldStartMiddleware() {
   let isFirstRequest = true;
@@ -47,6 +49,10 @@ export function coldStartMiddleware() {
     isFirstRequest = false;
 
     const bootMs = Math.round(performance.now());
+    const activeSpan = Sentry.getActiveSpan();
+    if (activeSpan) {
+      Sentry.getRootSpan(activeSpan).setAttributes({ cold_start: true, boot_ms: bootMs });
+    }
     const start = performance.now();
     await next();
     const requestMs = Math.round(performance.now() - start);
