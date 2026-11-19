@@ -1,6 +1,9 @@
-import { nanoid } from "nanoid";
 import { createCookieSessionStorage } from "react-router";
 import { createThemeAction, createThemeSessionResolver } from "remix-themes";
+import invariant from "tiny-invariant";
+
+const { THEME_COOKIE_SECRET } = process.env;
+invariant(THEME_COOKIE_SECRET, "THEME_COOKIE_SECRET env var not set");
 
 const themeSessionStorage = createCookieSessionStorage({
   cookie: {
@@ -8,7 +11,7 @@ const themeSessionStorage = createCookieSessionStorage({
     httpOnly: false,
     path: "/",
     sameSite: "lax",
-    secrets: [nanoid(32)],
+    secrets: [THEME_COOKIE_SECRET],
     secure: process.env.NODE_ENV === "production",
     maxAge: 60 * 60 * 24 * 365,
   },
