@@ -1,6 +1,12 @@
 // @vitest-environment node
 import { Hono } from "hono";
 
+import { Sentry } from "~/integrations/sentry";
+
+vi.mock("~/integrations/sentry", () => ({
+  Sentry: { getActiveSpan: vi.fn(), getRootSpan: vi.fn() },
+}));
+
 import { coldStartMiddleware, forwardedProtoMiddleware, unknownPathMiddleware } from "~/server/middleware";
 
 function createApp() {
@@ -71,5 +77,21 @@ describe("coldStartMiddleware", () => {
     expect(first.status).toBe(302);
     expect(first.headers.get("server-timing")).toMatch(/^boot;dur=\d+, cold-request;dur=\d+$/);
     expect(second.headers.get("server-timing")).toBeNull();
+  });
+
+  it("tags the first request's root span as a cold start", async () => {
+    const rootSpan = { setAttributes: vi.fn() };
+    vi.mocked(Sentry.getActiveSpan).mockReturnValue({} as never);
+    vi.mocked(Sentry.getRootSpan).mockReturnValue(rootSpan as never);
+
+    const app = new Hono();
+    app.use(coldStartMiddleware());
+    app.get("/", (c) => c.text("ok"));
+
+    await app.request("http://example.com/");
+    await app.request("http://example.com/");
+
+    expect(rootSpan.setAttributes).toHaveBeenCalledTimes(1);
+    expect(rootSpan.setAttributes).toHaveBeenCalledWith({ cold_start: true, boot_ms: expect.any(Number) });
   });
 });

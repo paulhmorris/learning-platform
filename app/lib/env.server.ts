@@ -10,6 +10,8 @@ const _serverEnvValidation = z.object({
   // Clerk
   CLERK_SECRET_KEY: z.string().min(1),
   CLERK_WEBHOOK_SIGNING_SECRET: z.string().min(1),
+  /** PEM public key; Clerk verifies session tokens locally instead of fetching JWKS on each cold start. */
+  CLERK_JWT_KEY: z.string().startsWith("-----BEGIN PUBLIC KEY-----").optional(),
 
   // Strapi
   STRAPI_TOKEN: z.string().min(1),
