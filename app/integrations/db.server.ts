@@ -5,6 +5,10 @@ import invariant from "tiny-invariant";
 import ws from "ws";
 
 import { PrismaClient } from "~/generated/prisma/client";
+import { createLogger } from "~/integrations/logger.server";
+import { Sentry } from "~/integrations/sentry";
+
+const logger = createLogger("Database");
 
 export const singleton = <Value>(name: string, valueFactory: () => Value): Value => {
   const g = global as unknown as { __singletons: Record<string, unknown> };
@@ -26,11 +30,21 @@ function getPrismaClient() {
   }
 
   neonConfig.webSocketConstructor = ws;
-  const adapter = new PrismaNeon({ connectionString: `${DATABASE_URL}` });
-  const client = new PrismaClient({
-    adapter,
-  });
-  return client;
+  const adapter = new PrismaNeon(
+    {
+      connectionString: DATABASE_URL,
+      idleTimeoutMillis: 5_000,
+      connectionTimeoutMillis: 5_000,
+      query_timeout: 8_000,
+    },
+    { onPoolError: logPoolError },
+  );
+  return new PrismaClient({ adapter });
+}
+
+function logPoolError(error: Error) {
+  logger.error("Database pool error", { error });
+  Sentry.captureException(error);
 }
 
 // Hard-code a unique key, so we can look up the client when this module gets re-imported

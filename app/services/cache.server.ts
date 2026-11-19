@@ -46,7 +46,17 @@ export const CacheService = {
 
     try {
       logger.debug(`Getting cache item: ${key}`);
-      return await redis.get<T>(key);
+      return await Sentry.startSpan(
+        { op: "cache.get", name: key, attributes: { "cache.key": [key] } },
+        async (span) => {
+          const value = await redis.get<T>(key);
+          span.setAttributes({
+            "cache.hit": value !== null,
+            ...(value !== null && { "cache.item_size": JSON.stringify(value).length }),
+          });
+          return value;
+        },
+      );
     } catch (error) {
       Sentry.captureException(error);
       logger.error(`Failed to get cache item: ${key}`, { key });
@@ -63,7 +73,14 @@ export const CacheService = {
 
     try {
       logger.debug(`Setting cache item: ${key} (TTL: ${opts.ex}s)`);
-      await redis.set(key, value, opts);
+      await Sentry.startSpan(
+        {
+          op: "cache.put",
+          name: key,
+          attributes: { "cache.key": [key], "cache.item_size": JSON.stringify(value).length, "cache.ttl": opts.ex },
+        },
+        () => redis.set(key, value, opts),
+      );
     } catch (error) {
       Sentry.captureException(error);
       logger.error(`Failed to set cache item: ${key}`, { key });
