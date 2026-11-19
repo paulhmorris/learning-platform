@@ -28,6 +28,9 @@ export const handleError: HandleErrorFunction = (error, { request }) => {
   }
 };
 
+/** `handleError` captures errors with filtering, so the instrumentation must not. */
+export const instrumentations = [Sentry.createSentryServerInstrumentation({ captureErrors: false })];
+
 const handleRequest = Sentry.createSentryHandleRequest({
   ServerRouter,
   renderToPipeableStream,

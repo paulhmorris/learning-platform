@@ -10,7 +10,8 @@ Sentry.init({
   environment: process.env.VERCEL_ENV,
   // v11 defaults this to true, which regroups issues captured from non-Error values.
   attachStacktrace: false,
-  integrations: [Sentry.prismaIntegration()],
+  // Hono's integration renames server spans to its `/*` mount, overwriting React Router's route name.
+  integrations: (defaults) => defaults.filter((i) => i.name !== "Hono"),
 
   sampleRate: 1.0,
   tracesSampleRate: 1.0,

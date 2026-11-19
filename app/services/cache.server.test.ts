@@ -19,7 +19,10 @@ vi.mock("~/integrations/logger.server", () => ({
 }));
 
 vi.mock("~/integrations/sentry", () => ({
-  Sentry: { captureException: vi.fn() },
+  Sentry: {
+    captureException: vi.fn(),
+    startSpan: (_options: unknown, callback: (span: unknown) => unknown) => callback({ setAttributes: vi.fn() }),
+  },
 }));
 
 import { SERVER_CONFIG } from "~/config.server";

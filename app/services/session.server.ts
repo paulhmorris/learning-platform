@@ -3,6 +3,7 @@ import { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 
 import { UserRole } from "~/config";
 import { createLogger } from "~/integrations/logger.server";
+import { Sentry } from "~/integrations/sentry";
 import { Responses } from "~/lib/responses.server";
 
 const logger = createLogger("SessionService");
@@ -16,6 +17,8 @@ class _SessionService {
     if (!auth.isAuthenticated) {
       throw Responses.redirectToSignIn(args.request.url);
     }
+
+    Sentry.setUser({ id: auth.userId });
 
     return {
       ...auth,
