@@ -218,8 +218,8 @@ const validFormData = {
 // ─── Tests ───────────────────────────────────────────────────────────────────
 
 beforeEach(() => {
-  vi.restoreAllMocks();
-  // Re-apply default mock implementations after restoreAllMocks
+  vi.resetAllMocks();
+  // Re-apply default mock implementations after resetAllMocks
   mockLoadImage.mockResolvedValue({ width: 1650, height: 1275 } as any);
   mockGlobalFonts.has.mockReturnValue(false);
   mockCourseService.getById.mockResolvedValue({ id: KNOWN_COURSE_ID } as any);

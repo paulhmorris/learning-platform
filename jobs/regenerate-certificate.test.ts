@@ -146,9 +146,7 @@ describe("regenerateCertificateJob", () => {
 
   it("prints the original dates in the certificate timezone, never today's date", async () => {
     // issuedAt is 2026-01-06T00:00:00Z, which is still 1/5/2026 in America/Chicago.
-    mockCertificateService.getForRegeneration.mockResolvedValue(
-      buildUserCourse({ completedAt: null }) as never,
-    );
+    mockCertificateService.getForRegeneration.mockResolvedValue(buildUserCourse({ completedAt: null }) as never);
 
     await run(payload);
 
@@ -197,9 +195,7 @@ describe("regenerateCertificateJob", () => {
   });
 
   it("throws when the user course has no certificate", async () => {
-    mockCertificateService.getForRegeneration.mockResolvedValue(
-      buildUserCourse({ certificate: null }) as never,
-    );
+    mockCertificateService.getForRegeneration.mockResolvedValue(buildUserCourse({ certificate: null }) as never);
 
     await expect(run(payload)).rejects.toThrow("User course has no certificate to regenerate");
     expect(mockBucket.uploadFile).not.toHaveBeenCalled();

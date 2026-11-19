@@ -235,9 +235,9 @@ describe("CertificateService", () => {
     it("throws when the transaction fails so the caller does not queue a regeneration", async () => {
       mockDb.$transaction.mockRejectedValue(new Error("Transaction error") as never);
 
-      await expect(
-        CertificateService.amendFormSubmission({ userCourseId: 5, formData: {} }),
-      ).rejects.toThrow("Transaction error");
+      await expect(CertificateService.amendFormSubmission({ userCourseId: 5, formData: {} })).rejects.toThrow(
+        "Transaction error",
+      );
     });
   });
 

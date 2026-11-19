@@ -1,4 +1,4 @@
-import type { Attribute, Common, Utils } from "@strapi/strapi";
+import type { Attribute, Common, Utils } from "@strapi/types";
 
 // Utilities for Strapi
 type IDProperty = { id: number };

@@ -1,4 +1,4 @@
-import type { Attribute } from "@strapi/strapi";
+import type { Attribute } from "@strapi/types";
 
 import {
   formatSeconds,

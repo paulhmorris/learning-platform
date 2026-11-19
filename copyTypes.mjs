@@ -31,7 +31,7 @@ function copyFile({ src, dest }) {
   }
 
   // Read the source file, modify its content and write to the destination file
-  const content = fs.readFileSync(src, "utf8");
+  const content = fs.readFileSync(src, "utf8").replace(/from ["']@strapi\/strapi["']/g, 'from "@strapi/types"');
 
   fs.writeFile(dest, content, (err) => {
     if (err) {
