@@ -71,17 +71,22 @@ export async function action({ request }: ActionFunctionArgs) {
               }
 
               if (user.email) {
-                const { default: VerificationRequiresInputEmail } =
-                  await import("~/emails/verification-requires-input");
-                await EmailService.send({
-                  to: user.email,
-                  from: `Plumb Media & Education <no-reply@${SERVER_CONFIG.emailFromDomain}>`,
-                  subject: "Action Required: Verify Your Identity",
-                  // Sessions created before `base_url` was recorded fall back to BASE_URL.
-                  react: VerificationRequiresInputEmail({
-                    baseUrl: event.data.object.metadata.base_url ?? SERVER_CONFIG.baseUrl,
-                  }),
-                });
+                try {
+                  const { default: VerificationRequiresInputEmail } =
+                    await import("~/emails/verification-requires-input");
+                  await EmailService.send({
+                    to: user.email,
+                    from: `Plumb Media & Education <no-reply@${SERVER_CONFIG.emailFromDomain}>`,
+                    subject: "Action Required: Verify Your Identity",
+                    // Sessions created before `base_url` was recorded fall back to BASE_URL.
+                    react: VerificationRequiresInputEmail({
+                      baseUrl: event.data.object.metadata.base_url ?? SERVER_CONFIG.baseUrl,
+                    }),
+                  });
+                } catch (error) {
+                  Sentry.captureException(error, { extra: { userId } });
+                  logger.error("Failed to send verification requires input email", { userId });
+                }
               }
 
               return Responses.ok();
@@ -112,13 +117,18 @@ export async function action({ request }: ActionFunctionArgs) {
                 logger.info("Verification successful", { userId });
 
                 if (user.email) {
-                  const { default: VerificationSuccessEmail } = await import("~/emails/verification-success");
-                  await EmailService.send({
-                    to: user.email,
-                    from: `Plumb Media & Education <no-reply@${SERVER_CONFIG.emailFromDomain}>`,
-                    subject: "Identity Verification Successful!",
-                    react: VerificationSuccessEmail(),
-                  });
+                  try {
+                    const { default: VerificationSuccessEmail } = await import("~/emails/verification-success");
+                    await EmailService.send({
+                      to: user.email,
+                      from: `Plumb Media & Education <no-reply@${SERVER_CONFIG.emailFromDomain}>`,
+                      subject: "Identity Verification Successful!",
+                      react: VerificationSuccessEmail(),
+                    });
+                  } catch (error) {
+                    Sentry.captureException(error, { extra: { userId } });
+                    logger.error("Failed to send verification success email", { userId });
+                  }
                 }
 
                 await AuthService.updatePublicMetadata(user.id, {
