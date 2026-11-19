@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockGetAuth = vi.fn();
 
-vi.mock("@clerk/react-router/ssr.server", () => ({
+vi.mock("@clerk/react-router/server", () => ({
   getAuth: (...args: Array<unknown>) => mockGetAuth(...args),
 }));
 

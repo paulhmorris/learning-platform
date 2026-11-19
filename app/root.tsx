@@ -1,5 +1,5 @@
 import { ClerkProvider, SignedIn, useUser } from "@clerk/react-router";
-import { rootAuthLoader } from "@clerk/react-router/ssr.server";
+import { clerkMiddleware, rootAuthLoader } from "@clerk/react-router/server";
 import { dark } from "@clerk/themes";
 
 import "@fontsource-variable/inter/wght.css";
@@ -30,6 +30,8 @@ import globalStyles from "~/tailwind.css?url";
 const logger = createLogger("Root");
 
 export const links: LinksFunction = () => [{ rel: "stylesheet", href: globalStyles, as: "style" }];
+
+export const middleware: Route.MiddlewareFunction[] = [clerkMiddleware()];
 
 export const loader = async (args: LoaderFunctionArgs) => {
   const theme = (await themeSessionResolver(args.request)).getTheme();

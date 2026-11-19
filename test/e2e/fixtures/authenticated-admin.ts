@@ -1,7 +1,6 @@
 import { test as base, expect } from "@playwright/test";
 
 import { UserRole } from "~/config";
-import { AuthService } from "~/services/auth.server";
 
 import { createE2ETestUser, deleteE2ETestUser, ensureAuthenticatedStorageState, TestUser } from "../helpers/auth";
 
@@ -18,8 +17,7 @@ export const test = base.extend<AuthFixtures, AuthWorkerFixtures>({
   testUser: [
     // oxlint-disable-next-line no-empty-pattern
     async ({}, use, workerInfo) => {
-      const testUser = await createE2ETestUser(workerInfo.workerIndex);
-      await AuthService.updatePublicMetadata(testUser.id, { role: UserRole.ADMIN });
+      const testUser = await createE2ETestUser(workerInfo.workerIndex, UserRole.ADMIN);
       await use(testUser);
       await deleteE2ETestUser(testUser.id, testUser.stripeCustomerId);
     },

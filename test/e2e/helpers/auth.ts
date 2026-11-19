@@ -5,6 +5,7 @@ import path from "node:path";
 import { clerk } from "@clerk/testing/playwright";
 import type { Browser, Page } from "@playwright/test";
 
+import type { UserRole } from "~/config";
 import { getStripe } from "~/integrations/stripe.server";
 import { AuthService } from "~/services/auth.server";
 import { UserService } from "~/services/user.server";
@@ -101,7 +102,7 @@ export async function ensureAuthenticatedStorageState(
   return storageStatePath;
 }
 
-export async function createE2ETestUser(workerIndex: number): Promise<TestUser> {
+export async function createE2ETestUser(workerIndex: number, role?: UserRole): Promise<TestUser> {
   const uniqueId = randomUUID();
   const email = `e2e-${workerIndex}-${uniqueId}+clerk_test@example.com`;
   const password = `TestPassword!${uniqueId}`;
@@ -111,6 +112,7 @@ export async function createE2ETestUser(workerIndex: number): Promise<TestUser> 
     lastName: "Test User" + workerIndex,
     emailAddress: [email],
     password,
+    ...(role && { publicMetadata: { role } }),
   });
 
   const clerkUser = await UserService.linkToStripe(user.id);
