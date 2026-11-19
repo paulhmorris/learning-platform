@@ -1,8 +1,6 @@
 import { prismaExtension } from "@trigger.dev/build/extensions/prisma";
 import { defineConfig } from "@trigger.dev/sdk/v3";
 
-import { Sentry } from "./app/integrations/sentry";
-
 export default defineConfig({
   dirs: ["./jobs"],
   maxDuration: 300,
@@ -15,9 +13,5 @@ export default defineConfig({
       }),
     ],
     external: ["@napi-rs/canvas", "fsevents", "resend", "@react-email/render", "@react-email/components"],
-  },
-  // eslint-disable-next-line @typescript-eslint/require-await
-  onFailure: async ({ error }) => {
-    Sentry.captureException(error);
   },
 });
