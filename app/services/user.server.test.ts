@@ -115,17 +115,36 @@ describe("UserService", () => {
   });
 
   describe("linkToStripe", () => {
-    it("creates a stripe customer and updates metadata", async () => {
+    it("creates a stripe customer and defaults unset metadata", async () => {
       vi.mocked(PaymentService.upsertCustomer).mockResolvedValue({ id: "cus_123" });
+      vi.mocked(clerkClient.users.getUser).mockResolvedValue({ publicMetadata: {} } as never);
       vi.mocked(AuthService.updatePublicMetadata).mockResolvedValue({ id: "user_1" } as never);
 
       const result = await UserService.linkToStripe("user_1");
       expect(result).toEqual({ id: "user_1" });
       expect(vi.mocked(PaymentService.upsertCustomer)).toHaveBeenCalledWith("user_1");
-      expect(vi.mocked(AuthService.updatePublicMetadata)).toHaveBeenCalledWith(
-        "user_1",
-        expect.objectContaining({ stripeCustomerId: "cus_123" }),
-      );
+      expect(vi.mocked(AuthService.updatePublicMetadata)).toHaveBeenCalledWith("user_1", {
+        role: "USER",
+        stripeCustomerId: "cus_123",
+        stripeVerificationSessionId: null,
+        isIdentityVerified: false,
+      });
+    });
+
+    it("keeps metadata that is already set", async () => {
+      vi.mocked(PaymentService.upsertCustomer).mockResolvedValue({ id: "cus_123" });
+      vi.mocked(clerkClient.users.getUser).mockResolvedValue({
+        publicMetadata: { role: "ADMIN", isIdentityVerified: true },
+      } as never);
+      vi.mocked(AuthService.updatePublicMetadata).mockResolvedValue({ id: "user_1" } as never);
+
+      await UserService.linkToStripe("user_1");
+      expect(vi.mocked(AuthService.updatePublicMetadata)).toHaveBeenCalledWith("user_1", {
+        role: "ADMIN",
+        stripeCustomerId: "cus_123",
+        stripeVerificationSessionId: null,
+        isIdentityVerified: true,
+      });
     });
 
     it("captures exception and rethrows on failure", async () => {

@@ -44,14 +44,22 @@ export const UserService = {
     }
   },
 
+  /**
+   * Runs from both the `user.created` webhook and e2e setup, in either order, so it only defaults
+   * metadata that isn't set yet. Overwriting would demote a user promoted before the webhook lands.
+   */
   async linkToStripe(userId: string) {
     try {
-      const stripeCustomer = await PaymentService.upsertCustomer(userId);
+      const [stripeCustomer, existing] = await Promise.all([
+        PaymentService.upsertCustomer(userId),
+        clerkClient.users.getUser(userId),
+      ]);
       const user = await AuthService.updatePublicMetadata(userId, {
         role: UserRole.USER,
-        stripeCustomerId: stripeCustomer.id,
         stripeVerificationSessionId: null,
         isIdentityVerified: false,
+        ...existing.publicMetadata,
+        stripeCustomerId: stripeCustomer.id,
       });
       logger.info(`Metadata saved for user ${user.id}`);
       return user;
