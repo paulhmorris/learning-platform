@@ -3,7 +3,6 @@ import type { CreateEmailOptions, Resend } from "resend";
 
 import { SERVER_CONFIG } from "~/config.server";
 import { createLogger } from "~/integrations/logger.server";
-import { Sentry } from "~/integrations/sentry";
 
 const logger = createLogger("EmailService");
 
@@ -35,12 +34,12 @@ async function sendResendEmail(props: SendEmailInput) {
       attachments: props.attachments,
     });
 
+    // Resend returns errors rather than throwing.
     if (response.error) {
-      logger.error(`Failed to send email via Resend: ${response.error.message}`);
-      Sentry.captureException(response.error);
+      throw new Error(`Failed to send email via Resend: ${response.error.message}`, { cause: response.error });
     }
 
-    return { messageId: response.data?.id };
+    return { messageId: response.data.id };
   }
 
   logger.info(
