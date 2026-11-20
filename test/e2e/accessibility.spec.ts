@@ -82,7 +82,8 @@ test.describe("Lesson page", () => {
   test("first lesson page has no accessibility violations", async ({ page, makeAxeBuilder }) => {
     await page.goto("/preview", { waitUntil: "domcontentloaded" });
     await page.getByRole("link", { name: "Start" }).nth(1).click();
-    await page.waitForLoadState("domcontentloaded");
+    await page.waitForURL((url) => url.pathname !== "/preview");
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
     const results = await makeAxeBuilder().analyze();
     expect(results.violations).toEqual([]);
   });
